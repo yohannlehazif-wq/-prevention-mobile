@@ -2,219 +2,157 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RESTEV - SafeStart Prévention</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#02407b">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RESTEV 85 - Accueil Sécurité</title>
+    
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0284c7">
+    <link rel="apple-touch-icon" href="/icon-192x192.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
-        :root {
-            --primary: #02407b; /* Bleu RESTEV */
-            --secondary: #e30613; /* Rouge Alerte / Sécurité */
-            --success: #28a745;
-            --background: #f4f6f9;
-            --text: #333;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: var(--background);
-            color: var(--text);
-        }
-
-        header {
-            background: var(--primary);
-            color: white;
-            padding: 20px 15px;
-            text-align: center;
-            border-bottom-left-radius: 15px;
-            border-bottom-right-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        header h1 { margin: 0; font-size: 24px; }
-        header p { margin: 5px 0 0 0; font-size: 14px; opacity: 0.9; }
-
-        .container {
-            padding: 15px;
-            max-width: 500px;
-            margin: 0 auto;
-        }
-
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-
-        .card h2 {
-            margin-top: 0;
-            font-size: 18px;
-            color: var(--primary);
-            border-bottom: 2px solid var(--background);
-            padding-bottom: 8px;
-        }
-
-        button {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            width: 100%;
-            transition: background 0.2s;
-            margin-top: 10px;
-        }
-
-        button:hover { opacity: 0.9; }
-        
-        .btn-alert { background-color: var(--secondary); }
-        .btn-success { background-color: var(--success); }
-
-        .quiz-option {
-            background: var(--background);
-            padding: 12px;
-            margin: 8px 0;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: 0.2s;
-            border: 1px solid #ddd;
-        }
-        .quiz-option:hover { background: #e9ecef; }
-
-        input, select {
-            width: 100%;
-            padding: 10px;
-            margin: 8px 0 15px 0;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            box-sizing: border-box;
-        }
-
-        .hidden { display: none; }
-        
-        footer {
-            text-align: center;
-            padding: 20px;
-            font-size: 12px;
-            color: #777;
+        /* Styles spécifiques pour le pad de signature */
+        #signature-pad {
+            touch-action: none; /* Empêche le scroll pendant la signature sur mobile */
         }
     </style>
 </head>
-<body>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased pb-20">
 
-    <header>
-        <h1>🛡️ SafeStart</h1>
-        <p>Service d'Accueil Sécurité interactif — RESTEV Vendée</p>
+    <header class="bg-sky-600 text-white p-4 shadow-md sticky top-0 z-50 flex justify-between items-center">
+        <div>
+            <h1 class="text-xl font-bold">RESTEV 85</h1>
+            <p class="text-xs opacity-80">Passeport Prévention</p>
+        </div>
+        <i class="fa-solid fa-shield-halved text-2xl"></i>
     </header>
 
-    <div class="container">
-
-        <div id="step-accueil" class="card">
-            <h2>1. Tronc Commun de Prévention</h2>
-            <p>Bienvenue dans votre entreprise adhérente au RESTEV. Avant de prendre votre poste, vous devez assimiler les règles de sécurité indispensables :</p>
-            <ul style="text-align: left; padding-left: 20px;">
-                <li><strong>EPI :</strong> Le port des protections individuelles (chaussures, casque) est obligatoire selon votre zone.</li>
-                <li><strong>Droit de retrait :</strong> Tout travailleur confronté à un danger grave et imminent a le droit d'alerter et de se retirer.</li>
-                <li><strong>Urgence :</strong> En cas d'accident, alertez immédiatement un Sauveteur Secouriste du Travail (SST) ou composez le 15/112.</li>
-            </ul>
-            <button class="btn-success" onclick="startQuiz()">Passer le Quizz Sécurité</button>
-        </div>
-
-        <div id="step-quiz" class="card hidden">
-            <h2>📝 Évaluation des Compétences</h2>
-            <div id="quiz-container">
-                <p id="quiz-question"><strong>Question :</strong> Que devez-vous faire en priorité si vous constatez un câble électrique dénudé au sol ?</p>
-                <div class="quiz-option" onclick="checkAnswer(false)">A) Je passe par-dessus en faisant attention sans rien dire.</div>
-                <div class="quiz-option" onclick="checkAnswer(true)">B) Je balise la zone et je le signale immédiatement à mon tuteur.</div>
-                <div class="quiz-option" onclick="checkAnswer(false)">C) J'essaie de le réparer moi-même avec du scotch.</div>
+    <main class="p-4 max-w-lg mx-auto">
+        
+        <div class="bg-white rounded-xl shadow-sm p-4 mb-6 border-l-4 border-sky-500">
+            <h2 class="text-lg font-semibold text-gray-800 mb-1">Livret d'Accueil Sécurité</h2>
+            <p class="text-sm text-gray-600">Bienvenue. La validation de ce module est obligatoire avant votre prise de poste.</p>
+            
+            <div class="mt-4 flex flex-col gap-2">
+                <input type="text" placeholder="Nom et Prénom du salarié" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-sky-500 outline-none">
+                <input type="text" placeholder="Nom de l'entreprise" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-sky-500 outline-none">
             </div>
         </div>
 
-        <div id="step-emargement" class="card hidden">
-            <h2>⚖️ Émargement de Conformité</h2>
-            <p class="btn-success" style="color: white; padding: 10px; border-radius: 5px; font-weight: bold;">
-                ✓ Quizz Validé avec succès !
-            </p>
-            <p>Conformément au PST 2026-2030, complétez ce formulaire pour valider officiellement votre accueil sécurité.</p>
+        <h3 class="font-bold text-gray-700 mb-3"><i class="fa-solid fa-list-check text-sky-500 mr-2"></i>Consignes obligatoires</h3>
+        <div class="bg-white rounded-xl shadow-sm p-4 mb-6 flex flex-col gap-4">
             
-            <label for="nom">Nom & Prénom du Travailleur :</label>
-            <input type="text" id="nom" placeholder="Ex: Jean Dupont" required>
+            <label class="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" class="mt-1 w-5 h-5 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
+                <span class="text-sm text-gray-700">J'ai pris connaissance des risques liés à mon poste de travail et des équipements de protection individuelle (EPI) requis.</span>
+            </label>
 
-            <label for="statut">Statut :</label>
-            <select id="statut">
-                <option value="interimaire">Intérimaire</option>
-                <option value="nouveau">Nouvel Arrivant (CDI/CDD)</option>
-                <option value="jeune">Jeune Travailleur / Apprenti / Stagiaire</option>
-            </select>
+            <label class="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" class="mt-1 w-5 h-5 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
+                <span class="text-sm text-gray-700">Je sais repérer les issues de secours et connais le point de rassemblement en cas d'évacuation.</span>
+            </label>
 
-            <label for="entreprise">Entreprise d'accueil (Adhérent RESTEV) :</label>
-            <input type="text" id="entreprise" placeholder="Nom de la structure vendéenne" required>
-
-            <p style="font-size: 13px; color: #555; text-align: left; background: #eee; padding: 10px; border-radius: 5px;">
-                Je certifie avoir pris connaissance des règles de sécurité génériques et spécifiques à mon poste de travail ce jour.
-            </p>
-
-            <button class="btn-success" onclick="validerSignature()">Signer et Enregistrer l'Accueil</button>
+            <label class="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" class="mt-1 w-5 h-5 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
+                <span class="text-sm text-gray-700">J'ai été informé de la procédure à suivre en cas d'accident du travail (alerter, secourir).</span>
+            </label>
         </div>
 
-        <div class="card" style="border-top: 4px solid var(--secondary);">
-            <h2>🚨 Signalement Flash Terrain</h2>
-            <p>Un danger ? Une anomalie dans l'atelier ou sur le chantier ? Remontez l'information en direct.</p>
-            <button class="btn-alert" onclick="triggerSignalement()">Prendre une photo & Signaler</button>
+        <h3 class="font-bold text-gray-700 mb-3"><i class="fa-solid fa-pen-nib text-sky-500 mr-2"></i>Émargement numérique</h3>
+        <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+            <p class="text-xs text-gray-500 mb-2">Signature du salarié (Vaut acceptation des consignes)</p>
+            <div class="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 relative">
+                <canvas id="signature-pad" class="w-full h-40 rounded-lg"></canvas>
+            </div>
+            <div class="flex justify-end mt-2">
+                <button id="clear-signature" class="text-sm text-red-500 hover:text-red-700 font-medium px-2 py-1">Effacer</button>
+            </div>
         </div>
 
+        <button id="submit-form" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition duration-200 flex justify-center items-center gap-2">
+            <i class="fa-solid fa-check-circle"></i> Valider et générer l'attestation
+        </button>
+
+    </main>
+
+    <div class="fixed bottom-4 right-4 z-50">
+        <button class="bg-orange-500 hover:bg-orange-600 text-white rounded-full h-14 px-6 shadow-xl flex items-center justify-center gap-2 font-bold transition transform hover:scale-105">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span class="hidden sm:inline">Signalement Flash</span>
+        </button>
     </div>
 
-    <footer>
-        <p>© 2026 RESTEV — Réseau de Santé au Travail en Vendée<br>Outil d'accompagnement - Plan Santé au Travail 2026-2030</p>
-    </footer>
-
     <script>
-        // Logique de navigation de l'application
-        function startQuiz() {
-            document.getElementById('step-accueil').classList.add('hidden');
-            document.getElementById('step-quiz').classList.remove('hidden');
-        }
+        const canvas = document.getElementById('signature-pad');
+        const ctx = canvas.getContext('2d');
+        const clearBtn = document.getElementById('clear-signature');
+        let isDrawing = false;
 
-        function checkAnswer(isCorrect) {
-            if (isCorrect) {
-                alert("Bonne réponse ! Passage à la validation réglementaire.");
-                document.getElementById('step-quiz').classList.add('hidden');
-                document.getElementById('step-emargement').classList.remove('hidden');
-            } else {
-                alert("Réponse incorrecte ou dangereuse. Veuillez analyser à nouveau la situation.");
-            }
+        // Ajuster la taille du canvas à son conteneur
+        function resizeCanvas() {
+            const ratio =  Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            ctx.scale(ratio, ratio);
         }
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
 
-        function validerSignature() {
-            const nom = document.getElementById('nom').value;
-            const entreprise = document.getElementById('entreprise').value;
+        // Événements souris / tactile
+        const startDrawing = (e) => {
+            isDrawing = true;
+            draw(e);
+        };
+        const stopDrawing = () => {
+            isDrawing = false;
+            ctx.beginPath();
+        };
+        const draw = (e) => {
+            if (!isDrawing) return;
+            e.preventDefault(); // Empêcher le scroll
             
-            if (nom === "" || entreprise === "") {
-                alert("Veuillez remplir les champs obligatoires pour valider l'attestation.");
-            } else {
-                alert(`Félicitations ${nom}. Votre accueil chez ${entreprise} est validé. L'attestation PDF de preuve est transmise au registre de l'employeur et prête pour votre Passeport Prévention.`);
-                location.reload(); // Réinitialise l'app après validation
-            }
-        }
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
 
-        function triggerSignalement() {
-            alert("Accès à l'appareil photo du smartphone... \n[Maquette] : La photo du risque et la position GPS sont transmises en temps réel au responsable HSE et au tuteur.");
-        }
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#1f2937';
 
-        // Script de déclaration de la PWA (Service Worker)
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
-            .then(() => console.log('Service Worker SafeStart activé !'))
-            .catch(err => console.log('Erreur Service Worker PWA :', err));
-        }
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        };
+
+        // Mouse events
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        // Touch events
+        canvas.addEventListener('touchstart', startDrawing);
+        canvas.addEventListener('touchmove', draw);
+        canvas.addEventListener('touchend', stopDrawing);
+
+        // Nettoyer la signature
+        clearBtn.addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        });
+
+        // Simuler la validation (Préparation pour l'insertion en base)
+        document.getElementById('submit-form').addEventListener('click', () => {
+            // Ici, tu pourras récupérer le canvas.toDataURL() et l'envoyer vers Supabase 
+            // avec les données des inputs et l'état des checkboxes.
+            const signatureData = canvas.toDataURL('image/png');
+            alert("Attestation prête à être synchronisée avec la base de données !");
+        });
     </script>
 </body>
 </html>
