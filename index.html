@@ -11,6 +11,8 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <style>
         .bg-restev-blue { background-color: #2f6bb2; }
@@ -26,6 +28,7 @@
         .border-restev-teal { border-color: #69b3a5; }
 
         canvas { touch-action: none; }
+        #report-map { height: 180px; width: 100%; border-radius: 12px; z-index: 10; }
 
         @media print {
             .no-print { display: none !important; }
@@ -296,18 +299,17 @@
                 </div>
 
                 <div>
-                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Localisation précise</label>
-                    <div class="grid grid-cols-3 gap-2">
-                        <div class="col-span-1 bg-slate-100 rounded-xl border border-slate-200 flex items-center justify-center relative overflow-hidden h-20 shadow-inner">
-                            <i class="fa-solid fa-location-dot text-restev-magenta text-xl z-10 animate-pulse"></i>
-                            <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:12px_12px]"></div>
-                        </div>
-                        <div class="col-span-2 flex flex-col justify-between gap-1.5">
-                            <button type="button" onclick="triggerGeolocation()" id="btn-geo-action" class="w-full bg-restev-teal hover:opacity-95 text-white font-bold py-2 px-3 rounded-xl text-[10px] uppercase tracking-wider shadow-sm flex items-center justify-center gap-2">
-                                <i class="fa-solid fa-location-crosshairs"></i> Détecter ma position
-                            </button>
-                            <input type="text" id="flash-geo-coords" placeholder="Coordonnées GPS terrain" class="w-full border border-slate-200 rounded-xl p-2 text-xs outline-none bg-slate-50">
-                        </div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-[11px] font-bold text-slate-600 uppercase">Localisation précise (GPS Haute Précision)</label>
+                        <button type="button" onclick="triggerHighAccuracyLocation()" id="btn-geo-action" class="bg-restev-teal hover:opacity-95 text-white font-bold py-1 px-2.5 rounded-lg text-[10px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-location-crosshairs animate-pulse"></i> Capturer ma position
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <div id="report-map" class="border border-slate-200 bg-slate-100 shadow-inner"></div>
+                        <p class="text-[10px] text-slate-400 leading-tight italic"><i class="fa-solid fa-info-circle"></i> Le marqueur indique l'emplacement précis. Vous pouvez aussi le déplacer manuellement sur la carte.</p>
+                        <input type="text" id="flash-geo-coords" readonly placeholder="Coordonnées (Latitude, Longitude) / Précision" class="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none bg-slate-100 text-slate-600 font-mono">
                     </div>
                 </div>
 
@@ -363,17 +365,17 @@
                 <p class="text-sm text-emerald-600 font-bold">Signalement enregistré avec succès.</p>
             </div>
 
-            <div class="w-full bg-slate-200 border rounded-2xl overflow-hidden shadow-inner relative h-40">
+            <div id="success-map-preview" class="w-full bg-slate-200 border rounded-2xl overflow-hidden shadow-inner h-40 relative">
                 <div class="absolute inset-0 bg-cover bg-center opacity-85" style="background-image: url('https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=500&q=80')"></div>
                 <div class="absolute inset-0 bg-slate-900/10"></div>
                 <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
                     <i class="fa-solid fa-location-pin text-restev-magenta text-3xl drop-shadow animate-bounce"></i>
-                    <span class="bg-white/95 text-slate-800 text-[9px] px-2 py-0.5 rounded shadow font-bold mt-1 shadow-sm">Point de Risque Identifié</span>
+                    <span class="bg-white/95 text-slate-800 text-[9px] px-2 py-0.5 rounded shadow font-bold mt-1 shadow-sm">Risque Géolocalisé</span>
                 </div>
             </div>
 
             <p class="text-xs text-slate-500 px-4 leading-relaxed">
-                Une notification instantanée incluant le visuel technique et le point GPS a été partagée avec les encadrants et le coordinateur sécurité.
+                Une notification instantanée incluant le visuel technique, le niveau de zoom et le point GPS de haute précision a été partagée avec les encadrants et le coordinateur sécurité.
             </p>
 
             <button onclick="resetAllForms()" class="w-full bg-restev-blue text-white font-bold py-3.5 px-4 rounded-xl shadow text-xs tracking-wider uppercase">
@@ -400,7 +402,13 @@
 
     <script>
         let currentUrgency = "";
+        let mapInstance = null;
+        let mapMarker = null;
         
+        // Coordonnées par défaut centrées sur la Vendée (La Roche-sur-Yon)
+        const defaultLat = 46.6705;
+        const defaultLng = -1.4265;
+
         function switchScreen(screenId) {
             const screens = ['scr-dashboard', 'scr-onboarding-1', 'scr-onboarding-2', 'scr-attestation', 'scr-flash-report', 'scr-flash-success'];
             screens.forEach(id => document.getElementById(id).classList.add('hidden'));
@@ -411,8 +419,103 @@
             document.getElementById('nav-home').className = "flex flex-col items-center gap-0.5 focus:outline-none " + (screenId === 'scr-dashboard' ? 'text-restev-blue' : 'text-slate-400');
             document.getElementById('nav-onboard').className = "flex flex-col items-center gap-0.5 focus:outline-none " + (['scr-onboarding-1', 'scr-onboarding-2', 'scr-attestation'].includes(screenId) ? 'text-restev-blue' : 'text-slate-400');
             document.getElementById('nav-flash').className = "flex flex-col items-center gap-0.5 focus:outline-none " + (['scr-flash-report', 'scr-flash-success'].includes(screenId) ? 'text-restev-blue' : 'text-slate-400');
+
+            // Initialisation décalée de la carte pour éviter les bugs de rendu CSS d'un bloc caché
+            if (screenId === 'scr-flash-report') {
+                setTimeout(initializeMap, 200);
+            }
         }
 
+        // --- TRAITEMENTS DE LA CARTOGRAPHIE ET GÉOLOCALISATION PRÉCISE ---
+        function initializeMap() {
+            if (mapInstance) {
+                mapInstance.invalidateSize();
+                return;
+            }
+
+            // Création de la carte avec Leaflet (Cartographie OpenStreetMap open-source)
+            mapInstance = L.map('report-map').setView([defaultLat, defaultLng], 10);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(mapInstance);
+
+            // Icône personnalisée Magenta pour correspondre au code couleur du Signalement Flash RESTEV
+            const magentaIcon = L.divIcon({
+                html: `<div class="flex items-center justify-center w-8 h-8 rounded-full bg-white border-2 border-restev-magenta text-restev-magenta shadow-md"><i class="fa-solid fa-location-dot"></i></div>`,
+                className: '',
+                iconSize: [32, 32],
+                iconAnchor: [16, 32]
+            });
+
+            // Marqueur déplaçable par l'utilisateur pour ajustement chirurgical
+            mapMarker = L.marker([defaultLat, defaultLng], { draggable: true, icon: magentaIcon }).addTo(mapInstance);
+            
+            updateCoordinateFields(defaultLat, defaultLng, null);
+
+            // Événement en cas de déplacement du marqueur à la main
+            mapMarker.on('dragend', function (e) {
+                const position = mapMarker.getLatLng();
+                updateCoordinateFields(position.lat, position.lng, "Ajusté manuellement");
+            });
+        }
+
+        function triggerHighAccuracyLocation() {
+            const geoBtn = document.getElementById('btn-geo-action');
+            
+            if (!navigator.geolocation) {
+                alert("La géolocalisation n'est pas supportée par votre terminal mobile.");
+                return;
+            }
+
+            geoBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Recherche du signal...';
+            
+            // Options avancées pour forcer l'activation du module GPS haute précision
+            const geoOptions = {
+                enableHighAccuracy: true, // Demande une précision maximale (GPS matériel plutôt que réseau cellulaire/IP)
+                timeout: 12000,           // Laisse 12 secondes max pour accrocher les satellites
+                maximumAge: 0             // Ne réutilise pas une position en cache système
+            };
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const accuracy = position.coords.accuracy ? Math.round(position.coords.accuracy) : null;
+
+                    // Déplacement du marqueur et zoom maximal ciblé (Zoom 18 = Précision bâtiment / infrastructure)
+                    if (mapInstance && mapMarker) {
+                        const targetLatLng = new L.LatLng(lat, lng);
+                        mapMarker.setLatLng(targetLatLng);
+                        mapInstance.setView(targetLatLng, 18); // Zoom fort
+                    }
+
+                    updateCoordinateFields(lat, lng, accuracy ? `Précision ±${accuracy}m` : "Haute Précision");
+                    
+                    geoBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Position Capturée';
+                    geoBtn.className = "bg-emerald-600 text-white font-bold py-1 px-2.5 rounded-lg text-[10px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm";
+                },
+                (error) => {
+                    console.warn(`Erreur de géolocalisation (${error.code}): ${error.message}`);
+                    alert("Signal GPS insuffisant ou refus d'autorisation. Vous pouvez placer manuellement le marqueur sur la carte.");
+                    
+                    geoBtn.innerHTML = '<i class="fa-solid fa-keyboard"></i> Placement Manuel';
+                    geoBtn.className = "bg-amber-500 text-white font-bold py-1 px-2.5 rounded-lg text-[10px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm";
+                    
+                    // Zoom moyen pour faciliter la recherche manuelle de l'utilisateur
+                    if (mapInstance) mapInstance.setZoom(14);
+                },
+                geoOptions
+            );
+        }
+
+        function updateCoordinateFields(lat, lng, detail) {
+            const field = document.getElementById('flash-geo-coords');
+            const detailStr = detail ? ` [${detail}]` : '';
+            field.value = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}${detailStr}`;
+        }
+
+        // --- AUTRES LOGIQUES APPLICATIVES (INCHANGÉES) ---
         function validateFirstStep() {
             const name = document.getElementById('reg-emp-name').value.trim();
             const company = document.getElementById('reg-company').value.trim();
@@ -548,26 +651,6 @@
             dlNode.remove();
         }
 
-        function triggerGeolocation() {
-            const coordsField = document.getElementById('flash-geo-coords');
-            const geoBtn = document.getElementById('btn-geo-action');
-
-            if (navigator.geolocation) {
-                geoBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Détection GPS...';
-                navigator.geolocation.getCurrentPosition(
-                    (p) => {
-                        coordsField.value = `${p.coords.latitude.toFixed(5)}, ${p.coords.longitude.toFixed(5)}`;
-                        geoBtn.innerHTML = '<i class="fa-solid fa-location-dot"></i> Position Validée';
-                        geoBtn.className = "w-full bg-emerald-600 text-white font-bold py-2 px-3 rounded-xl text-[10px] uppercase tracking-wider shadow-sm flex items-center justify-center gap-2";
-                    },
-                    () => {
-                        coordsField.value = "Zone Atelier Saisie Manuelle";
-                        geoBtn.innerHTML = '<i class="fa-solid fa-keyboard"></i> Clavier';
-                    }
-                );
-            }
-        }
-
         function handleFlashPhoto(e) {
             const fileReader = new FileReader();
             fileReader.onload = function() {
@@ -613,7 +696,6 @@
             document.getElementById('reg-company').value = "";
             document.getElementById('reg-tutor-name').value = "";
             document.getElementById('flash-title').value = "";
-            document.getElementById('flash-geo-coords').value = "";
             document.getElementById('flash-desc').value = "";
             document.getElementById('flash-camera-file').value = "";
             
@@ -628,8 +710,8 @@
             captureBtn.innerHTML = '<i class="fa-solid fa-camera text-2xl"></i><span class="text-[9px] font-bold uppercase tracking-wider">Ouvrir l\'appareil</span>';
 
             const geoBtn = document.getElementById('btn-geo-action');
-            geoBtn.className = "w-full bg-restev-teal hover:opacity-95 text-white font-bold py-2 px-3 rounded-xl text-[10px] uppercase tracking-wider shadow-sm flex items-center justify-center gap-2";
-            geoBtn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i> Détecter ma position';
+            geoBtn.className = "bg-restev-teal hover:opacity-95 text-white font-bold py-1 px-2.5 rounded-lg text-[10px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm";
+            geoBtn.innerHTML = '<i class="fa-solid fa-location-crosshairs animate-pulse"></i> Capturer ma position';
 
             document.querySelectorAll('.urg-node').forEach(n => {
                 n.className = "urg-node border border-slate-200 bg-white text-slate-700 font-bold py-2 rounded-xl text-xs transition";
@@ -637,6 +719,12 @@
 
             clearSign('canv-employee');
             clearSign('canv-tutor');
+
+            if (mapMarker && mapInstance) {
+                mapMarker.setLatLng([defaultLat, defaultLng]);
+                mapInstance.setView([defaultLat, defaultLng], 10);
+                updateCoordinateFields(defaultLat, defaultLng, null);
+            }
             
             switchScreen('scr-dashboard');
         }
