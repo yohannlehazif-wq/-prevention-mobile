@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
     <style>
         .bg-restev-blue { background-color: #2f6bb2; }
@@ -99,6 +100,21 @@
                 <p id="dash-subtitle" class="text-xs text-slate-500"></p>
             </div>
 
+            <div id="manager-qr-shortcut" class="hidden bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-4 shadow-md space-y-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center text-xl text-restev-teal">
+                        <i class="fa-solid fa-qrcode"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300">Intégration d'un Nouvel Arrivant</h4>
+                        <p class="text-[11px] text-slate-400">Faites scanner le code pour ouvrir son parcours 1er jour.</p>
+                    </div>
+                </div>
+                <button onclick="generateEmployeeQR()" class="w-full bg-restev-blue text-white font-bold py-2.5 px-4 rounded-xl text-xs uppercase tracking-wide shadow transition active:scale-[0.98]">
+                    Afficher le QR Code Salarié
+                </button>
+            </div>
+
             <div class="grid grid-cols-1 gap-4">
                 
                 <div onclick="switchScreen('scr-onboarding-1')" class="bg-white border-l-4 border-restev-blue rounded-2xl p-4 shadow-sm hover:shadow-md transition cursor-pointer flex items-center gap-4 active:scale-[0.99]">
@@ -155,7 +171,6 @@
 
                 <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
                     <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2"><i class="fa-solid fa-chart-bar mr-1"></i> Suivi des indicateurs du site</h4>
-                    
                     <div class="flex justify-between text-xs font-semibold">
                         <span class="text-slate-600">Accueils sécurité validés (Ce mois)</span>
                         <span class="text-restev-blue font-bold">18 / 18</span>
@@ -163,17 +178,34 @@
                     <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                         <div class="bg-restev-blue h-full" style="width: 100%"></div>
                     </div>
+                </div>
+            </div>
+        </section>
 
-                    <div class="flex justify-between text-xs font-semibold pt-1">
-                        <span class="text-slate-600">Signalements clos / résolus</span>
-                        <span class="text-restev-teal font-bold">14 / 16</span>
-                    </div>
-                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                        <div class="bg-restev-teal h-full" style="width: 87%"></div>
-                    </div>
+
+        <section id="scr-qr-display" class="hidden space-y-5 text-center py-4 no-print">
+            <div class="flex items-center gap-2 mb-2 text-left">
+                <button onclick="switchScreen('scr-dashboard')" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-arrow-left"></i></button>
+                <h2 class="text-base font-bold text-slate-800">Partager le livret d'accueil</h2>
+            </div>
+
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4 flex flex-col items-center">
+                <p class="text-xs text-slate-600 px-2 leading-relaxed">
+                    Présentez ce QR Code au **salarié nouvel arrivant**. En le scannant, son smartphone ouvrira directement son parcours d'intégration sécurité.
+                </p>
+                
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-inner flex justify-center items-center">
+                    <canvas id="qr-canvas" class="bg-white p-2 rounded-xl shadow-sm"></canvas>
                 </div>
 
+                <div class="text-[10px] text-slate-400 font-mono tracking-wide bg-slate-50 px-3 py-1 rounded border border-dashed w-full break-all">
+                    Lien direct généré automatiquement
+                </div>
             </div>
+
+            <button onclick="switchScreen('scr-dashboard')" class="w-full bg-slate-800 text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider">
+                Fermer et retourner au suivi
+            </button>
         </section>
 
 
@@ -209,18 +241,15 @@
 
             <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
                 <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider"><i class="fa-solid fa-list-check mr-1"></i> Contenu délivré (1er jour)</h3>
-                
                 <div class="space-y-2">
                     <label class="flex items-start gap-3 p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 cursor-pointer">
                         <input type="checkbox" id="chk-module-1" checked class="mt-1 w-5 h-5 text-restev-blue rounded border-slate-300 focus:ring-restev-blue">
                         <span class="text-xs text-slate-700 leading-tight"><strong>Risques Poste & EPI :</strong> Explications des risques liés au poste et remise des protections obligatoires.</span>
                     </label>
-
                     <label class="flex items-start gap-3 p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 cursor-pointer">
                         <input type="checkbox" id="chk-module-2" class="mt-1 w-5 h-5 text-restev-blue rounded border-slate-300 focus:ring-restev-blue">
                         <span class="text-xs text-slate-700 leading-tight"><strong>Secours & Évacuation :</strong> Repérage des issues, alarmes et points de rassemblement.</span>
                     </label>
-
                     <label class="flex items-start gap-3 p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 cursor-pointer">
                         <input type="checkbox" id="chk-module-3" class="mt-1 w-5 h-5 text-restev-blue rounded border-slate-300 focus:ring-restev-blue">
                         <span class="text-xs text-slate-700 leading-tight"><strong>Circulation & Flux :</strong> Sens de circulation des engins et barrières piétonnes.</span>
@@ -241,7 +270,6 @@
             </div>
 
             <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-4">
-                
                 <div class="space-y-1">
                     <p class="text-xs font-bold text-slate-700 flex items-center gap-1"><i class="fa-solid fa-pen text-restev-magenta"></i> 1. Signature du Salarié Nouvel Arrivant :</p>
                     <div class="border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
@@ -268,7 +296,6 @@
                         <button onclick="clearSign('canv-tutor')" class="text-[10px] text-red-500 font-bold"><i class="fa-solid fa-eraser"></i> Effacer</button>
                     </div>
                 </div>
-
             </div>
 
             <button onclick="processFinalAttestation()" class="w-full bg-restev-magenta text-white font-bold py-4 px-4 rounded-xl shadow-lg flex justify-center items-center gap-2 text-sm uppercase tracking-wider">
@@ -278,7 +305,6 @@
 
 
         <section id="scr-attestation" class="hidden space-y-4">
-            
             <div id="print-zone" class="bg-white rounded-2xl p-6 shadow-md border border-slate-200 print-card space-y-5">
                 <div class="flex justify-between items-start border-b pb-3 border-slate-200">
                     <div>
@@ -327,10 +353,6 @@
                         </div>
                     </div>
                 </div>
-
-                <p class="text-[9px] text-center text-emerald-600 font-bold border-t border-dashed pt-3">
-                    <i class="fa-solid fa-circle-check"></i> Conforme aux exigences d'audit de prévention.
-                </p>
             </div>
 
             <div class="space-y-2 no-print">
@@ -354,7 +376,6 @@
             </div>
 
             <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-4">
-                
                 <div>
                     <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Intitulé du danger constaté</label>
                     <input type="text" id="flash-title" placeholder="Ex: Palette instable, fuite d'huile..." class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-magenta outline-none bg-slate-50">
@@ -367,10 +388,9 @@
                             <i class="fa-solid fa-location-crosshairs animate-pulse"></i> Capturer ma position
                         </button>
                     </div>
-                    
                     <div class="space-y-2">
                         <div id="report-map" class="border border-slate-200 bg-slate-100 shadow-inner"></div>
-                        <input type="text" id="flash-geo-coords" readonly placeholder="Coordonnées (Latitude, Longitude) / Précision" class="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none bg-slate-100 text-slate-600 font-mono">
+                        <input type="text" id="flash-geo-coords" readonly placeholder="Coordonnées (Latitude, Longitude)" class="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none bg-slate-100 text-slate-600 font-mono">
                     </div>
                 </div>
 
@@ -384,7 +404,6 @@
                         </button>
                     </div>
                     <div>
-                        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1 opacity-0">Aperçu</label>
                         <div class="w-full h-24 border-2 border-dashed border-slate-200 bg-slate-50 rounded-xl flex items-center justify-center p-1 overflow-hidden">
                             <div id="flash-photo-placeholder" class="text-slate-400 flex flex-col items-center gap-0.5 text-center p-2">
                                 <i class="fa-solid fa-image text-lg opacity-50"></i>
@@ -408,7 +427,6 @@
                         <button type="button" onclick="selectFlashUrgency('Critique')" id="urg-c" class="urg-node border border-slate-200 bg-white text-slate-700 font-bold py-2 rounded-xl text-xs transition">Imminent</button>
                     </div>
                 </div>
-
             </div>
 
             <button onclick="submitFlashReport()" class="w-full bg-restev-magenta text-white font-bold py-3.5 px-4 rounded-xl shadow-md flex justify-center items-center gap-2 text-sm uppercase tracking-wider">
@@ -420,21 +438,10 @@
             <div class="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto border border-emerald-100">
                 <i class="fa-solid fa-circle-check text-emerald-500 text-4xl"></i>
             </div>
-            
             <div class="space-y-1">
                 <h2 class="text-xl font-black text-slate-800 tracking-wide uppercase">Alerte Transmise</h2>
                 <p class="text-sm text-emerald-600 font-bold">Le danger a été inscrit au registre managérial.</p>
             </div>
-
-            <div class="w-full bg-slate-200 border rounded-2xl overflow-hidden shadow-inner h-32 relative">
-                <div class="absolute inset-0 bg-cover bg-center opacity-85" style="background-image: url('https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=500&q=80')"></div>
-                <div class="absolute inset-0 bg-slate-900/20"></div>
-                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
-                    <i class="fa-solid fa-location-pin text-restev-magenta text-2xl drop-shadow animate-bounce"></i>
-                    <span class="bg-white/95 text-slate-800 text-[9px] px-2 py-0.5 rounded shadow font-bold mt-1 shadow-sm">Risque Géolocalisé</span>
-                </div>
-            </div>
-
             <button onclick="resetAllForms()" class="w-full bg-restev-blue text-white font-bold py-3.5 px-4 rounded-xl shadow text-xs tracking-wider uppercase">
                 Retour au Tableau de Bord
             </button>
@@ -466,11 +473,12 @@
         const defaultLat = 46.6705;
         const defaultLng = -1.4265;
 
-        // Configuration initiale du rôle utilisateur
+        // Configuration dynamique du rôle utilisateur
         function setRole(role) {
             currentUserRole = role;
             const badge = document.getElementById('role-badge');
             const mPanel = document.getElementById('manager-only-panel');
+            const qrShortcut = document.getElementById('manager-qr-shortcut');
             
             const title = document.getElementById('dash-title');
             const subtitle = document.getElementById('dash-subtitle');
@@ -482,6 +490,7 @@
                 badge.innerText = "Profil : Manager";
                 badge.className = "cursor-pointer bg-pink-600 text-white text-[10px] font-bold px-2 py-1 rounded border border-pink-400 uppercase tracking-wide";
                 mPanel.classList.remove('hidden');
+                qrShortcut.classList.remove('hidden');
                 
                 title.innerText = "Console de Suivi Manager";
                 subtitle.innerText = "Vue de contrôle : Validation des accueils et traitement des anomalies terrain.";
@@ -492,6 +501,7 @@
                 badge.innerText = "Profil : Salarié";
                 badge.className = "cursor-pointer bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded border border-blue-400 uppercase tracking-wide";
                 mPanel.classList.add('hidden');
+                qrShortcut.classList.add('hidden');
                 
                 title.innerText = "Mon Espace Intégration";
                 subtitle.innerText = "Remplissez vos modules obligatoires d'arrivée et signalez les anomalies constatées.";
@@ -499,18 +509,36 @@
                 cardOnboardTitle.innerText = "Mon Parcours Sécurité Obligatoire";
                 cardOnboardDesc.innerText = "Valider les thématiques réglementaires de mon premier jour sur site.";
             }
+        }
 
-            switchScreen('scr-dashboard');
+        // --- GÉNÉRATION DYNAMIQUE DU QR CODE (POUR LE MANAGER) ---
+        function generateEmployeeQR() {
+            switchScreen('scr-qr-display');
+            
+            // Construit l'URL cible absolue en injectant le paramètre de routage automatique
+            const employeeTargetUrl = window.location.origin + window.location.pathname + '?mode=onboarding';
+            
+            // Génération sur l'élément Canvas
+            const canvasTarget = document.getElementById('qr-canvas');
+            QRCode.toCanvas(canvasTarget, employeeTargetUrl, {
+                width: 200,
+                margin: 1,
+                color: {
+                    dark: '#1e293b',  // Couleur du QR code (Slate 800)
+                    light: '#ffffff'  // Fond
+                }
+            }, function (error) {
+                if (error) console.error("Erreur lors de la génération du QR code :", error);
+            });
         }
 
         function switchScreen(screenId) {
-            const screens = ['scr-auth', 'scr-dashboard', 'scr-onboarding-1', 'scr-onboarding-2', 'scr-attestation', 'scr-flash-report', 'scr-flash-success'];
+            const screens = ['scr-auth', 'scr-dashboard', 'scr-qr-display', 'scr-onboarding-1', 'scr-onboarding-2', 'scr-attestation', 'scr-flash-report', 'scr-flash-success'];
             screens.forEach(id => document.getElementById(id).classList.add('hidden'));
             
             document.getElementById(screenId).classList.remove('hidden');
             window.scrollTo(0,0);
 
-            // Gestion de l'état actif de la navbar basse
             document.getElementById('nav-home').className = "flex flex-col items-center gap-0.5 focus:outline-none " + (screenId === 'scr-dashboard' ? 'text-restev-blue' : 'text-slate-400');
             document.getElementById('nav-onboard').className = "flex flex-col items-center gap-0.5 focus:outline-none " + (['scr-onboarding-1', 'scr-onboarding-2', 'scr-attestation'].includes(screenId) ? 'text-restev-blue' : 'text-slate-400');
             document.getElementById('nav-flash').className = "flex flex-col items-center gap-0.5 focus:outline-none " + (['scr-flash-report', 'scr-flash-success'].includes(screenId) ? 'text-restev-blue' : 'text-slate-400');
@@ -520,23 +548,31 @@
             }
         }
 
-        function initializeMap() {
-            if (mapInstance) {
-                mapInstance.invalidateSize();
-                return;
+        // --- AUTOMATISATION PAR SCAN DU QR CODE ---
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // Détection du scan : si l'URL contient "?mode=onboarding"
+            if (urlParams.get('mode') === 'onboarding') {
+                setRole('employee');           // Force le rôle salarié
+                switchScreen('scr-onboarding-1'); // Ouvre immédiatement le formulaire du livret
+            } else {
+                // Sinon, parcours classique : choix du profil
+                switchScreen('scr-auth');
             }
+        };
 
+        // --- LOGIQUES APPLICATIVES SECONDAIRES ---
+        function initializeMap() {
+            if (mapInstance) { mapInstance.invalidateSize(); return; }
             mapInstance = L.map('report-map').setView([defaultLat, defaultLng], 11);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
-
             const magentaIcon = L.divIcon({
                 html: `<div class="flex items-center justify-center w-7 h-7 rounded-full bg-white border-2 border-restev-magenta text-restev-magenta shadow"><i class="fa-solid fa-location-dot"></i></div>`,
                 className: '', iconSize: [28, 28], iconAnchor: [14, 28]
             });
-
             mapMarker = L.marker([defaultLat, defaultLng], { draggable: true, icon: magentaIcon }).addTo(mapInstance);
             updateCoordinateFields(defaultLat, defaultLng, null);
-
             mapMarker.on('dragend', function () {
                 const pos = mapMarker.getLatLng();
                 updateCoordinateFields(pos.lat, pos.lng, "Ajustement manuel");
@@ -546,29 +582,20 @@
         function triggerHighAccuracyLocation() {
             const geoBtn = document.getElementById('btn-geo-action');
             if (!navigator.geolocation) return;
-
-            geoBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Liaison satellite...';
-            
+            geoBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Satellite...';
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
-                    const lat = pos.coords.latitude;
-                    const lng = pos.coords.longitude;
+                    const lat = pos.coords.latitude; const lng = pos.coords.longitude;
                     const acc = pos.coords.accuracy ? Math.round(pos.coords.accuracy) : null;
-
                     if (mapInstance && mapMarker) {
                         const pt = new L.LatLng(lat, lng);
-                        mapMarker.setLatLng(pt);
-                        mapInstance.setView(pt, 18); // Zoom ciblé précis bâtiment
+                        mapMarker.setLatLng(pt); mapInstance.setView(pt, 18);
                     }
-
                     updateCoordinateFields(lat, lng, acc ? `Précision ±${acc}m` : "GPS Actif");
                     geoBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Fix Réussi';
                     geoBtn.className = "bg-emerald-600 text-white font-bold py-1 px-2.5 rounded-lg text-[10px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm";
                 },
-                () => {
-                    alert("Impossible d'acquérir le signal GPS. Positionnez le marqueur manuellement.");
-                    geoBtn.innerHTML = '<i class="fa-solid fa-keyboard"></i> Manuel';
-                },
+                () => { alert("Signal GPS faible. Déplacez le curseur à la main."); geoBtn.innerHTML = '<i class="fa-solid fa-keyboard"></i> Manuel'; },
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
         }
@@ -580,33 +607,95 @@
         function validateFirstStep() {
             const name = document.getElementById('reg-emp-name').value.trim();
             const company = document.getElementById('reg-company').value.trim();
-            if(!name || !company) {
-                alert("Erreur de saisie : Le nom du travailleur et l'entreprise d'accueil sont indispensables.");
-                return;
-            }
+            if(!name || !company) { alert("Le nom et l'entreprise d'accueil sont indispensables."); return; }
             switchScreen('scr-onboarding-2');
-            setTimeout(() => {
-                bindCanvasDrawing('canv-employee');
-                bindCanvasDrawing('canv-tutor');
-            }, 150);
+            setTimeout(() => { bindCanvasDrawing('canv-employee'); bindCanvasDrawing('canv-tutor'); }, 150);
         }
 
         const activeCanvas = {}, activeContext = {}, drawingState = {};
         function bindCanvasDrawing(id) {
-            const canvas = document.getElementById(id);
-            activeCanvas[id] = canvas;
-            activeContext[id] = canvas.getContext('2d');
-            drawingState[id] = false;
-            const box = canvas.getBoundingClientRect();
-            canvas.width = box.width; canvas.height = box.height;
-
-            const getPos = (e) => {
-                const r = canvas.getBoundingClientRect();
-                return { x: (e.clientX || e.touches[0].clientX) - r.left, y: (e.clientY || e.touches[0].clientY) - r.top };
-            };
+            const canvas = document.getElementById(id); activeCanvas[id] = canvas; activeContext[id] = canvas.getContext('2d'); drawingState[id] = false;
+            const box = canvas.getBoundingClientRect(); canvas.width = box.width; canvas.height = box.height;
+            const getPos = (e) => { const r = canvas.getBoundingClientRect(); return { x: (e.clientX || e.touches[0].clientX) - r.left, y: (e.clientY || e.touches[0].clientY) - r.top }; };
             const start = (e) => { drawingState[id] = true; activeContext[id].beginPath(); const p = getPos(e); activeContext[id].moveTo(p.x, p.y); };
             const move = (e) => { if (!drawingState[id]) return; e.preventDefault(); const p = getPos(e); activeContext[id].lineWidth = 2; activeContext[id].lineCap = 'round'; activeContext[id].strokeStyle = '#0f172a'; activeContext[id].lineTo(p.x, p.y); activeContext[id].stroke(); };
             const stop = () => { drawingState[id] = false; };
-
             canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); canvas.addEventListener('mouseup', stop);
-            canvas.addEventListener('touchstart', start); canvas
+            canvas.addEventListener('touchstart', start); canvas.addEventListener('touchmove', move); canvas.addEventListener('touchend', stop);
+        }
+
+        function clearSign(id) { if(activeContext[id]) activeContext[id].clearRect(0, 0, activeCanvas[id].width, activeCanvas[id].height); }
+
+        function processFinalAttestation() {
+            const tutor = document.getElementById('reg-tutor-name').value.trim();
+            if(!tutor) { alert("Le tuteur doit indiquer son nom."); return; }
+            document.getElementById('lbl-view-date').innerText = new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+            document.getElementById('attestation-id').innerText = "RE-85-" + Math.floor(100000 + Math.random() * 900000);
+            document.getElementById('lbl-view-company').innerText = document.getElementById('reg-company').value;
+            document.getElementById('lbl-view-emp').innerText = document.getElementById('reg-emp-name').value;
+            document.getElementById('lbl-view-tutor').innerText = tutor;
+            document.getElementById('lbl-view-status').innerText = "Profil : " + document.getElementById('reg-emp-status').value;
+
+            const ul = document.getElementById('lbl-view-modules'); ul.innerHTML = "";
+            const modules = [
+                { id: 'chk-module-1', text: 'Risques Spécifiques au Poste de Travail & Dotation EPI' },
+                { id: 'chk-module-2', text: 'Procédures d\'Alerte, Secours & Plan d\'Évacuation' },
+                { id: 'chk-module-3', text: 'Règles de Circulation Internes & Coactivité Engins/Piétons' }
+            ];
+            modules.forEach(m => {
+                const ok = document.getElementById(m.id).checked;
+                ul.innerHTML += `<li class="${ok ? 'font-semibold text-slate-800' : 'line-through text-slate-400 opacity-60'}">${ok ? '<i class="fa-solid fa-square-check text-emerald-500 mr-2"></i>' : '<i class="fa-solid fa-square-xmark text-slate-300 mr-2"></i>'}${m.text}</li>`;
+            });
+            document.getElementById('img-render-emp').src = activeCanvas['canv-employee'].toDataURL();
+            document.getElementById('img-render-tutor').src = activeCanvas['canv-tutor'].toDataURL();
+            switchScreen('scr-attestation');
+        }
+
+        function exportToPasseportPrevention() {
+            const struct = { schema_norm: "PST-2026-V1", document_uid: document.getElementById('attestation-id').innerText, timestamp: new Date().toISOString(), entreprise: document.getElementById('reg-company').value, travailleur: document.getElementById('reg-emp-name').value, valide_par: document.getElementById('reg-tutor-name').value };
+            const blob = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(struct, null, 2));
+            const a = document.createElement('a'); a.setAttribute("href", blob); a.setAttribute("download", `attestation_${struct.travailleur.replace(/\s+/g, '_')}.json`);
+            document.body.appendChild(a); a.click(); a.remove();
+        }
+
+        function handleFlashPhoto(e) {
+            const reader = new FileReader();
+            reader.onload = function() {
+                document.getElementById('img-flash-preview').src = reader.result;
+                document.getElementById('img-flash-preview').classList.remove('hidden');
+                document.getElementById('flash-photo-placeholder').classList.add('hidden');
+                document.getElementById('btn-flash-capture').className = "w-full bg-emerald-600 text-white rounded-xl h-24 flex flex-col items-center justify-center gap-1 shadow-sm";
+                document.getElementById('btn-flash-capture').innerHTML = '<i class="fa-solid fa-square-check text-2xl"></i><span class="text-[9px] font-bold uppercase">Photo Capturée</span>';
+            }
+            if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
+        }
+
+        function selectFlashUrgency(l) {
+            currentUrgency = l;
+            document.querySelectorAll('.urg-node').forEach(n => n.className = "urg-node border border-slate-200 bg-white text-slate-700 font-bold py-2 rounded-xl text-xs transition");
+            const t = document.getElementById(`urg-${l.toLowerCase().charAt(0)}`);
+            if(l === 'Faible') t.className = "urg-node bg-emerald-600 text-white font-bold py-2 rounded-xl text-xs transition shadow-inner";
+            if(l === 'Moyen') t.className = "urg-node bg-amber-500 text-white font-bold py-2 rounded-xl text-xs transition shadow-inner";
+            if(l === 'Critique') t.className = "urg-node bg-red-600 text-white font-bold py-2 rounded-xl text-xs transition shadow-inner";
+        }
+
+        function submitFlashReport() {
+            if(!document.getElementById('flash-title').value.trim()) { alert("Indiquez le danger constaté."); return; }
+            switchScreen('scr-flash-success');
+        }
+
+        function resetAllForms() {
+            document.getElementById('reg-emp-name').value = ""; document.getElementById('reg-company').value = ""; document.getElementById('reg-tutor-name').value = "";
+            document.getElementById('flash-title').value = ""; document.getElementById('flash-desc').value = ""; document.getElementById('flash-camera-file').value = "";
+            document.getElementById('chk-module-2').checked = false; document.getElementById('chk-module-3').checked = false;
+            document.getElementById('img-flash-preview').classList.add('hidden'); document.getElementById('flash-photo-placeholder').classList.remove('hidden');
+            const btn = document.getElementById('btn-flash-capture');
+            btn.className = "w-full bg-restev-magenta text-white rounded-xl h-24 flex flex-col items-center justify-center gap-1 shadow-sm transition";
+            btn.innerHTML = '<i class="fa-solid fa-camera text-2xl"></i><span class="text-[9px] font-bold uppercase tracking-wider">Ouvrir l\'appareil</span>';
+            if (mapMarker && mapInstance) { mapMarker.setLatLng([defaultLat, defaultLng]); mapInstance.setView([defaultLat, defaultLng], 11); }
+            setRole(currentUserRole);
+            switchScreen('scr-dashboard');
+        }
+    </script>
+</body>
+</html>
