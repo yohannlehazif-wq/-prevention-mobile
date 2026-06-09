@@ -3,156 +3,305 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RESTEV 85 - Accueil Sécurité</title>
+    <title>RESTEV 85 - Signalement Risques</title>
     
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#0284c7">
-    <link rel="apple-touch-icon" href="/icon-192x192.png">
+    <meta name="theme-color" content="#2f6bb2">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        /* Styles spécifiques pour le pad de signature */
-        #signature-pad {
-            touch-action: none; /* Empêche le scroll pendant la signature sur mobile */
-        }
+        /* Couleurs personnalisées du logo RESTEV */
+        .bg-restev-blue { background-color: #2f6bb2; }
+        .text-restev-blue { color: #2f6bb2; }
+        .bg-restev-magenta { background-color: #b8257b; }
+        .text-restev-magenta { color: #b8257b; }
+        .border-restev-magenta { border-color: #b8257b; }
+        .bg-restev-teal { background-color: #69b3a5; }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans antialiased pb-20">
+<body class="bg-gray-100 font-sans antialiased pb-24 text-gray-800">
 
-    <header class="bg-sky-600 text-white p-4 shadow-md sticky top-0 z-50 flex justify-between items-center">
-        <div>
-            <h1 class="text-xl font-bold">RESTEV 85</h1>
-            <p class="text-xs opacity-80">Passeport Prévention</p>
-        </div>
-        <i class="fa-solid fa-shield-halved text-2xl"></i>
-    </header>
+    <section id="screen-accueil" class="block">
+        <header class="bg-restev-blue text-white p-4 shadow-md text-center">
+            <h1 class="text-xl font-bold tracking-wide">RESTEV 85</h1>
+            <p class="text-xs opacity-90">Prévention santé au travail</p>
+        </header>
 
-    <main class="p-4 max-w-lg mx-auto">
-        
-        <div class="bg-white rounded-xl shadow-sm p-4 mb-6 border-l-4 border-sky-500">
-            <h2 class="text-lg font-semibold text-gray-800 mb-1">Livret d'Accueil Sécurité</h2>
-            <p class="text-sm text-gray-600">Bienvenue. La validation de ce module est obligatoire avant votre prise de poste.</p>
+        <main class="p-6 max-w-md mx-auto flex flex-col items-center">
+            <h2 class="text-xl font-bold text-gray-700 text-center my-6">RESTEV 85 - Signalement Risques</h2>
             
-            <div class="mt-4 flex flex-col gap-2">
-                <input type="text" placeholder="Nom et Prénom du salarié" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-sky-500 outline-none">
-                <input type="text" placeholder="Nom de l'entreprise" class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-sky-500 outline-none">
+            <button onclick="switchScreen('screen-form')" class="bg-restev-magenta hover:opacity-90 text-white rounded-full w-44 h-44 shadow-2xl flex flex-col items-center justify-center gap-2 border-4 border-white transition transform active:scale-95 my-4">
+                <i class="fa-solid fa-square-check text-4xl"></i>
+                <span class="text-sm font-bold tracking-wider text-center px-4 uppercase leading-tight">Nouveau Signalement</span>
+            </button>
+
+            <div class="w-full mt-8 space-y-4">
+                <div class="bg-white rounded-xl shadow-sm p-4 border-b-2 border-yellow-500">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-semibold text-sm text-gray-600">Signalements en cours</span>
+                        <span class="font-bold text-gray-800 text-sm">4</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-yellow-500 h-2 rounded-full" style="width: 35%"></div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm p-4 border-b-2 border-cool-teal">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-semibold text-sm text-gray-600">Résolus</span>
+                        <span class="font-bold text-gray-800 text-sm">12</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-[#69b3a5] h-2 rounded-full" style="width: 75%"></div>
+                    </div>
+                </div>
             </div>
-        </div>
+        </main>
+    </section>
 
-        <h3 class="font-bold text-gray-700 mb-3"><i class="fa-solid fa-list-check text-sky-500 mr-2"></i>Consignes obligatoires</h3>
-        <div class="bg-white rounded-xl shadow-sm p-4 mb-6 flex flex-col gap-4">
-            
-            <label class="flex items-start gap-3 cursor-pointer">
-                <input type="checkbox" class="mt-1 w-5 h-5 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                <span class="text-sm text-gray-700">J'ai pris connaissance des risques liés à mon poste de travail et des équipements de protection individuelle (EPI) requis.</span>
-            </label>
 
-            <label class="flex items-start gap-3 cursor-pointer">
-                <input type="checkbox" class="mt-1 w-5 h-5 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                <span class="text-sm text-gray-700">Je sais repérer les issues de secours et connais le point de rassemblement en cas d'évacuation.</span>
-            </label>
+    <section id="screen-form" class="hidden">
+        <header class="bg-restev-blue text-white p-4 shadow-md flex items-center gap-4">
+            <button onclick="switchScreen('screen-accueil')" class="text-white text-lg focus:outline-none">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <h1 class="text-lg font-bold">Nouveau Signalement</h1>
+        </header>
 
-            <label class="flex items-start gap-3 cursor-pointer">
-                <input type="checkbox" class="mt-1 w-5 h-5 text-sky-600 rounded border-gray-300 focus:ring-sky-500">
-                <span class="text-sm text-gray-700">J'ai été informé de la procédure à suivre en cas d'accident du travail (alerter, secourir).</span>
-            </label>
-        </div>
-
-        <h3 class="font-bold text-gray-700 mb-3"><i class="fa-solid fa-pen-nib text-sky-500 mr-2"></i>Émargement numérique</h3>
-        <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
-            <p class="text-xs text-gray-500 mb-2">Signature du salarié (Vaut acceptation des consignes)</p>
-            <div class="border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 relative">
-                <canvas id="signature-pad" class="w-full h-40 rounded-lg"></canvas>
+        <main class="p-4 max-w-md mx-auto space-y-4">
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Titre du problème</label>
+                <input type="text" id="input-title" placeholder="Ex: Câble dénudé, Sol glissant..." class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-restev-blue outline-none bg-white">
             </div>
-            <div class="flex justify-end mt-2">
-                <button id="clear-signature" class="text-sm text-red-500 hover:text-red-700 font-medium px-2 py-1">Effacer</button>
-            </div>
-        </div>
 
-        <button id="submit-form" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition duration-200 flex justify-center items-center gap-2">
-            <i class="fa-solid fa-check-circle"></i> Valider et générer l'attestation
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Localisation</label>
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="col-span-1 bg-gray-200 rounded-lg h-24 flex items-center justify-center border border-gray-300 overflow-hidden relative">
+                        <i class="fa-solid fa-location-dot text-restev-blue text-2xl z-10"></i>
+                        <div class="absolute inset-0 opacity-40 bg-[radial-gradient(#ccc_1px,transparent_1px)] [background-size:16px_16px] bg-white"></div>
+                    </div>
+                    <div class="col-span-2 flex flex-col justify-between gap-2">
+                        <button onclick="getGeoloc()" id="btn-geoloc" class="w-full bg-[#00a3b4] hover:opacity-90 text-white font-bold py-2 px-3 rounded-lg text-xs tracking-wider uppercase shadow-sm flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-location-crosshairs"></i> Me géolocaliser
+                        </button>
+                        <input type="text" id="input-location" placeholder="Adresse ou coordonnées GPS" class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-restev-blue outline-none bg-white">
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Photo</label>
+                    <input type="file" id="camera-file" accept="image/*" capture="environment" class="hidden" onchange="previewImage(event)">
+                    
+                    <button onclick="document.getElementById('camera-file').click()" id="btn-capture" class="w-full bg-restev-magenta text-white rounded-lg h-28 flex flex-col items-center justify-center gap-2 shadow-sm border border-transparent active:scale-95 transition">
+                        <i class="fa-solid fa-camera text-3xl"></i>
+                        <span class="text-xs font-bold uppercase tracking-wider">Prendre Photo</span>
+                    </button>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-500 mb-1 opacity-0">Aperçu</label>
+                    <div id="photo-preview-container" class="w-full h-28 border-2 border-dashed border-amber-300 bg-amber-50 rounded-lg flex items-center justify-center text-center p-2 overflow-hidden">
+                        <div id="preview-placeholder" class="text-amber-600 flex flex-col items-center gap-1">
+                            <i class="fa-solid fa-image text-2xl opacity-60"></i>
+                            <span class="text-[10px] font-medium">Aucune photo capturée</span>
+                        </div>
+                        <img id="photo-preview" class="hidden w-full h-full object-cover rounded-md">
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Description du problème</label>
+                <textarea id="input-desc" rows="3" placeholder="Décrivez la situation dangereuse..." class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-restev-blue outline-none bg-white"></textarea>
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Niveau d'urgence</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="setUrgency('faible')" id="urg-faible" class="urg-btn border border-gray-300 bg-white text-gray-700 font-semibold py-2 rounded-lg text-sm transition">Faible</button>
+                    <button onclick="setUrgency('moyen')" id="urg-moyen" class="urg-btn border border-gray-300 bg-white text-gray-700 font-semibold py-2 rounded-lg text-sm transition">Moyen</button>
+                    <button onclick="setUrgency('critique')" id="urg-critique" class="urg-btn border border-gray-300 bg-white text-gray-700 font-semibold py-2 rounded-lg text-sm transition">Critique</button>
+                </div>
+            </div>
+
+            <button onclick="submitSignalement()" class="w-full bg-restev-blue hover:bg-opacity-90 text-white font-bold py-3 px-4 rounded-xl shadow-md transition transform active:scale-95 flex justify-center items-center gap-2 pt-4">
+                <i class="fa-solid fa-paper-plane"></i> Transmettre le signalement
+            </button>
+        </main>
+    </section>
+
+
+    <section id="screen-success" class="hidden">
+        <header class="bg-restev-blue text-white p-4 shadow-md text-center font-bold tracking-wide uppercase">
+            Signalement Transmis
+        </header>
+
+        <main class="p-4 max-w-md mx-auto flex flex-col items-center">
+            <div class="text-center my-6 space-y-2">
+                <h2 class="text-2xl font-black text-gray-800 tracking-wide">SUCCÈS !</h2>
+                <p class="text-md text-emerald-600 font-bold"><i class="fa-solid fa-circle-check mr-1"></i> Votre signalement a bien été transmis.</p>
+            </div>
+
+            <div class="w-full bg-gray-200 border rounded-xl overflow-hidden shadow-inner mb-4 relative h-48">
+                <div class="absolute inset-0 bg-cover bg-center opacity-90" style="background-image: url('https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=600&q=80')"></div>
+                <div class="absolute inset-0 bg-black/10"></div>
+                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10">
+                    <i class="fa-solid fa-location-pin text-restev-magenta text-4xl drop-shadow-md animate-bounce"></i>
+                    <span class="bg-white/90 text-gray-800 text-[10px] px-2 py-0.5 rounded shadow font-bold mt-1">La Roche-sur-Yon</span>
+                </div>
+            </div>
+
+            <p class="text-xs text-gray-500 text-center px-4 mb-6">
+                Un e-mail de notification contenant la géolocalisation exacte et la photo a été envoyé directement au référent sécurité de l'entreprise.
+            </p>
+
+            <div class="w-full flex flex-col gap-3">
+                <button onclick="switchScreen('screen-accueil')" class="w-full bg-[#00a3b4] text-white font-bold py-3 px-4 rounded-xl shadow text-sm tracking-wider uppercase">
+                    Voir détails
+                </button>
+                <button onclick="resetForm(); switchScreen('screen-accueil');" class="w-full bg-restev-blue text-white font-bold py-3 px-4 rounded-xl shadow text-sm tracking-wider uppercase">
+                    Retour à l'accueil
+                </button>
+            </div>
+        </main>
+    </section>
+
+
+    <nav class="fixed bottom-0 inset-x-0 bg-white border-t border-gray-200 h-16 flex items-center justify-around text-gray-400 z-50">
+        <button onclick="switchScreen('screen-accueil')" class="flex flex-col items-center gap-1 focus:outline-none text-restev-blue">
+            <i class="fa-solid fa-house text-lg"></i>
+            <span class="text-[10px] font-bold">Accueil</span>
         </button>
-
-    </main>
-
-    <div class="fixed bottom-4 right-4 z-50">
-        <button class="bg-orange-500 hover:bg-orange-600 text-white rounded-full h-14 px-6 shadow-xl flex items-center justify-center gap-2 font-bold transition transform hover:scale-105">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-            <span class="hidden sm:inline">Signalement Flash</span>
+        <button class="flex flex-col items-center gap-1 focus:outline-none cursor-not-allowed opacity-50">
+            <i class="fa-solid fa-map-location-dot text-lg"></i>
+            <span class="text-[10px] font-medium">Carte</span>
         </button>
-    </div>
+        <button class="flex flex-col items-center gap-1 focus:outline-none cursor-not-allowed opacity-50">
+            <i class="fa-solid fa-clock-rotate-left text-lg"></i>
+            <span class="text-[10px] font-medium">Historique</span>
+        </button>
+        <button class="flex flex-col items-center gap-1 focus:outline-none cursor-not-allowed opacity-50">
+            <i class="fa-solid fa-user text-lg"></i>
+            <span class="text-[10px] font-medium">Profil</span>
+        </button>
+    </nav>
+
 
     <script>
-        const canvas = document.getElementById('signature-pad');
-        const ctx = canvas.getContext('2d');
-        const clearBtn = document.getElementById('clear-signature');
-        let isDrawing = false;
+        let selectedUrgency = '';
 
-        // Ajuster la taille du canvas à son conteneur
-        function resizeCanvas() {
-            const ratio =  Math.max(window.devicePixelRatio || 1, 1);
-            canvas.width = canvas.offsetWidth * ratio;
-            canvas.height = canvas.offsetHeight * ratio;
-            ctx.scale(ratio, ratio);
+        // Changement d'écran
+        function switchScreen(screenId) {
+            document.getElementById('screen-accueil').classList.add('hidden');
+            document.getElementById('screen-form').classList.add('hidden');
+            document.getElementById('screen-success').classList.add('hidden');
+            
+            document.getElementById(screenId).classList.remove('hidden');
+            window.scrollTo(0,0);
         }
-        window.addEventListener("resize", resizeCanvas);
-        resizeCanvas();
 
-        // Événements souris / tactile
-        const startDrawing = (e) => {
-            isDrawing = true;
-            draw(e);
-        };
-        const stopDrawing = () => {
-            isDrawing = false;
-            ctx.beginPath();
-        };
-        const draw = (e) => {
-            if (!isDrawing) return;
-            e.preventDefault(); // Empêcher le scroll
+        // Utilisation de l'API de géolocalisation HTML5 native
+        function getGeoloc() {
+            const locInput = document.getElementById('input-location');
+            const btn = document.getElementById('btn-geoloc');
             
-            const rect = canvas.getBoundingClientRect();
-            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            if (navigator.geolocation) {
+                btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Recherche...';
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude.toFixed(5);
+                        const lng = position.coords.longitude.toFixed(5);
+                        // Remplissage automatique avec les coordonnées réelles détectées par le smartphone
+                        locInput.value = `Lat: ${lat}, Lng: ${lng} (Vendée, 85)`;
+                        btn.innerHTML = '<i class="fa-solid fa-check"></i> Géolocalisé';
+                        btn.classList.replace('bg-[#00a3b4]', 'bg-emerald-600');
+                    },
+                    (error) => {
+                        // Fallback si l'utilisateur refuse l'autorisation
+                        locInput.value = "La Roche-sur-Yon (Géoloc manuelle)";
+                        btn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Activer GPS';
+                    }
+                );
+            } else {
+                locInput.value = "Géolocalisation non supportée";
+            }
+        }
+
+        // Gestion de l'affichage de l'image capturée (Camera native)
+        function previewImage(event) {
+            const reader = new FileReader();
+            reader.onload = function() {
+                const output = document.getElementById('photo-preview');
+                const placeholder = document.getElementById('preview-placeholder');
+                
+                output.src = reader.result;
+                output.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+                
+                // Style visuel du bouton après photo prise
+                const btnCapture = document.getElementById('btn-capture');
+                btnCapture.classList.replace('bg-restev-magenta', 'bg-emerald-600');
+                btnCapture.innerHTML = '<i class="fa-solid fa-circle-check text-3xl"></i><span class="text-xs font-bold uppercase">Photo Enregistrée</span>';
+            }
+            if(event.target.files[0]) {
+                reader.readAsDataURL(event.target.files[0]);
+            }
+        }
+
+        // Gestion de la sélection du niveau d'urgence
+        function setUrgency(level) {
+            selectedUrgency = level;
+            // Réinitialiser le style de tous les boutons
+            document.querySelectorAll('.urg-btn').forEach(btn => {
+                btn.className = "urg-btn border border-gray-300 bg-white text-gray-700 font-semibold py-2 rounded-lg text-sm transition";
+            });
+
+            // Appliquer le style actif selon la maquette
+            const activeBtn = document.getElementById(`urg-${level}`);
+            if (level === 'faible') activeBtn.className = "urg-btn bg-emerald-600 text-white font-bold py-2 rounded-lg text-sm transition shadow-sm";
+            if (level === 'moyen') activeBtn.className = "urg-btn bg-amber-500 text-white font-bold py-2 rounded-lg text-sm transition shadow-sm";
+            if (level === 'critique') activeBtn.className = "urg-btn bg-red-600 text-white font-bold py-2 rounded-lg text-sm transition shadow-sm";
+        }
+
+        // Soumission du formulaire
+        function submitSignalement() {
+            // Ici tu pourras injecter ta logique Supabase pour insérer les données en base :
+            // const title = document.getElementById('input-title').value;
+            // const coords = document.getElementById('input-location').value;
+            // const photoBase64 = document.getElementById('photo-preview').src;
+            // const description = document.getElementById('input-desc').value;
+
+            switchScreen('screen-success');
+        }
+
+        // Reset du formulaire pour le prochain signalement
+        function resetForm() {
+            document.getElementById('input-title').value = '';
+            document.getElementById('input-location').value = '';
+            document.getElementById('input-desc').value = '';
+            document.getElementById('camera-file').value = '';
             
-            const x = clientX - rect.left;
-            const y = clientY - rect.top;
+            const output = document.getElementById('photo-preview');
+            const placeholder = document.getElementById('preview-placeholder');
+            output.src = '';
+            output.classList.add('hidden');
+            placeholder.classList.remove('hidden');
 
-            ctx.lineWidth = 2;
-            ctx.lineCap = 'round';
-            ctx.strokeStyle = '#1f2937';
+            const btnCapture = document.getElementById('btn-capture');
+            btnCapture.className = "w-full bg-restev-magenta text-white rounded-lg h-28 flex flex-col items-center justify-center gap-2 shadow-sm border border-transparent active:scale-95 transition";
+            btnCapture.innerHTML = '<i class="fa-solid fa-camera text-3xl"></i><span class="text-xs font-bold uppercase tracking-wider">Prendre Photo</span>';
 
-            ctx.lineTo(x, y);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-        };
+            const btnGeoloc = document.getElementById('btn-geoloc');
+            btnGeoloc.className = "w-full bg-[#00a3b4] hover:opacity-90 text-white font-bold py-2 px-3 rounded-lg text-xs tracking-wider uppercase shadow-sm flex items-center justify-center gap-2";
+            btnGeoloc.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i> Me géolocaliser';
 
-        // Mouse events
-        canvas.addEventListener('mousedown', startDrawing);
-        canvas.addEventListener('mousemove', draw);
-        canvas.addEventListener('mouseup', stopDrawing);
-        canvas.addEventListener('mouseout', stopDrawing);
-
-        // Touch events
-        canvas.addEventListener('touchstart', startDrawing);
-        canvas.addEventListener('touchmove', draw);
-        canvas.addEventListener('touchend', stopDrawing);
-
-        // Nettoyer la signature
-        clearBtn.addEventListener('click', () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        });
-
-        // Simuler la validation (Préparation pour l'insertion en base)
-        document.getElementById('submit-form').addEventListener('click', () => {
-            // Ici, tu pourras récupérer le canvas.toDataURL() et l'envoyer vers Supabase 
-            // avec les données des inputs et l'état des checkboxes.
-            const signatureData = canvas.toDataURL('image/png');
-            alert("Attestation prête à être synchronisée avec la base de données !");
-        });
+            setUrgency('');
+        }
     </script>
 </body>
 </html>
