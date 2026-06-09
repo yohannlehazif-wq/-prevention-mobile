@@ -107,16 +107,15 @@
                     </div>
                     <div>
                         <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300">Intégration d'un Nouvel Arrivant</h4>
-                        <p class="text-[11px] text-slate-400">Faites scanner le code pour ouvrir son parcours 1er jour.</p>
+                        <p class="text-[11px] text-slate-400">Faites scanner le code pour ouvrir son parcours sécurisé 1er jour.</p>
                     </div>
                 </div>
                 <button onclick="generateEmployeeQR()" class="w-full bg-restev-blue text-white font-bold py-2.5 px-4 rounded-xl text-xs uppercase tracking-wide shadow transition active:scale-[0.98]">
-                    Afficher le QR Code Salarié
+                    Générer le QR Code Écran
                 </button>
             </div>
 
             <div class="grid grid-cols-1 gap-4">
-                
                 <div onclick="switchScreen('scr-onboarding-1')" class="bg-white border-l-4 border-restev-blue rounded-2xl p-4 shadow-sm hover:shadow-md transition cursor-pointer flex items-center gap-4 active:scale-[0.99]">
                     <div class="w-14 h-14 rounded-xl bg-blue-50 flex items-center justify-center text-restev-blue text-2xl shrink-0">
                         <i class="fa-solid fa-file-signature"></i>
@@ -140,17 +139,24 @@
                     </div>
                     <i class="fa-solid fa-chevron-right text-slate-300 text-sm"></i>
                 </div>
-
             </div>
 
             <div id="manager-only-panel" class="hidden space-y-4">
                 
                 <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
                     <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                        <span><i class="fa-solid fa-user-clock text-restev-blue mr-1"></i> Accueils reçus via QR Code</span>
+                        <span id="pending-count" class="bg-blue-100 text-restev-blue px-1.5 py-0.5 rounded text-[9px] font-bold">1 À VISER</span>
+                    </h4>
+                    <div id="pending-onboardings-list" class="space-y-2">
+                        </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
                         <span><i class="fa-solid fa-folder-open mr-1"></i> Registre Récent des Dangers</span>
                         <span class="bg-red-100 text-red-600 px-1.5 py-0.5 rounded text-[9px] font-bold">2 À TRAITER</span>
                     </h4>
-                    
                     <div class="space-y-2">
                         <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex justify-between items-center text-xs">
                             <div>
@@ -159,24 +165,6 @@
                             </div>
                             <span class="bg-red-500 text-white font-bold text-[9px] px-2 py-0.5 rounded">Urgent</span>
                         </div>
-                        <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex justify-between items-center text-xs">
-                            <div>
-                                <p class="font-bold text-slate-800">Stockage palette défectueux h=4m</p>
-                                <p class="text-[10px] text-slate-400 font-mono">Quai de déchargement Nord</p>
-                            </div>
-                            <span class="bg-amber-500 text-white font-bold text-[9px] px-2 py-0.5 rounded">Sérieux</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
-                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2"><i class="fa-solid fa-chart-bar mr-1"></i> Suivi des indicateurs du site</h4>
-                    <div class="flex justify-between text-xs font-semibold">
-                        <span class="text-slate-600">Accueils sécurité validés (Ce mois)</span>
-                        <span class="text-restev-blue font-bold">18 / 18</span>
-                    </div>
-                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                        <div class="bg-restev-blue h-full" style="width: 100%"></div>
                     </div>
                 </div>
             </div>
@@ -188,23 +176,16 @@
                 <button onclick="switchScreen('scr-dashboard')" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-arrow-left"></i></button>
                 <h2 class="text-base font-bold text-slate-800">Partager le livret d'accueil</h2>
             </div>
-
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4 flex flex-col items-center">
                 <p class="text-xs text-slate-600 px-2 leading-relaxed">
-                    Présentez ce QR Code au **salarié nouvel arrivant**. En le scannant, son smartphone ouvrira directement son parcours d'intégration sécurité.
+                    Présentez ce QR Code au **salarié nouvel arrivant**. En le scannant, son smartphone ouvrira l'application directement configurée sur son profil restreint.
                 </p>
-                
                 <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-inner flex justify-center items-center">
                     <canvas id="qr-canvas" class="bg-white p-2 rounded-xl shadow-sm"></canvas>
                 </div>
-
-                <div class="text-[10px] text-slate-400 font-mono tracking-wide bg-slate-50 px-3 py-1 rounded border border-dashed w-full break-all">
-                    Lien direct généré automatiquement
-                </div>
             </div>
-
             <button onclick="switchScreen('scr-dashboard')" class="w-full bg-slate-800 text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider">
-                Fermer et retourner au suivi
+                Fermer
             </button>
         </section>
 
@@ -217,22 +198,18 @@
 
             <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
                 <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider"><i class="fa-solid fa-address-card mr-1"></i> Identification</h3>
-                
                 <div>
                     <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Nom & Prénom du Travailleur</label>
                     <input type="text" id="reg-emp-name" placeholder="Ex: Lucas Bernard" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue outline-none bg-slate-50">
                 </div>
-
                 <div>
                     <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Statut du public</label>
                     <select id="reg-emp-status" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue outline-none bg-slate-50 font-medium">
                         <option value="Intérimaire">Intérimaire (Mission temporaire)</option>
                         <option value="Jeune Travailleur / Apprenti">Jeune Travailleur / Apprenti / Stagiaire</option>
                         <option value="Nouvel Arrivant">Nouvel Arrivant (CDI / CDD)</option>
-                        <option value="Saisonnier">Saisonnier</option>
                     </select>
                 </div>
-
                 <div>
                     <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Entreprise Utilisatrice / Établissement</label>
                     <input type="text" id="reg-company" placeholder="Ex: Logistique Vendée SAS" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue outline-none bg-slate-50">
@@ -250,15 +227,11 @@
                         <input type="checkbox" id="chk-module-2" class="mt-1 w-5 h-5 text-restev-blue rounded border-slate-300 focus:ring-restev-blue">
                         <span class="text-xs text-slate-700 leading-tight"><strong>Secours & Évacuation :</strong> Repérage des issues, alarmes et points de rassemblement.</span>
                     </label>
-                    <label class="flex items-start gap-3 p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 cursor-pointer">
-                        <input type="checkbox" id="chk-module-3" class="mt-1 w-5 h-5 text-restev-blue rounded border-slate-300 focus:ring-restev-blue">
-                        <span class="text-xs text-slate-700 leading-tight"><strong>Circulation & Flux :</strong> Sens de circulation des engins et barrières piétonnes.</span>
-                    </label>
                 </div>
             </div>
 
             <button onclick="validateFirstStep()" class="w-full bg-restev-blue text-white font-bold py-3.5 px-4 rounded-xl shadow-md flex justify-center items-center gap-2 text-sm uppercase tracking-wider">
-                Passer aux émargements <i class="fa-solid fa-arrow-right text-xs"></i>
+                Passer à l'émargement <i class="fa-solid fa-arrow-right text-xs"></i>
             </button>
         </section>
 
@@ -266,12 +239,12 @@
         <section id="scr-onboarding-2" class="hidden space-y-4 no-print">
             <div class="flex items-center gap-2 mb-2">
                 <button onclick="switchScreen('scr-onboarding-1')" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-arrow-left"></i></button>
-                <h2 class="text-base font-bold text-slate-800">Émargement à Force Probante</h2>
+                <h2 class="text-base font-bold text-slate-800">Émargement</h2>
             </div>
 
             <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-4">
                 <div class="space-y-1">
-                    <p class="text-xs font-bold text-slate-700 flex items-center gap-1"><i class="fa-solid fa-pen text-restev-magenta"></i> 1. Signature du Salarié Nouvel Arrivant :</p>
+                    <p class="text-xs font-bold text-slate-700 flex items-center gap-1"><i class="fa-solid fa-pen text-restev-magenta"></i> Signature du Salarié Nouvel Arrivant :</p>
                     <div class="border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
                         <canvas id="canv-employee" class="w-full h-26 bg-white"></canvas>
                     </div>
@@ -280,26 +253,88 @@
                     </div>
                 </div>
 
-                <hr class="border-slate-100">
-
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Nom du Responsable / Tuteur Évaluateur</label>
-                    <input type="text" id="reg-tutor-name" placeholder="Ex: Robert Moreau" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue outline-none bg-slate-50">
-                </div>
-
-                <div class="space-y-1">
-                    <p class="text-xs font-bold text-slate-700 flex items-center gap-1"><i class="fa-solid fa-pen text-restev-blue"></i> 2. Signature de validation du Manager :</p>
-                    <div class="border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
-                        <canvas id="canv-tutor" class="w-full h-26 bg-white"></canvas>
+                <div id="tutor-signature-block" class="space-y-4 border-t pt-4 border-slate-100">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Nom du Responsable / Tuteur Évaluateur</label>
+                        <input type="text" id="reg-tutor-name" placeholder="Ex: Robert Moreau" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue outline-none bg-slate-50">
                     </div>
-                    <div class="text-right">
-                        <button onclick="clearSign('canv-tutor')" class="text-[10px] text-red-500 font-bold"><i class="fa-solid fa-eraser"></i> Effacer</button>
+                    <div class="space-y-1">
+                        <p class="text-xs font-bold text-slate-700 flex items-center gap-1"><i class="fa-solid fa-pen text-restev-blue"></i> Signature du Manager / Tuteur :</p>
+                        <div class="border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+                            <canvas id="canv-tutor" class="w-full h-26 bg-white"></canvas>
+                        </div>
+                        <div class="text-right">
+                            <button onclick="clearSign('canv-tutor')" class="text-[10px] text-red-500 font-bold"><i class="fa-solid fa-eraser"></i> Effacer</button>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <button onclick="processFinalAttestation()" class="w-full bg-restev-magenta text-white font-bold py-4 px-4 rounded-xl shadow-lg flex justify-center items-center gap-2 text-sm uppercase tracking-wider">
+            <button id="btn-employee-submit" onclick="submitToManagerQueue()" class="hidden w-full bg-restev-blue text-white font-bold py-4 px-4 rounded-xl shadow-lg flex justify-center items-center gap-2 text-sm uppercase tracking-wider">
+                <i class="fa-solid fa-paper-plane"></i> Transmettre au Responsable
+            </button>
+
+            <button id="btn-manager-finalize" onclick="processFinalAttestation()" class="hidden w-full bg-restev-magenta text-white font-bold py-4 px-4 rounded-xl shadow-lg flex justify-center items-center gap-2 text-sm uppercase tracking-wider">
                 <i class="fa-solid fa-lock"></i> Verrouiller & Valider le Livret
+            </button>
+        </section>
+
+
+        <section id="scr-manager-review" class="hidden space-y-4 no-print">
+            <div class="flex items-center gap-2 mb-2">
+                <button onclick="switchScreen('scr-dashboard')" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-arrow-left"></i></button>
+                <h2 class="text-base font-bold text-slate-800">Contrôle et Visa Tuteur</h2>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3 text-xs">
+                <h3 class="text-slate-400 font-bold uppercase text-[10px]">Informations Salarié</h3>
+                <p><strong>Nom :</strong> <span id="rev-emp-name">-</span></p>
+                <p><strong>Société :</strong> <span id="rev-company">-</span></p>
+                <p><strong>Statut :</strong> <span id="rev-status">-</span></p>
+                
+                <h3 class="text-slate-400 font-bold uppercase text-[10px] pt-2">Modules validés par le salarié</h3>
+                <ul id="rev-modules-list" class="space-y-1 bg-slate-50 p-2 rounded-xl border border-slate-100"></ul>
+
+                <h3 class="text-slate-400 font-bold uppercase text-[10px] pt-2">Émargement initial salarié</h3>
+                <div class="border border-slate-200 rounded-lg bg-slate-100 p-2 h-20 flex items-center justify-center">
+                    <img id="img-rev-emp-sign" class="max-h-full max-w-full object-contain">
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+                <h3 class="text-slate-400 font-bold uppercase text-[10px]"><i class="fa-solid fa-signature text-restev-blue"></i> Validation finale par l'employeur</h3>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Nom de l'encadrant / Tuteur</label>
+                    <input type="text" id="reg-tutor-name-rev" placeholder="Ex: Robert Moreau" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue outline-none bg-slate-50">
+                </div>
+                <div class="space-y-1">
+                    <p class="text-xs font-bold text-slate-700">Signature Manuelle Manager :</p>
+                    <div class="border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+                        <canvas id="canv-tutor-rev" class="w-full h-26 bg-white"></canvas>
+                    </div>
+                    <div class="text-right">
+                        <button onclick="clearSign('canv-tutor-rev')" class="text-[10px] text-red-500 font-bold"><i class="fa-solid fa-eraser"></i> Effacer</button>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="finalizeReviewSubmission()" class="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-xl text-xs uppercase tracking-wider shadow">
+                <i class="fa-solid fa-certificate mr-1"></i> Co-signer et Clôturer le livret
+            </button>
+        </section>
+
+
+        <section id="scr-employee-success" class="hidden space-y-4 no-print text-center py-6">
+            <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto border border-blue-100">
+                <i class="fa-solid fa-paper-plane text-restev-blue text-4xl animate-bounce"></i>
+            </div>
+            <div class="space-y-2 px-4">
+                <h2 class="text-lg font-black text-slate-800 uppercase">Livret Transmis</h2>
+                <p class="text-xs text-slate-500 leading-relaxed">Vos validations et votre signature ont été envoyées sur la console du responsable de site.</p>
+                <p class="text-xs font-bold text-slate-700 bg-slate-100 p-3 rounded-xl border border-dashed border-slate-200 mt-2">Veuillez vous rapprocher de votre tuteur pour la validation finale du document.</p>
+            </div>
+            <button onclick="resetAllForms()" class="w-full bg-slate-800 text-white font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider">
+                Retour à mon espace
             </button>
         </section>
 
@@ -357,7 +392,7 @@
 
             <div class="space-y-2 no-print">
                 <button onclick="window.print()" class="w-full bg-emerald-600 text-white font-bold py-3 px-4 rounded-xl shadow text-xs tracking-wider uppercase flex justify-center items-center gap-2">
-                    <i class="fa-solid fa-print"></i> Imprimer ou Exporter en PDF
+                    <i class="fa-solid fa-print"></i> Imprimer / Export PDF
                 </button>
                 <button onclick="exportToPasseportPrevention()" class="w-full bg-restev-blue text-white font-bold py-3 px-4 rounded-xl shadow text-xs tracking-wider uppercase flex justify-center items-center gap-2">
                     <i class="fa-solid fa-file-export"></i> Transférer au Passeport Prévention (JSON)
@@ -418,15 +453,6 @@
                     <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Complément d'information</label>
                     <textarea id="flash-desc" rows="2" placeholder="Précisez le contexte..." class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-magenta outline-none bg-slate-50"></textarea>
                 </div>
-
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Niveau d'urgence requis</label>
-                    <div class="grid grid-cols-3 gap-2">
-                        <button type="button" onclick="selectFlashUrgency('Faible')" id="urg-f" class="urg-node border border-slate-200 bg-white text-slate-700 font-bold py-2 rounded-xl text-xs transition">Mineur</button>
-                        <button type="button" onclick="selectFlashUrgency('Moyen')" id="urg-m" class="urg-node border border-slate-200 bg-white text-slate-700 font-bold py-2 rounded-xl text-xs transition">Sérieux</button>
-                        <button type="button" onclick="selectFlashUrgency('Critique')" id="urg-c" class="urg-node border border-slate-200 bg-white text-slate-700 font-bold py-2 rounded-xl text-xs transition">Imminent</button>
-                    </div>
-                </div>
             </div>
 
             <button onclick="submitFlashReport()" class="w-full bg-restev-magenta text-white font-bold py-3.5 px-4 rounded-xl shadow-md flex justify-center items-center gap-2 text-sm uppercase tracking-wider">
@@ -466,14 +492,18 @@
 
     <script>
         let currentUserRole = "";
-        let currentUrgency = "";
         let mapInstance = null;
         let mapMarker = null;
+        let isStrictEmployeeMode = false; // Flag si arrivée stricte par QR Code
         
         const defaultLat = 46.6705;
         const defaultLng = -1.4265;
 
-        // Configuration dynamique du rôle utilisateur
+        // Base de données simulée pour stocker les transmissions QR Code
+        let pendingOnboardings = JSON.parse(localStorage.getItem('restev_pending')) || [
+            { id: "PEND-882", name: "Yanis Martin", company: "Logistique Vendée SAS", status: "Intérimaire", modules: [true, true], empSign: "" }
+        ];
+
         function setRole(role) {
             currentUserRole = role;
             const badge = document.getElementById('role-badge');
@@ -486,6 +516,10 @@
             const cardOnboardTitle = document.getElementById('card-onboard-title');
             const cardOnboardDesc = document.getElementById('card-onboard-desc');
 
+            const tutorBlock = document.getElementById('tutor-signature-block');
+            const btnEmp = document.getElementById('btn-employee-submit');
+            const btnMngr = document.getElementById('btn-manager-finalize');
+
             if(role === 'manager') {
                 badge.innerText = "Profil : Manager";
                 badge.className = "cursor-pointer bg-pink-600 text-white text-[10px] font-bold px-2 py-1 rounded border border-pink-400 uppercase tracking-wide";
@@ -496,7 +530,14 @@
                 subtitle.innerText = "Vue de contrôle : Validation des accueils et traitement des anomalies terrain.";
                 
                 cardOnboardTitle.innerText = "Évaluer & Signer un Accueil";
-                cardOnboardDesc.innerText = "Ouvrir le formulaire d'évaluation pour valider l'intégration d'un arrivant.";
+                cardOnboardDesc.innerText = "Ouvrir le formulaire collaboratif sur votre appareil pour intégrer un arrivant.";
+                
+                // Mode collaboratif sur un seul écran
+                tutorBlock.classList.remove('hidden');
+                btnEmp.classList.add('hidden');
+                btnMngr.classList.remove('hidden');
+
+                renderPendingList();
             } else {
                 badge.innerText = "Profil : Salarié";
                 badge.className = "cursor-pointer bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded border border-blue-400 uppercase tracking-wide";
@@ -504,37 +545,168 @@
                 qrShortcut.classList.add('hidden');
                 
                 title.innerText = "Mon Espace Intégration";
-                subtitle.innerText = "Remplissez vos modules obligatoires d'arrivée et signalez les anomalies constatées.";
+                subtitle.innerText = "Remplissez vos modules obligatoires d'arrivée et signalez les anomalies.";
                 
                 cardOnboardTitle.innerText = "Mon Parcours Sécurité Obligatoire";
                 cardOnboardDesc.innerText = "Valider les thématiques réglementaires de mon premier jour sur site.";
+                
+                // Mode autonome sur le smartphone du salarié
+                tutorBlock.classList.add('hidden');
+                btnEmp.classList.remove('hidden');
+                btnMngr.classList.add('hidden');
+            }
+
+            // Si le salarié a scanné un QR code, on lui bloque toute possibilité de changer son rôle
+            if (isStrictEmployeeMode) {
+                badge.classList.add('hidden');
+            } else {
+                badge.classList.remove('hidden');
             }
         }
 
-        // --- GÉNÉRATION DYNAMIQUE DU QR CODE (POUR LE MANAGER) ---
         function generateEmployeeQR() {
             switchScreen('scr-qr-display');
-            
-            // Construit l'URL cible absolue en injectant le paramètre de routage automatique
             const employeeTargetUrl = window.location.origin + window.location.pathname + '?mode=onboarding';
-            
-            // Génération sur l'élément Canvas
             const canvasTarget = document.getElementById('qr-canvas');
             QRCode.toCanvas(canvasTarget, employeeTargetUrl, {
                 width: 200,
                 margin: 1,
-                color: {
-                    dark: '#1e293b',  // Couleur du QR code (Slate 800)
-                    light: '#ffffff'  // Fond
-                }
+                color: { dark: '#1e293b', light: '#ffffff' }
             }, function (error) {
-                if (error) console.error("Erreur lors de la génération du QR code :", error);
+                if (error) console.error("Erreur QR code :", error);
             });
         }
 
+        // --- FILTRAGE DE FLUX SALARIÉ DEPUIS SON PROPRE TÉLÉPHONE ---
+        function submitToManagerQueue() {
+            const name = document.getElementById('reg-emp-name').value.trim();
+            const company = document.getElementById('reg-company').value.trim();
+            const status = document.getElementById('reg-emp-status').value;
+            const m1 = document.getElementById('chk-module-1').checked;
+            const m2 = document.getElementById('chk-module-2').checked;
+
+            if(!name || !company) { alert("Veuillez remplir vos informations d'identification."); return; }
+
+            const newSubmission = {
+                id: "QR-" + Math.floor(100 + Math.random() * 900),
+                name: name,
+                company: company,
+                status: status,
+                modules: [m1, m2],
+                empSign: activeCanvas['canv-employee'] ? activeCanvas['canv-employee'].toDataURL() : ""
+            };
+
+            pendingOnboardings.push(newSubmission);
+            localStorage.setItem('restev_pending', JSON.stringify(pendingOnboardings));
+            
+            switchScreen('scr-employee-success');
+        }
+
+        // --- INTERFACE DE TRAITEMENT MANAGER ---
+        function renderPendingList() {
+            const container = document.getElementById('pending-onboardings-list');
+            const badgeCount = document.getElementById('pending-count');
+            if(!container) return;
+
+            container.innerHTML = "";
+            badgeCount.innerText = `${pendingOnboardings.length} À VISER`;
+
+            if(pendingOnboardings.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-2">Aucun dossier en attente de visa.</p>`;
+                return;
+            }
+
+            pendingOnboardings.forEach((item, index) => {
+                container.innerHTML += `
+                    <div onclick="openManagerReview(${index})" class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 hover:border-restev-blue transition cursor-pointer flex justify-between items-center text-xs">
+                        <div>
+                            <p class="font-bold text-slate-800">${item.name}</p>
+                            <p class="text-[10px] text-slate-400 uppercase font-semibold">${item.company} | ${item.status}</p>
+                        </div>
+                        <span class="bg-restev-blue/10 text-restev-blue font-bold px-2 py-1 rounded text-[10px] uppercase tracking-wide">Viser</span>
+                    </div>
+                `;
+            });
+        }
+
+        let selectedReviewIndex = null;
+        function openManagerReview(index) {
+            selectedReviewIndex = index;
+            const item = pendingOnboardings[index];
+
+            document.getElementById('rev-emp-name').innerText = item.name;
+            document.getElementById('rev-company').innerText = item.company;
+            document.getElementById('rev-status').innerText = item.status;
+
+            const modUl = document.getElementById('rev-modules-list');
+            modUl.innerHTML = "";
+            const texts = ["Risques Spécifiques Poste & EPI", "Procédures d'Alerte & Évacuation"];
+            item.modules.forEach((checked, i) => {
+                modUl.innerHTML += `<li class="${checked ? 'text-slate-800 font-bold' : 'line-through text-slate-400'}">
+                    ${checked ? '<i class="fa-solid fa-check text-emerald-500 mr-1"></i>' : '<i class="fa-solid fa-xmark text-slate-300 mr-1"></i>'} ${texts[i]}
+                </li>`;
+            });
+
+            document.getElementById('img-rev-emp-sign').src = item.empSign || "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+            
+            switchScreen('scr-manager-review');
+            setTimeout(() => { bindCanvasDrawing('canv-tutor-rev'); }, 150);
+        }
+
+        function finalizeReviewSubmission() {
+            const tutorName = document.getElementById('reg-tutor-name-rev').value.trim();
+            if(!tutorName) { alert("Veuillez saisir votre nom d'encadrant."); return; }
+
+            const item = pendingOnboardings[selectedReviewIndex];
+
+            // Remplissage de l'attestation finale officielle
+            document.getElementById('lbl-view-date').innerText = new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+            document.getElementById('attestation-id').innerText = "RE-85-" + Math.floor(100000 + Math.random() * 900000);
+            document.getElementById('lbl-view-company').innerText = item.company;
+            document.getElementById('lbl-view-emp').innerText = item.name;
+            document.getElementById('lbl-view-tutor').innerText = tutorName;
+            document.getElementById('lbl-view-status').innerText = item.status;
+
+            const ul = document.getElementById('lbl-view-modules');
+            ul.innerHTML = "";
+            const texts = ["Risques Spécifiques Poste & EPI", "Procédures d'Alerte & Évacuation"];
+            item.modules.forEach((checked, i) => {
+                ul.innerHTML += `<li class="${checked ? 'font-semibold text-slate-800' : 'line-through text-slate-400'}">
+                    ${checked ? '<i class="fa-solid fa-square-check text-emerald-500 mr-2"></i>' : '<i class="fa-solid fa-square-xmark text-slate-300 mr-2"></i>'}${texts[i]}
+                </li>`;
+            });
+
+            document.getElementById('img-render-emp').src = item.empSign;
+            document.getElementById('img-render-tutor').src = activeCanvas['canv-tutor-rev'].toDataURL();
+
+            // Retrait de la file d'attente
+            pendingOnboardings.splice(selectedReviewIndex, 1);
+            localStorage.setItem('restev_pending', JSON.stringify(pendingOnboardings));
+
+            switchScreen('scr-attestation');
+        }
+
+
+        // --- AUTOMATISATION PAR ROUTING QR CODE ---
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('mode') === 'onboarding') {
+                isStrictEmployeeMode = true;
+                setRole('employee'); 
+                switchScreen('scr-onboarding-1');
+            } else {
+                isStrictEmployeeMode = false;
+                switchScreen('scr-auth');
+            }
+        };
+
+        // --- CODE ROUTER & UTILS EXISTANTS AMÉLIORÉS ---
         function switchScreen(screenId) {
-            const screens = ['scr-auth', 'scr-dashboard', 'scr-qr-display', 'scr-onboarding-1', 'scr-onboarding-2', 'scr-attestation', 'scr-flash-report', 'scr-flash-success'];
-            screens.forEach(id => document.getElementById(id).classList.add('hidden'));
+            const screens = ['scr-auth', 'scr-dashboard', 'scr-qr-display', 'scr-onboarding-1', 'scr-onboarding-2', 'scr-manager-review', 'scr-employee-success', 'scr-attestation', 'scr-flash-report', 'scr-flash-success'];
+            screens.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.classList.add('hidden');
+            });
             
             document.getElementById(screenId).classList.remove('hidden');
             window.scrollTo(0,0);
@@ -543,65 +715,7 @@
             document.getElementById('nav-onboard').className = "flex flex-col items-center gap-0.5 focus:outline-none " + (['scr-onboarding-1', 'scr-onboarding-2', 'scr-attestation'].includes(screenId) ? 'text-restev-blue' : 'text-slate-400');
             document.getElementById('nav-flash').className = "flex flex-col items-center gap-0.5 focus:outline-none " + (['scr-flash-report', 'scr-flash-success'].includes(screenId) ? 'text-restev-blue' : 'text-slate-400');
 
-            if (screenId === 'scr-flash-report') {
-                setTimeout(initializeMap, 200);
-            }
-        }
-
-        // --- AUTOMATISATION PAR SCAN DU QR CODE ---
-        window.onload = function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            
-            // Détection du scan : si l'URL contient "?mode=onboarding"
-            if (urlParams.get('mode') === 'onboarding') {
-                setRole('employee');           // Force le rôle salarié
-                switchScreen('scr-onboarding-1'); // Ouvre immédiatement le formulaire du livret
-            } else {
-                // Sinon, parcours classique : choix du profil
-                switchScreen('scr-auth');
-            }
-        };
-
-        // --- LOGIQUES APPLICATIVES SECONDAIRES ---
-        function initializeMap() {
-            if (mapInstance) { mapInstance.invalidateSize(); return; }
-            mapInstance = L.map('report-map').setView([defaultLat, defaultLng], 11);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
-            const magentaIcon = L.divIcon({
-                html: `<div class="flex items-center justify-center w-7 h-7 rounded-full bg-white border-2 border-restev-magenta text-restev-magenta shadow"><i class="fa-solid fa-location-dot"></i></div>`,
-                className: '', iconSize: [28, 28], iconAnchor: [14, 28]
-            });
-            mapMarker = L.marker([defaultLat, defaultLng], { draggable: true, icon: magentaIcon }).addTo(mapInstance);
-            updateCoordinateFields(defaultLat, defaultLng, null);
-            mapMarker.on('dragend', function () {
-                const pos = mapMarker.getLatLng();
-                updateCoordinateFields(pos.lat, pos.lng, "Ajustement manuel");
-            });
-        }
-
-        function triggerHighAccuracyLocation() {
-            const geoBtn = document.getElementById('btn-geo-action');
-            if (!navigator.geolocation) return;
-            geoBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Satellite...';
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    const lat = pos.coords.latitude; const lng = pos.coords.longitude;
-                    const acc = pos.coords.accuracy ? Math.round(pos.coords.accuracy) : null;
-                    if (mapInstance && mapMarker) {
-                        const pt = new L.LatLng(lat, lng);
-                        mapMarker.setLatLng(pt); mapInstance.setView(pt, 18);
-                    }
-                    updateCoordinateFields(lat, lng, acc ? `Précision ±${acc}m` : "GPS Actif");
-                    geoBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Fix Réussi';
-                    geoBtn.className = "bg-emerald-600 text-white font-bold py-1 px-2.5 rounded-lg text-[10px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm";
-                },
-                () => { alert("Signal GPS faible. Déplacez le curseur à la main."); geoBtn.innerHTML = '<i class="fa-solid fa-keyboard"></i> Manuel'; },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-            );
-        }
-
-        function updateCoordinateFields(lat, lng, detail) {
-            document.getElementById('flash-geo-coords').value = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}${detail ? ` [${detail}]` : ''}`;
+            if (screenId === 'scr-flash-report') setTimeout(initializeMap, 200);
         }
 
         function validateFirstStep() {
@@ -609,16 +723,20 @@
             const company = document.getElementById('reg-company').value.trim();
             if(!name || !company) { alert("Le nom et l'entreprise d'accueil sont indispensables."); return; }
             switchScreen('scr-onboarding-2');
-            setTimeout(() => { bindCanvasDrawing('canv-employee'); bindCanvasDrawing('canv-tutor'); }, 150);
+            setTimeout(() => { 
+                bindCanvasDrawing('canv-employee'); 
+                if(currentUserRole === 'manager') bindCanvasDrawing('canv-tutor');
+            }, 150);
         }
 
         const activeCanvas = {}, activeContext = {}, drawingState = {};
         function bindCanvasDrawing(id) {
-            const canvas = document.getElementById(id); activeCanvas[id] = canvas; activeContext[id] = canvas.getContext('2d'); drawingState[id] = false;
+            const canvas = document.getElementById(id); if(!canvas) return;
+            activeCanvas[id] = canvas; activeContext[id] = canvas.getContext('2d'); drawingState[id] = false;
             const box = canvas.getBoundingClientRect(); canvas.width = box.width; canvas.height = box.height;
             const getPos = (e) => { const r = canvas.getBoundingClientRect(); return { x: (e.clientX || e.touches[0].clientX) - r.left, y: (e.clientY || e.touches[0].clientY) - r.top }; };
             const start = (e) => { drawingState[id] = true; activeContext[id].beginPath(); const p = getPos(e); activeContext[id].moveTo(p.x, p.y); };
-            const move = (e) => { if (!drawingState[id]) return; e.preventDefault(); const p = getPos(e); activeContext[id].lineWidth = 2; activeContext[id].lineCap = 'round'; activeContext[id].strokeStyle = '#0f172a'; activeContext[id].lineTo(p.x, p.y); activeContext[id].stroke(); };
+            const move = (e) => { if (!drawingState[id]) return; e.preventDefault(); const p = getPos(e); activeContext[id].lineWidth = 2.5; activeContext[id].lineCap = 'round'; activeContext[id].strokeStyle = '#1e293b'; activeContext[id].lineTo(p.x, p.y); activeContext[id].stroke(); };
             const stop = () => { drawingState[id] = false; };
             canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); canvas.addEventListener('mouseup', stop);
             canvas.addEventListener('touchstart', start); canvas.addEventListener('touchmove', move); canvas.addEventListener('touchend', stop);
@@ -634,28 +752,35 @@
             document.getElementById('lbl-view-company').innerText = document.getElementById('reg-company').value;
             document.getElementById('lbl-view-emp').innerText = document.getElementById('reg-emp-name').value;
             document.getElementById('lbl-view-tutor').innerText = tutor;
-            document.getElementById('lbl-view-status').innerText = "Profil : " + document.getElementById('reg-emp-status').value;
+            document.getElementById('lbl-view-status').innerText = document.getElementById('reg-emp-status').value;
 
             const ul = document.getElementById('lbl-view-modules'); ul.innerHTML = "";
-            const modules = [
-                { id: 'chk-module-1', text: 'Risques Spécifiques au Poste de Travail & Dotation EPI' },
-                { id: 'chk-module-2', text: 'Procédures d\'Alerte, Secours & Plan d\'Évacuation' },
-                { id: 'chk-module-3', text: 'Règles de Circulation Internes & Coactivité Engins/Piétons' }
-            ];
+            const modules = [{ id: 'chk-module-1', text: 'Risques Spécifiques Poste & EPI' }, { id: 'chk-module-2', text: 'Procédures d\'Alerte & Évacuation' }];
             modules.forEach(m => {
                 const ok = document.getElementById(m.id).checked;
-                ul.innerHTML += `<li class="${ok ? 'font-semibold text-slate-800' : 'line-through text-slate-400 opacity-60'}">${ok ? '<i class="fa-solid fa-square-check text-emerald-500 mr-2"></i>' : '<i class="fa-solid fa-square-xmark text-slate-300 mr-2"></i>'}${m.text}</li>`;
+                ul.innerHTML += `<li class="${ok ? 'font-semibold text-slate-800' : 'line-through text-slate-400'}">${ok ? '✓ ' : '✗ '}${m.text}</li>`;
             });
             document.getElementById('img-render-emp').src = activeCanvas['canv-employee'].toDataURL();
             document.getElementById('img-render-tutor').src = activeCanvas['canv-tutor'].toDataURL();
             switchScreen('scr-attestation');
         }
 
-        function exportToPasseportPrevention() {
-            const struct = { schema_norm: "PST-2026-V1", document_uid: document.getElementById('attestation-id').innerText, timestamp: new Date().toISOString(), entreprise: document.getElementById('reg-company').value, travailleur: document.getElementById('reg-emp-name').value, valide_par: document.getElementById('reg-tutor-name').value };
-            const blob = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(struct, null, 2));
-            const a = document.createElement('a'); a.setAttribute("href", blob); a.setAttribute("download", `attestation_${struct.travailleur.replace(/\s+/g, '_')}.json`);
-            document.body.appendChild(a); a.click(); a.remove();
+        function initializeMap() {
+            if (mapInstance) { mapInstance.invalidateSize(); return; }
+            mapInstance = L.map('report-map').setView([defaultLat, defaultLng], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
+            mapMarker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(mapInstance);
+        }
+
+        function triggerHighAccuracyLocation() {
+            if (!navigator.geolocation) return;
+            navigator.geolocation.getCurrentPosition((pos) => {
+                const lat = pos.coords.latitude; const lng = pos.coords.longitude;
+                if (mapInstance && mapMarker) {
+                    const pt = new L.LatLng(lat, lng); mapMarker.setLatLng(pt); mapInstance.setView(pt, 16);
+                }
+                document.getElementById('flash-geo-coords').value = `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)} [Fix GPS]`;
+            });
         }
 
         function handleFlashPhoto(e) {
@@ -664,37 +789,25 @@
                 document.getElementById('img-flash-preview').src = reader.result;
                 document.getElementById('img-flash-preview').classList.remove('hidden');
                 document.getElementById('flash-photo-placeholder').classList.add('hidden');
-                document.getElementById('btn-flash-capture').className = "w-full bg-emerald-600 text-white rounded-xl h-24 flex flex-col items-center justify-center gap-1 shadow-sm";
-                document.getElementById('btn-flash-capture').innerHTML = '<i class="fa-solid fa-square-check text-2xl"></i><span class="text-[9px] font-bold uppercase">Photo Capturée</span>';
             }
             if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
         }
 
-        function selectFlashUrgency(l) {
-            currentUrgency = l;
-            document.querySelectorAll('.urg-node').forEach(n => n.className = "urg-node border border-slate-200 bg-white text-slate-700 font-bold py-2 rounded-xl text-xs transition");
-            const t = document.getElementById(`urg-${l.toLowerCase().charAt(0)}`);
-            if(l === 'Faible') t.className = "urg-node bg-emerald-600 text-white font-bold py-2 rounded-xl text-xs transition shadow-inner";
-            if(l === 'Moyen') t.className = "urg-node bg-amber-500 text-white font-bold py-2 rounded-xl text-xs transition shadow-inner";
-            if(l === 'Critique') t.className = "urg-node bg-red-600 text-white font-bold py-2 rounded-xl text-xs transition shadow-inner";
-        }
-
-        function submitFlashReport() {
-            if(!document.getElementById('flash-title').value.trim()) { alert("Indiquez le danger constaté."); return; }
-            switchScreen('scr-flash-success');
-        }
+        function submitFlashReport() { switchScreen('scr-flash-success'); }
 
         function resetAllForms() {
-            document.getElementById('reg-emp-name').value = ""; document.getElementById('reg-company').value = ""; document.getElementById('reg-tutor-name').value = "";
-            document.getElementById('flash-title').value = ""; document.getElementById('flash-desc').value = ""; document.getElementById('flash-camera-file').value = "";
-            document.getElementById('chk-module-2').checked = false; document.getElementById('chk-module-3').checked = false;
-            document.getElementById('img-flash-preview').classList.add('hidden'); document.getElementById('flash-photo-placeholder').classList.remove('hidden');
-            const btn = document.getElementById('btn-flash-capture');
-            btn.className = "w-full bg-restev-magenta text-white rounded-xl h-24 flex flex-col items-center justify-center gap-1 shadow-sm transition";
-            btn.innerHTML = '<i class="fa-solid fa-camera text-2xl"></i><span class="text-[9px] font-bold uppercase tracking-wider">Ouvrir l\'appareil</span>';
-            if (mapMarker && mapInstance) { mapMarker.setLatLng([defaultLat, defaultLng]); mapInstance.setView([defaultLat, defaultLng], 11); }
+            document.getElementById('reg-emp-name').value = ""; document.getElementById('reg-company').value = "";
+            if(document.getElementById('reg-tutor-name')) document.getElementById('reg-tutor-name').value = "";
+            document.getElementById('flash-title').value = "";
             setRole(currentUserRole);
             switchScreen('scr-dashboard');
+        }
+
+        function exportToPasseportPrevention() {
+            const struct = { schema: "PST-2026", uid: document.getElementById('attestation-id').innerText, worker: document.getElementById('lbl-view-emp').innerText };
+            const blob = "data:text/json;charset=utf-8 ashes," + encodeURIComponent(JSON.stringify(struct, null, 2));
+            const a = document.createElement('a'); a.setAttribute("href", blob); a.setAttribute("download", `attestation.json`);
+            a.click();
         }
     </script>
 </body>
