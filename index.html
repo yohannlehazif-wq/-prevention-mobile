@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RESTEV 85 - Signalement Risques</title>
+    <title>RESTEV 85 - Passeport Prévention</title>
     
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#2f6bb2">
@@ -12,295 +12,397 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        /* Couleurs personnalisées du logo RESTEV */
         .bg-restev-blue { background-color: #2f6bb2; }
         .text-restev-blue { color: #2f6bb2; }
         .bg-restev-magenta { background-color: #b8257b; }
         .text-restev-magenta { color: #b8257b; }
         .border-restev-magenta { border-color: #b8257b; }
         .bg-restev-teal { background-color: #69b3a5; }
+        
+        canvas { touch-action: none; }
+        
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; padding: 0; }
+            .print-card { shadow: none; border: 1px solid #ccc; }
+        }
     </style>
 </head>
-<body class="bg-gray-100 font-sans antialiased pb-24 text-gray-800">
+<body class="bg-gray-50 font-sans antialiased text-gray-800 pb-12">
 
-    <section id="screen-accueil" class="block">
-        <header class="bg-restev-blue text-white p-4 shadow-md text-center">
-            <h1 class="text-xl font-bold tracking-wide">RESTEV 85</h1>
-            <p class="text-xs opacity-90">Prévention santé au travail</p>
-        </header>
+    <header class="bg-restev-blue text-white p-4 shadow-md sticky top-0 z-50 flex justify-between items-center no-print">
+        <div>
+            <h1 class="text-lg font-bold tracking-wide">RESTEV 85</h1>
+            <p class="text-xs opacity-90"><i class="fa-solid fa-gavel mr-1"></i> Conformité Art. L4141-2</p>
+        </div>
+        <span class="bg-white text-restev-blue text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">PST 2026-2030</span>
+    </header>
 
-        <main class="p-6 max-w-md mx-auto flex flex-col items-center">
-            <h2 class="text-xl font-bold text-gray-700 text-center my-6">RESTEV 85 - Signalement Risques</h2>
-            
-            <button onclick="switchScreen('screen-form')" class="bg-restev-magenta hover:opacity-90 text-white rounded-full w-44 h-44 shadow-2xl flex flex-col items-center justify-center gap-2 border-4 border-white transition transform active:scale-95 my-4">
-                <i class="fa-solid fa-square-check text-4xl"></i>
-                <span class="text-sm font-bold tracking-wider text-center px-4 uppercase leading-tight">Nouveau Signalement</span>
-            </button>
+    <main class="p-4 max-w-xl mx-auto">
 
-            <div class="w-full mt-8 space-y-4">
-                <div class="bg-white rounded-xl shadow-sm p-4 border-b-2 border-yellow-500">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="font-semibold text-sm text-gray-600">Signalements en cours</span>
-                        <span class="font-bold text-gray-800 text-sm">4</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-yellow-500 h-2 rounded-full" style="width: 35%"></div>
+        <section id="step-1" class="space-y-4">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="p-2 bg-blue-50 text-restev-blue rounded-lg text-xl"><i class="fa-solid fa-user-shield"></i></div>
+                    <div>
+                        <h2 class="font-bold text-gray-800">1. Identification du Travailleur</h2>
+                        <p class="text-xs text-gray-500">Prise de poste : Accueil sécurité obligatoire dès le 1er jour.</p>
                     </div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-sm p-4 border-b-2 border-cool-teal">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="font-semibold text-sm text-gray-600">Résolus</span>
-                        <span class="font-bold text-gray-800 text-sm">12</span>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nom & Prénom du salarié</label>
+                        <input type="text" id="emp-name" placeholder="Ex: Jean Dupont" class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue outline-none bg-gray-50">
                     </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-[#69b3a5] h-2 rounded-full" style="width: 75%"></div>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </section>
-
-
-    <section id="screen-form" class="hidden">
-        <header class="bg-restev-blue text-white p-4 shadow-md flex items-center gap-4">
-            <button onclick="switchScreen('screen-accueil')" class="text-white text-lg focus:outline-none">
-                <i class="fa-solid fa-arrow-left"></i>
-            </button>
-            <h1 class="text-lg font-bold">Nouveau Signalement</h1>
-        </header>
-
-        <main class="p-4 max-w-md mx-auto space-y-4">
-            <div>
-                <label class="block text-sm font-bold text-gray-700 mb-1">Titre du problème</label>
-                <input type="text" id="input-title" placeholder="Ex: Câble dénudé, Sol glissant..." class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-restev-blue outline-none bg-white">
-            </div>
-
-            <div>
-                <label class="block text-sm font-bold text-gray-700 mb-1">Localisation</label>
-                <div class="grid grid-cols-3 gap-3">
-                    <div class="col-span-1 bg-gray-200 rounded-lg h-24 flex items-center justify-center border border-gray-300 overflow-hidden relative">
-                        <i class="fa-solid fa-location-dot text-restev-blue text-2xl z-10"></i>
-                        <div class="absolute inset-0 opacity-40 bg-[radial-gradient(#ccc_1px,transparent_1px)] [background-size:16px_16px] bg-white"></div>
-                    </div>
-                    <div class="col-span-2 flex flex-col justify-between gap-2">
-                        <button onclick="getGeoloc()" id="btn-geoloc" class="w-full bg-[#00a3b4] hover:opacity-90 text-white font-bold py-2 px-3 rounded-lg text-xs tracking-wider uppercase shadow-sm flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-location-crosshairs"></i> Me géolocaliser
-                        </button>
-                        <input type="text" id="input-location" placeholder="Adresse ou coordonnées GPS" class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-restev-blue outline-none bg-white">
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Photo</label>
-                    <input type="file" id="camera-file" accept="image/*" capture="environment" class="hidden" onchange="previewImage(event)">
                     
-                    <button onclick="document.getElementById('camera-file').click()" id="btn-capture" class="w-full bg-restev-magenta text-white rounded-lg h-28 flex flex-col items-center justify-center gap-2 shadow-sm border border-transparent active:scale-95 transition">
-                        <i class="fa-solid fa-camera text-3xl"></i>
-                        <span class="text-xs font-bold uppercase tracking-wider">Prendre Photo</span>
-                    </button>
-                </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Statut du travailleur (Public ciblé)</label>
+                        <select id="emp-status" class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue outline-none bg-gray-50 font-medium">
+                            <option value="interim">Intérimaire (Sur-exposition statistique)</option>
+                            <option value="apprenti_stagiaire">Jeune travailleur (Apprenti / Stagiaire)</option>
+                            <option value="nouvel_arrivant">Nouvel arrivant (CDI / CDD)</option>
+                            <option value="saisonnier">Travailleur Saisonnier</option>
+                        </select>
+                    </div>
 
-                <div>
-                    <label class="block text-sm font-bold text-gray-500 mb-1 opacity-0">Aperçu</label>
-                    <div id="photo-preview-container" class="w-full h-28 border-2 border-dashed border-amber-300 bg-amber-50 rounded-lg flex items-center justify-center text-center p-2 overflow-hidden">
-                        <div id="preview-placeholder" class="text-amber-600 flex flex-col items-center gap-1">
-                            <i class="fa-solid fa-image text-2xl opacity-60"></i>
-                            <span class="text-[10px] font-medium">Aucune photo capturée</span>
-                        </div>
-                        <img id="photo-preview" class="hidden w-full h-full object-cover rounded-md">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Entreprise Utilisatrice (Adhérente RESTEV)</label>
+                        <input type="text" id="company-name" placeholder="Ex: Entreprise Vendéenne SAS" class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue outline-none bg-gray-50">
                     </div>
                 </div>
             </div>
 
-            <div>
-                <label class="block text-sm font-bold text-gray-700 mb-1">Description du problème</label>
-                <textarea id="input-desc" rows="3" placeholder="Décrivez la situation dangereuse..." class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-restev-blue outline-none bg-white"></textarea>
-            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="p-2 bg-emerald-50 text-emerald-600 rounded-lg text-xl"><i class="fa-solid fa-list-check"></i></div>
+                    <div>
+                        <h2 class="font-bold text-gray-800">2. Contenu de la Formation Délivrée</h2>
+                        <p class="text-xs text-gray-500">Cocher les modules validés sur le terrain après explications.</p>
+                    </div>
+                </div>
 
-            <div>
-                <label class="block text-sm font-bold text-gray-700 mb-1">Niveau d'urgence</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <button onclick="setUrgency('faible')" id="urg-faible" class="urg-btn border border-gray-300 bg-white text-gray-700 font-semibold py-2 rounded-lg text-sm transition">Faible</button>
-                    <button onclick="setUrgency('moyen')" id="urg-moyen" class="urg-btn border border-gray-300 bg-white text-gray-700 font-semibold py-2 rounded-lg text-sm transition">Moyen</button>
-                    <button onclick="setUrgency('critique')" id="urg-critique" class="urg-btn border border-gray-300 bg-white text-gray-700 font-semibold py-2 rounded-lg text-sm transition">Critique</button>
+                <div class="space-y-3">
+                    <label class="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 cursor-pointer border border-gray-100 transition">
+                        <input type="checkbox" id="chk-risques" class="mt-1 w-5 h-5 text-restev-blue rounded border-gray-300 focus:ring-restev-blue">
+                        <span class="text-xs text-gray-700 leading-normal"><strong>Risques du poste & EPI :</strong> Prise de connaissance des risques spécifiques au poste de travail affecté et port effectif des Équipements de Protection Individuelle requis.</span>
+                    </label>
+
+                    <label class="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 cursor-pointer border border-gray-100 transition">
+                        <input type="checkbox" id="chk-secours" class="mt-1 w-5 h-5 text-restev-blue rounded border-gray-300 focus:ring-restev-blue">
+                        <span class="text-xs text-gray-700 leading-normal"><strong>Secours & Évacuation :</strong> Localisation exacte des issues de secours, du point de rassemblement et identification des Sauveteurs Secouristes du Travail (SST).</span>
+                    </label>
+
+                    <label class="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 cursor-pointer border border-gray-100 transition">
+                        <input type="checkbox" id="chk-circulation" class="mt-1 w-5 h-5 text-restev-blue rounded border-gray-300 focus:ring-restev-blue">
+                        <span class="text-xs text-gray-700 leading-normal"><strong>Règles de circulation :</strong> Assimilation du plan de circulation de l'entreprise (flux piétons, engins de manutention, zones de stockage).</span>
+                    </label>
                 </div>
             </div>
 
-            <button onclick="submitSignalement()" class="w-full bg-restev-blue hover:bg-opacity-90 text-white font-bold py-3 px-4 rounded-xl shadow-md transition transform active:scale-95 flex justify-center items-center gap-2 pt-4">
-                <i class="fa-solid fa-paper-plane"></i> Transmettre le signalement
+            <button onclick="goToSignatures()" class="w-full bg-restev-blue hover:opacity-95 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition transform active:scale-95 flex justify-center items-center gap-2">
+                Passer aux émargements réglementaires <i class="fa-solid fa-arrow-right text-xs"></i>
             </button>
-        </main>
-    </section>
+        </section>
 
+        <section id="step-2" class="hidden space-y-4">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-5">
+                <div class="flex items-center gap-3">
+                    <button onclick="showStep(1)" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-arrow-left"></i></button>
+                    <div>
+                        <h2 class="font-bold text-gray-800">3. Signature Électronique Commune</h2>
+                        <p class="text-xs text-gray-500">Garantit la force probante du document devant l'Inspection du Travail.</p>
+                    </div>
+                </div>
 
-    <section id="screen-success" class="hidden">
-        <header class="bg-restev-blue text-white p-4 shadow-md text-center font-bold tracking-wide uppercase">
-            Signalement Transmis
-        </header>
+                <div class="border border-gray-200 rounded-xl p-3 bg-gray-50">
+                    <p class="text-xs font-bold text-gray-700 mb-2"><i class="fa-solid fa-pen text-restev-magenta mr-1"></i> Signature du Salarié Arrivant :</p>
+                    <div class="bg-white border rounded-lg overflow-hidden">
+                        <canvas id="sig-emp" class="w-full h-32 bg-white"></canvas>
+                    </div>
+                    <div class="flex justify-end mt-1">
+                        <button onclick="clearCanvas('sig-emp')" class="text-[11px] text-red-500 font-semibold"><i class="fa-solid fa-eraser"></i> Effacer</button>
+                    </div>
+                </div>
 
-        <main class="p-4 max-w-md mx-auto flex flex-col items-center">
-            <div class="text-center my-6 space-y-2">
-                <h2 class="text-2xl font-black text-gray-800 tracking-wide">SUCCÈS !</h2>
-                <p class="text-md text-emerald-600 font-bold"><i class="fa-solid fa-circle-check mr-1"></i> Votre signalement a bien été transmis.</p>
-            </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nom & Prénom du Tuteur / Manager</label>
+                    <input type="text" id="tutor-name" placeholder="Ex: Marc Lemaire (Responsable Site)" class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue outline-none bg-gray-50">
+                </div>
 
-            <div class="w-full bg-gray-200 border rounded-xl overflow-hidden shadow-inner mb-4 relative h-48">
-                <div class="absolute inset-0 bg-cover bg-center opacity-90" style="background-image: url('https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=600&q=80')"></div>
-                <div class="absolute inset-0 bg-black/10"></div>
-                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10">
-                    <i class="fa-solid fa-location-pin text-restev-magenta text-4xl drop-shadow-md animate-bounce"></i>
-                    <span class="bg-white/90 text-gray-800 text-[10px] px-2 py-0.5 rounded shadow font-bold mt-1">La Roche-sur-Yon</span>
+                <div class="border border-gray-200 rounded-xl p-3 bg-gray-50">
+                    <p class="text-xs font-bold text-gray-700 mb-2"><i class="fa-solid fa-pen text-restev-blue mr-1"></i> Signature du Tuteur / Employeur :</p>
+                    <div class="bg-white border rounded-lg overflow-hidden">
+                        <canvas id="sig-tut" class="w-full h-32 bg-white"></canvas>
+                    </div>
+                    <div class="flex justify-end mt-1">
+                        <button onclick="clearCanvas('sig-tut')" class="text-[11px] text-red-500 font-semibold"><i class="fa-solid fa-eraser"></i> Effacer</button>
+                    </div>
                 </div>
             </div>
 
-            <p class="text-xs text-gray-500 text-center px-4 mb-6">
-                Un e-mail de notification contenant la géolocalisation exacte et la photo a été envoyé directement au référent sécurité de l'entreprise.
-            </p>
+            <button onclick="generateAttestation()" class="w-full bg-restev-magenta hover:opacity-95 text-white font-bold py-4 px-4 rounded-xl shadow-lg transition transform active:scale-95 flex justify-center items-center gap-2">
+                <i class="fa-solid fa-file-signature"></i> Verrouiller & Clôturer le parcours
+            </button>
+        </section>
 
-            <div class="w-full flex flex-col gap-3">
-                <button onclick="switchScreen('screen-accueil')" class="w-full bg-[#00a3b4] text-white font-bold py-3 px-4 rounded-xl shadow text-sm tracking-wider uppercase">
-                    Voir détails
+        <section id="step-3" class="hidden space-y-4">
+            
+            <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200 print-card space-y-6" id="attestation-document">
+                <div class="flex justify-between items-start border-b pb-4 border-gray-200">
+                    <div>
+                        <h2 class="text-md font-black text-gray-900 uppercase tracking-wide">Attestation de Formation Sécurité</h2>
+                        <p class="text-[11px] text-gray-500">Délivrée en application de l'Article L4141-2 du Code du Travail</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[10px] font-mono bg-gray-100 text-gray-600 px-2 py-1 rounded block" id="doc-id">ID: RE-XXXXXXXX</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 text-xs">
+                    <div>
+                        <p class="text-gray-400 font-semibold">ENTREPRISE EMPLOYEUR</p>
+                        <p class="font-bold text-gray-800 uppercase" id="lbl-company">-</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400 font-semibold">DATE & HEURE DU VISA</p>
+                        <p class="font-bold text-gray-800" id="lbl-date">-</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400 font-semibold">SALARIÉ (PUBLIC VULNÉRABLE)</p>
+                        <p class="font-bold text-gray-800" id="lbl-emp">-</p>
+                        <p class="text-[10px] text-restev-magenta font-medium" id="lbl-status">-</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400 font-semibold">REPRÉSENTANT / TUTEUR</p>
+                        <p class="font-bold text-gray-800" id="lbl-tutor">-</p>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    <p class="text-[11px] font-bold text-gray-500 uppercase mb-2 tracking-wider">Compétences Sécurité Validées sur Site :</p>
+                    <ul class="text-xs space-y-1.5 text-gray-700" id="lbl-modules">
+                        </ul>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 pt-2">
+                    <div class="text-center">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Visa Émargement Salarié</p>
+                        <div class="border rounded-lg bg-gray-50 p-1 flex items-center justify-center h-20">
+                            <img id="img-sig-emp" class="max-h-full max-w-full object-contain">
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase mb-1">Visa Émargement Tuteur</p>
+                        <div class="border rounded-lg bg-gray-50 p-1 flex items-center justify-center h-20">
+                            <img id="img-sig-tut" class="max-h-full max-w-full object-contain">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-t border-dashed pt-3 text-center">
+                    <p class="text-[10px] text-emerald-600 font-bold"><i class="fa-solid fa-shield-halved"></i> Document conforme aux exigences d'audit de certification du RESTEV 85</p>
+                </div>
+            </div>
+
+            <div class="space-y-2 no-print">
+                <button onclick="window.print()" class="w-full bg-emerald-600 text-white font-bold py-3 px-4 rounded-xl shadow text-sm tracking-wider uppercase flex justify-center items-center gap-2">
+                    <i class="fa-solid fa-print"></i> Imprimer / Enregistrer en PDF (Preuve)
                 </button>
-                <button onclick="resetForm(); switchScreen('screen-accueil');" class="w-full bg-restev-blue text-white font-bold py-3 px-4 rounded-xl shadow text-sm tracking-wider uppercase">
-                    Retour à l'accueil
+                
+                <button onclick="exportToPasseportPrevention()" class="w-full bg-restev-blue text-white font-bold py-3 px-4 rounded-xl shadow text-xs tracking-wider uppercase flex justify-center items-center gap-2">
+                    <i class="fa-solid fa-file-export"></i> Exporter au Format Passeport Prévention (JSON)
+                </button>
+
+                <button onclick="location.reload()" class="w-full bg-gray-200 text-gray-700 font-bold py-2.5 px-4 rounded-xl text-xs uppercase text-center block">
+                    Créer un nouvel accueil
                 </button>
             </div>
-        </main>
-    </section>
+        </section>
 
-
-    <nav class="fixed bottom-0 inset-x-0 bg-white border-t border-gray-200 h-16 flex items-center justify-around text-gray-400 z-50">
-        <button onclick="switchScreen('screen-accueil')" class="flex flex-col items-center gap-1 focus:outline-none text-restev-blue">
-            <i class="fa-solid fa-house text-lg"></i>
-            <span class="text-[10px] font-bold">Accueil</span>
-        </button>
-        <button class="flex flex-col items-center gap-1 focus:outline-none cursor-not-allowed opacity-50">
-            <i class="fa-solid fa-map-location-dot text-lg"></i>
-            <span class="text-[10px] font-medium">Carte</span>
-        </button>
-        <button class="flex flex-col items-center gap-1 focus:outline-none cursor-not-allowed opacity-50">
-            <i class="fa-solid fa-clock-rotate-left text-lg"></i>
-            <span class="text-[10px] font-medium">Historique</span>
-        </button>
-        <button class="flex flex-col items-center gap-1 focus:outline-none cursor-not-allowed opacity-50">
-            <i class="fa-solid fa-user text-lg"></i>
-            <span class="text-[10px] font-medium">Profil</span>
-        </button>
-    </nav>
-
+    </main>
 
     <script>
-        let selectedUrgency = '';
-
-        // Changement d'écran
-        function switchScreen(screenId) {
-            document.getElementById('screen-accueil').classList.add('hidden');
-            document.getElementById('screen-form').classList.add('hidden');
-            document.getElementById('screen-success').classList.add('hidden');
-            
-            document.getElementById(screenId).classList.remove('hidden');
+        // Switcher d'écran simple
+        function showStep(stepNum) {
+            document.getElementById('step-1').classList.add('hidden');
+            document.getElementById('step-2').classList.add('hidden');
+            document.getElementById('step-3').classList.add('hidden');
+            document.getElementById(`step-${stepNum}`).classList.remove('hidden');
             window.scrollTo(0,0);
         }
 
-        // Utilisation de l'API de géolocalisation HTML5 native
-        function getGeoloc() {
-            const locInput = document.getElementById('input-location');
-            const btn = document.getElementById('btn-geoloc');
+        // Vérification des données initiales avant émargement
+        function goToSignatures() {
+            const empName = document.getElementById('emp-name').value.trim();
+            const compName = document.getElementById('company-name').value.trim();
             
-            if (navigator.geolocation) {
-                btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Recherche...';
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const lat = position.coords.latitude.toFixed(5);
-                        const lng = position.coords.longitude.toFixed(5);
-                        // Remplissage automatique avec les coordonnées réelles détectées par le smartphone
-                        locInput.value = `Lat: ${lat}, Lng: ${lng} (Vendée, 85)`;
-                        btn.innerHTML = '<i class="fa-solid fa-check"></i> Géolocalisé';
-                        btn.classList.replace('bg-[#00a3b4]', 'bg-emerald-600');
-                    },
-                    (error) => {
-                        // Fallback si l'utilisateur refuse l'autorisation
-                        locInput.value = "La Roche-sur-Yon (Géoloc manuelle)";
-                        btn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Activer GPS';
-                    }
-                );
-            } else {
-                locInput.value = "Géolocalisation non supportée";
+            if(!empName || !compName) {
+                alert("Veuillez renseigner le nom du salarié et de l'entreprise adhérente pour assurer la validité juridique.");
+                return;
             }
+            
+            showStep(2);
+            // Ajustement des Canvas à l'ouverture de l'écran
+            setTimeout(() => {
+                initCanvas('sig-emp');
+                initCanvas('sig-tut');
+            }, 100);
         }
 
-        // Gestion de l'affichage de l'image capturée (Camera native)
-        function previewImage(event) {
-            const reader = new FileReader();
-            reader.onload = function() {
-                const output = document.getElementById('photo-preview');
-                const placeholder = document.getElementById('preview-placeholder');
-                
-                output.src = reader.result;
-                output.classList.remove('hidden');
-                placeholder.classList.add('hidden');
-                
-                // Style visuel du bouton après photo prise
-                const btnCapture = document.getElementById('btn-capture');
-                btnCapture.classList.replace('bg-restev-magenta', 'bg-emerald-600');
-                btnCapture.innerHTML = '<i class="fa-solid fa-circle-check text-3xl"></i><span class="text-xs font-bold uppercase">Photo Enregistrée</span>';
-            }
-            if(event.target.files[0]) {
-                reader.readAsDataURL(event.target.files[0]);
-            }
+        // --- GESTION TECHNIQUE DES CANVASES DE SIGNATURE ---
+        const canvases = {};
+        const contexts = {};
+        const isDrawing = {};
+
+        function initCanvas(id) {
+            const canvas = document.getElementById(id);
+            canvases[id] = canvas;
+            contexts[id] = canvas.getContext('2d');
+            isDrawing[id] = false;
+
+            // Résolution responsive du canvas
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+
+            // Attribution des écouteurs événements (Souris + Tactile mobile)
+            canvas.addEventListener('mousedown', (e) => startDraw(e, id));
+            canvas.addEventListener('mousemove', (e) => draw(e, id));
+            canvas.addEventListener('mouseup', () => stopDraw(id));
+            canvas.addEventListener('mouseleave', () => stopDraw(id));
+
+            canvas.addEventListener('touchstart', (e) => startDraw(e, id));
+            canvas.addEventListener('touchmove', (e) => draw(e, id));
+            canvas.addEventListener('touchend', () => stopDraw(id));
         }
 
-        // Gestion de la sélection du niveau d'urgence
-        function setUrgency(level) {
-            selectedUrgency = level;
-            // Réinitialiser le style de tous les boutons
-            document.querySelectorAll('.urg-btn').forEach(btn => {
-                btn.className = "urg-btn border border-gray-300 bg-white text-gray-700 font-semibold py-2 rounded-lg text-sm transition";
+        function startDraw(e, id) {
+            isDrawing[id] = true;
+            contexts[id].beginPath();
+            const pos = getPos(e, canvases[id]);
+            contexts[id].moveTo(pos.x, pos.y);
+        }
+
+        function draw(e, id) {
+            if (!isDrawing[id]) return;
+            e.preventDefault();
+            const pos = getPos(e, canvases[id]);
+            contexts[id].lineWidth = 2.5;
+            contexts[id].lineCap = 'round';
+            contexts[id].strokeStyle = '#1e293b';
+            contexts[id].lineTo(pos.x, pos.y);
+            contexts[id].stroke();
+        }
+
+        function stopDraw(id) {
+            isDrawing[id] = false;
+        }
+
+        function getPos(e, canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        function clearCanvas(id) {
+            const canvas = canvases[id];
+            contexts[id].clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // --- GÉNÉRATION DU DOCUMENT D'ATTESTATION ---
+        function generateAttestation() {
+            const tutorName = document.getElementById('tutor-name').value.trim();
+            if(!tutorName) {
+                alert("La présence et le nom du tuteur sont obligatoires pour valider le parcours réglementaire.");
+                return;
+            }
+
+            // Capture de la date actuelle
+            const now = new Date();
+            const dateStr = now.toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+            
+            // Génération d'un ID de preuve unique (Simulé pour l'archivage)
+            const cryptoId = "RE-85-" + Math.floor(100000 + Math.random() * 900000);
+
+            // Remplissage des étiquettes de l'attestation finale
+            document.getElementById('doc-id').innerText = cryptoId;
+            document.getElementById('lbl-company').innerText = document.getElementById('company-name').value;
+            document.getElementById('lbl-date').innerText = dateStr;
+            document.getElementById('lbl-emp').innerText = document.getElementById('emp-name').value;
+            document.getElementById('lbl-tutor').innerText = tutorName;
+
+            // Statut lisible
+            const selectStatus = document.getElementById('emp-status');
+            document.getElementById('lbl-status').innerText = "Profil : " + selectStatus.options[selectStatus.selectedIndex].text;
+
+            // Listing dynamique des modules cochés
+            const modulesList = document.getElementById('lbl-modules');
+            modulesList.innerHTML = '';
+            
+            const checkBoxes = [
+                { id: 'chk-risques', label: 'Risques Spécifiques au Poste & Dotation EPI' },
+                { id: 'chk-secours', label: 'Procédures Alerte, Secours & Évacuation Incendie' },
+                { id: 'chk-circulation', label: 'Règles de Circulation Internes & Flux Logistiques' }
+            ];
+
+            checkBoxes.forEach(item => {
+                const isChecked = document.getElementById(item.id).checked;
+                const icon = isChecked ? '<i class="fa-solid fa-circle-check text-emerald-500 mr-2"></i>' : '<i class="fa-solid fa-circle-xmark text-red-400 mr-2"></i>';
+                const style = isChecked ? 'font-medium text-gray-800' : 'line-through text-gray-400 opacity-60';
+                
+                modulesList.innerHTML += `<li class="${style}">${icon}${item.label}</li>`;
             });
 
-            // Appliquer le style actif selon la maquette
-            const activeBtn = document.getElementById(`urg-${level}`);
-            if (level === 'faible') activeBtn.className = "urg-btn bg-emerald-600 text-white font-bold py-2 rounded-lg text-sm transition shadow-sm";
-            if (level === 'moyen') activeBtn.className = "urg-btn bg-amber-500 text-white font-bold py-2 rounded-lg text-sm transition shadow-sm";
-            if (level === 'critique') activeBtn.className = "urg-btn bg-red-600 text-white font-bold py-2 rounded-lg text-sm transition shadow-sm";
+            // Conversion des signatures Canvas en images img src pour impression/affichage final
+            document.getElementById('img-sig-emp').src = canvases['sig-emp'].toDataURL();
+            document.getElementById('img-sig-tut').src = canvases['sig-tut'].toDataURL();
+
+            // Passage au volet d'attestation
+            showStep(3);
         }
 
-        // Soumission du formulaire
-        function submitSignalement() {
-            // Ici tu pourras injecter ta logique Supabase pour insérer les données en base :
-            // const title = document.getElementById('input-title').value;
-            // const coords = document.getElementById('input-location').value;
-            // const photoBase64 = document.getElementById('photo-preview').src;
-            // const description = document.getElementById('input-desc').value;
-
-            switchScreen('screen-success');
-        }
-
-        // Reset du formulaire pour le prochain signalement
-        function resetForm() {
-            document.getElementById('input-title').value = '';
-            document.getElementById('input-location').value = '';
-            document.getElementById('input-desc').value = '';
-            document.getElementById('camera-file').value = '';
+        // --- EXPORT COMPATIBLE PASSEPORT PRÉVENTION (JSON) ---
+        function exportToPasseportPrevention() {
+            const selectStatus = document.getElementById('emp-status');
             
-            const output = document.getElementById('photo-preview');
-            const placeholder = document.getElementById('preview-placeholder');
-            output.src = '';
-            output.classList.add('hidden');
-            placeholder.classList.remove('hidden');
+            // Création de l'objet standardisé attendu par un système tiers ou API Supabase
+            const passeportData = {
+                version_schema: "2026.1",
+                certification_type: "ACCUEIL_SECURITE_PREMIER_JOUR",
+                legal_reference: "Article L4141-2 du Code du Travail",
+                attestation_id: document.getElementById('doc-id').innerText,
+                date_validation: new Date().toISOString(),
+                employeur: {
+                    raison_sociale: document.getElementById('company-name').value,
+                    service_prevention_rattachement: "RESTEV 85"
+                },
+                salarie: {
+                    nom_prenom: document.getElementById('emp-name').value,
+                    categorie_vulnerabilite: selectStatus.value
+                },
+                formateur_tuteur: {
+                    nom_prenom: document.getElementById('tutor-name').value
+                },
+                competences_validees: {
+                    risques_poste_epi: document.getElementById('chk-risques').checked,
+                    secours_evacuation: document.getElementById('chk-secours').checked,
+                    regles_circulation: document.getElementById('chk-circulation').checked
+                }
+            };
 
-            const btnCapture = document.getElementById('btn-capture');
-            btnCapture.className = "w-full bg-restev-magenta text-white rounded-lg h-28 flex flex-col items-center justify-center gap-2 shadow-sm border border-transparent active:scale-95 transition";
-            btnCapture.innerHTML = '<i class="fa-solid fa-camera text-3xl"></i><span class="text-xs font-bold uppercase tracking-wider">Prendre Photo</span>';
-
-            const btnGeoloc = document.getElementById('btn-geoloc');
-            btnGeoloc.className = "w-full bg-[#00a3b4] hover:opacity-90 text-white font-bold py-2 px-3 rounded-lg text-xs tracking-wider uppercase shadow-sm flex items-center justify-center gap-2";
-            btnGeoloc.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i> Me géolocaliser';
-
-            setUrgency('');
+            // Téléchargement immédiat du fichier de données JSON au clic
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(passeportData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `passeport_prevention_${document.getElementById('emp-name').value.replace(/\s+/g, '_')}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
         }
     </script>
 </body>
