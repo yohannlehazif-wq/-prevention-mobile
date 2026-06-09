@@ -14,7 +14,6 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         .bg-restev-blue { background-color: #2f6bb2; }
@@ -94,6 +93,7 @@
             </div>
         </section>
 
+
         <section id="scr-dashboard" class="hidden space-y-6 no-print">
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
                 <h2 id="dash-title" class="text-lg font-bold text-slate-800 mb-1">Pilote de Prévention Vendée</h2>
@@ -143,13 +143,15 @@
             <div id="manager-only-panel" class="hidden space-y-4">
                 <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
                     <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                        <span><i class="fa-solid fa-user-clock text-restev-blue mr-1"></i> Attentes de Visa Cloud (QCM)</span>
+                        <span><i class="fa-solid fa-user-clock text-restev-blue mr-1"></i> Attentes de Visa (QCM terminés)</span>
                         <span id="pending-count" class="bg-blue-100 text-restev-blue px-1.5 py-0.5 rounded text-[9px] font-bold">0 À VISER</span>
                     </h4>
-                    <div id="pending-onboardings-list" class="space-y-2"></div>
+                    <div id="pending-onboardings-list" class="space-y-2">
+                        </div>
                 </div>
             </div>
         </section>
+
 
         <section id="scr-qr-display" class="hidden space-y-5 text-center py-4 no-print">
             <div class="flex items-center gap-2 mb-2 text-left">
@@ -166,6 +168,7 @@
             </div>
             <button onclick="switchScreen('scr-dashboard')" class="w-full bg-slate-800 text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider">Fermer</button>
         </section>
+
 
         <section id="scr-onboarding-1" class="hidden space-y-4 no-print">
             <div class="flex items-center gap-2 mb-2">
@@ -240,6 +243,7 @@
             </button>
         </section>
 
+
         <section id="scr-onboarding-2" class="hidden space-y-4 no-print">
             <div class="flex items-center gap-2 mb-2">
                 <button onclick="switchScreen('scr-onboarding-1')" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-arrow-left"></i></button>
@@ -250,7 +254,7 @@
                 <div class="space-y-1">
                     <p class="text-xs font-bold text-slate-700 flex items-center gap-1"><i class="fa-solid fa-pen text-restev-magenta"></i> Signature du Salarié Nouvel Arrivant :</p>
                     <div class="border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
-                        <canvas id="canv-employee" class="w-full h-28 bg-white"></canvas>
+                        <canvas id="canv-employee" class="w-full h-26 bg-white"></canvas>
                     </div>
                     <div class="text-right">
                         <button onclick="clearSign('canv-employee')" class="text-[10px] text-red-500 font-bold"><i class="fa-solid fa-eraser"></i> Effacer</button>
@@ -265,7 +269,7 @@
                     <div class="space-y-1">
                         <p class="text-xs font-bold text-slate-700 flex items-center gap-1"><i class="fa-solid fa-pen text-restev-blue"></i> Signature du Manager / Tuteur :</p>
                         <div class="border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
-                            <canvas id="canv-tutor" class="w-full h-28 bg-white"></canvas>
+                            <canvas id="canv-tutor" class="w-full h-26 bg-white"></canvas>
                         </div>
                         <div class="text-right">
                             <button onclick="clearSign('canv-tutor')" class="text-[10px] text-red-500 font-bold"><i class="fa-solid fa-eraser"></i> Effacer</button>
@@ -275,13 +279,14 @@
             </div>
 
             <button id="btn-employee-submit" onclick="submitToManagerQueue()" class="hidden w-full bg-restev-blue text-white font-bold py-4 px-4 rounded-xl shadow-lg flex justify-center items-center gap-2 text-sm uppercase tracking-wider">
-                <i class="fa-solid fa-paper-plane"></i> Transmettre au Cloud Responsable
+                <i class="fa-solid fa-paper-plane"></i> Transmettre au Responsable
             </button>
 
             <button id="btn-manager-finalize" onclick="processFinalAttestation()" class="hidden w-full bg-restev-magenta text-white font-bold py-4 px-4 rounded-xl shadow-lg flex justify-center items-center gap-2 text-sm uppercase tracking-wider">
                 <i class="fa-solid fa-lock"></i> Verrouiller & Valider en direct
             </button>
         </section>
+
 
         <section id="scr-manager-review" class="hidden space-y-4 no-print">
             <div class="flex items-center gap-2 mb-2">
@@ -294,7 +299,9 @@
                     <h3 class="text-slate-400 font-bold uppercase text-[10px]">Résultats de l'évaluation</h3>
                     <span id="rev-qcm-score-badge" class="font-black px-2.5 py-1 rounded-full text-xs">Score : - / 3</span>
                 </div>
-                <div id="rev-qcm-details" class="space-y-2 text-xs"></div>
+                
+                <div id="rev-qcm-details" class="space-y-2 text-xs">
+                    </div>
             </div>
 
             <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3 text-xs">
@@ -317,7 +324,7 @@
                 <div class="space-y-1">
                     <p class="text-xs font-bold text-slate-700">Signature Écran du Manager :</p>
                     <div class="border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
-                        <canvas id="canv-tutor-rev" class="w-full h-28 bg-white"></canvas>
+                        <canvas id="canv-tutor-rev" class="w-full h-26 bg-white"></canvas>
                     </div>
                     <div class="text-right">
                         <button onclick="clearSign('canv-tutor-rev')" class="text-[10px] text-red-500 font-bold"><i class="fa-solid fa-eraser"></i> Effacer</button>
@@ -330,6 +337,7 @@
             </button>
         </section>
 
+
         <section id="scr-employee-success" class="hidden space-y-4 no-print text-center py-6">
             <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto border border-blue-100">
                 <i class="fa-solid fa-paper-plane text-restev-blue text-4xl"></i>
@@ -341,6 +349,7 @@
             </div>
             <button onclick="resetAllForms()" class="w-full bg-slate-800 text-white font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider">Retour</button>
         </section>
+
 
         <section id="scr-attestation" class="hidden space-y-4">
             <div id="print-zone" class="bg-white rounded-2xl p-6 shadow-md border border-slate-200 print-card space-y-5">
@@ -403,6 +412,7 @@
                 <button onclick="resetAllForms()" class="w-full bg-slate-200 text-slate-700 font-bold py-2.5 px-4 rounded-xl text-xs uppercase text-center block">Retour</button>
             </div>
         </section>
+
 
         <section id="scr-flash-report" class="hidden space-y-4 no-print">
             <div class="flex items-center gap-2 mb-2">
@@ -471,12 +481,6 @@
     </nav>
 
     <script>
-        // CONFIGURATION SUPABASE INITIALISÉE EN DIRECT
-        const SUPABASE_URL = "https://qhlwfclagaurfhanqmoi.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFobHdmY2xhZ2F1cmZoYW5xbW9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMjE1MDAsImV4cCI6MjA5NjU5NzUwMH0.sHli3I0Gk63Zh_weZ0y_DWSB6LTTJFSCyIfgWiRjhEU";
-        
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
         let currentUserRole = "";
         let mapInstance = null;
         let mapMarker = null;
@@ -484,10 +488,11 @@
         
         const defaultLat = 46.6705;
         const defaultLng = -1.4265;
+
+        // Réponses correctes attendues pour le QCM
         const qcmCorrectAnswers = { q1: "B", q2: "A", q3: "B" };
-        
-        let pendingOnboardings = [];
-        let realtimeChannel = null;
+
+        let pendingOnboardings = JSON.parse(localStorage.getItem('restev_pending')) || [];
 
         function setRole(role) {
             currentUserRole = role;
@@ -514,9 +519,7 @@
                 tutorBlock.classList.remove('hidden');
                 btnEmp.classList.add('hidden');
                 btnMngr.classList.remove('hidden');
-                
-                fetchPendingOnboardings();
-                initRealtimeListener();
+                renderPendingList();
             } else {
                 badge.innerText = "Profil : Salarié";
                 badge.className = "cursor-pointer bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded border border-blue-400 uppercase tracking-wide";
@@ -529,16 +532,10 @@
                 tutorBlock.classList.add('hidden');
                 btnEmp.classList.remove('hidden');
                 btnMngr.classList.add('hidden');
-                
-                if (realtimeChannel) { realtimeChannel.unsubscribe(); realtimeChannel = null; }
             }
 
             if (isStrictEmployeeMode) badge.classList.add('hidden');
             else badge.classList.remove('hidden');
-
-            if (!isStrictEmployeeMode) {
-                switchScreen('scr-dashboard');
-            }
         }
 
         function generateEmployeeQR() {
@@ -547,74 +544,40 @@
             QRCode.toCanvas(document.getElementById('qr-canvas'), employeeTargetUrl, { width: 200, margin: 1 });
         }
 
-        async function submitToManagerQueue() {
+        // TRANSMISSION SALARIÉ AUTONOME (VIA QR)
+        function submitToManagerQueue() {
             const name = document.getElementById('reg-emp-name').value.trim();
             const company = document.getElementById('reg-company').value.trim();
             const status = document.getElementById('reg-emp-status').value;
             
             if(!name || !company) { alert("Veuillez saisir votre nom et l'entreprise."); return; }
 
+            // Récupération des réponses du QCM
             const r1 = document.querySelector('input[name="q1"]:checked')?.value || "";
             const r2 = document.querySelector('input[name="q2"]:checked')?.value || "";
             const r3 = document.querySelector('input[name="q3"]:checked')?.value || "";
 
+            // Calcul du score
             let score = 0;
             if(r1 === qcmCorrectAnswers.q1) score++;
             if(r2 === qcmCorrectAnswers.q2) score++;
             if(r3 === qcmCorrectAnswers.q3) score++;
 
-            const empSignData = activeCanvas['canv-employee'] ? activeCanvas['canv-employee'].toDataURL() : "";
+            const newSubmission = {
+                id: "QR-" + Math.floor(100 + Math.random() * 900),
+                name: name,
+                company: company,
+                status: status,
+                qcm: { answers: { q1: r1, q2: r2, q3: r3 }, score: score },
+                empSign: activeCanvas['canv-employee'] ? activeCanvas['canv-employee'].toDataURL() : ""
+            };
 
-            const { error } = await supabase
-                .from('onboardings')
-                .insert([{ 
-                    name: name, 
-                    company: company, 
-                    status: status, 
-                    qcm_answers: { q1: r1, q2: r2, q3: r3 },
-                    qcm_score: score,
-                    employee_signature: empSignData,
-                    is_validated: false
-                }]);
-
-            if (error) {
-                alert("Erreur de synchronisation Supabase : " + error.message);
-            } else {
-                switchScreen('scr-employee-success');
-            }
+            pendingOnboardings.push(newSubmission);
+            localStorage.setItem('restev_pending', JSON.stringify(pendingOnboardings));
+            switchScreen('scr-employee-success');
         }
 
-        async function fetchPendingOnboardings() {
-            const { data, error } = await supabase
-                .from('onboardings')
-                .select('*')
-                .eq('is_validated', false)
-                .order('created_at', { ascending: false });
-
-            if (error) { console.error("Erreur de récupération : ", error); return; }
-
-            pendingOnboardings = data.map(item => ({
-                dbId: item.id,
-                name: item.name,
-                company: item.company,
-                status: item.status,
-                qcm: { answers: item.qcm_answers, score: item.qcm_score },
-                empSign: item.employee_signature
-            }));
-
-            renderPendingList();
-        }
-
-        function initRealtimeListener() {
-            if (realtimeChannel) return;
-            realtimeChannel = supabase
-                .channel('realtime-onboardings')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'onboardings' }, () => {
-                    fetchPendingOnboardings();
-                })
-                .subscribe();
-        }
-
+        // CONSOLE DE VUE MANAGER OPTIMISÉE
         function renderPendingList() {
             const container = document.getElementById('pending-onboardings-list');
             const badgeCount = document.getElementById('pending-count');
@@ -624,7 +587,7 @@
             badgeCount.innerText = `${pendingOnboardings.length} À VISER`;
 
             if(pendingOnboardings.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-2">Aucun dossier en attente dans le cloud.</p>`;
+                container.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-2">Aucun dossier en attente de validation.</p>`;
                 return;
             }
 
@@ -654,11 +617,13 @@
             document.getElementById('rev-company').innerText = item.company;
             document.getElementById('rev-status').innerText = item.status;
 
+            // Rendu visuel ciblé du QCM pour guider le débriefing
             const scoreBadge = document.getElementById('rev-qcm-score-badge');
             scoreBadge.innerText = `Score : ${item.qcm.score} / 3`;
             scoreBadge.className = item.qcm.score === 3 ? "font-black px-2.5 py-1 rounded-full text-xs bg-emerald-100 text-emerald-800" : "font-black px-2.5 py-1 rounded-full text-xs bg-red-100 text-red-800";
 
             const qcmDetails = document.getElementById('rev-qcm-details');
+            
             const qTexts = [
                 { id: 'q1', text: "1. Alarme Incendie", ansA: "Finir sa tâche", ansB: "Évacuer immédiatement (Correct)" },
                 { id: 'q2', text: "2. Responsabilité Port EPI", ansA: "Moi-même (Correct)", ansB: "Responsable sécurité" },
@@ -684,27 +649,13 @@
             setTimeout(() => { bindCanvasDrawing('canv-tutor-rev'); }, 150);
         }
 
-        async function finalizeReviewSubmission() {
+        function finalizeReviewSubmission() {
             const tutorName = document.getElementById('reg-tutor-name-rev').value.trim();
             if(!tutorName) { alert("Veuillez inscrire votre nom."); return; }
 
             const item = pendingOnboardings[selectedReviewIndex];
-            const tutorSignData = activeCanvas['canv-tutor-rev'].toDataURL();
 
-            const { error } = await supabase
-                .from('onboardings')
-                .update({
-                    tutor_name: tutorName,
-                    tutor_signature: tutorSignData,
-                    is_validated: true
-                })
-                .eq('id', item.dbId);
-
-            if (error) {
-                alert("Erreur lors de la mise à jour réglementaire : " + error.message);
-                return;
-            }
-
+            // Remplissage attestation
             document.getElementById('lbl-view-date').innerText = new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
             document.getElementById('attestation-id').innerText = "RE-85-" + Math.floor(100000 + Math.random() * 900000);
             document.getElementById('lbl-view-company').innerText = item.company;
@@ -717,11 +668,16 @@
             scoreDisplay.className = item.qcm.score === 3 ? "bg-emerald-600 text-white font-black px-2.5 py-0.5 rounded text-xs font-mono" : "bg-amber-500 text-white font-black px-2.5 py-0.5 rounded text-xs font-mono";
 
             document.getElementById('img-render-emp').src = item.empSign;
-            document.getElementById('img-render-tutor').src = tutorSignData;
+            document.getElementById('img-render-tutor').src = activeCanvas['canv-tutor-rev'].toDataURL();
+
+            // Retrait de la file d'attente locale
+            pendingOnboardings.splice(selectedReviewIndex, 1);
+            localStorage.setItem('restev_pending', JSON.stringify(pendingOnboardings));
 
             switchScreen('scr-attestation');
         }
 
+        // ROUTER INITIALISATION
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('mode') === 'onboarding') {
@@ -758,6 +714,7 @@
             }, 150);
         }
 
+        // SIGNATURE CANVAS ENGINE
         const activeCanvas = {}, activeContext = {}, drawingState = {};
         function bindCanvasDrawing(id) {
             const canvas = document.getElementById(id); if(!canvas) return;
@@ -773,14 +730,11 @@
 
         function clearSign(id) { if(activeContext[id]) activeContext[id].clearRect(0, 0, activeCanvas[id].width, activeCanvas[id].height); }
 
-        async function processFinalAttestation() {
+        // MODE DIRECT / CO-PRÉSENTIEL SUR LE MÊME ÉCRAN
+        function processFinalAttestation() {
             const tutor = document.getElementById('reg-tutor-name').value.trim();
             if(!tutor) { alert("Le nom du tuteur est nécessaire."); return; }
             
-            const name = document.getElementById('reg-emp-name').value;
-            const company = document.getElementById('reg-company').value;
-            const status = document.getElementById('reg-emp-status').value;
-
             const r1 = document.querySelector('input[name="q1"]:checked')?.value || "";
             const r2 = document.querySelector('input[name="q2"]:checked')?.value || "";
             const r3 = document.querySelector('input[name="q3"]:checked')?.value || "";
@@ -789,26 +743,18 @@
             if(r2 === qcmCorrectAnswers.q2) score++;
             if(r3 === qcmCorrectAnswers.q3) score++;
 
-            const empSignData = activeCanvas['canv-employee'].toDataURL();
-            const tutorSignData = activeCanvas['canv-tutor'].toDataURL();
-
-            await supabase.from('onboardings').insert([{ 
-                name: name, company: company, status: status, 
-                qcm_answers: { q1: r1, q2: r2, q3: r3 }, qcm_score: score,
-                employee_signature: empSignData, tutor_name: tutor, tutor_signature: tutorSignData,
-                is_validated: true
-            }]);
-
             document.getElementById('lbl-view-date').innerText = new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
             document.getElementById('attestation-id').innerText = "RE-85-" + Math.floor(100000 + Math.random() * 900000);
-            document.getElementById('lbl-view-company').innerText = company;
-            document.getElementById('lbl-view-emp').innerText = name;
+            document.getElementById('lbl-view-company').innerText = document.getElementById('reg-company').value;
+            document.getElementById('lbl-view-emp').innerText = document.getElementById('reg-emp-name').value;
             document.getElementById('lbl-view-tutor').innerText = tutor;
-            document.getElementById('lbl-view-status').innerText = status;
+            document.getElementById('lbl-view-status').innerText = document.getElementById('reg-emp-status').value;
             
-            document.getElementById('lbl-view-qcm-score').innerText = `${score} / 3`;
-            document.getElementById('img-render-emp').src = empSignData;
-            document.getElementById('img-render-tutor').src = tutorSignData;
+            const scoreDisplay = document.getElementById('lbl-view-qcm-score');
+            scoreDisplay.innerText = `${score} / 3`;
+
+            document.getElementById('img-render-emp').src = activeCanvas['canv-employee'].toDataURL();
+            document.getElementById('img-render-tutor').src = activeCanvas['canv-tutor'].toDataURL();
             switchScreen('scr-attestation');
         }
 
