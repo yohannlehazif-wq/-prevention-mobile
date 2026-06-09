@@ -146,8 +146,7 @@
                         <span><i class="fa-solid fa-user-clock text-restev-blue mr-1"></i> Attentes de Visa Cloud (QCM)</span>
                         <span id="pending-count" class="bg-blue-100 text-restev-blue px-1.5 py-0.5 rounded text-[9px] font-bold">0 À VISER</span>
                     </h4>
-                    <div id="pending-onboardings-list" class="space-y-2">
-                        </div>
+                    <div id="pending-onboardings-list" class="space-y-2"></div>
                 </div>
             </div>
         </section>
@@ -158,7 +157,7 @@
                 <h2 class="text-base font-bold text-slate-800">Partager le livret d'accueil</h2>
             </div>
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4 flex flex-col items-center">
-                <p class="text-xs text-slate-600 px-2 leading-relaxed">
+                <p class="text-xs text-slate-600 px-2 LEADING-relaxed">
                     Le salarié scanne ce code pour ouvrir le livret d'accueil et le test directement sur son terminal.
                 </p>
                 <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-inner flex justify-center items-center">
@@ -475,332 +474,8 @@
         // CONFIGURATION SUPABASE INITIALISÉE EN DIRECT
         const SUPABASE_URL = "https://qhlwfclagaurfhanqmoi.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFobHdmY2xhZ2F1cmZoYW5xbW9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMjE1MDAsImV4cCI6MjA5NjU5NzUwMH0.sHli3I0Gk63Zh_weZ0y_DWSB6LTTJFSCyIfgWiRjhEU";
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        let currentUserRole = "";
-        let mapInstance = null;
-        let mapMarker = null;
-        let isStrictEmployeeMode = false;
         
-        const defaultLat = 46.6705;
-        const defaultLng = -1.4265;
-        const qcmCorrectAnswers = { q1: "B", q2: "A", q3: "B" };
-        
-        let pendingOnboardings = [];
-        let realtimeChannel = null;
-
-        function setRole(role) {
-            currentUserRole = role;
-            const badge = document.getElementById('role-badge');
-            const mPanel = document.getElementById('manager-only-panel');
-            const qrShortcut = document.getElementById('manager-qr-shortcut');
-            const title = document.getElementById('dash-title');
-            const subtitle = document.getElementById('dash-subtitle');
-            const cardOnboardTitle = document.getElementById('card-onboard-title');
-            const cardOnboardDesc = document.getElementById('card-onboard-desc');
-            const tutorBlock = document.getElementById('tutor-signature-block');
-            const btnEmp = document.getElementById('btn-employee-submit');
-            const btnMngr = document.getElementById('btn-manager-finalize');
-
-            if(role === 'manager') {
-                badge.innerText = "Profil : Manager";
-                badge.className = "cursor-pointer bg-pink-600 text-white text-[10px] font-bold px-2 py-1 rounded border border-pink-400 uppercase tracking-wide";
-                mPanel.classList.remove('hidden');
-                qrShortcut.classList.remove('hidden');
-                title.innerText = "Console de Suivi Manager";
-                subtitle.innerText = "Vue de contrôle : Validation et traitement des anomalies terrain.";
-                cardOnboardTitle.innerText = "Évaluer & Signer un Accueil";
-                cardOnboardDesc.innerText = "Lancer directement un parcours d'intégration en présentiel.";
-                tutorBlock.classList.remove('hidden');
-                btnEmp.classList.add('hidden');
-                btnMngr.classList.remove('hidden');
-                
-                // Charger la liste cloud et activer l'écoute temps réel
-                fetchPendingOnboardings();
-                initRealtimeListener();
-            } else {
-                badge.innerText = "Profil : Salarié";
-                badge.className = "cursor-pointer bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded border border-blue-400 uppercase tracking-wide";
-                mPanel.classList.add('hidden');
-                qrShortcut.classList.add('hidden');
-                title.innerText = "Mon Espace Intégration";
-                subtitle.innerText = "Remplissez vos livrets et répondez au questionnaire d'arrivée.";
-                cardOnboardTitle.innerText = "Mon Parcours Sécurité Obligatoire";
-                cardOnboardDesc.innerText = "Valider les modules réglementaires et mon mini-test.";
-                tutorBlock.classList.add('hidden');
-                btnEmp.classList.remove('hidden');
-                btnMngr.classList.add('hidden');
-                
-                if (realtimeChannel) { realtimeChannel.unsubscribe(); realtimeChannel = null; }
-            }
-
-            if (isStrictEmployeeMode) badge.classList.add('hidden');
-            else badge.classList.remove('hidden');
-        }
-
-        function generateEmployeeQR() {
-            switchScreen('scr-qr-display');
-            const employeeTargetUrl = window.location.origin + window.location.pathname + '?mode=onboarding';
-            QRCode.toCanvas(document.getElementById('qr-canvas'), employeeTargetUrl, { width: 200, margin: 1 });
-        }
-
-        // PUSH CLOUD PAR LE SALARIÉ
-        async function submitToManagerQueue() {
-            const name = document.getElementById('reg-emp-name').value.trim();
-            const company = document.getElementById('reg-company').value.trim();
-            const status = document.getElementById('reg-emp-status').value;
-            
-            if(!name || !company) { alert("Veuillez saisir votre nom et l'entreprise."); return; }
-
-            const r1 = document.querySelector('input[name="q1"]:checked')?.value || "";
-            const r2 = document.querySelector('input[name="q2"]:checked')?.value || "";
-            const r3 = document.querySelector('input[name="q3"]:checked')?.value || "";
-
-            let score = 0;
-            if(r1 === qcmCorrectAnswers.q1) score++;
-            if(r2 === qcmCorrectAnswers.q2) score++;
-            if(r3 === qcmCorrectAnswers.q3) score++;
-
-            const empSignData = activeCanvas['canv-employee'] ? activeCanvas['canv-employee'].toDataURL() : "";
-
-            // Envoi dans Supabase
-            const { error } = await supabase
-                .from('onboardings')
-                .insert([{ 
-                    name: name, 
-                    company: company, 
-                    status: status, 
-                    qcm_answers: { q1: r1, q2: r2, q3: r3 },
-                    qcm_score: score,
-                    employee_signature: empSignData,
-                    is_validated: false
-                }]);
-
-            if (error) {
-                alert("Erreur de synchronisation Supabase : " + error.message);
-            } else {
-                switchScreen('scr-employee-success');
-            }
-        }
-
-        // CHARGEMENT CLOUD DES DEMANDES EN ATTENTE (MANAGER)
-        async function fetchPendingOnboardings() {
-            const { data, error } = await supabase
-                .from('onboardings')
-                .select('*')
-                .eq('is_validated', false)
-                .order('created_at', { ascending: false });
-
-            if (error) { console.error("Erreur de récupération : ", error); return; }
-
-            pendingOnboardings = data.map(item => ({
-                dbId: item.id,
-                name: item.name,
-                company: item.company,
-                status: item.status,
-                qcm: { answers: item.qcm_answers, score: item.qcm_score },
-                empSign: item.employee_signature
-            }));
-
-            renderPendingList();
-        }
-
-        // ÉCOUTE DU TEMPS RÉEL (REALTIME CLOUD CHANNELS)
-        function initRealtimeListener() {
-            if (realtimeChannel) return;
-            realtimeChannel = supabase
-                .channel('realtime-onboardings')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'onboardings' }, () => {
-                    fetchPendingOnboardings();
-                })
-                .subscribe();
-        }
-
-        function renderPendingList() {
-            const container = document.getElementById('pending-onboardings-list');
-            const badgeCount = document.getElementById('pending-count');
-            if(!container) return;
-
-            container.innerHTML = "";
-            badgeCount.innerText = `${pendingOnboardings.length} À VISER`;
-
-            if(pendingOnboardings.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-2">Aucun dossier en attente dans le cloud.</p>`;
-                return;
-            }
-
-            pendingOnboardings.forEach((item, index) => {
-                const badgeColor = item.qcm.score === 3 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700';
-                container.innerHTML += `
-                    <div onclick="openManagerReview(${index})" class="p-3 rounded-xl bg-white border border-slate-200 hover:border-restev-blue shadow-sm transition cursor-pointer flex justify-between items-center text-xs">
-                        <div>
-                            <p class="font-bold text-slate-800">${item.name}</p>
-                            <p class="text-[10px] text-slate-400 uppercase font-semibold">${item.company} | ${item.status}</p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="${badgeColor} px-2 py-0.5 rounded text-[10px] font-bold font-mono">QCM: ${item.qcm.score}/3</span>
-                            <span class="bg-restev-blue text-white font-bold px-2.5 py-1 rounded text-[10px] uppercase">Ouvrir</span>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        let selectedReviewIndex = null;
-        function openManagerReview(index) {
-            selectedReviewIndex = index;
-            const item = pendingOnboardings[index];
-
-            document.getElementById('rev-emp-name').innerText = item.name;
-            document.getElementById('rev-company').innerText = item.company;
-            document.getElementById('rev-status').innerText = item.status;
-
-            const scoreBadge = document.getElementById('rev-qcm-score-badge');
-            scoreBadge.innerText = `Score : ${item.qcm.score} / 3`;
-            scoreBadge.className = item.qcm.score === 3 ? "font-black px-2.5 py-1 rounded-full text-xs bg-emerald-100 text-emerald-800" : "font-black px-2.5 py-1 rounded-full text-xs bg-red-100 text-red-800";
-
-            const qcmDetails = document.getElementById('rev-qcm-details');
-            const qTexts = [
-                { id: 'q1', text: "1. Alarme Incendie", ansA: "Finir sa tâche", ansB: "Évacuer immédiatement (Correct)" },
-                { id: 'q2', text: "2. Responsabilité Port EPI", ansA: "Moi-même (Correct)", ansB: "Responsable sécurité" },
-                { id: 'q3', text: "3. Danger Grave & Imminent", ansA: "Attendre la fin de journée", ansB: "Alerter immédiatement (Correct)" }
-            ];
-
-            qcmDetails.innerHTML = "";
-            qTexts.forEach(q => {
-                const userAns = item.qcm.answers[q.id];
-                const isCorrect = userAns === qcmCorrectAnswers[q.id];
-                const displayUserAns = userAns === "A" ? q.ansA : (userAns === "B" ? q.ansB : "Aucune réponse");
-
-                qcmDetails.innerHTML += `
-                    <div class="p-2 rounded-xl border ${isCorrect ? 'bg-emerald-50/60 border-emerald-100' : 'bg-red-50/60 border-red-100'}">
-                        <p class="font-bold text-slate-800">${q.text}</p>
-                        <p class="text-[11px] mt-0.5">Réponse donnée : <span class="font-semibold ${isCorrect ? 'text-emerald-700' : 'text-red-700'}">${displayUserAns}</span> ${isCorrect ? '✓' : '✗'}</p>
-                    </div>
-                `;
-            });
-
-            document.getElementById('img-rev-emp-sign').src = item.empSign || "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-            switchScreen('scr-manager-review');
-            setTimeout(() => { bindCanvasDrawing('canv-tutor-rev'); }, 150);
-        }
-
-        // VALIDATION CLOUD FINALE & CO-SIGNATURE
-        async function finalizeReviewSubmission() {
-            const tutorName = document.getElementById('reg-tutor-name-rev').value.trim();
-            if(!tutorName) { alert("Veuillez inscrire votre nom."); return; }
-
-            const item = pendingOnboardings[selectedReviewIndex];
-            const tutorSignData = activeCanvas['canv-tutor-rev'].toDataURL();
-
-            // Mettre à jour l'enregistrement existant dans Supabase
-            const { error } = await supabase
-                .from('onboardings')
-                .update({
-                    tutor_name: tutorName,
-                    tutor_signature: tutorSignData,
-                    is_validated: true
-                })
-                .eq('id', item.dbId);
-
-            if (error) {
-                alert("Erreur lors de la mise à jour réglementaire : " + error.message);
-                return;
-            }
-
-            // Génération de l'attestation visuelle
-            document.getElementById('lbl-view-date').innerText = new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
-            document.getElementById('attestation-id').innerText = "RE-85-" + Math.floor(100000 + Math.random() * 900000);
-            document.getElementById('lbl-view-company').innerText = item.company;
-            document.getElementById('lbl-view-emp').innerText = item.name;
-            document.getElementById('lbl-view-tutor').innerText = tutorName;
-            document.getElementById('lbl-view-status').innerText = item.status;
-            
-            const scoreDisplay = document.getElementById('lbl-view-qcm-score');
-            scoreDisplay.innerText = `${item.qcm.score} / 3`;
-            scoreDisplay.className = item.qcm.score === 3 ? "bg-emerald-600 text-white font-black px-2.5 py-0.5 rounded text-xs font-mono" : "bg-amber-500 text-white font-black px-2.5 py-0.5 rounded text-xs font-mono";
-
-            document.getElementById('img-render-emp').src = item.empSign;
-            document.getElementById('img-render-tutor').src = tutorSignData;
-
-            switchScreen('scr-attestation');
-        }
-
-        // ROUTER INITIALISATION
-        window.onload = function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('mode') === 'onboarding') {
-                isStrictEmployeeMode = true;
-                setRole('employee'); 
-                switchScreen('scr-onboarding-1');
-            } else {
-                isStrictEmployeeMode = false;
-                switchScreen('scr-auth');
-            }
-        };
-
-        function switchScreen(screenId) {
-            const screens = ['scr-auth', 'scr-dashboard', 'scr-qr-display', 'scr-onboarding-1', 'scr-onboarding-2', 'scr-manager-review', 'scr-employee-success', 'scr-attestation', 'scr-flash-report', 'scr-flash-success'];
-            screens.forEach(id => { document.getElementById(id)?.classList.add('hidden'); });
-            document.getElementById(screenId).classList.remove('hidden');
-            window.scrollTo(0,0);
-
-            document.getElementById('nav-home').className = "flex flex-col items-center gap-0.5 focus:outline-none " + (screenId === 'scr-dashboard' ? 'text-restev-blue' : 'text-slate-400');
-            document.getElementById('nav-onboard').className = "flex flex-col items-center gap-0.5 focus:outline-none " + (['scr-onboarding-1', 'scr-onboarding-2', 'scr-attestation'].includes(screenId) ? 'text-restev-blue' : 'text-slate-400');
-            document.getElementById('nav-flash').className = "flex flex-col items-center gap-0.5 focus:outline-none " + (['scr-flash-report', 'scr-flash-success'].includes(screenId) ? 'text-restev-blue' : 'text-slate-400');
-
-            if (screenId === 'scr-flash-report') setTimeout(initializeMap, 200);
-        }
-
-        function validateFirstStep() {
-            const name = document.getElementById('reg-emp-name').value.trim();
-            const company = document.getElementById('reg-company').value.trim();
-            if(!name || !company) { alert("Informations requises manquantes."); return; }
-            switchScreen('scr-onboarding-2');
-            setTimeout(() => { 
-                bindCanvasDrawing('canv-employee'); 
-                if(currentUserRole === 'manager') bindCanvasDrawing('canv-tutor');
-            }, 150);
-        }
-
-        // SIGNATURE CANVAS ENGINE
-        const activeCanvas = {}, activeContext = {}, drawingState = {};
-        function bindCanvasDrawing(id) {
-            const canvas = document.getElementById(id); if(!canvas) return;
-            activeCanvas[id] = canvas; activeContext[id] = canvas.getContext('2d'); drawingState[id] = false;
-            const box = canvas.getBoundingClientRect(); canvas.width = box.width; canvas.height = box.height;
-            const getPos = (e) => { const r = canvas.getBoundingClientRect(); return { x: (e.clientX || e.touches[0].clientX) - r.left, y: (e.clientY || e.touches[0].clientY) - r.top }; };
-            const start = (e) => { drawingState[id] = true; activeContext[id].beginPath(); const p = getPos(e); activeContext[id].moveTo(p.x, p.y); };
-            const move = (e) => { if (!drawingState[id]) return; e.preventDefault(); const p = getPos(e); activeContext[id].lineWidth = 2.5; activeContext[id].lineCap = 'round'; activeContext[id].strokeStyle = '#1e293b'; activeContext[id].lineTo(p.x, p.y); activeContext[id].stroke(); };
-            const stop = () => { drawingState[id] = false; };
-            canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); canvas.addEventListener('mouseup', stop);
-            canvas.addEventListener('touchstart', start); canvas.addEventListener('touchmove', move); canvas.addEventListener('touchend', stop);
-        }
-
-        function clearSign(id) { if(activeContext[id]) activeContext[id].clearRect(0, 0, activeCanvas[id].width, activeCanvas[id].height); }
-
-        // MODE PRÉSENTIEL DIRECT (MÊME SMARTPHONE)
-        async function processFinalAttestation() {
-            const tutor = document.getElementById('reg-tutor-name').value.trim();
-            if(!tutor) { alert("Le nom du tuteur est nécessaire."); return; }
-            
-            const name = document.getElementById('reg-emp-name').value;
-            const company = document.getElementById('reg-company').value;
-            const status = document.getElementById('reg-emp-status').value;
-
-            const r1 = document.querySelector('input[name="q1"]:checked')?.value || "";
-            const r2 = document.querySelector('input[name="q2"]:checked')?.value || "";
-            const r3 = document.querySelector('input[name="q3"]:checked')?.value || "";
-            let score = 0;
-            if(r1 === qcmCorrectAnswers.q1) score++;
-            if(r2 === qcmCorrectAnswers.q2) score++;
-            if(r3 === qcmCorrectAnswers.q3) score++;
-    <script>
-        // CONFIGURATION SUPABASE INITIALISÉE EN DIRECT
-        const SUPABASE_URL = "https://qhlwfclagaurfhanqmoi.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFobHdmY2xhZ2F1cmZoYW5xbW9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMjE1MDAsImV4cCI6MjA5NjU5NzUwMH0.sHli3I0Gk63Zh_weZ0y_DWSB6LTTJFSCyIfgWiRjhEU";
-        
-        // Correction du conflit de nommage ici :
+        // Résolution définitive de la Temporal Dead Zone (TDZ)
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let currentUserRole = "";
@@ -852,6 +527,7 @@
                 subtitle.innerText = "Remplissez vos livrets et répondez au questionnaire d'arrivée.";
                 cardOnboardTitle.innerText = "Mon Parcours Sécurité Obligatoire";
                 cardOnboardDesc.innerText = "Valider les modules réglementaires et mon mini-test.";
+                tutorBlock.html = "";
                 tutorBlock.classList.add('hidden');
                 btnEmp.classList.remove('hidden');
                 btnMngr.classList.add('hidden');
@@ -1180,3 +856,5 @@
             a.click();
         }
     </script>
+</body>
+</html>
