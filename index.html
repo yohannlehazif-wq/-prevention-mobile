@@ -781,4 +781,108 @@
 
         function triggerHighAccuracyLocation() {
             if (!navigator.geolocation) return;
-            navigator.geolocation.getCurrentPosition((pos
+            navigator.geolocation.getCurrentPosition((pos) => {
+                const lat = pos.coords.latitude; const lng = pos.coords.longitude;
+                if (mapInstance && mapMarker) {
+                    const pt = new L.LatLng(lat, lng); mapMarker.setLatLng(pt); mapInstance.setView(pt, 16);
+                }
+                document.getElementById('flash-geo-coords').value = `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`;
+            });
+        }
+
+        function handleFlashPhoto(e) {
+            const file = e.target.files[0];
+            if(file) {
+                currentPhotoFile = file;
+                const reader = new FileReader();
+                reader.onload = function() {
+                    document.getElementById('img-flash-preview').src = reader.result;
+                    document.getElementById('img-flash-preview').classList.remove('hidden');
+                    document.getElementById('flash-photo-placeholder').classList.add('hidden');
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function submitFlashReport() {
+            const title = document.getElementById('flash-title').value.trim();
+            const riskType = document.getElementById('flash-risk-type').value;
+            const urgency = document.getElementById('flash-urgency').value;
+            const coordsString = document.getElementById('flash-geo-coords').value;
+
+            if(!title) { alert("Veuillez saisir un intitulé pour l'anomalie."); return; }
+
+            let lat = null, lon = null;
+            if(coordsString) {
+                const cleanCoords = coordsString.replace('Lat: ', '').replace('Lng: ', '');
+                const parts = cleanCoords.split(',');
+                lat = parseFloat(parts[0]);
+                lon = parseFloat(parts[1]);
+            }
+
+            let imageUrl = null;
+
+            // Envoi de la photo dans le Storage Supabase (si sélectionnée)
+            if (currentPhotoFile) {
+                const fileExt = currentPhotoFile.name.split('.').pop();
+                const fileName = `${Math.random()}.${fileExt}`;
+                const filePath = `reports/${fileName}`;
+
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('flash-photos')
+                    .upload(filePath, currentPhotoFile);
+
+                if (!uploadError) {
+                    const { data: urlData } = supabase.storage.from('flash-photos').getPublicUrl(filePath);
+                    imageUrl = urlData.publicUrl;
+                } else {
+                    console.error("Erreur de stockage média :", uploadError);
+                }
+            }
+
+            // Insertion finale de la ligne dans la table flash_reports
+            const { error } = await supabase.from('flash_reports').insert([{
+                title: title,
+                risk_type: riskType,
+                urgency: urgency,
+                latitude: lat,
+                longitude: lon,
+                image_url: imageUrl
+            }]);
+
+            if(error) {
+                console.error("Erreur base de données :", error);
+                alert("Impossible de synchroniser l'alerte avec la base.");
+            }
+
+            switchScreen('scr-flash-success');
+        }
+
+        function resetAllForms() {
+            document.getElementById('reg-emp-name').value = ""; document.getElementById('reg-company').value = "";
+            if(document.getElementById('reg-tutor-name')) document.getElementById('reg-tutor-name').value = "";
+            if(document.getElementById('reg-tutor-name-rev')) document.getElementById('reg-tutor-name-rev').value = "";
+            document.querySelectorAll('input[type="radio"]').forEach(el => el.checked = false);
+            currentPhotoFile = null;
+            document.getElementById('flash-title').value = "";
+            document.getElementById('flash-geo-coords').value = "";
+            document.getElementById('img-flash-preview').classList.add('hidden');
+            document.getElementById('flash-photo-placeholder').classList.remove('hidden');
+            setRole(currentUserRole);
+            switchScreen('scr-dashboard');
+        }
+
+        function exportToPasseportPrevention() {
+            const struct = { 
+                schema: "PST-2026", 
+                uid: document.getElementById('attestation-id').innerText, 
+                worker: document.getElementById('lbl-view-emp').innerText, 
+                score: document.getElementById('lbl-view-qcm-score').innerText 
+            };
+            const blob = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(struct, null, 2));
+            const a = document.createElement('a'); a.setAttribute("href", blob); a.setAttribute("download", `attestation.json`);
+            a.click();
+        }
+    </script>
+</body>
+</html>
