@@ -490,326 +490,64 @@
         </button>
     </nav>
 
-    <script>
-        let currentUserRole = "";
-        let mapInstance = null;
-        let mapMarker = null;
-        let isStrictEmployeeMode = false; // Flag si arrivée stricte par QR Code
-        
-        const defaultLat = 46.6705;
-        const defaultLng = -1.4265;
+   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-        // Base de données simulée pour stocker les transmissions QR Code
-        let pendingOnboardings = JSON.parse(localStorage.getItem('restev_pending')) || [
-            { id: "PEND-882", name: "Yanis Martin", company: "Logistique Vendée SAS", status: "Intérimaire", modules: [true, true], empSign: "" }
-        ];
+<script>
+  // 1. Initialisation
+  const supabaseUrl = 'VOTRE_PROJET_URL'; // Remplacez par votre URL
+  const supabaseKey = 'VOTRE_ANON_PUBLIC_KEY'; // Remplacez par votre clé publique
+  const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        function setRole(role) {
-            currentUserRole = role;
-            const badge = document.getElementById('role-badge');
-            const mPanel = document.getElementById('manager-only-panel');
-            const qrShortcut = document.getElementById('manager-qr-shortcut');
-            
-            const title = document.getElementById('dash-title');
-            const subtitle = document.getElementById('dash-subtitle');
-            
-            const cardOnboardTitle = document.getElementById('card-onboard-title');
-            const cardOnboardDesc = document.getElementById('card-onboard-desc');
+  // 2. Fonction d'envoi pour le Flash Report
+  async function submitFlashReport() {
+    // Récupération des données du formulaire
+    const title = document.getElementById('flash-title').value;
+    const coords = document.getElementById('flash-geo-coords').value;
+    const desc = document.getElementById('flash-desc').value;
 
-            const tutorBlock = document.getElementById('tutor-signature-block');
-            const btnEmp = document.getElementById('btn-employee-submit');
-            const btnMngr = document.getElementById('btn-manager-finalize');
+    // Vérification simple
+    if (!title) {
+        alert("Veuillez saisir un intitulé pour le signalement.");
+        return;
+    }
 
-            if(role === 'manager') {
-                badge.innerText = "Profil : Manager";
-                badge.className = "cursor-pointer bg-pink-600 text-white text-[10px] font-bold px-2 py-1 rounded border border-pink-400 uppercase tracking-wide";
-                mPanel.classList.remove('hidden');
-                qrShortcut.classList.remove('hidden');
-                
-                title.innerText = "Console de Suivi Manager";
-                subtitle.innerText = "Vue de contrôle : Validation des accueils et traitement des anomalies terrain.";
-                
-                cardOnboardTitle.innerText = "Évaluer & Signer un Accueil";
-                cardOnboardDesc.innerText = "Ouvrir le formulaire collaboratif sur votre appareil pour intégrer un arrivant.";
-                
-                // Mode collaboratif sur un seul écran
-                tutorBlock.classList.remove('hidden');
-                btnEmp.classList.add('hidden');
-                btnMngr.classList.remove('hidden');
-
-                renderPendingList();
-            } else {
-                badge.innerText = "Profil : Salarié";
-                badge.className = "cursor-pointer bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded border border-blue-400 uppercase tracking-wide";
-                mPanel.classList.add('hidden');
-                qrShortcut.classList.add('hidden');
-                
-                title.innerText = "Mon Espace Intégration";
-                subtitle.innerText = "Remplissez vos modules obligatoires d'arrivée et signalez les anomalies.";
-                
-                cardOnboardTitle.innerText = "Mon Parcours Sécurité Obligatoire";
-                cardOnboardDesc.innerText = "Valider les thématiques réglementaires de mon premier jour sur site.";
-                
-                // Mode autonome sur le smartphone du salarié
-                tutorBlock.classList.add('hidden');
-                btnEmp.classList.remove('hidden');
-                btnMngr.classList.add('hidden');
-            }
-
-            // Si le salarié a scanné un QR code, on lui bloque toute possibilité de changer son rôle
-            if (isStrictEmployeeMode) {
-                badge.classList.add('hidden');
-            } else {
-                badge.classList.remove('hidden');
-            }
-        }
-
-        function generateEmployeeQR() {
-            switchScreen('scr-qr-display');
-            const employeeTargetUrl = window.location.origin + window.location.pathname + '?mode=onboarding';
-            const canvasTarget = document.getElementById('qr-canvas');
-            QRCode.toCanvas(canvasTarget, employeeTargetUrl, {
-                width: 200,
-                margin: 1,
-                color: { dark: '#1e293b', light: '#ffffff' }
-            }, function (error) {
-                if (error) console.error("Erreur QR code :", error);
-            });
-        }
-
-        // --- FILTRAGE DE FLUX SALARIÉ DEPUIS SON PROPRE TÉLÉPHONE ---
-        function submitToManagerQueue() {
-            const name = document.getElementById('reg-emp-name').value.trim();
-            const company = document.getElementById('reg-company').value.trim();
-            const status = document.getElementById('reg-emp-status').value;
-            const m1 = document.getElementById('chk-module-1').checked;
-            const m2 = document.getElementById('chk-module-2').checked;
-
-            if(!name || !company) { alert("Veuillez remplir vos informations d'identification."); return; }
-
-            const newSubmission = {
-                id: "QR-" + Math.floor(100 + Math.random() * 900),
-                name: name,
-                company: company,
-                status: status,
-                modules: [m1, m2],
-                empSign: activeCanvas['canv-employee'] ? activeCanvas['canv-employee'].toDataURL() : ""
-            };
-
-            pendingOnboardings.push(newSubmission);
-            localStorage.setItem('restev_pending', JSON.stringify(pendingOnboardings));
-            
-            switchScreen('scr-employee-success');
-        }
-
-        // --- INTERFACE DE TRAITEMENT MANAGER ---
-        function renderPendingList() {
-            const container = document.getElementById('pending-onboardings-list');
-            const badgeCount = document.getElementById('pending-count');
-            if(!container) return;
-
-            container.innerHTML = "";
-            badgeCount.innerText = `${pendingOnboardings.length} À VISER`;
-
-            if(pendingOnboardings.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-2">Aucun dossier en attente de visa.</p>`;
-                return;
-            }
-
-            pendingOnboardings.forEach((item, index) => {
-                container.innerHTML += `
-                    <div onclick="openManagerReview(${index})" class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 hover:border-restev-blue transition cursor-pointer flex justify-between items-center text-xs">
-                        <div>
-                            <p class="font-bold text-slate-800">${item.name}</p>
-                            <p class="text-[10px] text-slate-400 uppercase font-semibold">${item.company} | ${item.status}</p>
-                        </div>
-                        <span class="bg-restev-blue/10 text-restev-blue font-bold px-2 py-1 rounded text-[10px] uppercase tracking-wide">Viser</span>
-                    </div>
-                `;
-            });
-        }
-
-        let selectedReviewIndex = null;
-        function openManagerReview(index) {
-            selectedReviewIndex = index;
-            const item = pendingOnboardings[index];
-
-            document.getElementById('rev-emp-name').innerText = item.name;
-            document.getElementById('rev-company').innerText = item.company;
-            document.getElementById('rev-status').innerText = item.status;
-
-            const modUl = document.getElementById('rev-modules-list');
-            modUl.innerHTML = "";
-            const texts = ["Risques Spécifiques Poste & EPI", "Procédures d'Alerte & Évacuation"];
-            item.modules.forEach((checked, i) => {
-                modUl.innerHTML += `<li class="${checked ? 'text-slate-800 font-bold' : 'line-through text-slate-400'}">
-                    ${checked ? '<i class="fa-solid fa-check text-emerald-500 mr-1"></i>' : '<i class="fa-solid fa-xmark text-slate-300 mr-1"></i>'} ${texts[i]}
-                </li>`;
-            });
-
-            document.getElementById('img-rev-emp-sign').src = item.empSign || "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-            
-            switchScreen('scr-manager-review');
-            setTimeout(() => { bindCanvasDrawing('canv-tutor-rev'); }, 150);
-        }
-
-        function finalizeReviewSubmission() {
-            const tutorName = document.getElementById('reg-tutor-name-rev').value.trim();
-            if(!tutorName) { alert("Veuillez saisir votre nom d'encadrant."); return; }
-
-            const item = pendingOnboardings[selectedReviewIndex];
-
-            // Remplissage de l'attestation finale officielle
-            document.getElementById('lbl-view-date').innerText = new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
-            document.getElementById('attestation-id').innerText = "RE-85-" + Math.floor(100000 + Math.random() * 900000);
-            document.getElementById('lbl-view-company').innerText = item.company;
-            document.getElementById('lbl-view-emp').innerText = item.name;
-            document.getElementById('lbl-view-tutor').innerText = tutorName;
-            document.getElementById('lbl-view-status').innerText = item.status;
-
-            const ul = document.getElementById('lbl-view-modules');
-            ul.innerHTML = "";
-            const texts = ["Risques Spécifiques Poste & EPI", "Procédures d'Alerte & Évacuation"];
-            item.modules.forEach((checked, i) => {
-                ul.innerHTML += `<li class="${checked ? 'font-semibold text-slate-800' : 'line-through text-slate-400'}">
-                    ${checked ? '<i class="fa-solid fa-square-check text-emerald-500 mr-2"></i>' : '<i class="fa-solid fa-square-xmark text-slate-300 mr-2"></i>'}${texts[i]}
-                </li>`;
-            });
-
-            document.getElementById('img-render-emp').src = item.empSign;
-            document.getElementById('img-render-tutor').src = activeCanvas['canv-tutor-rev'].toDataURL();
-
-            // Retrait de la file d'attente
-            pendingOnboardings.splice(selectedReviewIndex, 1);
-            localStorage.setItem('restev_pending', JSON.stringify(pendingOnboardings));
-
-            switchScreen('scr-attestation');
-        }
-
-
-        // --- AUTOMATISATION PAR ROUTING QR CODE ---
-        window.onload = function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('mode') === 'onboarding') {
-                isStrictEmployeeMode = true;
-                setRole('employee'); 
-                switchScreen('scr-onboarding-1');
-            } else {
-                isStrictEmployeeMode = false;
-                switchScreen('scr-auth');
-            }
-        };
-
-        // --- CODE ROUTER & UTILS EXISTANTS AMÉLIORÉS ---
-        function switchScreen(screenId) {
-            const screens = ['scr-auth', 'scr-dashboard', 'scr-qr-display', 'scr-onboarding-1', 'scr-onboarding-2', 'scr-manager-review', 'scr-employee-success', 'scr-attestation', 'scr-flash-report', 'scr-flash-success'];
-            screens.forEach(id => {
-                const el = document.getElementById(id);
-                if(el) el.classList.add('hidden');
-            });
-            
-            document.getElementById(screenId).classList.remove('hidden');
-            window.scrollTo(0,0);
-
-            document.getElementById('nav-home').className = "flex flex-col items-center gap-0.5 focus:outline-none " + (screenId === 'scr-dashboard' ? 'text-restev-blue' : 'text-slate-400');
-            document.getElementById('nav-onboard').className = "flex flex-col items-center gap-0.5 focus:outline-none " + (['scr-onboarding-1', 'scr-onboarding-2', 'scr-attestation'].includes(screenId) ? 'text-restev-blue' : 'text-slate-400');
-            document.getElementById('nav-flash').className = "flex flex-col items-center gap-0.5 focus:outline-none " + (['scr-flash-report', 'scr-flash-success'].includes(screenId) ? 'text-restev-blue' : 'text-slate-400');
-
-            if (screenId === 'scr-flash-report') setTimeout(initializeMap, 200);
-        }
-
-        function validateFirstStep() {
-            const name = document.getElementById('reg-emp-name').value.trim();
-            const company = document.getElementById('reg-company').value.trim();
-            if(!name || !company) { alert("Le nom et l'entreprise d'accueil sont indispensables."); return; }
-            switchScreen('scr-onboarding-2');
-            setTimeout(() => { 
-                bindCanvasDrawing('canv-employee'); 
-                if(currentUserRole === 'manager') bindCanvasDrawing('canv-tutor');
-            }, 150);
-        }
-
-        const activeCanvas = {}, activeContext = {}, drawingState = {};
-        function bindCanvasDrawing(id) {
-            const canvas = document.getElementById(id); if(!canvas) return;
-            activeCanvas[id] = canvas; activeContext[id] = canvas.getContext('2d'); drawingState[id] = false;
-            const box = canvas.getBoundingClientRect(); canvas.width = box.width; canvas.height = box.height;
-            const getPos = (e) => { const r = canvas.getBoundingClientRect(); return { x: (e.clientX || e.touches[0].clientX) - r.left, y: (e.clientY || e.touches[0].clientY) - r.top }; };
-            const start = (e) => { drawingState[id] = true; activeContext[id].beginPath(); const p = getPos(e); activeContext[id].moveTo(p.x, p.y); };
-            const move = (e) => { if (!drawingState[id]) return; e.preventDefault(); const p = getPos(e); activeContext[id].lineWidth = 2.5; activeContext[id].lineCap = 'round'; activeContext[id].strokeStyle = '#1e293b'; activeContext[id].lineTo(p.x, p.y); activeContext[id].stroke(); };
-            const stop = () => { drawingState[id] = false; };
-            canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); canvas.addEventListener('mouseup', stop);
-            canvas.addEventListener('touchstart', start); canvas.addEventListener('touchmove', move); canvas.addEventListener('touchend', stop);
-        }
-
-        function clearSign(id) { if(activeContext[id]) activeContext[id].clearRect(0, 0, activeCanvas[id].width, activeCanvas[id].height); }
-
-        function processFinalAttestation() {
-            const tutor = document.getElementById('reg-tutor-name').value.trim();
-            if(!tutor) { alert("Le tuteur doit indiquer son nom."); return; }
-            document.getElementById('lbl-view-date').innerText = new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
-            document.getElementById('attestation-id').innerText = "RE-85-" + Math.floor(100000 + Math.random() * 900000);
-            document.getElementById('lbl-view-company').innerText = document.getElementById('reg-company').value;
-            document.getElementById('lbl-view-emp').innerText = document.getElementById('reg-emp-name').value;
-            document.getElementById('lbl-view-tutor').innerText = tutor;
-            document.getElementById('lbl-view-status').innerText = document.getElementById('reg-emp-status').value;
-
-            const ul = document.getElementById('lbl-view-modules'); ul.innerHTML = "";
-            const modules = [{ id: 'chk-module-1', text: 'Risques Spécifiques Poste & EPI' }, { id: 'chk-module-2', text: 'Procédures d\'Alerte & Évacuation' }];
-            modules.forEach(m => {
-                const ok = document.getElementById(m.id).checked;
-                ul.innerHTML += `<li class="${ok ? 'font-semibold text-slate-800' : 'line-through text-slate-400'}">${ok ? '✓ ' : '✗ '}${m.text}</li>`;
-            });
-            document.getElementById('img-render-emp').src = activeCanvas['canv-employee'].toDataURL();
-            document.getElementById('img-render-tutor').src = activeCanvas['canv-tutor'].toDataURL();
-            switchScreen('scr-attestation');
-        }
-
-        function initializeMap() {
-            if (mapInstance) { mapInstance.invalidateSize(); return; }
-            mapInstance = L.map('report-map').setView([defaultLat, defaultLng], 12);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
-            mapMarker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(mapInstance);
-        }
-
-        function triggerHighAccuracyLocation() {
-            if (!navigator.geolocation) return;
-            navigator.geolocation.getCurrentPosition((pos) => {
-                const lat = pos.coords.latitude; const lng = pos.coords.longitude;
-                if (mapInstance && mapMarker) {
-                    const pt = new L.LatLng(lat, lng); mapMarker.setLatLng(pt); mapInstance.setView(pt, 16);
+    try {
+        // Envoi des données vers Supabase
+        const { data, error } = await supabase
+            .from('flash_reports')
+            .insert([
+                { 
+                    title: title, 
+                    coords: coords, 
+                    description: desc 
                 }
-                document.getElementById('flash-geo-coords').value = `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)} [Fix GPS]`;
-            });
-        }
+            ]);
 
-        function handleFlashPhoto(e) {
-            const reader = new FileReader();
-            reader.onload = function() {
-                document.getElementById('img-flash-preview').src = reader.result;
-                document.getElementById('img-flash-preview').classList.remove('hidden');
-                document.getElementById('flash-photo-placeholder').classList.add('hidden');
-            }
-            if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
-        }
+        if (error) throw error;
 
-        function submitFlashReport() { switchScreen('scr-flash-success'); }
+        console.log("Données envoyées avec succès :", data);
+        alert("Signalement transmis avec succès !");
+        
+        // Optionnel : Basculer vers l'écran de succès
+        switchScreen('scr-flash-success'); 
+        
+    } catch (err) {
+        console.error("Erreur lors de l'envoi vers Supabase :", err.message);
+        alert("Erreur lors de l'envoi : " + err.message);
+    }
+  }
 
-        function resetAllForms() {
-            document.getElementById('reg-emp-name').value = ""; document.getElementById('reg-company').value = "";
-            if(document.getElementById('reg-tutor-name')) document.getElementById('reg-tutor-name').value = "";
-            document.getElementById('flash-title').value = "";
-            setRole(currentUserRole);
-            switchScreen('scr-dashboard');
-        }
+  // 3. (Optionnel) Pour le dashboard : Écoute en temps réel
+  supabase
+    .channel('flash_reports_channel')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'flash_reports' }, payload => {
+      console.log('Nouveau rapport détecté !', payload.new);
+      // Appelez ici votre fonction qui met à jour le DOM
+      // updateManagerDashboard(payload.new);
+    })
+    .subscribe();
 
-        function exportToPasseportPrevention() {
-            const struct = { schema: "PST-2026", uid: document.getElementById('attestation-id').innerText, worker: document.getElementById('lbl-view-emp').innerText };
-            const blob = "data:text/json;charset=utf-8 ashes," + encodeURIComponent(JSON.stringify(struct, null, 2));
-            const a = document.createElement('a'); a.setAttribute("href", blob); a.setAttribute("download", `attestation.json`);
-            a.click();
-        }
-    </script>
+</script>
 </body>
 </html>
 
