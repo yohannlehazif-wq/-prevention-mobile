@@ -1,486 +1,463 @@
-<!DOCTYPE html>
-<html lang="fr" class="">
+DANS CE HTML , COMMENT FAIRE POUR REMONTER LES INFORMATIONS SALARIE AU MANAGER : <!DOCTYPE html>
+<html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RESTEV 85 - Expert Prévention</title>
-    
-    <meta name="theme-color" content="#3065a8">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RESTEV 85 - Application Prévention PWA</title>
+    
+    <meta name="theme-color" content="#2f6bb2">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        restev: {
-                            blue: '#3065a8',
-                            dark: '#1e4475',
-                            teal: '#75bba8',
-                            magenta: '#ae227d',
-                            yellow: '#e6a00f',
-                            light: '#f4f7fa'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="manifest" href="manifest.json">
-    <style>
-        /* Protection terrain : anti-sélection */
-        body {
-            -webkit-user-select: none;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            background-color: #f4f7fa;
-            margin-bottom: 80px;
-        }
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
-  );
-});
-        /* ================= SPLASH SCREEN ================= */
-        #splash {
-            position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center;
-            background: radial-gradient(circle at center, #254d80 0%, #112237 100%);
-            transition: all 0.6s cubic-bezier(0.77, 0, 0.175, 1); overflow: hidden;
-        }
-        #splash::before {
-            content: ''; position: absolute; inset: 0;
-            background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-                              linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-            background-size: 20px 20px; background-position: center;
-            mask-image: radial-gradient(circle, black 40%, transparent 80%);
-            -webkit-mask-image: radial-gradient(circle, black 40%, transparent 80%);
-        }
-        .logo-wrapper {
-            position: relative; display: inline-block; transform: scale(0) rotate(-15deg);
-            animation: logoPopIn 1s cubic-bezier(0.34, 1.7, 0.64, 1) 0.2s forwards; margin-bottom: 25px;
-        }
-        .splash-logo {
-            width: 120px; height: 120px; border-radius: 16px; background: white; padding: 12px;
-            position: relative; z-index: 2; box-shadow: 0 0 30px rgba(48, 101, 168, 0.4);
-        }
-        .logo-pulse-ring {
-            position: absolute; inset: -5px; border: 2px solid #75bba8; border-radius: 20px;
-            z-index: 1; opacity: 0; animation: ringPulse 2.5s ease-out infinite 1.2s;
-        }
-        .app-title-reveal {
-            font-size: 2.2rem; font-weight: 900; letter-spacing: 4px;
-            background: linear-gradient(45deg, #ffffff, #93c5fd);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            opacity: 0; transform: translateY(15px); animation: textSlideUp 0.6s ease-out 0.8s forwards;
-        }
-        .splash-subtitle-animated {
-            font-size: 0.85rem; font-weight: 600; letter-spacing: 3px; text-transform: uppercase;
-            color: #75bba8; opacity: 0; transform: translateY(10px);
-            animation: textSlideUp 0.6s ease-out 1s forwards; margin-top: 5px;
-        }
-        .btn-enter-premium {
-            position: relative; background: white; color: #1e4475; border: none;
-            padding: 14px 40px; border-radius: 50px; font-weight: 800; font-size: 0.95rem;
-            letter-spacing: 1.5px; overflow: hidden; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-            opacity: 0; transform: scale(0.9);
-            animation: btnReveal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 1.4s forwards, breathing 3s ease-in-out infinite 2s;
-            transition: all 0.2s ease;
-        }
-        .btn-enter-premium:active { transform: scale(0.95) !important; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); }
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
-        @keyframes logoPopIn { 0% { transform: scale(0) rotate(-25deg); filter: blur(5px); } 70% { transform: scale(1.15) rotate(5deg); filter: blur(0); } 100% { transform: scale(1) rotate(0deg); } }
-        @keyframes ringPulse { 0% { transform: scale(0.95); opacity: 0.8; } 50% { opacity: 0.4; } 100% { transform: scale(1.3); opacity: 0; } }
-        @keyframes textSlideUp { to { opacity: 1; transform: translateY(0); } }
-        @keyframes btnReveal { to { opacity: 1; transform: scale(1); } }
-        @keyframes breathing { 0%, 100% { transform: scale(1); box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 12px 35px rgba(117, 187, 168, 0.4); } }
+    <style>
+        .bg-restev-blue { background-color: #2f6bb2; }
+        .text-restev-blue { color: #2f6bb2; }
+        .border-restev-blue { border-color: #2f6bb2; }
+        
+        .bg-restev-magenta { background-color: #b8257b; }
+        .text-restev-magenta { color: #b8257b; }
+        .border-restev-magenta { border-color: #b8257b; }
+        
+        .bg-restev-teal { background-color: #69b3a5; }
+        .text-restev-teal { color: #69b3a5; }
+        .border-restev-teal { border-color: #69b3a5; }
 
-        /* ================= TICKER & NAV ================= */
-        .info-banner { background: #e0f2fe; color: #0369a1; padding: 6px 0; overflow: hidden; white-space: nowrap; font-weight: 600; font-size: 0.75rem; border-bottom: 1px solid #bae6fd; }
-        .ticker { display: inline-block; animation: ticker 35s linear infinite; }
-        .ticker span { padding-right: 60px; }
-        @keyframes ticker { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
+        canvas { touch-action: none; }
+        #report-map { height: 160px; width: 100%; border-radius: 12px; z-index: 10; }
 
-        .app-page { display: none; animation: fadeIn 0.3s ease; }
-        .active-page { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; padding: 0; margin: 0; }
+            .print-card { border: 1px solid #111 !important; box-shadow: none !important; padding: 0 !important; }
+        }
+    </style>
 </head>
-<body class="dark:bg-slate-900 transition-colors duration-200">
+<body class="bg-slate-50 font-sans antialiased text-slate-800 pb-20 select-none">
 
-    <div id="splash">
-        <div class="text-center text-white">
-            <div class="logo-wrapper">
-                <div class="splash-logo flex items-center justify-center">
-                    <i class="fa-solid fa-shield-halved text-5xl text-restev-blue"></i>
-                </div>
-                <div class="logo-pulse-ring"></div>
-            </div>
-            <h2 class="app-title-reveal">RESTEV 85</h2>
-            <p class="splash-subtitle-animated">Expert Prévention</p>
-            <button class="btn-enter-premium mt-8" onclick="closeSplash()">
-                <span>ENTRER</span>
-            </button>
-        </div>
-    </div>
+    <header class="bg-restev-blue text-white p-4 shadow-md sticky top-0 z-50 flex justify-between items-center no-print">
+        <div class="flex items-center gap-3">
+            <div class="h-10 bg-white rounded p-1 flex items-center justify-center shadow-inner">
+                <i class="fa-solid fa-shield-halved text-restev-blue text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-base font-black tracking-wider leading-none">RESTEV 85</h1>
+                <p class="text-[10px] opacity-80 mt-1 uppercase tracking-widest font-semibold">Expert Prévention</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <span id="role-badge" onclick="switchScreen('scr-auth')" class="cursor-pointer bg-white/20 text-white text-[10px] font-bold px-2 py-1 rounded border border-white/30 uppercase tracking-wide">
+                Choisir Profil
+            </span>
+        </div>
+    </header>
 
-    <header class="bg-white dark:bg-slate-800 border-b-4 border-restev-yellow sticky top-0 z-40 px-4 py-3 shadow-sm flex items-center justify-between">
-        <div class="flex items-center space-x-2">
-            <i class="fa-solid fa-shield-halved text-2xl text-restev-blue"></i>
-            <div class="leading-none">
-                <h1 class="font-black text-slate-800 dark:text-white text-lg tracking-wide">RESTEV 85</h1>
-                <span class="text-[10px] text-restev-teal font-bold uppercase tracking-widest">Prévention Terrain</span>
-            </div>
-        </div>
-        <div class="flex items-center space-x-3">
-            <button onclick="toggleNetwork()" id="networkStatusBtn" class="flex items-center space-x-1.5 px-3 py-1 bg-green-100 text-green-800 border border-green-200 rounded-full text-xs font-bold transition-all">
-                <span id="networkDot" class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                <span id="networkText">En ligne</span>
-            </button>
-            <button onclick="toggleDarkMode()" class="text-slate-500 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 p-2 rounded-full">
-                <i class="fa-solid fa-moon dark:hidden"></i>
-                <i class="fa-solid fa-sun hidden dark:block"></i>
-            </button>
-        </div>
-    </header>
+    <div id="legal-banner" class="bg-amber-500 text-white px-4 py-2 text-center text-xs font-bold shadow-sm flex items-center justify-center gap-2 no-print">
+        <i class="fa-solid fa-gavel"></i>
+        <span>Conformité réglementaire Loi Santé au Travail</span>
+    </div>
 
-    <div class="info-banner dark:bg-slate-800 dark:text-restev-teal dark:border-slate-700">
-        <div class="ticker">
-            <span>
-                ⚠️ NOUVEAU SALARIÉ : Le livret d'accueil sécurité est obligatoire dès le 1er jour (Art. L4141-2). 
-                | 🛡️ Droit de retrait : Signalez immédiatement tout danger grave et imminent via l'application.
-                | 📝 DUERP : Pensez à mettre à jour votre document unique suite aux nouveaux signalements.
-            </span>
-        </div>
-    </div>
+    <main class="p-4 max-w-md mx-auto">
 
-    <main class="p-4 max-w-md mx-auto w-full">
-        
-        <div class="bg-slate-200 dark:bg-slate-800 p-1.5 rounded-xl flex space-x-1 mb-5 shadow-inner">
-            <button onclick="switchRole('salarie')" id="btn-salarie" class="flex-1 py-2.5 rounded-lg text-sm font-bold shadow bg-white dark:bg-slate-700 text-restev-blue transition-all">
-                <i class="fa-solid fa-hard-hat me-1"></i> Employé
-            </button>
-            <button onclick="switchRole('manager')" id="btn-manager" class="flex-1 py-2.5 rounded-lg text-sm font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 transition-all">
-                <i class="fa-solid fa-user-tie me-1"></i> Manager
-            </button>
-        </div>
+        <section id="scr-auth" class="space-y-6 block no-print py-4">
+            <div class="text-center space-y-2">
+                <h2 class="text-xl font-black text-slate-800 uppercase tracking-wide">Portail Connexion</h2>
+                <p class="text-xs text-slate-500 px-6">Sélectionnez votre profil d'accès pour adapter les fonctionnalités réglementaires du site.</p>
+            </div>
 
-        <div id="sync-alert" class="hidden bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-xl p-3 mb-4 items-center justify-between shadow-sm">
-            <div class="flex items-center space-x-3">
-                <i class="fa-solid fa-cloud-arrow-up text-amber-600 dark:text-amber-400 text-xl"></i>
-                <p class="text-xs text-amber-800 dark:text-amber-300 font-medium leading-tight">Mode hors-ligne.<br><span id="sync-count" class="font-bold">0</span> signalement(s) en attente.</p>
-            </div>
-        </div>
+            <div class="space-y-4">
+                <div onclick="setRole('employee')" class="bg-white border-2 border-slate-100 hover:border-restev-blue rounded-2xl p-5 shadow-sm transition cursor-pointer flex items-center gap-4 active:scale-[0.99]">
+                    <div class="w-14 h-14 rounded-xl bg-blue-50 flex items-center justify-center text-restev-blue text-2xl shrink-0">
+                        <i class="fa-solid fa-user-graduate"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-sm">Salarié / Nouvel Arrivant</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Compléter mon livret d'accueil, signer mes modules sécurité et remonter un danger.</p>
+                    </div>
+                </div>
 
-        <div id="view-salarie" class="app-page active-page space-y-4 !p-0">
-            
-            <div class="bg-gradient-to-br from-restev-blue to-restev-dark text-white rounded-2xl p-5 shadow-md border border-restev-blue/20">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <h2 class="text-lg font-black tracking-wide uppercase">Mon Espace Sécurité</h2>
-                        <p class="text-xs text-blue-100 mt-1 max-w-[200px]">Votre sécurité est notre priorité. Remplissez vos obligations d'accueil.</p>
-                    </div>
-                    <i class="fa-solid fa-shield-heart text-4xl opacity-50"></i>
-                </div>
-            </div>
-
-            <div onclick="alert('Ouverture du QCM d\'intégration réglementaire...')" class="bg-white dark:bg-slate-800 border-l-4 border-restev-teal rounded-2xl p-4 shadow-sm active:scale-95 transition-all cursor-pointer flex items-center space-x-4">
-                <div class="w-12 h-12 rounded-full bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center text-restev-teal text-xl shrink-0">
-                    <i class="fa-solid fa-clipboard-check"></i>
-                </div>
-                <div class="flex-grow">
-                    <h3 class="font-bold text-slate-800 dark:text-white text-sm">Livret & QCM d'accueil</h3>
-                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Test de sécurité obligatoire pour les nouveaux arrivants.</p>
-                </div>
-                <i class="fa-solid fa-chevron-right text-slate-300"></i>
-            </div>
-
-            <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm">
-                <h3 class="font-black text-restev-magenta text-sm uppercase tracking-wider mb-4 flex items-center">
-                    <i class="fa-solid fa-triangle-exclamation me-2 text-lg"></i> Signaler un Danger
-                </h3>
-                
-                <form onsubmit="submitDanger(event)" class="space-y-4">
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Gravité du risque</label>
-                        <div class="grid grid-cols-3 gap-2">
-                            <label class="border-2 border-slate-200 dark:border-slate-600 rounded-xl p-2 flex flex-col items-center cursor-pointer bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all danger-radio">
-                                <input type="radio" name="dangerLvl" value="faible" class="hidden" checked onchange="updateRadioUI(this, 'border-green-500 text-green-600 bg-green-50 dark:bg-green-900/20')">
-                                <i class="fa-solid fa-info-circle text-lg mb-1"></i>
-                                <span class="text-[10px] font-bold uppercase">Mineur</span>
-                            </label>
-                            <label class="border-2 border-slate-200 dark:border-slate-600 rounded-xl p-2 flex flex-col items-center cursor-pointer bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all danger-radio">
-                                <input type="radio" name="dangerLvl" value="moyen" class="hidden" onchange="updateRadioUI(this, 'border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-900/20')">
-                                <i class="fa-solid fa-triangle-exclamation text-lg mb-1"></i>
-                                <span class="text-[10px] font-bold uppercase">Sérieux</span>
-                            </label>
-                            <label class="border-2 border-slate-200 dark:border-slate-600 rounded-xl p-2 flex flex-col items-center cursor-pointer bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all danger-radio">
-                                <input type="radio" name="dangerLvl" value="critique" class="hidden" onchange="updateRadioUI(this, 'border-red-500 text-red-600 bg-red-50 dark:bg-red-900/20')">
-                                <i class="fa-solid fa-skull-crossbones text-lg mb-1"></i>
-                                <span class="text-[10px] font-bold uppercase">Imminent</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Nature de l'anomalie</label>
-                        <select class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-restev-magenta outline-none dark:text-white transition-all">
-                            <option>EPI manquant ou défectueux</option>
-                            <option>Risque de chute ou glissade</option>
-                            <option>Problème machine / équipement</option>
-                            <option>Exposition produit chimique</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Prise de vue & Description</label>
-                        <textarea rows="2" placeholder="Décrivez rapidement la situation..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-magenta outline-none dark:text-white transition-all mb-2"></textarea>
-                        
-                        <button type="button" class="w-full bg-slate-100 dark:bg-slate-700 border border-dashed border-slate-300 dark:border-slate-500 text-slate-500 dark:text-slate-300 font-bold py-2 rounded-xl text-xs flex justify-center items-center gap-2">
-                            <i class="fa-solid fa-camera"></i> Ajouter une photo terrain
-                        </button>
-                    </div>
-
-                    <button type="submit" class="w-full bg-restev-magenta hover:bg-pink-700 text-white font-bold py-3.5 rounded-xl shadow-md uppercase tracking-wider text-sm flex justify-center items-center gap-2 transition-all active:scale-95">
-                        <i class="fa-solid fa-paper-plane"></i> Transmettre l'alerte
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <div id="view-manager" class="app-page space-y-4 !p-0">
-            
-            <div class="grid grid-cols-2 gap-3">
-                <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border-l-4 border-green-500 shadow-sm">
-                    <div class="flex justify-between items-start mb-1">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Conformité</span>
-                        <i class="fa-solid fa-percent text-green-500"></i>
-                    </div>
-                    <h3 class="text-2xl font-black text-slate-800 dark:text-white">92%</h3>
-                    <p class="text-[10px] text-slate-500 mt-1">Nouveaux arrivants à jour</p>
-                </div>
-
-                <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border-l-4 border-red-500 shadow-sm">
-                    <div class="flex justify-between items-start mb-1">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Dangers</span>
-                        <i class="fa-solid fa-triangle-exclamation text-red-500"></i>
-                    </div>
-                    <h3 class="text-2xl font-black text-slate-800 dark:text-white">3</h3>
-                    <p class="text-[10px] text-slate-500 mt-1">Alertes terrain non traitées</p>
-                </div>
-            </div>
-
-            <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm">
-                <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3 mb-3">
-                    <h3 class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider">Dangers Signalés</h3>
-                    <span class="bg-red-100 text-red-700 text-[10px] font-black px-2 py-0.5 rounded-full">ACTION REQUISE</span>
-                </div>
-
-                <div class="space-y-3">
-                    <div class="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-100 dark:border-slate-600">
-                        <div class="w-2 h-2 rounded-full bg-red-500 mt-1.5 shrink-0 animate-pulse"></div>
-                        <div class="flex-grow">
-                            <h4 class="text-xs font-bold text-slate-800 dark:text-white">Machine de coupe - Carter cassé</h4>
-                            <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Signalé par: Y. Le Hazif - Il y a 10 min</p>
-                        </div>
-                        <button class="bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-white w-8 h-8 rounded-lg flex items-center justify-center text-xs shadow-sm">
-                            <i class="fa-solid fa-eye"></i>
-                        </button>
-                    </div>
-
-                    <div class="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-100 dark:border-slate-600">
-                        <div class="w-2 h-2 rounded-full bg-amber-500 mt-1.5 shrink-0"></div>
-                        <div class="flex-grow">
-                            <h4 class="text-xs font-bold text-slate-800 dark:text-white">Absence lunettes de protection</h4>
-                            <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Zone Stockage Chimique - Hier</p>
-                        </div>
-                        <button class="bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-white w-8 h-8 rounded-lg flex items-center justify-center text-xs shadow-sm">
-                            <i class="fa-solid fa-eye"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div onclick="alert('Ouverture de la console d\'émargement employeur...')" class="bg-restev-blue text-white rounded-2xl p-4 shadow-md active:scale-95 transition-all cursor-pointer flex items-center space-x-4">
-                <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-xl shrink-0">
-                    <i class="fa-solid fa-signature"></i>
-                </div>
-                <div class="flex-grow">
-                    <h3 class="font-bold text-sm">Viser un accueil sécurité</h3>
-                    <p class="text-[11px] text-blue-100 mt-0.5">1 livret en attente de votre signature.</p>
-                </div>
-            </div>
-
-        </div>
-
-    </main>
-
-    <nav class="fixed bottom-3 left-4 right-4 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md border border-slate-200 dark:border-slate-700 rounded-2xl flex justify-around p-2 shadow-lg z-50">
-        <button class="flex flex-col items-center justify-center w-16 py-1 text-restev-blue font-bold transition-transform active:scale-90">
-            <i class="fa-solid fa-house text-lg mb-1"></i>
-            <span class="text-[9px] uppercase tracking-wider">Accueil</span>
-        </button>
-        <button onclick="openScanner()" class="flex flex-col items-center justify-center w-16 py-1 text-slate-400 hover:text-restev-blue dark:hover:text-white transition-transform active:scale-90">
-            <i class="fa-solid fa-qrcode text-lg mb-1"></i>
-            <span class="text-[9px] uppercase tracking-wider">Scanner</span>
-        </button>
-        <button class="flex flex-col items-center justify-center w-16 py-1 text-slate-400 hover:text-restev-blue dark:hover:text-white transition-transform active:scale-90">
-            <i class="fa-solid fa-folder-open text-lg mb-1"></i>
-            <span class="text-[9px] uppercase tracking-wider">Fiches</span>
-        </button>
-    </nav>
-
-    <div id="scannerModal" class="fixed inset-0 bg-black/95 z-[10000] hidden flex-col justify-between p-6">
-        <div class="flex items-center justify-between text-white">
-            <button onclick="closeScanner()" class="p-3 rounded-xl bg-white/10 active:bg-white/20">
-                <i class="fa-solid fa-xmark text-xl"></i>
-            </button>
-            <span class="text-sm font-bold tracking-wide uppercase">Scanner un équipement</span>
-            <button onclick="this.classList.toggle('text-yellow-400')" class="p-3 rounded-xl bg-white/10 active:bg-white/20 text-slate-400">
-                <i class="fa-solid fa-bolt text-xl"></i>
-            </button>
-        </div>
-
-        <div class="w-full max-w-xs aspect-square mx-auto border-2 border-dashed border-white/30 rounded-3xl relative flex items-center justify-center overflow-hidden">
-            <div class="w-full h-1 bg-restev-teal shadow-[0_0_15px_#75bba8] absolute top-0 left-0 animate-[laserScan_2s_infinite]"></div>
-            <p class="text-white/50 text-xs font-mono">Viseur caméra simulé</p>
-        </div>
-
-        <button onclick="simulateScanSuccess()" class="w-full bg-restev-teal text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-all text-sm uppercase tracking-wider">
-            Simuler Scan (Haptique)
-        </button>
-    </div>
-
-    <script>
-        [cite_start]// --- 1. Gestion du Splash Screen [cite: 1] ---
-        function closeSplash() {
-            const splash = document.getElementById('splash');
-            splash.style.opacity = '0';
-            setTimeout(() => { splash.style.display = 'none'; }, 600);
-        }
-        setTimeout(() => {
-            if(document.getElementById('splash').style.display !== 'none') { closeSplash(); }
-        }, 3500);
-
-        // --- 2. Bascule Employé / Manager ---
-        function switchRole(role) {
-            const viewSalarie = document.getElementById('view-salarie');
-            const viewManager = document.getElementById('view-manager');
-            const btnSalarie = document.getElementById('btn-salarie');
-            const btnManager = document.getElementById('btn-manager');
-
-            const activeClass = "flex-1 py-2.5 rounded-lg text-sm font-bold shadow bg-white dark:bg-slate-700 text-restev-blue transition-all";
-            const inactiveClass = "flex-1 py-2.5 rounded-lg text-sm font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 transition-all";
-
-            if (role === 'salarie') {
-                viewSalarie.classList.add('active-page');
-                viewManager.classList.remove('active-page');
-                btnSalarie.className = activeClass;
-                btnManager.className = inactiveClass;
-            } else {
-                viewSalarie.classList.remove('active-page');
-                viewManager.classList.add('active-page');
-                btnManager.className = activeClass;
-                btnSalarie.className = inactiveClass;
-            }
-        }
-
-        // --- 3. UI Radio Boutons Formulaire Danger ---
-        // Initialiser visuellement le premier bouton au chargement
-        window.addEventListener('DOMContentLoaded', () => {
-            const firstRadio = document.querySelector('input[name="dangerLvl"]:checked');
-            if(firstRadio) updateRadioUI(firstRadio, 'border-green-500 text-green-600 bg-green-50 dark:bg-green-900/20');
-        });
-
-        function updateRadioUI(radioInput, activeClasses) {
-            // Réinitialiser tous les labels
-            document.querySelectorAll('.danger-radio').forEach(label => {
-                label.className = "border-2 border-slate-200 dark:border-slate-600 rounded-xl p-2 flex flex-col items-center cursor-pointer bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all danger-radio";
-            });
-            // Appliquer les classes actives au parent du radio cliqué
-            radioInput.parentElement.className = `border-2 rounded-xl p-2 flex flex-col items-center cursor-pointer transition-all danger-radio ${activeClasses}`;
-        }
-
-        // --- 4. Simulateur Hors-ligne et Soumission ---
-        let isOnline = true;
-        let syncCount = 0;
-
-        function toggleNetwork() {
-            isOnline = !isOnline;
-            const btn = document.getElementById('networkStatusBtn');
-            const dot = document.getElementById('networkDot');
-            const text = document.getElementById('networkText');
-            const alertBox = document.getElementById('sync-alert');
-
-            if (isOnline) {
-                btn.className = "flex items-center space-x-1.5 px-3 py-1 bg-green-100 text-green-800 border border-green-200 rounded-full text-xs font-bold transition-all";
-                dot.className = "w-2 h-2 rounded-full bg-green-500 animate-pulse";
-                text.innerText = "En ligne";
-                
-                if (syncCount > 0) {
-                    alert(`🌐 Réseau rétabli ! ${syncCount} signalement(s) de danger synchronisé(s) avec succès.`);
-                    syncCount = 0;
-                    document.getElementById('sync-count').innerText = syncCount;
-                }
-                alertBox.classList.add('hidden');
-                alertBox.classList.remove('flex');
-            } else {
-                btn.className = "flex items-center space-x-1.5 px-3 py-1 bg-amber-100 text-amber-800 border border-amber-200 rounded-full text-xs font-bold transition-all";
-                dot.className = "w-2 h-2 rounded-full bg-amber-500";
-                text.innerText = "Hors-ligne";
-                
-                alertBox.classList.remove('hidden');
-                alertBox.classList.add('flex');
-            }
-        }
-
-        function submitDanger(e) {
-            e.preventDefault();
-            // Retour Haptique
-            if (navigator.vibrate) navigator.vibrate(50);
-
-            if (!isOnline) {
-                syncCount++;
-                document.getElementById('sync-count').innerText = syncCount;
-                alert("Alerte de danger stockée localement (Pas de réseau). Elle sera transmise au manager dès que la connexion reviendra.");
-            } else {
-                alert("Alerte transmise instantanément au manager du site !");
-            }
-            e.target.reset();
-            // Remise à zéro UI radio
-            const firstRadio = document.querySelector('input[name="dangerLvl"][value="faible"]');
-            firstRadio.checked = true;
-            updateRadioUI(firstRadio, 'border-green-500 text-green-600 bg-green-50 dark:bg-green-900/20');
-        }
-
-        // --- 5. Mode Sombre ---
-        function toggleDarkMode() {
-            document.documentElement.classList.toggle('dark');
-        }
-
-        // --- 6. Simulateur Scanner ---
-        function openScanner() {
-            document.getElementById('scannerModal').classList.remove('hidden');
-            document.getElementById('scannerModal').classList.add('flex');
-        }
-        function closeScanner() {
-            document.getElementById('scannerModal').classList.add('hidden');
-            document.getElementById('scannerModal').classList.remove('flex');
-        }
-        function simulateScanSuccess() {
-            if (navigator.vibrate) { navigator.vibrate([100, 50, 100]); } // Vibreur
-            alert("Scan EPI Validé. L'équipement de protection est conforme.");
-            closeScanner();
-        }
-    </script>
-</body>
-</html>
+                <div onclick="setRole('manager')" class="bg-white border-2 border-slate-100 hover:border-restev-magenta rounded-2xl p-5 shadow-sm transition cursor-pointer flex items-center gap-4 active:scale-[0.99]">
+                    <div class="w-14 h-14 rounded-xl bg-pink-50 flex items-center justify-center text-restev-magenta text-2xl shrink-0">
+                        <i class="fa-solid fa-user-tie"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-sm">Manager / Responsable Site</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Piloter les intégrations, signer les attestations et traiter le registre des risques.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
 
 
-Tu as désormais un code unifié et robuste, centré sur la prévention et le dialogue terrain-manager ! Est-ce que les libellés utilisés pour les dangers te conviennent ?
+        <section id="scr-dashboard" class="hidden space-y-6 no-print">
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                <h2 id="dash-title" class="text-lg font-bold text-slate-800 mb-1">Pilote de Prévention Vendée</h2>
+                <p id="dash-subtitle" class="text-xs text-slate-500"></p>
+            </div>
+
+            <div id="manager-qr-shortcut" class="hidden bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-4 shadow-md space-y-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center text-xl text-restev-teal">
+                        <i class="fa-solid fa-qrcode"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300">Intégration d'un Nouvel Arrivant</h4>
+                        <p class="text-[11px] text-slate-400">Faites scanner le code pour ouvrir son parcours sécurisé 1er jour.</p>
+                    </div>
+                </div>
+                <button onclick="generateEmployeeQR()" class="w-full bg-restev-blue text-white font-bold py-2.5 px-4 rounded-xl text-xs uppercase tracking-wide shadow transition active:scale-[0.98]">
+                    Générer le QR Code Écran
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4">
+                <div onclick="switchScreen('scr-onboarding-1')" class="bg-white border-l-4 border-restev-blue rounded-2xl p-4 shadow-sm hover:shadow-md transition cursor-pointer flex items-center gap-4 active:scale-[0.99]">
+                    <div class="w-14 h-14 rounded-xl bg-blue-50 flex items-center justify-center text-restev-blue text-2xl shrink-0">
+                        <i class="fa-solid fa-file-signature"></i>
+                    </div>
+                    <div class="flex-grow">
+                        <h3 id="card-onboard-title" class="font-bold text-slate-800 text-sm">Accueil Sécurité Intégration</h3>
+                        <p id="card-onboard-desc" class="text-xs text-slate-500 mt-0.5">Parcours d'arrivée obligatoire des publics vulnérables.</p>
+                        <span class="inline-block mt-2 text-[10px] bg-blue-100 text-restev-blue font-bold px-2 py-0.5 rounded uppercase">Force Probante</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-300 text-sm"></i>
+                </div>
+
+                <div onclick="switchScreen('scr-flash-report')" class="bg-white border-l-4 border-restev-magenta rounded-2xl p-4 shadow-sm hover:shadow-md transition cursor-pointer flex items-center gap-4 active:scale-[0.99]">
+                    <div class="w-14 h-14 rounded-xl bg-pink-50 flex items-center justify-center text-restev-magenta text-2xl shrink-0">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <div class="flex-grow">
+                        <h3 class="font-bold text-slate-800 text-sm">Signalement Flash Risque</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Remontée participative immédiate avec photo & GPS précis.</p>
+                        <span class="inline-block mt-2 text-[10px] bg-pink-100 text-restev-magenta font-bold px-2 py-0.5 rounded uppercase">Terrain</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-300 text-sm"></i>
+                </div>
+            </div>
+
+            <div id="manager-only-panel" class="hidden space-y-4">
+                
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                        <span><i class="fa-solid fa-user-clock text-restev-blue mr-1"></i> Accueils reçus via QR Code</span>
+                        <span id="pending-count" class="bg-blue-100 text-restev-blue px-1.5 py-0.5 rounded text-[9px] font-bold">1 À VISER</span>
+                    </h4>
+                    <div id="pending-onboardings-list" class="space-y-2">
+                        </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                        <span><i class="fa-solid fa-folder-open mr-1"></i> Registre Récent des Dangers</span>
+                        <span class="bg-red-100 text-red-600 px-1.5 py-0.5 rounded text-[9px] font-bold">2 À TRAITER</span>
+                    </h4>
+                    <div class="space-y-2">
+                        <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex justify-between items-center text-xs">
+                            <div>
+                                <p class="font-bold text-slate-800">Fuite hydraulique - Ligne d'emballage</p>
+                                <p class="text-[10px] text-slate-400 font-mono">Zone logistique | Lat: 46.671, Lng: -1.426</p>
+                            </div>
+                            <span class="bg-red-500 text-white font-bold text-[9px] px-2 py-0.5 rounded">Urgent</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <section id="scr-qr-display" class="hidden space-y-5 text-center py-4 no-print">
+            <div class="flex items-center gap-2 mb-2 text-left">
+                <button onclick="switchScreen('scr-dashboard')" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-arrow-left"></i></button>
+                <h2 class="text-base font-bold text-slate-800">Partager le livret d'accueil</h2>
+            </div>
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4 flex flex-col items-center">
+                <p class="text-xs text-slate-600 px-2 leading-relaxed">
+                    Présentez ce QR Code au **salarié nouvel arrivant**. En le scannant, son smartphone ouvrira l'application directement configurée sur son profil restreint.
+                </p>
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-inner flex justify-center items-center">
+                    <canvas id="qr-canvas" class="bg-white p-2 rounded-xl shadow-sm"></canvas>
+                </div>
+            </div>
+            <button onclick="switchScreen('scr-dashboard')" class="w-full bg-slate-800 text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider">
+                Fermer
+            </button>
+        </section>
+
+
+        <section id="scr-onboarding-1" class="hidden space-y-4 no-print">
+            <div class="flex items-center gap-2 mb-2">
+                <button onclick="switchScreen('scr-dashboard')" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-arrow-left"></i></button>
+                <h2 class="text-base font-bold text-slate-800">Parcours Intégration Sécurité</h2>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider"><i class="fa-solid fa-address-card mr-1"></i> Identification</h3>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Nom & Prénom du Travailleur</label>
+                    <input type="text" id="reg-emp-name" placeholder="Ex: Lucas Bernard" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue outline-none bg-slate-50">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Statut du public</label>
+                    <select id="reg-emp-status" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue outline-none bg-slate-50 font-medium">
+                        <option value="Intérimaire">Intérimaire (Mission temporaire)</option>
+                        <option value="Jeune Travailleur / Apprenti">Jeune Travailleur / Apprenti / Stagiaire</option>
+                        <option value="Nouvel Arrivant">Nouvel Arrivant (CDI / CDD)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Entreprise Utilisatrice / Établissement</label>
+                    <input type="text" id="reg-company" placeholder="Ex: Logistique Vendée SAS" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue outline-none bg-slate-50">
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider"><i class="fa-solid fa-list-check mr-1"></i> Contenu délivré (1er jour)</h3>
+                <div class="space-y-2">
+                    <label class="flex items-start gap-3 p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 cursor-pointer">
+                        <input type="checkbox" id="chk-module-1" checked class="mt-1 w-5 h-5 text-restev-blue rounded border-slate-300 focus:ring-restev-blue">
+                        <span class="text-xs text-slate-700 leading-tight"><strong>Risques Poste & EPI :</strong> Explications des risques liés au poste et remise des protections obligatoires.</span>
+                    </label>
+                    <label class="flex items-start gap-3 p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 cursor-pointer">
+                        <input type="checkbox" id="chk-module-2" class="mt-1 w-5 h-5 text-restev-blue rounded border-slate-300 focus:ring-restev-blue">
+                        <span class="text-xs text-slate-700 leading-tight"><strong>Secours & Évacuation :</strong> Repérage des issues, alarmes et points de rassemblement.</span>
+                    </label>
+                </div>
+            </div>
+
+            <button onclick="validateFirstStep()" class="w-full bg-restev-blue text-white font-bold py-3.5 px-4 rounded-xl shadow-md flex justify-center items-center gap-2 text-sm uppercase tracking-wider">
+                Passer à l'émargement <i class="fa-solid fa-arrow-right text-xs"></i>
+            </button>
+        </section>
+
+
+        <section id="scr-onboarding-2" class="hidden space-y-4 no-print">
+            <div class="flex items-center gap-2 mb-2">
+                <button onclick="switchScreen('scr-onboarding-1')" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-arrow-left"></i></button>
+                <h2 class="text-base font-bold text-slate-800">Émargement</h2>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-4">
+                <div class="space-y-1">
+                    <p class="text-xs font-bold text-slate-700 flex items-center gap-1"><i class="fa-solid fa-pen text-restev-magenta"></i> Signature du Salarié Nouvel Arrivant :</p>
+                    <div class="border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+                        <canvas id="canv-employee" class="w-full h-26 bg-white"></canvas>
+                    </div>
+                    <div class="text-right">
+                        <button onclick="clearSign('canv-employee')" class="text-[10px] text-red-500 font-bold"><i class="fa-solid fa-eraser"></i> Effacer</button>
+                    </div>
+                </div>
+
+                <div id="tutor-signature-block" class="space-y-4 border-t pt-4 border-slate-100">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Nom du Responsable / Tuteur Évaluateur</label>
+                        <input type="text" id="reg-tutor-name" placeholder="Ex: Robert Moreau" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue outline-none bg-slate-50">
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-xs font-bold text-slate-700 flex items-center gap-1"><i class="fa-solid fa-pen text-restev-blue"></i> Signature du Manager / Tuteur :</p>
+                        <div class="border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+                            <canvas id="canv-tutor" class="w-full h-26 bg-white"></canvas>
+                        </div>
+                        <div class="text-right">
+                            <button onclick="clearSign('canv-tutor')" class="text-[10px] text-red-500 font-bold"><i class="fa-solid fa-eraser"></i> Effacer</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button id="btn-employee-submit" onclick="submitToManagerQueue()" class="hidden w-full bg-restev-blue text-white font-bold py-4 px-4 rounded-xl shadow-lg flex justify-center items-center gap-2 text-sm uppercase tracking-wider">
+                <i class="fa-solid fa-paper-plane"></i> Transmettre au Responsable
+            </button>
+
+            <button id="btn-manager-finalize" onclick="processFinalAttestation()" class="hidden w-full bg-restev-magenta text-white font-bold py-4 px-4 rounded-xl shadow-lg flex justify-center items-center gap-2 text-sm uppercase tracking-wider">
+                <i class="fa-solid fa-lock"></i> Verrouiller & Valider le Livret
+            </button>
+        </section>
+
+
+        <section id="scr-manager-review" class="hidden space-y-4 no-print">
+            <div class="flex items-center gap-2 mb-2">
+                <button onclick="switchScreen('scr-dashboard')" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-arrow-left"></i></button>
+                <h2 class="text-base font-bold text-slate-800">Contrôle et Visa Tuteur</h2>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3 text-xs">
+                <h3 class="text-slate-400 font-bold uppercase text-[10px]">Informations Salarié</h3>
+                <p><strong>Nom :</strong> <span id="rev-emp-name">-</span></p>
+                <p><strong>Société :</strong> <span id="rev-company">-</span></p>
+                <p><strong>Statut :</strong> <span id="rev-status">-</span></p>
+                
+                <h3 class="text-slate-400 font-bold uppercase text-[10px] pt-2">Modules validés par le salarié</h3>
+                <ul id="rev-modules-list" class="space-y-1 bg-slate-50 p-2 rounded-xl border border-slate-100"></ul>
+
+                <h3 class="text-slate-400 font-bold uppercase text-[10px] pt-2">Émargement initial salarié</h3>
+                <div class="border border-slate-200 rounded-lg bg-slate-100 p-2 h-20 flex items-center justify-center">
+                    <img id="img-rev-emp-sign" class="max-h-full max-w-full object-contain">
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+                <h3 class="text-slate-400 font-bold uppercase text-[10px]"><i class="fa-solid fa-signature text-restev-blue"></i> Validation finale par l'employeur</h3>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Nom de l'encadrant / Tuteur</label>
+                    <input type="text" id="reg-tutor-name-rev" placeholder="Ex: Robert Moreau" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue outline-none bg-slate-50">
+                </div>
+                <div class="space-y-1">
+                    <p class="text-xs font-bold text-slate-700">Signature Manuelle Manager :</p>
+                    <div class="border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+                        <canvas id="canv-tutor-rev" class="w-full h-26 bg-white"></canvas>
+                    </div>
+                    <div class="text-right">
+                        <button onclick="clearSign('canv-tutor-rev')" class="text-[10px] text-red-500 font-bold"><i class="fa-solid fa-eraser"></i> Effacer</button>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="finalizeReviewSubmission()" class="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-xl text-xs uppercase tracking-wider shadow">
+                <i class="fa-solid fa-certificate mr-1"></i> Co-signer et Clôturer le livret
+            </button>
+        </section>
+
+
+        <section id="scr-employee-success" class="hidden space-y-4 no-print text-center py-6">
+            <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto border border-blue-100">
+                <i class="fa-solid fa-paper-plane text-restev-blue text-4xl animate-bounce"></i>
+            </div>
+            <div class="space-y-2 px-4">
+                <h2 class="text-lg font-black text-slate-800 uppercase">Livret Transmis</h2>
+                <p class="text-xs text-slate-500 leading-relaxed">Vos validations et votre signature ont été envoyées sur la console du responsable de site.</p>
+                <p class="text-xs font-bold text-slate-700 bg-slate-100 p-3 rounded-xl border border-dashed border-slate-200 mt-2">Veuillez vous rapprocher de votre tuteur pour la validation finale du document.</p>
+            </div>
+            <button onclick="resetAllForms()" class="w-full bg-slate-800 text-white font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider">
+                Retour à mon espace
+            </button>
+        </section>
+
+
+        <section id="scr-attestation" class="hidden space-y-4">
+            <div id="print-zone" class="bg-white rounded-2xl p-6 shadow-md border border-slate-200 print-card space-y-5">
+                <div class="flex justify-between items-start border-b pb-3 border-slate-200">
+                    <div>
+                        <h3 class="text-sm font-black text-slate-900 uppercase tracking-wide">Attestation d'Accueil Sécurité</h3>
+                        <p class="text-[10px] text-slate-500">Généré sous la supervision du RESTEV 85</p>
+                    </div>
+                    <span id="attestation-id" class="text-[9px] font-mono bg-slate-100 text-slate-600 px-2 py-1 rounded font-bold">RE-85-XXXXXX</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 text-xs border-b pb-3 border-slate-100">
+                    <div>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase block">Entreprise Utilisatrice</span>
+                        <span id="lbl-view-company" class="font-bold text-slate-800 uppercase">-</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase block">Date d'Horodatage</span>
+                        <span id="lbl-view-date" class="font-bold text-slate-800">-</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase block">Salarié Intégré</span>
+                        <span id="lbl-view-emp" class="font-bold text-slate-800">-</span>
+                        <span id="lbl-view-status" class="text-[10px] text-restev-magenta font-semibold block mt-0.5">-</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase block">Tuteur / Encadrant</span>
+                        <span id="lbl-view-tutor" class="font-bold text-slate-800">-</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-2">
+                    <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Instructions réglementaires validées :</h4>
+                    <ul id="lbl-view-modules" class="text-xs space-y-1 text-slate-700"></ul>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 pt-2">
+                    <div class="text-center">
+                        <span class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Visa Salarié</span>
+                        <div class="border border-slate-200 rounded-lg bg-slate-50 p-1 h-16 flex items-center justify-center">
+                            <img id="img-render-emp" class="max-h-full max-w-full object-contain">
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <span class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Visa Responsable</span>
+                        <div class="border border-slate-200 rounded-lg bg-slate-50 p-1 h-16 flex items-center justify-center">
+                            <img id="img-render-tutor" class="max-h-full max-w-full object-contain">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-2 no-print">
+                <button onclick="window.print()" class="w-full bg-emerald-600 text-white font-bold py-3 px-4 rounded-xl shadow text-xs tracking-wider uppercase flex justify-center items-center gap-2">
+                    <i class="fa-solid fa-print"></i> Imprimer / Export PDF
+                </button>
+                <button onclick="exportToPasseportPrevention()" class="w-full bg-restev-blue text-white font-bold py-3 px-4 rounded-xl shadow text-xs tracking-wider uppercase flex justify-center items-center gap-2">
+                    <i class="fa-solid fa-file-export"></i> Transférer au Passeport Prévention (JSON)
+                </button>
+                <button onclick="resetAllForms()" class="w-full bg-slate-200 text-slate-700 font-bold py-2.5 px-4 rounded-xl text-xs uppercase text-center block">
+                    Retour au Tableau de Bord
+                </button>
+            </div>
+        </section>
+
+
+        <section id="scr-flash-report" class="hidden space-y-4 no-print">
+            <div class="flex items-center gap-2 mb-2">
+                <button onclick="switchScreen('scr-dashboard')" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-arrow-left"></i></button>
+                <h2 class="text-base font-bold text-slate-800">Signalement Flash Terrain</h2>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-4">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Intitulé du danger constaté</label>
+                    <input type="text" id="flash-title" placeholder="Ex: Palette instable, fuite d'huile..." class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-magenta outline-none bg-slate-50">
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-[11px] font-bold text-slate-600 uppercase">Localisation précise (GPS Matériel)</label>
+                        <button type="button" onclick="triggerHighAccuracyLocation()" id="btn-geo-action" class="bg-restev-teal hover:opacity-95 text-white font-bold py-1 px-2.5 rounded-lg text-[10px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-location-crosshairs animate-pulse"></i> Capturer ma position
+                        </button>
+                    </div>
+                    <div class="space-y-2">
+                        <div id="report-map" class="border border-slate-200 bg-slate-100 shadow-inner"></div>
+                        <input type="text" id="flash-geo-coords" readonly placeholder="Coordonnées (Latitude, Longitude)" class="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none bg-slate-100 text-slate-600 font-mono">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Prise de vue</label>
+                        <input type="file" id="flash-camera-file" accept="image/*" capture="environment" class="hidden" onchange="handleFlashPhoto(event)">
+                        <button type="button" onclick="document.getElementById('flash-camera-file').click()" id="btn-flash-capture" class="w-full bg-restev-magenta text-white rounded-xl h-24 flex flex-col items-center justify-center gap-1 shadow-sm active:scale-95 transition">
+                            <i class="fa-solid fa-camera text-2xl"></i>
+                            <span class="text-[9px] font-bold uppercase tracking-wider">Ouvrir l'appareil</span>
+                        </button>
+                    </div>
+                    <div>
+                        <div class="w-full h-24 border-2 border-dashed border-slate-200 bg-slate-50 rounded-xl flex items-center justify-center p-1 overflow-hidden">
+                            <div id="flash-photo-placeholder" class="text-slate-400 flex flex-col items-center gap-0.5 text-center p-2">
+                                <i class="fa-solid fa-image text-lg opacity-50"></i>
+                                <span class="text-[9px]">Aucun cliché</span>
+                            </div>
+                            <img id="img-flash-preview" class="hidden w-full h-full object-cover rounded-lg">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Complément d'information</label>
+                    <textarea id="flash-desc" rows="2" placeholder="Précisez le contexte..." class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-magenta outline-none bg-slate-50"></textarea>
+                </div>
+            </div>
+
+            <button onclick="submitFlashReport()" class="w-full bg-restev-magenta text-white font-bold py-3.5 px-4 rounded-xl shadow-md flex justify-center items-center gap-2 text-sm uppercase tracking-wider">
+                <i class="fa-solid fa-paper-plane text-xs"></i> Envoyer au Responsable Site
+            </button>
+        </section>
+
+        <section id="scr-flash-success" class="hidd
