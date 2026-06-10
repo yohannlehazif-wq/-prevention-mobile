@@ -1,936 +1,477 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RESTEV 85 - Expert Prévention</title>
-
-    <link rel="manifest" href="manifest.json">
+    
     <meta name="theme-color" content="#3065a8">
-    <link rel="icon" type="image/png" href="logo_restev_carre.png">
-
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="RESTEV 85">
-    <link rel="apple-touch-icon" href="logo_restev_carre.png">
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
-    <style>
-    :root { 
-        --r-blue: #3065a8; 
-        --r-blue-dark: #1e4475;
-        --r-teal: #75bba8; 
-        --r-purple: #ae227d; 
-        --r-yellow: #e6a00f; 
-        --r-light: #f4f7fa; 
-        --shadow-sm: 0 2px 8px rgba(48, 101, 168, 0.05);
-        --shadow-md: 0 8px 24px rgba(48, 101, 168, 0.08);
-        --shadow-lg: 0 16px 32px rgba(30, 68, 117, 0.12);
-        --radius-sm: 10px;
-        --radius-md: 16px;
-        --radius-lg: 24px;
-    }
-
-    body { 
-        background-color: var(--r-light); 
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-        margin-bottom: 110px; 
-        overflow-x: hidden; 
-        color: #334155;
-        -webkit-font-smoothing: antialiased;
-        -webkit-user-select: none; /* Protection contre la selection accidentelle sur le terrain */
-        user-select: none;
-    }
-
-    .nav-bottom, .btn-enter-premium, .card-custom {
-        user-select: none;
-        -webkit-user-select: none;
-    }
-
-    #splash { 
-        position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; 
-        background: radial-gradient(circle at center, #254d80 0%, #112237 100%);
-        transition: all 0.6s cubic-bezier(0.77, 0, 0.175, 1); overflow: hidden;
-    }
-
-    #splash::before {
-        content: ''; position: absolute; inset: 0;
-        background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), 
-                          linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-        background-size: 20px 20px; background-position: center;
-        mask-image: radial-gradient(circle, black 40%, transparent 80%);
-        -webkit-mask-image: radial-gradient(circle, black 40%, transparent 80%);
-    }
-
-    .logo-wrapper {
-        position: relative; display: inline-block; transform: scale(0) rotate(-15deg);
-        animation: logoPopIn 1s cubic-bezier(0.34, 1.7, 0.64, 1) 0.2s forwards; margin-bottom: 25px;
-    }
-
-    .splash-logo {
-        width: 120px; height: 120px; border-radius: var(--radius-md); background: white; padding: 12px;
-        position: relative; z-index: 2; box-shadow: 0 0 30px rgba(48, 101, 168, 0.4);
-    }
-
-    .logo-pulse-ring {
-        position: absolute; inset: -5px; border: 2px solid var(--r-teal); border-radius: 20px;
-        z-index: 1; opacity: 0; animation: ringPulse 2.5s ease-out infinite 1.2s;
-    }
-
-    .scan-line {
-        position: absolute; left: 0; right: 0; top: 0; height: 4px;
-        background: linear-gradient(90deg, transparent, var(--r-yellow), transparent);
-        box-shadow: 0 0 12px var(--r-yellow); z-index: 3; opacity: 0.8;
-        animation: laserScan 3s ease-in-out infinite 1.5s; pointer-events: none;
-    }
-
-    .app-title-reveal {
-        font-size: 2.2rem; font-weight: 900; letter-spacing: 4px;
-        background: linear-gradient(45deg, #ffffff, #93c5fd);
-        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        opacity: 0; transform: translateY(15px); animation: textSlideUp 0.6s ease-out 0.8s forwards;
-    }
-
-    .splash-subtitle-animated {
-        font-size: 0.85rem; font-weight: 600; letter-spacing: 3px; text-transform: uppercase;
-        color: var(--r-teal); opacity: 0; transform: translateY(10px);
-        animation: textSlideUp 0.6s ease-out 1s forwards; margin-top: 5px;
-    }
-
-    .ecg-container-premium { width: 180px; margin: 20px auto; opacity: 0; animation: fadeInECG 0.8s ease-out 1.2s forwards; }
-
-    .ecg-line-premium {
-        fill: none; stroke: #ef4444; stroke-width: 3; stroke-linecap: round;
-        stroke-linejoin: round; stroke-dasharray: 400; stroke-dashoffset: 400;
-        animation: heartbeatStream 2.5s linear infinite;
-    }
-
-    .btn-enter-premium {
-        position: relative; background: white; color: var(--r-blue-dark); border: none;
-        padding: 14px 40px; border-radius: 50px; font-weight: 800; font-size: 0.95rem;
-        letter-spacing: 1.5px; overflow: hidden; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-        opacity: 0; transform: scale(0.9);
-        animation: btnReveal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 1.4s forwards, breathing 3s ease-in-out infinite 2s;
-        transition: all 0.2s ease;
-    }
-    .btn-enter-premium span { position: relative; z-index: 2; }
-    .btn-enter-premium::before {
-        content: ''; position: absolute; inset: 0;
-        background: linear-gradient(90deg, transparent, rgba(117, 187, 168, 0.3), transparent);
-        transform: translateX(-100%); transition: transform 0.5s; z-index: 1;
-    }
-    .btn-enter-premium:active { transform: scale(0.95) !important; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); }
-
-    @keyframes logoPopIn { 0% { transform: scale(0) rotate(-25deg); filter: blur(5px); } 70% { transform: scale(1.15) rotate(5deg); filter: blur(0); } 100% { transform: scale(1) rotate(0deg); } }
-    @keyframes ringPulse { 0% { transform: scale(0.95); opacity: 0.8; } 50% { opacity: 0.4; } 100% { transform: scale(1.3); opacity: 0; } }
-    @keyframes laserScan { 0%, 100% { top: 0%; opacity: 0; } 10%, 90% { opacity: 1; } 50% { top: 100%; opacity: 1; } }
-    @keyframes textSlideUp { to { opacity: 1; transform: translateY(0); } }
-    @keyframes fadeInECG { to { opacity: 0.7; } }
-    @keyframes heartbeatStream { 0% { stroke-dashoffset: 400; } 60% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -400; } }
-    @keyframes btnReveal { to { opacity: 1; transform: scale(1); } }
-    @keyframes breathing { 0%, 100% { transform: scale(1); box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 12px 35px rgba(117, 187, 168, 0.4); } }
-
-    /* HEADER FIXE + INDICATEUR RÉSEAU */
-    .app-header { 
-        background: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;
-        border-bottom: 3px solid var(--r-yellow); position: sticky; top: 0; z-index: 1000; box-shadow: var(--shadow-sm);
-    }
-    .network-badge {
-        font-size: 0.7rem; font-weight: 800; padding: 6px 12px; border-radius: 50px;
-        transition: all 0.3s ease; cursor: pointer; border: 1px solid transparent;
-    }
-    .network-online { background-color: #dcfce7; color: #166534; border-color: #bbf7d0; }
-    .network-offline { background-color: #fef3c7; color: #92400e; border-color: #fde68a; }
-    .pulse-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
-    .pulse-dot.online { background-color: #22c55e; animation: pulseGreen 2s infinite; }
-    .pulse-dot.offline { background-color: #f59e0b; }
-    @keyframes pulseGreen { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
-
-    .info-banner { background: #e0f2fe; color: #0369a1; padding: 6px 0; overflow: hidden; white-space: nowrap; font-weight: 600; font-size: 0.75rem; border-bottom: 1px solid #bae6fd; }
-    .ticker { display: inline-block; animation: ticker 45s linear infinite; }
-    .ticker span { padding-right: 60px; }
-    @keyframes ticker { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
-
-    .nav-bottom { 
-        position: fixed; bottom: 20px; left: 15px; right: 15px; 
-        background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-        display: flex; justify-content: space-around; padding: 10px 5px; 
-        border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); z-index: 1000; border: 1px solid rgba(255, 255, 255, 0.6);
-    }
-    .nav-item-bottom { 
-        border: none; background: none; color: #64748b; font-size: 0.62rem; font-weight: 700; 
-        display: flex; flex-direction: column; align-items: center; flex: 1; 
-        text-decoration: none; outline: none; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        border-radius: var(--radius-md); padding: 6px 0;
-    }
-    .nav-item-bottom:active { transform: scale(0.9); background: rgba(48, 101, 168, 0.05); }
-    .nav-item-bottom.active { color: var(--r-blue); }
-    .nav-item-bottom i { font-size: 1.35rem; margin-bottom: 4px; transition: transform 0.2s ease; }
-    .nav-item-bottom.active i { transform: translateY(-2px); }
-
-    .app-page { display: none; padding: 22px 16px; animation: fadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
-    .active-page { display: block !important; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-
-    .card-custom { 
-        background: white; border-radius: var(--radius-md); padding: 20px; margin-bottom: 16px; border: none;
-        border-left: 5px solid var(--r-blue); box-shadow: var(--shadow-md); transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .card-custom:active { transform: translateY(1px); box-shadow: var(--shadow-sm); }
-    .grid-btn .card-custom { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; border-top: 1px solid rgba(255,255,255,0.4); border-right: 1px solid rgba(0,0,0,0.02); border-bottom: 3px solid rgba(0,0,0,0.05); }
-    .grid-btn:active { transform: scale(0.96); }
-
-    /* Custom Toggle Pills for Roles */
-    .role-toggle .nav-link { color: #64748b; background-color: transparent; border-radius: var(--radius-md); }
-    .role-toggle .nav-link.active { background-color: var(--r-blue); color: white; box-shadow: var(--shadow-sm); }
-
-    .form-select, .form-control { border: 1.5px solid #cbd5e1; border-radius: var(--radius-sm); padding: 10px 14px; font-size: 0.92rem; color: #1e293b; background-color: #f8fafc; transition: all 0.2s ease; }
-    .form-select:focus, .form-control:focus { border-color: var(--r-blue); background-color: #fff; box-shadow: 0 0 0 3px rgba(48, 101, 168, 0.15); }
-    .btn-primary { background-color: var(--r-blue); border: none; }
-    .btn-primary:active, .btn-primary:hover { background-color: var(--r-blue-dark) !important; }
-    </style>
-</head>
-<body>
-
-<div id="splash">
-    <div class="splash-content text-center text-white">
-        <div class="logo-wrapper">
-            <div class="scan-line"></div>
-            <img src="logo_restev_carre.png" alt="Logo" class="splash-logo" onerror="this.src='https://placehold.co/140x140/ffffff/3065a8?text=RESTEV'">
-            <div class="logo-pulse-ring"></div>
-        </div>
-        <h2 class="app-title-reveal">RESTEV 85</h2>
-        <p class="splash-subtitle-animated">Expert Prévention des Risques</p>
-        <div class="ecg-container-premium">
-            <svg viewBox="0 0 200 40">
-                <path class="ecg-line-premium" d="M0,20 L40,20 L48,5 L56,35 L64,20 L110,20 L118,5 L126,35 L134,20 L200,20" />
-            </svg>
-        </div>
-        <button class="btn-enter-premium mt-4" onclick="Splash()">
-            <span>ENTRER</span>
-        </button>
-    </div>
-</div>
-
-<header class="app-header">
-    <div class="d-flex align-items-center">
-        <i class="fa-solid fa-shield-halved fa-lg me-2" style="color: var(--r-blue);"></i>
-        <div>
-            <h6 class="mb-0 fw-bold text-dark lh-1">RESTEV 85</h6>
-            <small class="text-muted" style="font-size: 0.65rem;">Expert Prévention</small>
-        </div>
-    </div>
-    <div id="networkStatusBtn" class="network-badge network-online" onclick="toggleNetwork()">
-        <span class="pulse-dot online" id="networkDot"></span>
-        <span id="networkText">En ligne</span>
-    </div>
-</header>
-
-<div class="info-banner">
-    <div class="ticker">
-        <span>
-            📝 Mise à jour du DUERP : Votre centre RESTEV vous accompagne dans l'évaluation de vos risques.
-              |  
-            💰 Aides CARSAT : Des subventions disponibles pour vos équipements de protection (TPE/PME).
-              |  
-            🔍 Risque Chimique : Consultez les fiches toxicologiques INRS directement via l'app.
-              |  
-            🏗️ BTP : Profitez des conseils experts de l'OPPBTP pour vos chantiers en Vendée.
-        </span>
-    </div>
-</div>
-
-<div id="page-home" class="app-page active-page">
-    
-    <div id="sync-alert" class="alert alert-warning d-none align-items-center py-2 px-3 mb-3 border-warning shadow-sm" style="border-radius: var(--radius-sm); font-size: 0.8rem;">
-        <i class="fa-solid fa-cloud-arrow-up fa-lg me-2 text-warning"></i>
-        <div>
-            <strong>Mode Hors-ligne actif.</strong><br>
-            <span id="sync-count">0</span> rapport(s) en attente de synchronisation locale.
-        </div>
-    </div>
-
-    <ul class="nav nav-pills nav-fill mb-4 bg-white shadow-sm p-1 role-toggle" style="border-radius: var(--radius-md);">
-        <li class="nav-item">
-            <button class="nav-link active fw-bold py-2" id="tab-tech" onclick="switchRole('tech')">
-                <i class="fa-solid fa-hard-hat me-1"></i> Terrain (Tech)
-            </button>
-        </li>
-        <li class="nav-item">
-            <button class="nav-link fw-bold py-2" id="tab-emp" onclick="switchRole('emp')">
-                <i class="fa-solid fa-chart-line me-1"></i> Pilotage (Emp)
-            </button>
-        </li>
-    </ul>
-
-    <div id="view-tech">
-        <div class="card-custom text-white border-0 mb-3" style="background: linear-gradient(135deg, var(--r-blue), #1e40af);">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h5 class="fw-bold mb-1">Espace Intervention</h5>
-                    <p class="small opacity-75 mb-0">Sélectionnez un outil rapide</p>
-                </div>
-                <button class="btn btn-light btn-sm text-primary fw-bold shadow" onclick="nav('page-signalement')">
-                    <i class="fa-solid fa-bolt me-1"></i> Flash Risque
-                </button>
-            </div>
-        </div>
-
-        <div class="row g-2">
-            <div class="col-6 grid-btn" onclick="nav('page-scan')">
-                <div class="card-custom text-center py-3 mb-0" style="background-color: #e3f2fd; border-left-color: #90caf9;"><i class="fa-solid fa-barcode fa-2x mb-2" style="color: #1e88e5;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #1e40af;">SCANNER RAPIDE</small></div>
-            </div>
-            <div class="col-6 grid-btn" onclick="nav('page-quiz')">
-                <div class="card-custom text-center py-3 mb-0" style="background-color: #ffebee; border-left-color: #ef9a9a;"><i class="fa-solid fa-clipboard-question fa-2x mb-2" style="color: #e53935;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #b71c1c;">AUTO-DIAG</small></div>
-            </div>
-            <div class="col-6 grid-btn" onclick="nav('page-gants')">
-                <div class="card-custom text-center py-3 mb-0" style="background-color: #e0f2fe; border-left-color: #3b82f6;"><i class="fa-solid fa-hand-dots fa-2x mb-2" style="color: #2563eb;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #1d4ed8;">SÉLECTEUR GANTS</small></div>
-            </div>
-            <div class="col-6 grid-btn" onclick="nav('page-masques')">
-                <div class="card-custom text-center py-3 mb-0" style="background-color: #fef2f2; border-left-color: #ef4444;"><i class="fa-solid fa-head-side-mask fa-2x mb-2" style="color: #dc2626;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #991b1b;">MASQUES & FILTRES</small></div>
-            </div>
-            <div class="col-6 grid-btn" onclick="nav('page-storage')">
-                <div class="card-custom text-center py-3 mb-0" style="background-color: #fff3e0; border-left-color: #ffb74d;"><i class="fa-solidSalut yoyo ! Ton code de base est franchement propre. L'UI avec les variables CSS, le splash screen animé et les couleurs Bootstrap personnalisées, ça donne déjà un aspect très professionnel.
-
-Pour que cette application remplisse parfaitement son rôle d'outil de pilotage à la fois pour les **employeurs** et de terrain pour les **techniciens**, j'ai fusionné mes suggestions (mode hors-ligne, double lecture Employeur/Technicien, retour haptique du scanner) directement en utilisant ton architecture (Bootstrap 5 et tes classes personnalisées).
-
-J'ai également terminé proprement la page "Compatibilité des Stockages" qui était coupée, et j'ai ajouté la logique JavaScript en bas pour que tout soit fonctionnel.
-
-Tu peux copier-coller ce bloc de code entier (il remplace ton fichier complet) :
-
-```html
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RESTEV 85 - Expert Prévention</title>
-
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#3065a8">
-    <link rel="icon" type="image/png" href="logo_restev_carre.png">
-
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="RESTEV 85">
-    <link rel="apple-touch-icon" href="logo_restev_carre.png">
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
-    <style>
-    :root { 
-        --r-blue: #3065a8; 
-        --r-blue-dark: #1e4475;
-        --r-teal: #75bba8; 
-        --r-purple: #ae227d; 
-        --r-yellow: #e6a00f; 
-        --r-light: #f4f7fa; 
-        --shadow-sm: 0 2px 8px rgba(48, 101, 168, 0.05);
-        --shadow-md: 0 8px 24px rgba(48, 101, 168, 0.08);
-        --shadow-lg: 0 16px 32px rgba(30, 68, 117, 0.12);
-        --radius-sm: 10px;
-        --radius-md: 16px;
-        --radius-lg: 24px;
-    }
-
-    body { 
-        background-color: var(--r-light); 
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-        margin-bottom: 110px; 
-        overflow-x: hidden; 
-        color: #334155;
-        -webkit-font-smoothing: antialiased;
-        -webkit-user-select: none; /* Protection contre la selection accidentelle sur le terrain */
-        user-select: none;
-    }
-
-    .nav-bottom, .btn-enter-premium, .card-custom {
-        user-select: none;
-        -webkit-user-select: none;
-    }
-
-    #splash { 
-        position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; 
-        background: radial-gradient(circle at center, #254d80 0%, #112237 100%);
-        transition: all 0.6s cubic-bezier(0.77, 0, 0.175, 1); overflow: hidden;
-    }
-
-    #splash::before {
-        content: ''; position: absolute; inset: 0;
-        background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), 
-                          linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-        background-size: 20px 20px; background-position: center;
-        mask-image: radial-gradient(circle, black 40%, transparent 80%);
-        -webkit-mask-image: radial-gradient(circle, black 40%, transparent 80%);
-    }
-
-    .logo-wrapper {
-        position: relative; display: inline-block; transform: scale(0) rotate(-15deg);
-        animation: logoPopIn 1s cubic-bezier(0.34, 1.7, 0.64, 1) 0.2s forwards; margin-bottom: 25px;
-    }
-
-    .splash-logo {
-        width: 120px; height: 120px; border-radius: var(--radius-md); background: white; padding: 12px;
-        position: relative; z-index: 2; box-shadow: 0 0 30px rgba(48, 101, 168, 0.4);
-    }
-
-    .logo-pulse-ring {
-        position: absolute; inset: -5px; border: 2px solid var(--r-teal); border-radius: 20px;
-        z-index: 1; opacity: 0; animation: ringPulse 2.5s ease-out infinite 1.2s;
-    }
-
-    .scan-line {
-        position: absolute; left: 0; right: 0; top: 0; height: 4px;
-        background: linear-gradient(90deg, transparent, var(--r-yellow), transparent);
-        box-shadow: 0 0 12px var(--r-yellow); z-index: 3; opacity: 0.8;
-        animation: laserScan 3s ease-in-out infinite 1.5s; pointer-events: none;
-    }
-
-    .app-title-reveal {
-        font-size: 2.2rem; font-weight: 900; letter-spacing: 4px;
-        background: linear-gradient(45deg, #ffffff, #93c5fd);
-        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        opacity: 0; transform: translateY(15px); animation: textSlideUp 0.6s ease-out 0.8s forwards;
-    }
-
-    .splash-subtitle-animated {
-        font-size: 0.85rem; font-weight: 600; letter-spacing: 3px; text-transform: uppercase;
-        color: var(--r-teal); opacity: 0; transform: translateY(10px);
-        animation: textSlideUp 0.6s ease-out 1s forwards; margin-top: 5px;
-    }
-
-    .ecg-container-premium { width: 180px; margin: 20px auto; opacity: 0; animation: fadeInECG 0.8s ease-out 1.2s forwards; }
-
-    .ecg-line-premium {
-        fill: none; stroke: #ef4444; stroke-width: 3; stroke-linecap: round;
-        stroke-linejoin: round; stroke-dasharray: 400; stroke-dashoffset: 400;
-        animation: heartbeatStream 2.5s linear infinite;
-    }
-
-    .btn-enter-premium {
-        position: relative; background: white; color: var(--r-blue-dark); border: none;
-        padding: 14px 40px; border-radius: 50px; font-weight: 800; font-size: 0.95rem;
-        letter-spacing: 1.5px; overflow: hidden; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-        opacity: 0; transform: scale(0.9);
-        animation: btnReveal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 1.4s forwards, breathing 3s ease-in-out infinite 2s;
-        transition: all 0.2s ease;
-    }
-    .btn-enter-premium span { position: relative; z-index: 2; }
-    .btn-enter-premium::before {
-        content: ''; position: absolute; inset: 0;
-        background: linear-gradient(90deg, transparent, rgba(117, 187, 168, 0.3), transparent);
-        transform: translateX(-100%); transition: transform 0.5s; z-index: 1;
-    }
-    .btn-enter-premium:active { transform: scale(0.95) !important; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); }
-
-    @keyframes logoPopIn { 0% { transform: scale(0) rotate(-25deg); filter: blur(5px); } 70% { transform: scale(1.15) rotate(5deg); filter: blur(0); } 100% { transform: scale(1) rotate(0deg); } }
-    @keyframes ringPulse { 0% { transform: scale(0.95); opacity: 0.8; } 50% { opacity: 0.4; } 100% { transform: scale(1.3); opacity: 0; } }
-    @keyframes laserScan { 0%, 100% { top: 0%; opacity: 0; } 10%, 90% { opacity: 1; } 50% { top: 100%; opacity: 1; } }
-    @keyframes textSlideUp { to { opacity: 1; transform: translateY(0); } }
-    @keyframes fadeInECG { to { opacity: 0.7; } }
-    @keyframes heartbeatStream { 0% { stroke-dashoffset: 400; } 60% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -400; } }
-    @keyframes btnReveal { to { opacity: 1; transform: scale(1); } }
-    @keyframes breathing { 0%, 100% { transform: scale(1); box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 12px 35px rgba(117, 187, 168, 0.4); } }
-
-    /* HEADER FIXE + INDICATEUR RÉSEAU */
-    .app-header { 
-        background: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;
-        border-bottom: 3px solid var(--r-yellow); position: sticky; top: 0; z-index: 1000; box-shadow: var(--shadow-sm);
-    }
-    .network-badge {
-        font-size: 0.7rem; font-weight: 800; padding: 6px 12px; border-radius: 50px;
-        transition: all 0.3s ease; cursor: pointer; border: 1px solid transparent;
-    }
-    .network-online { background-color: #dcfce7; color: #166534; border-color: #bbf7d0; }
-    .network-offline { background-color: #fef3c7; color: #92400e; border-color: #fde68a; }
-    .pulse-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
-    .pulse-dot.online { background-color: #22c55e; animation: pulseGreen 2s infinite; }
-    .pulse-dot.offline { background-color: #f59e0b; }
-    @keyframes pulseGreen { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
-
-    .info-banner { background: #e0f2fe; color: #0369a1; padding: 6px 0; overflow: hidden; white-space: nowrap; font-weight: 600; font-size: 0.75rem; border-bottom: 1px solid #bae6fd; }
-    .ticker { display: inline-block; animation: ticker 45s linear infinite; }
-    .ticker span { padding-right: 60px; }
-    @keyframes ticker { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
-
-    .nav-bottom { 
-        position: fixed; bottom: 20px; left: 15px; right: 15px; 
-        background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-        display: flex; justify-content: space-around; padding: 10px 5px; 
-        border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); z-index: 1000; border: 1px solid rgba(255, 255, 255, 0.6);
-    }
-    .nav-item-bottom { 
-        border: none; background: none; color: #64748b; font-size: 0.62rem; font-weight: 700; 
-        display: flex; flex-direction: column; align-items: center; flex: 1; 
-        text-decoration: none; outline: none; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        border-radius: var(--radius-md); padding: 6px 0;
-    }
-    .nav-item-bottom:active { transform: scale(0.9); background: rgba(48, 101, 168, 0.05); }
-    .nav-item-bottom.active { color: var(--r-blue); }
-    .nav-item-bottom i { font-size: 1.35rem; margin-bottom: 4px; transition: transform 0.2s ease; }
-    .nav-item-bottom.active i { transform: translateY(-2px); }
-
-    .app-page { display: none; padding: 22px 16px; animation: fadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
-    .active-page { display: block !important; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-
-    .card-custom { 
-        background: white; border-radius: var(--radius-md); padding: 20px; margin-bottom: 16px; border: none;
-        border-left: 5px solid var(--r-blue); box-shadow: var(--shadow-md); transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .card-custom:active { transform: translateY(1px); box-shadow: var(--shadow-sm); }
-    .grid-btn .card-custom { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; border-top: 1px solid rgba(255,255,255,0.4); border-right: 1px solid rgba(0,0,0,0.02); border-bottom: 3px solid rgba(0,0,0,0.05); }
-    .grid-btn:active { transform: scale(0.96); }
-
-    /* Custom Toggle Pills for Roles */
-    .role-toggle .nav-link { color: #64748b; background-color: transparent; border-radius: var(--radius-md); }
-    .role-toggle .nav-link.active { background-color: var(--r-blue); color: white; box-shadow: var(--shadow-sm); }
-
-    .form-select, .form-control { border: 1.5px solid #cbd5e1; border-radius: var(--radius-sm); padding: 10px 14px; font-size: 0.92rem; color: #1e293b; background-color: #f8fafc; transition: all 0.2s ease; }
-    .form-select:focus, .form-control:focus { border-color: var(--r-blue); background-color: #fff; box-shadow: 0 0 0 3px rgba(48, 101, 168, 0.15); }
-    .btn-primary { background-color: var(--r-blue); border: none; }
-    .btn-primary:active, .btn-primary:hover { background-color: var(--r-blue-dark) !important; }
-    </style>
-</head>
-<body>
-
-<div id="splash">
-    <div class="splash-content text-center text-white">
-        <div class="logo-wrapper">
-            <div class="scan-line"></div>
-            <img src="logo_restev_carre.png" alt="Logo" class="splash-logo" onerror="this.src='https://placehold.co/140x140/ffffff/3065a8?text=RESTEV'">
-            <div class="logo-pulse-ring"></div>
-        </div>
-        <h2 class="app-title-reveal">RESTEV 85</h2>
-        <p class="splash-subtitle-animated">Expert Prévention des Risques</p>
-        <div class="ecg-container-premium">
-            <svg viewBox="0 0 200 40">
-                <path class="ecg-line-premium" d="M0,20 L40,20 L48,5 L56,35 L64,20 L110,20 L118,5 L126,35 L134,20 L200,20" />
-            </svg>
-        </div>
-        <button class="btn-enter-premium mt-4" onclick="Splash()">
-            <span>ENTRER</span>
-        </button>
-    </div>
-</div>
-
-<header class="app-header">
-    <div class="d-flex align-items-center">
-        <i class="fa-solid fa-shield-halved fa-lg me-2" style="color: var(--r-blue);"></i>
-        <div>
-            <h6 class="mb-0 fw-bold text-dark lh-1">RESTEV 85</h6>
-            <small class="text-muted" style="font-size: 0.65rem;">Expert Prévention</small>
-        </div>
-    </div>
-    <div id="networkStatusBtn" class="network-badge network-online" onclick="toggleNetwork()">
-        <span class="pulse-dot online" id="networkDot"></span>
-        <span id="networkText">En ligne</span>
-    </div>
-</header>
-
-<div class="info-banner">
-    <div class="ticker">
-        <span>
-            📝 Mise à jour du DUERP : Votre centre RESTEV vous accompagne dans l'évaluation de vos risques.
-              |  
-            💰 Aides CARSAT : Des subventions disponibles pour vos équipements de protection (TPE/PME).
-              |  
-            🔍 Risque Chimique : Consultez les fiches toxicologiques INRS directement via l'app.
-              |  
-            🏗️ BTP : Profitez des conseils experts de l'OPPBTP pour vos chantiers en Vendée.
-        </span>
-    </div>
-</div>
-
-<div id="page-home" class="app-page active-page">
-    
-    <div id="sync-alert" class="alert alert-warning d-none align-items-center py-2 px-3 mb-3 border-warning shadow-sm" style="border-radius: var(--radius-sm); font-size: 0.8rem;">
-        <i class="fa-solid fa-cloud-arrow-up fa-lg me-2 text-warning"></i>
-        <div>
-            <strong>Mode Hors-ligne actif.</strong><br>
-            <span id="sync-count">0</span> rapport(s) en attente de synchronisation locale.
-        </div>
-    </div>
-
-    <ul class="nav nav-pills nav-fill mb-4 bg-white shadow-sm p-1 role-toggle" style="border-radius: var(--radius-md);">
-        <li class="nav-item">
-            <button class="nav-link active fw-bold py-2" id="tab-tech" onclick="switchRole('tech')">
-                <i class="fa-solid fa-hard-hat me-1"></i> Terrain (Tech)
-            </button>
-        </li>
-        <li class="nav-item">
-            <button class="nav-link fw-bold py-2" id="tab-emp" onclick="switchRole('emp')">
-                <i class="fa-solid fa-chart-line me-1"></i> Pilotage (Emp)
-            </button>
-        </li>
-    </ul>
-
-    <div id="view-tech">
-        <div class="card-custom text-white border-0 mb-3" style="background: linear-gradient(135deg, var(--r-blue), #1e40af);">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h5 class="fw-bold mb-1">Espace Intervention</h5>
-                    <p class="small opacity-75 mb-0">Sélectionnez un outil rapide</p>
-                </div>
-                <button class="btn btn-light btn-sm text-primary fw-bold shadow" onclick="nav('page-signalement')">
-                    <i class="fa-solid fa-bolt me-1"></i> Flash Risque
-                </button>
-            </div>
-        </div>
-
-        <div class="row g-2">
-            <div class="col-6 grid-btn" onclick="nav('page-scan')">
-                <div class="card-custom text-center py-3 mb-0" style="background-color: #e3f2fd; border-left-color: #90caf9;"><i class="fa-solid fa-barcode fa-2x mb-2" style="color: #1e88e5;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #1e40af;">SCANNER RAPIDE</small></div>
-            </div>
-            <div class="col-6 grid-btn" onclick="nav('page-quiz')">
-                <div class="card-custom text-center py-3 mb-0" style="background-color: #ffebee; border-left-color: #ef9a9a;"><i class="fa-solid fa-clipboard-question fa-2x mb-2" style="color: #e53935;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #b71c1c;">AUTO-DIAG</small></div>
-            </div>
-            <div class="col-6 grid-btn" onclick="nav('page-gants')">
-                <div class="card-custom text-center py-3 mb-0" style="background-color: #e0f2fe; border-left-color: #3b82f6;"><i class="fa-solid fa-hand-dots fa-2x mb-2" style="color: #2563eb;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #1d4ed8;">SÉLECTEUR GANTS</small></div>
-            </div>
-            <div class="col-6 grid-btn" onclick="nav('page-masques')">
-                <div class="card-custom text-center py-3 mb-0" style="background-color: #fef2f2; border-left-color: #ef4444;"><i class="fa-solid fa-head-side-mask fa-2x mb-2" style="color: #dc2626;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #991b1b;">MASQUES & FILTRES</small></div>
-            </div>
-            <div class="col-6 grid-btn" onclick="nav('page-storage')">
-                <div class="card-custom text-center py-3 mb-0" style="background-color: #fff3e0; border-left-color: #ffb74d;"><i class="fa-solid fa-warehouse fa-2x mb-2" style="color: #f57c00;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #e65100;">COMPATIBILITÉ STOCK</small></div>
-            </div>
-            <div class="col-6 grid-btn" onclick="nav('page-fds-guide')">
-                <div class="card-custom text-center py-3 mb-0" style="background-color: #eceff1; border-left-color: #cfd8dc;"><i class="fa-solid fa-file-shield fa-2x mb-2" style="color: #546e7a;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #263238;">GUIDE FDS</small></div>
-            </div>
-        </div>
-    </div>
-
-    <div id="view-emp" class="d-none">
-        <div class="row g-2 mb-3">
-            <div class="col-6">
-                <div class="card-custom mb-0 p-3" style="border-left-color: #22c55e;">
-                    <div class="d-flex justify-content-between text-muted mb-1"><span class="small fw-bold text-uppercase">Conformité</span><i class="fa-solid fa-percent text-success"></i></div>
-                    <h3 class="fw-black text-success mb-0">92%</h3>
-                    <small class="text-muted" style="font-size:0.65rem;">Audit Global</small>
-                </div>
-            </div>
-            <div class="col-6">
-                <div class="card-custom mb-0 p-3" style="border-left-color: #ef4444;">
-                    <div class="d-flex justify-content-between text-muted mb-1"><span class="small fw-bold text-uppercase">Alertes EPI</span><i class="fa-solid fa-clock text-danger"></i></div>
-                    <h3 class="fw-black text-danger mb-0">3</h3>
-                    <small class="text-muted" style="font-size:0.65rem;">Renouvellements échus</small>
-                </div>
-            </div>
-            <div class="col-6">
-                <div class="card-custom mb-0 p-3" style="border-left-color: #f59e0b;">
-                    <div class="d-flex justify-content-between text-muted mb-1"><span class="small fw-bold text-uppercase">Risques Actifs</span><i class="fa-solid fa-triangle-exclamation text-warning"></i></div>
-                    <h3 class="fw-black text-warning mb-0">14</h3>
-                    <small class="text-muted" style="font-size:0.65rem;">Actions correctives</small>
-                </div>
-            </div>
-            <div class="col-6">
-                <div class="card-custom mb-0 p-3" style="border-left-color: var(--r-blue);">
-                    <div class="d-flex justify-content-between text-muted mb-1"><span class="small fw-bold text-uppercase">FDS Validées</span><i class="fa-solid fa-flask text-primary"></i></div>
-                    <h3 class="fw-black text-primary mb-0">48</h3>
-                    <small class="text-muted" style="font-size:0.65rem;">Produits référencés</small>
-                </div>
-            </div>
-        </div>
-
-        <div class="card-custom p-3" style="border-left-color: #64748b;">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="fw-bold text-dark mb-0 small text-uppercase">Actions Prioritaires</h6>
-                <span class="badge bg-light text-dark border">À jour</span>
-            </div>
-            <div class="d-flex align-items-start mb-3 border-bottom pb-2">
-                <div class="bg-danger rounded-circle mt-1 me-2" style="width:10px; height:10px; flex-shrink:0;"></div>
-                <div>
-                    <div class="small fw-bold text-dark">Masques respiratoires ABEK1 expirés</div>
-                    <div class="text-muted" style="font-size:0.65rem;">Zone : Atelier Logistique</div>
-                </div>
-            </div>
-            <div class="d-flex align-items-start">
-                <div class="bg-warning rounded-circle mt-1 me-2" style="width:10px; height:10px; flex-shrink:0;"></div>
-                <div>
-                    <div class="small fw-bold text-dark">Mise à jour FDS - Solvant Dégraissant</div>
-                    <div class="text-muted" style="font-size:0.65rem;">Action : Intégrer nouvelle fiche</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div id="page-signalement" class="app-page">
-    <div class="d-flex align-items-center mb-3">
-        <button class="btn btn-sm btn-light me-3 border shadow-sm" onclick="nav('page-home')"><i class="fa-solid fa-arrow-left"></i></button>
-        <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-bolt me-2"></i>Signalement Rapide</h5>
-    </div>
-
-    <form onsubmit="submitSignalement(event)">
-        <div class="card-custom mb-3 p-3">
-            <label class="small fw-bold text-muted text-uppercase mb-2">Niveau de Danger Observé</label>
-            <div class="d-flex gap-2 mb-3 text-center">
-                <label class="flex-fill p-2 border rounded shadow-sm bg-light text-success fw-bold" style="cursor:pointer;" onclick="selectDanger(this)">
-                    <input type="radio" name="dangerLevel" class="d-none" value="faible" checked>
-                    <i class="fa-solid fa-circle-check mb-1"></i><br><small>Faible</small>
-                </label>
-                <label class="flex-fill p-2 border rounded shadow-sm bg-light text-warning fw-bold" style="cursor:pointer;" onclick="selectDanger(this)">
-                    <input type="radio" name="dangerLevel" class="d-none" value="moyen">
-                    <i class="fa-solid fa-triangle-exclamation mb-1"></i><br><small>Moyen</small>
-                </label>
-                <label class="flex-fill p-2 border rounded shadow-sm bg-light text-danger fw-bold" style="cursor:pointer;" onclick="selectDanger(this)">
-                    <input type="radio" name="dangerLevel" class="d-none" value="critique">
-                    <i class="fa-solid fa-skull-crossbones mb-1"></i><br><small>Critique</small>
-                </label>
-            </div>
-
-            <label class="small fw-bold text-muted text-uppercase mb-2">Catégorie</label>
-            <select class="form-select mb-3 fw-bold text-dark">
-                <option>Risque Chimique (FDS manquante/périmée)</option>
-                <option>EPI Défectueux ou Manquant</option>
-                <option>Poste non ergonomique</option>
-                <option>Autre anomalie</option>
-            </select>
-
-            <label class="small fw-bold text-muted text-uppercase mb-2">Mémo Terrain</label>
-            <textarea class="form-control mb-3" rows="2" placeholder="Ex: Ventilation en panne..."></textarea>
-
-            <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow"><i class="fa-solid fa-paper-plane me-2"></i>Enregistrer l'évaluation</button>
-        </div>
-    </form>
-</div>
-
-<div id="page-scan" class="app-page">
-    <div class="d-flex align-items-center justify-content-between mb-3">
-        <div class="d-flex align-items-center">
-            <button class="btn btn-sm btn-light me-3 border shadow-sm" onclick="nav('page-home')"><i class="fa-solid fa-arrow-left"></i></button>
-            <h5 class="fw-bold mb-0" style="color: #1e88e5;"><i class="fa-solid fa-barcode me-2"></i>Scanner</h5>
-        </div>
-    </div>
-
-    <div class="card-custom bg-dark text-white text-center p-4 mb-3 position-relative overflow-hidden" style="border-left-color: #1e88e5; height: 300px;">
-        <div class="border border-2 border-primary rounded-3 w-75 mx-auto h-75 d-flex align-items-center justify-content-center position-relative" style="border-style: dashed !important;">
-            <div class="scan-line" style="background: linear-gradient(90deg, transparent, #2196f3, transparent); box-shadow: 0 0 10px #2196f3; height:2px;"></div>
-            <p class="small text-muted mb-0">Caméra simulée pour la démo</p>
-        </div>
-    </div>
-
-    <button class="btn btn-primary w-100 fw-bold py-3 shadow mb-2" onclick="simulateScan()">
-        <i class="fa-solid fa-expand me-2"></i>Simuler Détection (Vibreur)
-    </button>
-    <p class="text-center small text-muted">Testez le retour haptique (vibration) natif du mobile.</p>
-</div>
-
-<div id="page-gants" class="app-page">
-    <div class="d-flex align-items-center mb-3">
-        <button class="btn btn-sm btn-light me-3 border shadow-sm" onclick="nav('page-home')"><i class="fa-solid fa-arrow-left"></i></button>
-        <h5 class="fw-bold mb-0"><i class="fa-solid fa-hand-dots me-2" style="color:#3b82f6"></i>Gants Chimiques</h5>
-    </div>
-    <div class="card-custom mb-4" style="border-left: 4px solid #3b82f6;">
-        <p class="small text-muted mb-3">Choisissez le type de produit à manipuler pour trouver le bon matériau.</p>
-        <div class="mb-3">
-            <select id="epi-chemical" class="form-select fw-bold">
-                <option value="solv">🧪 Solvants hydrocarbonés</option>
-                <option value="acet">💅 Solvants polaires (Acétone)</option>
-                <option value="acid">💥 Acides forts</option>
-            </select>
-        </div>
-    </div>
-</div>
-
-<div id="page-masques" class="app-page">
-    <div class="d-flex align-items-center mb-3">
-        <button class="btn btn-sm btn-light me-3 border shadow-sm" onclick="nav('page-home')"><i class="fa-solid fa-arrow-left"></i></button>
-        <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-head-side-mask me-2 text-danger"></i>Protection Respiratoire</h5>
-    </div>
-    <div class="card-custom mb-3" style="border-left: 5px solid #dc3545;">
-        <label class="form-label small fw-bold text-uppercase text-muted mb-1">Nature du contaminant</label>
-        <select id="epi-mask-pollutant" class="form-select fw-bold">
-            <option>Gaz & Vapeurs Organiques ➔ [Type A]</option>
-            <option>Poussières fines ➔ [Type P3]</option>
-        </select>
-    </div>
-</div>
-
-<div id="page-storage" class="app-page">
-    <div class="d-flex align-items-center mb-3">
-        <button class="btn btn-sm btn-light me-3 border shadow-sm" onclick="nav('page-home')"><i class="fa-solid fa-arrow-left"></i></button>
-        <h5 class="fw-bold mb-0"><i class="fa-solid fa-warehouse me-2" style="color:#f57c00"></i>Compatibilité Stockages</h5>
-    </div>
-    <div class="card-custom mb-4" style="border-left: 4px solid #f57c00;">
-        <h6 class="fw-bold text-warning mb-2"><i class="fa-solid fa-layer-group me-2"></i>Matrice des Risques Croisés</h6>
-        <p class="small text-muted mb-3">Sélectionnez deux pictogrammes GHS/SGH pour vérifier s'ils peuvent être placés sur le même bac de rétention.</p>
-        <div class="mb-3">
-            <label class="small fw-bold text-secondary text-uppercase mb-1">Produit A</label>
-            <select class="form-select mb-2 fw-bold">
-                <option>🔥 Inflammable (GHS02)</option>
-                <option>💥 Explosif (GHS01)</option>
-                <option>☠️ Toxique (GHS06)</option>
-            </select>
-            <label class="small fw-bold text-secondary text-uppercase mb-1">Produit B</label>
-            <select class="form-select fw-bold">
-                <option>🔥 Inflammable (GHS02)</option>
-                <option>🧪 Corrosif (GHS05)</option>
-                <option>🔥⭕ Comburant (GHS03)</option>
-            </select>
-        </div>
-        <button class="btn btn-warning text-dark w-100 fw-bold py-2 shadow-sm">Vérifier la compatibilité</button>
-    </div>
-</div>
-
-<nav class="nav-bottom">
-    <button class="nav-item-bottom active" id="nav-home" onclick="nav('page-home', this)">
-        <i class="fa-solid fa-house"></i>
-        <span>Accueil</span>
-    </button>
-    <button class="nav-item-bottom" id="nav-scan" onclick="nav('page-scan', this)">
-        <i class="fa-solid fa-barcode"></i>
-        <span>Scan</span>
-    </button>
-    <button class="nav-item-bottom" id="nav-list" onclick="nav('page-signalement', this)">
-        <i class="fa-solid fa-bolt"></i>
-        <span>Action</span>
-    </button>
-</nav>
-
-<script>
-    // 1. Splash Screen Logic
-    function Splash() {
-        const splash = document.getElementById('splash');
-        splash.style.opacity = '0';
-        setTimeout(() => { splash.style.display = 'none'; }, 600);
-    }
-
-    // Auto-hide splash after 3.5s if not clicked
-    setTimeout(() => {
-        if(document.getElementById('splash').style.display !== 'none') { Splash(); }
-    }, 3500);
-
-    // 2. Navigation System
-    function nav(pageId, navItem = null) {
-        // Hide all pages
-        document.querySelectorAll('.app-page').forEach(page => page.classList.remove('active-page'));
-        // Show target
-        document.getElementById(pageId).classList.add('active-page');
-        
-        // Update bottom nav UI
-        if(navItem) {
-            document.querySelectorAll('.nav-item-bottom').forEach(item => item.classList.remove('active'));
-            navItem.classList.add('active');
-        } else {
-            // Reset to home icon if subpage
-            document.querySelectorAll('.nav-item-bottom').forEach(item => item.classList.remove('active'));
-            document.getElementById('nav-home').classList.add('active');
-        }
-        window.scrollTo(0,0);
-    }
-
-    // 3. Switch Role (Technician vs Employer)
-    function switchRole(role) {
-        const viewTech = document.getElementById('view-tech');
-        const viewEmp = document.getElementById('view-emp');
-        const tabTech = document.getElementById('tab-tech');
-        const tabEmp = document.getElementById('tab-emp');
-
-        if(role === 'tech') {
-            viewTech.classList.remove('d-none');
-            viewEmp.classList.add('d-none');
-            tabTech.classList.add('active');
-            tabEmp.classList.remove('active');
-        } else {
-            viewTech.classList.add('d-none');
-            viewEmp.classList.remove('d-none');
-            tabTech.classList.remove('active');
-            tabEmp.classList.add('active');
-        }
-    }
-
-    // 4. Offline Simulator
-    let isOnline = true;
-    let syncCount = 0;
-
-    function toggleNetwork() {
-        isOnline = !isOnline;
-        const btn = document.getElementById('networkStatusBtn');
-        const dot = document.getElementById('networkDot');
-        const text = document.getElementById('networkText');
-        const alertBox = document.getElementById('sync-alert');
-
-        if(isOnline) {
-            btn.className = "network-badge network-online";
-            dot.className = "pulse-dot online";
-            text.innerText = "En ligne";
-            
-            if(syncCount > 0) {
-                alert(`🌐 Réseau rétabli ! ${syncCount} rapport(s) synchronisé(s) vers Supabase.`);
-                syncCount = 0;
-                document.getElementById('sync-count').innerText = syncCount;
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        restev: {
+                            blue: '#3065a8',
+                            dark: '#1e4475',
+                            teal: '#75bba8',
+                            magenta: '#ae227d',
+                            yellow: '#e6a00f',
+                            light: '#f4f7fa'
+                        }
+                    }
+                }
             }
-            alertBox.classList.add('d-none');
-            alertBox.classList.remove('d-flex');
-        } else {
-            btn.className = "network-badge network-offline";
-            dot.className = "pulse-dot offline";
-            text.innerText = "Hors-ligne";
+        }
+    </script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        /* Protection terrain : anti-sélection */
+        body {
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            background-color: #f4f7fa;
+            margin-bottom: 80px;
+        }
+
+        /* ================= SPLASH SCREEN ================= */
+        #splash {
+            position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center;
+            background: radial-gradient(circle at center, #254d80 0%, #112237 100%);
+            transition: all 0.6s cubic-bezier(0.77, 0, 0.175, 1); overflow: hidden;
+        }
+        #splash::before {
+            content: ''; position: absolute; inset: 0;
+            background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 20px 20px; background-position: center;
+            mask-image: radial-gradient(circle, black 40%, transparent 80%);
+            -webkit-mask-image: radial-gradient(circle, black 40%, transparent 80%);
+        }
+        .logo-wrapper {
+            position: relative; display: inline-block; transform: scale(0) rotate(-15deg);
+            animation: logoPopIn 1s cubic-bezier(0.34, 1.7, 0.64, 1) 0.2s forwards; margin-bottom: 25px;
+        }
+        .splash-logo {
+            width: 120px; height: 120px; border-radius: 16px; background: white; padding: 12px;
+            position: relative; z-index: 2; box-shadow: 0 0 30px rgba(48, 101, 168, 0.4);
+        }
+        .logo-pulse-ring {
+            position: absolute; inset: -5px; border: 2px solid #75bba8; border-radius: 20px;
+            z-index: 1; opacity: 0; animation: ringPulse 2.5s ease-out infinite 1.2s;
+        }
+        .app-title-reveal {
+            font-size: 2.2rem; font-weight: 900; letter-spacing: 4px;
+            background: linear-gradient(45deg, #ffffff, #93c5fd);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            opacity: 0; transform: translateY(15px); animation: textSlideUp 0.6s ease-out 0.8s forwards;
+        }
+        .splash-subtitle-animated {
+            font-size: 0.85rem; font-weight: 600; letter-spacing: 3px; text-transform: uppercase;
+            color: #75bba8; opacity: 0; transform: translateY(10px);
+            animation: textSlideUp 0.6s ease-out 1s forwards; margin-top: 5px;
+        }
+        .btn-enter-premium {
+            position: relative; background: white; color: #1e4475; border: none;
+            padding: 14px 40px; border-radius: 50px; font-weight: 800; font-size: 0.95rem;
+            letter-spacing: 1.5px; overflow: hidden; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            opacity: 0; transform: scale(0.9);
+            animation: btnReveal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 1.4s forwards, breathing 3s ease-in-out infinite 2s;
+            transition: all 0.2s ease;
+        }
+        .btn-enter-premium:active { transform: scale(0.95) !important; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); }
+
+        @keyframes logoPopIn { 0% { transform: scale(0) rotate(-25deg); filter: blur(5px); } 70% { transform: scale(1.15) rotate(5deg); filter: blur(0); } 100% { transform: scale(1) rotate(0deg); } }
+        @keyframes ringPulse { 0% { transform: scale(0.95); opacity: 0.8; } 50% { opacity: 0.4; } 100% { transform: scale(1.3); opacity: 0; } }
+        @keyframes textSlideUp { to { opacity: 1; transform: translateY(0); } }
+        @keyframes btnReveal { to { opacity: 1; transform: scale(1); } }
+        @keyframes breathing { 0%, 100% { transform: scale(1); box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 12px 35px rgba(117, 187, 168, 0.4); } }
+
+        /* ================= TICKER & NAV ================= */
+        .info-banner { background: #e0f2fe; color: #0369a1; padding: 6px 0; overflow: hidden; white-space: nowrap; font-weight: 600; font-size: 0.75rem; border-bottom: 1px solid #bae6fd; }
+        .ticker { display: inline-block; animation: ticker 35s linear infinite; }
+        .ticker span { padding-right: 60px; }
+        @keyframes ticker { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
+
+        .app-page { display: none; animation: fadeIn 0.3s ease; }
+        .active-page { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="dark:bg-slate-900 transition-colors duration-200">
+
+    <div id="splash">
+        <div class="text-center text-white">
+            <div class="logo-wrapper">
+                <div class="splash-logo flex items-center justify-center">
+                    <i class="fa-solid fa-shield-halved text-5xl text-restev-blue"></i>
+                </div>
+                <div class="logo-pulse-ring"></div>
+            </div>
+            <h2 class="app-title-reveal">RESTEV 85</h2>
+            <p class="splash-subtitle-animated">Expert Prévention</p>
+            <button class="btn-enter-premium mt-8" onclick="closeSplash()">
+                <span>ENTRER</span>
+            </button>
+        </div>
+    </div>
+
+    <header class="bg-white dark:bg-slate-800 border-b-4 border-restev-yellow sticky top-0 z-40 px-4 py-3 shadow-sm flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-shield-halved text-2xl text-restev-blue"></i>
+            <div class="leading-none">
+                <h1 class="font-black text-slate-800 dark:text-white text-lg tracking-wide">RESTEV 85</h1>
+                <span class="text-[10px] text-restev-teal font-bold uppercase tracking-widest">Prévention Terrain</span>
+            </div>
+        </div>
+        <div class="flex items-center space-x-3">
+            <button onclick="toggleNetwork()" id="networkStatusBtn" class="flex items-center space-x-1.5 px-3 py-1 bg-green-100 text-green-800 border border-green-200 rounded-full text-xs font-bold transition-all">
+                <span id="networkDot" class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                <span id="networkText">En ligne</span>
+            </button>
+            <button onclick="toggleDarkMode()" class="text-slate-500 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 p-2 rounded-full">
+                <i class="fa-solid fa-moon dark:hidden"></i>
+                <i class="fa-solid fa-sun hidden dark:block"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="info-banner dark:bg-slate-800 dark:text-restev-teal dark:border-slate-700">
+        <div class="ticker">
+            <span>
+                ⚠️ NOUVEAU SALARIÉ : Le livret d'accueil sécurité est obligatoire dès le 1er jour (Art. L4141-2). 
+                | 🛡️ Droit de retrait : Signalez immédiatement tout danger grave et imminent via l'application.
+                | 📝 DUERP : Pensez à mettre à jour votre document unique suite aux nouveaux signalements.
+            </span>
+        </div>
+    </div>
+
+    <main class="p-4 max-w-md mx-auto w-full">
+        
+        <div class="bg-slate-200 dark:bg-slate-800 p-1.5 rounded-xl flex space-x-1 mb-5 shadow-inner">
+            <button onclick="switchRole('salarie')" id="btn-salarie" class="flex-1 py-2.5 rounded-lg text-sm font-bold shadow bg-white dark:bg-slate-700 text-restev-blue transition-all">
+                <i class="fa-solid fa-hard-hat me-1"></i> Employé
+            </button>
+            <button onclick="switchRole('manager')" id="btn-manager" class="flex-1 py-2.5 rounded-lg text-sm font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 transition-all">
+                <i class="fa-solid fa-user-tie me-1"></i> Manager
+            </button>
+        </div>
+
+        <div id="sync-alert" class="hidden bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-xl p-3 mb-4 items-center justify-between shadow-sm">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-cloud-arrow-up text-amber-600 dark:text-amber-400 text-xl"></i>
+                <p class="text-xs text-amber-800 dark:text-amber-300 font-medium leading-tight">Mode hors-ligne.<br><span id="sync-count" class="font-bold">0</span> signalement(s) en attente.</p>
+            </div>
+        </div>
+
+        <div id="view-salarie" class="app-page active-page space-y-4 !p-0">
             
-            alertBox.classList.remove('d-none');
-            alertBox.classList.add('d-flex');
-        }
-    }
+            <div class="bg-gradient-to-br from-restev-blue to-restev-dark text-white rounded-2xl p-5 shadow-md border border-restev-blue/20">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 class="text-lg font-black tracking-wide uppercase">Mon Espace Sécurité</h2>
+                        <p class="text-xs text-blue-100 mt-1 max-w-[200px]">Votre sécurité est notre priorité. Remplissez vos obligations d'accueil.</p>
+                    </div>
+                    <i class="fa-solid fa-shield-heart text-4xl opacity-50"></i>
+                </div>
+            </div>
 
-    // 5. Submit Rapid Risk (Offline support)
-    function submitSignalement(e) {
-        e.preventDefault();
-        if(navigator.vibrate) navigator.vibrate(50); // Feedback Haptique
+            <div onclick="alert('Ouverture du QCM d\'intégration réglementaire...')" class="bg-white dark:bg-slate-800 border-l-4 border-restev-teal rounded-2xl p-4 shadow-sm active:scale-95 transition-all cursor-pointer flex items-center space-x-4">
+                <div class="w-12 h-12 rounded-full bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center text-restev-teal text-xl shrink-0">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                </div>
+                <div class="flex-grow">
+                    <h3 class="font-bold text-slate-800 dark:text-white text-sm">Livret & QCM d'accueil</h3>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Test de sécurité obligatoire pour les nouveaux arrivants.</p>
+                </div>
+                <i class="fa-solid fa-chevron-right text-slate-300"></i>
+            </div>
 
-        if(!isOnline) {
-            syncCount++;
-            document.getElementById('sync-count').innerText = syncCount;
-            alert("Rapport enregistré localement (Hors-ligne). Il sera envoyé au retour du réseau.");
-        } else {
-            alert("Rapport envoyé et synchronisé avec succès !");
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm">
+                <h3 class="font-black text-restev-magenta text-sm uppercase tracking-wider mb-4 flex items-center">
+                    <i class="fa-solid fa-triangle-exclamation me-2 text-lg"></i> Signaler un Danger
+                </h3>
+                
+                <form onsubmit="submitDanger(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Gravité du risque</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <label class="border-2 border-slate-200 dark:border-slate-600 rounded-xl p-2 flex flex-col items-center cursor-pointer bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all danger-radio">
+                                <input type="radio" name="dangerLvl" value="faible" class="hidden" checked onchange="updateRadioUI(this, 'border-green-500 text-green-600 bg-green-50 dark:bg-green-900/20')">
+                                <i class="fa-solid fa-info-circle text-lg mb-1"></i>
+                                <span class="text-[10px] font-bold uppercase">Mineur</span>
+                            </label>
+                            <label class="border-2 border-slate-200 dark:border-slate-600 rounded-xl p-2 flex flex-col items-center cursor-pointer bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all danger-radio">
+                                <input type="radio" name="dangerLvl" value="moyen" class="hidden" onchange="updateRadioUI(this, 'border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-900/20')">
+                                <i class="fa-solid fa-triangle-exclamation text-lg mb-1"></i>
+                                <span class="text-[10px] font-bold uppercase">Sérieux</span>
+                            </label>
+                            <label class="border-2 border-slate-200 dark:border-slate-600 rounded-xl p-2 flex flex-col items-center cursor-pointer bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all danger-radio">
+                                <input type="radio" name="dangerLvl" value="critique" class="hidden" onchange="updateRadioUI(this, 'border-red-500 text-red-600 bg-red-50 dark:bg-red-900/20')">
+                                <i class="fa-solid fa-skull-crossbones text-lg mb-1"></i>
+                                <span class="text-[10px] font-bold uppercase">Imminent</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Nature de l'anomalie</label>
+                        <select class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm font-medium focus:ring-2 focus:ring-restev-magenta outline-none dark:text-white transition-all">
+                            <option>EPI manquant ou défectueux</option>
+                            <option>Risque de chute ou glissade</option>
+                            <option>Problème machine / équipement</option>
+                            <option>Exposition produit chimique</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">Prise de vue & Description</label>
+                        <textarea rows="2" placeholder="Décrivez rapidement la situation..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-magenta outline-none dark:text-white transition-all mb-2"></textarea>
+                        
+                        <button type="button" class="w-full bg-slate-100 dark:bg-slate-700 border border-dashed border-slate-300 dark:border-slate-500 text-slate-500 dark:text-slate-300 font-bold py-2 rounded-xl text-xs flex justify-center items-center gap-2">
+                            <i class="fa-solid fa-camera"></i> Ajouter une photo terrain
+                        </button>
+                    </div>
+
+                    <button type="submit" class="w-full bg-restev-magenta hover:bg-pink-700 text-white font-bold py-3.5 rounded-xl shadow-md uppercase tracking-wider text-sm flex justify-center items-center gap-2 transition-all active:scale-95">
+                        <i class="fa-solid fa-paper-plane"></i> Transmettre l'alerte
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div id="view-manager" class="app-page space-y-4 !p-0">
+            
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border-l-4 border-green-500 shadow-sm">
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Conformité</span>
+                        <i class="fa-solid fa-percent text-green-500"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-slate-800 dark:text-white">92%</h3>
+                    <p class="text-[10px] text-slate-500 mt-1">Nouveaux arrivants à jour</p>
+                </div>
+
+                <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border-l-4 border-red-500 shadow-sm">
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Dangers</span>
+                        <i class="fa-solid fa-triangle-exclamation text-red-500"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-slate-800 dark:text-white">3</h3>
+                    <p class="text-[10px] text-slate-500 mt-1">Alertes terrain non traitées</p>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3 mb-3">
+                    <h3 class="text-sm font-bold text-slate-800 dark:text-white uppercase tracking-wider">Dangers Signalés</h3>
+                    <span class="bg-red-100 text-red-700 text-[10px] font-black px-2 py-0.5 rounded-full">ACTION REQUISE</span>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-100 dark:border-slate-600">
+                        <div class="w-2 h-2 rounded-full bg-red-500 mt-1.5 shrink-0 animate-pulse"></div>
+                        <div class="flex-grow">
+                            <h4 class="text-xs font-bold text-slate-800 dark:text-white">Machine de coupe - Carter cassé</h4>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Signalé par: Y. Le Hazif - Il y a 10 min</p>
+                        </div>
+                        <button class="bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-white w-8 h-8 rounded-lg flex items-center justify-center text-xs shadow-sm">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+
+                    <div class="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-100 dark:border-slate-600">
+                        <div class="w-2 h-2 rounded-full bg-amber-500 mt-1.5 shrink-0"></div>
+                        <div class="flex-grow">
+                            <h4 class="text-xs font-bold text-slate-800 dark:text-white">Absence lunettes de protection</h4>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Zone Stockage Chimique - Hier</p>
+                        </div>
+                        <button class="bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-white w-8 h-8 rounded-lg flex items-center justify-center text-xs shadow-sm">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div onclick="alert('Ouverture de la console d\'émargement employeur...')" class="bg-restev-blue text-white rounded-2xl p-4 shadow-md active:scale-95 transition-all cursor-pointer flex items-center space-x-4">
+                <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-xl shrink-0">
+                    <i class="fa-solid fa-signature"></i>
+                </div>
+                <div class="flex-grow">
+                    <h3 class="font-bold text-sm">Viser un accueil sécurité</h3>
+                    <p class="text-[11px] text-blue-100 mt-0.5">1 livret en attente de votre signature.</p>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <nav class="fixed bottom-3 left-4 right-4 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md border border-slate-200 dark:border-slate-700 rounded-2xl flex justify-around p-2 shadow-lg z-50">
+        <button class="flex flex-col items-center justify-center w-16 py-1 text-restev-blue font-bold transition-transform active:scale-90">
+            <i class="fa-solid fa-house text-lg mb-1"></i>
+            <span class="text-[9px] uppercase tracking-wider">Accueil</span>
+        </button>
+        <button onclick="openScanner()" class="flex flex-col items-center justify-center w-16 py-1 text-slate-400 hover:text-restev-blue dark:hover:text-white transition-transform active:scale-90">
+            <i class="fa-solid fa-qrcode text-lg mb-1"></i>
+            <span class="text-[9px] uppercase tracking-wider">Scanner</span>
+        </button>
+        <button class="flex flex-col items-center justify-center w-16 py-1 text-slate-400 hover:text-restev-blue dark:hover:text-white transition-transform active:scale-90">
+            <i class="fa-solid fa-folder-open text-lg mb-1"></i>
+            <span class="text-[9px] uppercase tracking-wider">Fiches</span>
+        </button>
+    </nav>
+
+    <div id="scannerModal" class="fixed inset-0 bg-black/95 z-[10000] hidden flex-col justify-between p-6">
+        <div class="flex items-center justify-between text-white">
+            <button onclick="closeScanner()" class="p-3 rounded-xl bg-white/10 active:bg-white/20">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+            <span class="text-sm font-bold tracking-wide uppercase">Scanner un équipement</span>
+            <button onclick="this.classList.toggle('text-yellow-400')" class="p-3 rounded-xl bg-white/10 active:bg-white/20 text-slate-400">
+                <i class="fa-solid fa-bolt text-xl"></i>
+            </button>
+        </div>
+
+        <div class="w-full max-w-xs aspect-square mx-auto border-2 border-dashed border-white/30 rounded-3xl relative flex items-center justify-center overflow-hidden">
+            <div class="w-full h-1 bg-restev-teal shadow-[0_0_15px_#75bba8] absolute top-0 left-0 animate-[laserScan_2s_infinite]"></div>
+            <p class="text-white/50 text-xs font-mono">Viseur caméra simulé</p>
+        </div>
+
+        <button onclick="simulateScanSuccess()" class="w-full bg-restev-teal text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-all text-sm uppercase tracking-wider">
+            Simuler Scan (Haptique)
+        </button>
+    </div>
+
+    <script>
+        // --- 1. Gestion du Splash Screen  ---
+        function closeSplash() {
+            const splash = document.getElementById('splash');
+            splash.style.opacity = '0';
+            setTimeout(() => { splash.style.display = 'none'; }, 600);
         }
-        e.target.reset();
-        // Reset custom radio UI
-        document.querySelectorAll('input[name="dangerLevel"]').forEach(input => {
-            input.parentElement.classList.remove('border-primary', 'bg-white');
-            input.parentElement.classList.add('border', 'bg-light');
+        setTimeout(() => {
+            if(document.getElementById('splash').style.display !== 'none') { closeSplash(); }
+        }, 3500);
+
+        // --- 2. Bascule Employé / Manager ---
+        function switchRole(role) {
+            const viewSalarie = document.getElementById('view-salarie');
+            const viewManager = document.getElementById('view-manager');
+            const btnSalarie = document.getElementById('btn-salarie');
+            const btnManager = document.getElementById('btn-manager');
+
+            const activeClass = "flex-1 py-2.5 rounded-lg text-sm font-bold shadow bg-white dark:bg-slate-700 text-restev-blue transition-all";
+            const inactiveClass = "flex-1 py-2.5 rounded-lg text-sm font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 transition-all";
+
+            if (role === 'salarie') {
+                viewSalarie.classList.add('active-page');
+                viewManager.classList.remove('active-page');
+                btnSalarie.className = activeClass;
+                btnManager.className = inactiveClass;
+            } else {
+                viewSalarie.classList.remove('active-page');
+                viewManager.classList.add('active-page');
+                btnManager.className = activeClass;
+                btnSalarie.className = inactiveClass;
+            }
+        }
+
+        // --- 3. UI Radio Boutons Formulaire Danger ---
+        // Initialiser visuellement le premier bouton au chargement
+        window.addEventListener('DOMContentLoaded', () => {
+            const firstRadio = document.querySelector('input[name="dangerLvl"]:checked');
+            if(firstRadio) updateRadioUI(firstRadio, 'border-green-500 text-green-600 bg-green-50 dark:bg-green-900/20');
         });
-        document.querySelector('input[value="faible"]').parentElement.classList.add('border-primary', 'bg-white');
-    }
 
-    // Style custom pour les radios danger
-    function selectDanger(element) {
-        const allLabels = element.parentElement.querySelectorAll('label');
-        allLabels.forEach(lbl => {
-            lbl.classList.remove('border-primary', 'bg-white', 'border-2');
-            lbl.classList.add('border', 'bg-light');
-        });
-        element.classList.remove('border', 'bg-light');
-        element.classList.add('border-primary', 'bg-white', 'border-2');
-    }
-
-    // 6. Simulateur Scanner Haptique
-    function simulateScan() {
-        if(navigator.vibrate) {
-            // Vibre 2 fois rapidement (Pattern Haptique)
-            navigator.vibrate([100, 50, 100]); 
+        function updateRadioUI(radioInput, activeClasses) {
+            // Réinitialiser tous les labels
+            document.querySelectorAll('.danger-radio').forEach(label => {
+                label.className = "border-2 border-slate-200 dark:border-slate-600 rounded-xl p-2 flex flex-col items-center cursor-pointer bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all danger-radio";
+            });
+            // Appliquer les classes actives au parent du radio cliqué
+            radioInput.parentElement.className = `border-2 rounded-xl p-2 flex flex-col items-center cursor-pointer transition-all danger-radio ${activeClasses}`;
         }
-        alert("Scan validé ! Produit : Acétone Pure. FDS : Conforme.");
-    }
-</script>
 
+        // --- 4. Simulateur Hors-ligne et Soumission ---
+        let isOnline = true;
+        let syncCount = 0;
+
+        function toggleNetwork() {
+            isOnline = !isOnline;
+            const btn = document.getElementById('networkStatusBtn');
+            const dot = document.getElementById('networkDot');
+            const text = document.getElementById('networkText');
+            const alertBox = document.getElementById('sync-alert');
+
+            if (isOnline) {
+                btn.className = "flex items-center space-x-1.5 px-3 py-1 bg-green-100 text-green-800 border border-green-200 rounded-full text-xs font-bold transition-all";
+                dot.className = "w-2 h-2 rounded-full bg-green-500 animate-pulse";
+                text.innerText = "En ligne";
+                
+                if (syncCount > 0) {
+                    alert(`🌐 Réseau rétabli ! ${syncCount} signalement(s) de danger synchronisé(s) avec succès.`);
+                    syncCount = 0;
+                    document.getElementById('sync-count').innerText = syncCount;
+                }
+                alertBox.classList.add('hidden');
+                alertBox.classList.remove('flex');
+            } else {
+                btn.className = "flex items-center space-x-1.5 px-3 py-1 bg-amber-100 text-amber-800 border border-amber-200 rounded-full text-xs font-bold transition-all";
+                dot.className = "w-2 h-2 rounded-full bg-amber-500";
+                text.innerText = "Hors-ligne";
+                
+                alertBox.classList.remove('hidden');
+                alertBox.classList.add('flex');
+            }
+        }
+
+        function submitDanger(e) {
+            e.preventDefault();
+            // Retour Haptique
+            if (navigator.vibrate) navigator.vibrate(50);
+
+            if (!isOnline) {
+                syncCount++;
+                document.getElementById('sync-count').innerText = syncCount;
+                alert("Alerte de danger stockée localement (Pas de réseau). Elle sera transmise au manager dès que la connexion reviendra.");
+            } else {
+                alert("Alerte transmise instantanément au manager du site !");
+            }
+            e.target.reset();
+            // Remise à zéro UI radio
+            const firstRadio = document.querySelector('input[name="dangerLvl"][value="faible"]');
+            firstRadio.checked = true;
+            updateRadioUI(firstRadio, 'border-green-500 text-green-600 bg-green-50 dark:bg-green-900/20');
+        }
+
+        // --- 5. Mode Sombre ---
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+        }
+
+        // --- 6. Simulateur Scanner ---
+        function openScanner() {
+            document.getElementById('scannerModal').classList.remove('hidden');
+            document.getElementById('scannerModal').classList.add('flex');
+        }
+        function closeScanner() {
+            document.getElementById('scannerModal').classList.add('hidden');
+            document.getElementById('scannerModal').classList.remove('flex');
+        }
+        function simulateScanSuccess() {
+            if (navigator.vibrate) { navigator.vibrate([100, 50, 100]); } // Vibreur
+            alert("Scan EPI Validé. L'équipement de protection est conforme.");
+            closeScanner();
+        }
+    </script>
 </body>
 </html>
-
-```
