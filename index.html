@@ -1,16 +1,3 @@
-C'est une excellente remarque. Dans un contexte réglementaire et de sécurité sur le terrain, **le salarié ne doit en aucun cas pouvoir valider lui-même son livret**, voir le registre global des risques de l'entreprise, ou repasser en mode "Manager" pour falsifier une attestation.
-
-Pour étanchéifier l'application, voici les modifications majeures apportées à l'architecture :
-
-1. **Ségrégation stricte au Scan QR Code :** Si l'application est ouverte via le QR Code (`?mode=onboarding`), le bouton "Choisir Profil" de l'en-tête est **complètement masqué**. Le salarié est confiné dans son espace.
-2. **Double flux d'émargement adapté :** * **Sur le téléphone du salarié (via QR Code) :** L'étape de signature du manager est masquée. Le salarié signe uniquement sa partie et clique sur **"Transmettre au Responsable"**.
-* **Sur le téléphone du Manager :** Une nouvelle section **"Accueils en attente de visa"** apparaît sur son tableau de bord. Il y retrouve le dossier envoyé par le salarié, peut le contrôler, apposer sa propre signature de tuteur, et générer l'attestation finale à force probante.
-
-
-
-Voici le code complet mis à jour et prêt à être testé (le système utilise le `localStorage` pour simuler parfaitement la transmission en temps réel entre le profil salarié et manager) :
-
-```html
 <!DOCTYPE html>
 <html lang="fr">
 <head>
