@@ -1,899 +1,463 @@
-<!DOCTYPE html>
+DANS CE HTML , COMMENT FAIRE POUR REMONTER LES INFORMATIONS SALARIE AU MANAGER : <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RESTEV 85 - Application Prévention PWA</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RESTEV 85 - Application Prévention PWA</title>
+    
+    <meta name="theme-color" content="#2f6bb2">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    <meta name="theme-color" content="#2f6bb2">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'restev-blue': '#2f6bb2',
-                        'restev-blue-dark': '#224d80',
-                        'restev-magenta': '#b8257b',
-                        'restev-magenta-dark': '#911d61',
-                        'restev-teal': '#69b3a5',
-                        'restev-teal-dark': '#529689',
-                    }
-                }
-            }
-        }
-    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <style>
-        canvas { touch-action: none; }
-        #report-map { height: 160px; width: 100%; border-radius: 16px; z-index: 10; }
-        @media print {
-            .no-print { display: none !important; }
-            body { background: white; padding: 0; margin: 0; }
-            .print-card { border: 1px solid #111 !important; box-shadow: none !important; padding: 0 !important; }
-        }
-    </style>
+    <style>
+        .bg-restev-blue { background-color: #2f6bb2; }
+        .text-restev-blue { color: #2f6bb2; }
+        .border-restev-blue { border-color: #2f6bb2; }
+        
+        .bg-restev-magenta { background-color: #b8257b; }
+        .text-restev-magenta { color: #b8257b; }
+        .border-restev-magenta { border-color: #b8257b; }
+        
+        .bg-restev-teal { background-color: #69b3a5; }
+        .text-restev-teal { color: #69b3a5; }
+        .border-restev-teal { border-color: #69b3a5; }
+
+        canvas { touch-action: none; }
+        #report-map { height: 160px; width: 100%; border-radius: 12px; z-index: 10; }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; padding: 0; margin: 0; }
+            .print-card { border: 1px solid #111 !important; box-shadow: none !important; padding: 0 !important; }
+        }
+    </style>
 </head>
-<body class="bg-slate-50 font-sans antialiased text-slate-800 pb-24 select-none">
-
-    <header class="bg-gradient-to-r from-restev-blue to-restev-blue-dark text-white p-4 shadow-lg sticky top-0 z-50 flex justify-between items-center no-print backdrop-blur-md">
-        <div class="flex items-center gap-3">
-            <div class="h-10 w-10 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-inner border border-white/20">
-                <i class="fa-solid fa-shield-halved text-white text-xl animate-pulse"></i>
-            </div>
-            <div>
-                <h1 class="text-base font-black tracking-wider leading-none">RESTEV 85</h1>
-                <p class="text-[10px] text-restev-teal font-bold uppercase tracking-widest mt-0.5">Expert Prévention</p>
-            </div>
-        </div>
-        <div class="flex items-center gap-2">
-            <span id="role-badge" onclick="switchScreen('scr-auth')" class="cursor-pointer bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold px-3 py-1.5 rounded-xl border border-white/20 uppercase tracking-wide transition-all">
-                Choisir Profil
-            </span>
-        </div>
-    </header>
-
-    <div id="legal-banner" class="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-2 text-center text-xs font-bold shadow-sm flex items-center justify-center gap-2 no-print">
-        <i class="fa-solid fa-gavel animate-bounce"></i>
-        <span>Conformité réglementaire Loi Santé au Travail</span>
-    </div>
-
-    <main class="p-4 max-w-md mx-auto">
-        
-        <section id="scr-auth" class="space-y-6 block no-print py-4">
-            <div class="text-center space-y-2">
-                <h2 class="text-xl font-black text-slate-800 uppercase tracking-wide">Portail Connexion</h2>
-                <p class="text-xs text-slate-500 px-6">Sélectionnez votre profil d'accès pour adapter les fonctionnalités réglementaires du site.</p>
-            </div>
-            <div class="space-y-4">
-                <div onclick="setRole('employee')" class="bg-white border-2 border-slate-100 hover:border-restev-blue rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center gap-4 active:scale-[0.99] group">
-                    <div class="w-14 h-14 rounded-xl bg-restev-blue/10 flex items-center justify-center text-restev-blue text-2xl shrink-0 group-hover:scale-110 transition-transform">
-                        <i class="fa-solid fa-user-graduate"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-slate-800 text-sm group-hover:text-restev-blue transition-colors">Salarié / Nouvel Arrivant</h3>
-                        <p class="text-xs text-slate-500 mt-0.5">Compléter mon livret d'accueil, valider mon QCM et remonter un danger.</p>
-                    </div>
-                </div>
-                <div onclick="setRole('manager')" class="bg-white border-2 border-slate-100 hover:border-restev-magenta rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center gap-4 active:scale-[0.99] group">
-                    <div class="w-14 h-14 rounded-xl bg-restev-magenta/10 flex items-center justify-center text-restev-magenta text-2xl shrink-0 group-hover:scale-110 transition-transform">
-                        <i class="fa-solid fa-user-tie"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-slate-800 text-sm group-hover:text-restev-magenta transition-colors">Manager / Responsable Site</h3>
-                        <p class="text-xs text-slate-500 mt-0.5">Piloter les intégrations, débriefer les QCM et signer les livrets.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="scr-dashboard" class="hidden space-y-6 no-print">
-            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-                <h2 id="dash-title" class="text-lg font-bold text-slate-800 mb-1">Pilote de Prévention Vendée</h2>
-                <p id="dash-subtitle" class="text-xs text-slate-500"></p>
-            </div>
-            
-            <div id="manager-qr-shortcut" class="hidden bg-gradient-to-br from-slate-900 via-slate-850 to-slate-800 text-white rounded-2xl p-5 shadow-lg space-y-4 border border-slate-700">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-xl text-restev-teal border border-white/10">
-                        <i class="fa-solid fa-qrcode"></i>
-                    </div>
-                    <div>
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-200">Intégration d'un Nouvel Arrivant</h4>
-                        <p class="text-[11px] text-slate-400 mt-0.5">Faites scanner ce code pour lancer le parcours autonome.</p>
-                    </div>
-                </div>
-                <button onclick="generateEmployeeQR()" class="w-full bg-gradient-to-r from-restev-blue to-restev-blue-dark hover:from-restev-blue-dark hover:to-restev-blue text-white font-bold py-3 px-4 rounded-xl text-xs uppercase tracking-wide shadow-md transition transform active:scale-[0.98]">
-                    Générer le QR Code Écran
-                </button>
-            </div>
-
-            <div class="grid grid-cols-1 gap-4">
-                <div onclick="switchScreen('scr-onboarding-1')" class="bg-white border-l-4 border-restev-blue rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-4 active:scale-[0.99] group">
-                    <div class="w-14 h-14 rounded-xl bg-restev-blue/10 flex items-center justify-center text-restev-blue text-2xl shrink-0 group-hover:bg-restev-blue group-hover:text-white transition-colors">
-                        <i class="fa-solid fa-file-signature"></i>
-                    </div>
-                    <div class="flex-grow">
-                        <h3 id="card-onboard-title" class="font-bold text-slate-800 text-sm">Mon Parcours Sécurité Obligatoire</h3>
-                        <p id="card-onboard-desc" class="text-xs text-slate-500 mt-0.5">Valider les modules réglementaires et mon mini-test.</p>
-                        <span class="inline-block mt-2 text-[10px] bg-restev-blue/10 text-restev-blue font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">Évaluation interactive</span>
-                    </div>
-                    <i class="fa-solid fa-chevron-right text-slate-300 group-hover:text-restev-blue transition-colors text-sm"></i>
-                </div>
-
-                <div onclick="switchScreen('scr-flash-report')" class="bg-white border-l-4 border-restev-magenta rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-4 active:scale-[0.99] group">
-                    <div class="w-14 h-14 rounded-xl bg-restev-magenta/10 flex items-center justify-center text-restev-magenta text-2xl shrink-0 group-hover:bg-restev-magenta group-hover:text-white transition-colors">
-                        <i class="fa-solid fa-triangle-exclamation"></i>
-                    </div>
-                    <div class="flex-grow">
-                        <h3 class="font-bold text-slate-800 text-sm">Signalement Flash Risque</h3>
-                        <p class="text-xs text-slate-500 mt-0.5">Remontée participative immédiate avec photo & GPS précis.</p>
-                        <span class="inline-block mt-2 text-[10px] bg-restev-magenta/10 text-restev-magenta font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">Terrain & Urgences</span>
-                    </div>
-                    <i class="fa-solid fa-chevron-right text-slate-300 group-hover:text-restev-magenta transition-colors text-sm"></i>
-                </div>
-            </div>
-
-            <div id="manager-only-panel" class="hidden space-y-4">
-                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-3">
-                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                        <span class="flex items-center gap-1.5"><i class="fa-solid fa-user-clock text-restev-blue"></i> Attentes de Visa (QCM terminés)</span>
-                        <span id="pending-count" class="bg-restev-blue/10 text-restev-blue px-2.5 py-0.5 rounded-full text-[10px] font-bold">0 À VISER</span>
-                    </h4>
-                    <div id="pending-onboardings-list" class="space-y-2"></div>
-                </div>
-            </div>
-        </section>
-
-        <section id="scr-qr-display" class="hidden space-y-5 text-center py-4 no-print">
-            <div class="flex items-center gap-2 mb-2 text-left">
-                <button onclick="switchScreen('scr-dashboard')" class="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition"><i class="fa-solid fa-arrow-left"></i></button>
-                <h2 class="text-base font-bold text-slate-800">Partager le livret d'accueil</h2>
-            </div>
-            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4 flex flex-col items-center">
-                <p class="text-xs text-slate-600 px-2 leading-relaxed">
-                    Le salarié scanne ce code pour ouvrir le livret d'accueil et le test directement sur son terminal.
-                </p>
-                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-inner flex justify-center items-center">
-                    <canvas id="qr-canvas" class="bg-white p-2 rounded-xl shadow-md"></canvas>
-                </div>
-            </div>
-            <button onclick="switchScreen('scr-dashboard')" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3.5 rounded-xl text-xs uppercase tracking-wider transition">Fermer</button>
-        </section>
-
-        <section id="scr-onboarding-1" class="hidden space-y-4 no-print">
-            <div class="flex items-center gap-2 mb-2">
-                <button onclick="switchScreen('scr-dashboard')" class="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition"><i class="fa-solid fa-arrow-left"></i></button>
-                <h2 class="text-base font-bold text-slate-800">Parcours Intégration Sécurité</h2>
-            </div>
-
-            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4">
-                <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-address-card text-restev-blue"></i> Identification</h3>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Nom & Prénom du Travailleur</label>
-                    <input type="text" id="reg-emp-name" placeholder="Ex: Yanis Martin" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue focus:border-restev-blue outline-none bg-slate-50/50 transition">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Statut du public (Obligations Réglementaires)</label>
-                    <select id="reg-emp-status" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue focus:border-restev-blue outline-none bg-slate-50/50 font-medium transition">
-                        <option value="Intérimaire">Intérimaire (Formation Générale + Spécifique Postes à risques)</option>
-                        <option value="Jeune Travailleur / Apprenti">Jeune Travailleur / Apprenti (-18 ans - Travaux Réglementés suivis)</option>
-                        <option value="Nouvel Arrivant">Nouvel Arrivant (CDI / CDD / Stagiaire)</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Entreprise Utilisatrice / Établissement d'accueil</label>
-                    <input type="text" id="reg-company" placeholder="Ex: Logistique Vendée SAS" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue focus:border-restev-blue outline-none bg-slate-50/50 transition">
-                </div>
-            </div>
-
-            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4">
-                <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-list-check text-restev-blue"></i> Informations délivrées</h3>
-                <div class="space-y-3">
-                    <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 cursor-pointer transition select-none">
-                        <input type="checkbox" id="chk-module-1" checked class="mt-0.5 w-5 h-5 text-restev-blue rounded border-slate-300 focus:ring-restev-blue accent-restev-blue">
-                        <span class="text-xs text-slate-700 leading-normal">J'atteste avoir reçu la formation aux <strong>Risques du Poste & EPI</strong> obligatoires à mon activité.</span>
-                    </label>
-                    <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 cursor-pointer transition select-none">
-                        <input type="checkbox" id="chk-module-2" checked class="mt-0.5 w-5 h-5 text-restev-blue rounded border-slate-300 focus:ring-restev-blue accent-restev-blue">
-                        <span class="text-xs text-slate-700 leading-normal">J'ai pris connaissance des consignes, de l'emplacement des extincteurs et des chemins d'<strong>Évacuation & Secours</strong>.</span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-5">
-                <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5 text-restev-blue"><i class="fa-solid fa-graduation-cap"></i> QCM Universel de Prévention</h3>
-                
-                <div class="space-y-2 border-b pb-4 border-slate-100">
-                    <p class="text-xs font-bold text-slate-800">1. En cas de déclenchement du signal d'évacuation (alarme incendie), quelle action est requise ?</p>
-                    <div class="text-xs space-y-2 pl-1">
-                        <label class="flex items-center gap-2.5 cursor-pointer"><input type="radio" name="q1" value="A" class="w-4 h-4 accent-restev-blue"> Je termine ma tâche en cours et je préviens mes collègues.</label>
-                        <label class="flex items-center gap-2.5 cursor-pointer"><input type="radio" name="q1" value="B" class="w-4 h-4 accent-restev-blue"> J'interromps mon activité immédiatement et je me dirige vers le point de rassemblement.</label>
-                    </div>
-                </div>
-                <div class="space-y-2 border-b pb-4 border-slate-100">
-                    <p class="text-xs font-bold text-slate-800">2. Si mes Équipements de Protection Individuelle (EPI) sont endommagés ou manquants :</p>
-                    <div class="text-xs space-y-2 pl-1">
-                        <label class="flex items-center gap-2.5 cursor-pointer"><input type="radio" name="q2" value="A" class="w-4 h-4 accent-restev-blue"> Je refuse de prendre mon poste et j'alerte immédiatement ma hiérarchie ou mon tuteur.</label>
-                        <label class="flex items-center gap-2.5 cursor-pointer"><input type="radio" name="q2" value="B" class="w-4 h-4 accent-restev-blue"> Je commence mon travail en faisant attention, puis je le signale en fin de journée.</label>
-                    </div>
-                </div>
-                <div class="space-y-2 border-b pb-4 border-slate-100">
-                    <p class="text-xs font-bold text-slate-800">3. Face à une situation de travail présentant un danger grave et imminent pour ma vie ou ma santé :</p>
-                    <div class="text-xs space-y-2 pl-1">
-                        <label class="flex items-center gap-2.5 cursor-pointer"><input type="radio" name="q3" value="A" class="w-4 h-4 accent-restev-blue"> J'exerce mon droit de retrait, me mets en sécurité et signale la situation.</label>
-                        <label class="flex items-center gap-2.5 cursor-pointer"><input type="radio" name="q3" value="B" class="w-4 h-4 accent-restev-blue"> Je continue en essayant de contourner le problème pour ne pas ralentir la production.</label>
-                    </div>
-                </div>
-                <div class="space-y-2">
-                    <p class="text-xs font-bold text-slate-800">4. Lors de mes déplacements à pied dans les locaux ou entrepôts de l'entreprise :</p>
-                    <div class="text-xs space-y-2 pl-1">
-                        <label class="flex items-center gap-2.5 cursor-pointer"><input type="radio" name="q4" value="A" class="w-4 h-4 accent-restev-blue"> Je peux circuler librement partout tant que je reste vigilant aux bruits ambiants.</label>
-                        <label class="flex items-center gap-2.5 cursor-pointer"><input type="radio" name="q4" value="B" class="w-4 h-4 accent-restev-blue"> Je respecte obligatoirement les voies piétonnes matérialisées et reste attentif aux engins.</label>
-                    </div>
-                </div>
-            </div>
-            <button onclick="validateFirstStep()" class="w-full bg-gradient-to-r from-restev-blue to-restev-blue-dark hover:from-restev-blue-dark hover:to-restev-blue text-white font-bold py-4 px-4 rounded-xl shadow-md flex justify-center items-center gap-2 text-sm uppercase tracking-wider transition transform active:scale-[0.98]">
-                Passer à l'émargement <i class="fa-solid fa-arrow-right text-xs"></i>
-            </button>
-        </section>
-
-        <section id="scr-onboarding-2" class="hidden space-y-4 no-print">
-            <div class="flex items-center gap-2 mb-2">
-                <button onclick="switchScreen('scr-onboarding-1')" class="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition"><i class="fa-solid fa-arrow-left"></i></button>
-                <h2 class="text-base font-bold text-slate-800">Émargement Écran Salarié</h2>
-            </div>
-            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4">
-                <p class="text-xs text-slate-600">Veuillez apposer votre signature sur l'écran pour certifier l'exactitude des informations transmises.</p>
-                <div class="border border-slate-200 rounded-xl overflow-hidden bg-slate-50 shadow-inner">
-                    <canvas id="canv-employee" class="w-full h-32 bg-white"></canvas>
-                </div>
-                <div class="text-right">
-                    <button onclick="clearSign('canv-employee')" class="text-[11px] text-red-500 font-bold hover:text-red-700 transition"><i class="fa-solid fa-eraser"></i> Effacer</button>
-                </div>
-                
-                <div id="tutor-signature-block" class="hidden space-y-3 pt-2 border-t border-slate-100">
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Nom du Tuteur d'accueil</label>
-                        <input type="text" id="reg-tutor-name" placeholder="Ex: Robert Moreau" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue outline-none bg-slate-50/50 transition">
-                    </div>
-                    <p class="text-xs font-bold text-slate-700">Signature Écran du Manager :</p>
-                    <div class="border border-slate-200 rounded-xl overflow-hidden bg-slate-50 shadow-inner">
-                        <canvas id="canv-tutor" class="w-full h-32 bg-white"></canvas>
-                    </div>
-                    <div class="text-right">
-                        <button type="button" onclick="clearSign('canv-tutor')" class="text-[11px] text-red-500 font-bold hover:text-red-700 transition"><i class="fa-solid fa-eraser"></i> Effacer</button>
-                    </div>
-                </div>
-            </div>
-            <button onclick="submitToManagerQueue()" id="btn-employee-submit" class="w-full bg-gradient-to-r from-restev-blue to-restev-blue-dark text-white font-bold py-4 rounded-xl shadow-md uppercase tracking-wider text-sm transition">
-                Transmettre le dossier
-            </button>
-            <button onclick="processFinalAttestation()" id="btn-manager-finalize" class="hidden w-full bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-bold py-4 rounded-xl shadow-md uppercase tracking-wider text-sm transition">
-                Clôturer & Signer sur le champ
-            </button>
-        </section>
-
-        <section id="scr-manager-review" class="hidden space-y-4 no-print">
-            <div class="flex items-center gap-2 mb-2">
-                <button onclick="switchScreen('scr-dashboard')" class="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition"><i class="fa-solid fa-arrow-left"></i></button>
-                <h2 class="text-base font-bold text-slate-800">Contrôle & Débriefing QCM</h2>
-            </div>
-            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-3">
-                <div class="flex justify-between items-center border-b pb-2">
-                    <h3 class="text-slate-400 font-black uppercase text-[10px] tracking-wider">Résultats de l'évaluation</h3>
-                    <span id="rev-qcm-score-badge" class="font-black px-3 py-1 rounded-full text-xs">Score : - / 4</span>
-                </div>
-                <div id="rev-qcm-details" class="space-y-2 text-xs"></div>
-            </div>
-            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-3 text-xs">
-                <h3 class="text-slate-400 font-black uppercase text-[10px] tracking-wider">Profil du Salarié</h3>
-                <p class="text-slate-700"><strong>Nom :</strong> <span id="rev-emp-name-text" class="text-slate-900 font-medium">-</span> (<span id="rev-status" class="text-restev-magenta font-semibold">-</span>)</p>
-                <p class="text-slate-700"><strong>Société :</strong> <span id="rev-company" class="text-slate-900 font-medium">-</span></p>
-                <h3 class="text-slate-400 font-black uppercase text-[10px] tracking-wider pt-2">Émargement initial salarié</h3>
-                <div class="border border-slate-200 rounded-xl bg-slate-50 p-2 h-24 flex items-center justify-center shadow-inner">
-                    <img id="img-rev-emp-sign" class="max-h-full max-w-full object-contain">
-                </div>
-            </div>
-            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4">
-                <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-1 text-restev-blue"><i class="fa-solid fa-signature"></i> Clôture de l'accueil par l'employeur</h3>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Nom du Tuteur / Encadrant</label>
-                    <input type="text" id="reg-tutor-name-rev" placeholder="Ex: Robert Moreau" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue focus:border-restev-blue outline-none bg-slate-50/50 transition">
-                </div>
-                <div class="space-y-1.5">
-                    <p class="text-xs font-bold text-slate-700">Signature Écran du Manager :</p>
-                    <div class="border border-slate-200 rounded-xl overflow-hidden bg-slate-50 shadow-inner">
-                        <canvas id="canv-tutor-rev" class="w-full h-26 bg-white"></canvas>
-                    </div>
-                    <div class="text-right">
-                        <button onclick="clearSign('canv-tutor-rev')" class="text-[11px] text-red-500 font-bold hover:text-red-700 transition"><i class="fa-solid fa-eraser"></i> Effacer</button>
-                    </div>
-                </div>
-            </div>
-            <button onclick="finalizeReviewSubmission()" class="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-600 text-white font-bold py-4 rounded-xl text-xs uppercase tracking-wider shadow-md transition transform active:scale-[0.98]">
-                <i class="fa-solid fa-certificate mr-1"></i> Valider et Co-signer l'intégration
-            </button>
-        </section>
-
-        <section id="scr-employee-success" class="hidden space-y-5 text-center py-8 no-print">
-            <div class="w-20 h-20 bg-restev-blue/10 rounded-full flex items-center justify-center mx-auto border border-restev-blue/20">
-                <i class="fa-solid fa-paper-plane text-restev-blue text-4xl"></i>
-            </div>
-            <div class="space-y-3 px-4">
-                <h2 class="text-lg font-black text-slate-800 uppercase tracking-wide">Livret & QCM Envoyés</h2>
-                <p class="text-xs text-slate-500 leading-relaxed">Vos validations, vos réponses au questionnaire sécurité et votre émargement ont été télétransmis à votre tuteur d'accueil.</p>
-                <div class="text-xs font-bold text-slate-700 bg-amber-50 border border-dashed border-amber-300 p-4 rounded-2xl shadow-sm mt-4">
-                    Veuillez vous adresser à votre encadrant pour valider définitivement votre entrée sur le site.
-                </div>
-            </div>
-            <button onclick="resetAllForms()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider transition">Retour au tableau de bord</button>
-        </section>
-
-        <section id="scr-attestation" class="hidden space-y-4">
-            <div id="print-zone" class="bg-white rounded-3xl p-6 shadow-xl border border-slate-200 print-card space-y-6">
-                <div class="flex justify-between items-start border-b pb-4 border-slate-200">
-                    <div>
-                        <h3 class="text-sm font-black text-restev-blue uppercase tracking-wider">Attestation d'Accueil Sécurité</h3>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase mt-0.5 tracking-wider">Conformité RESTEV 85</p>
-                    </div>
-                    <span id="attestation-id" class="text-[10px] font-mono bg-slate-100 text-slate-600 px-2.5 py-1 rounded-xl font-black border border-slate-200">RE-85-XXXXXX</span>
-                </div>
-                <div class="grid grid-cols-2 gap-4 text-xs border-b pb-4 border-slate-100">
-                    <div>
-                        <span class="text-[10px] text-slate-400 font-bold uppercase block tracking-wide">Entreprise</span>
-                        <span id="lbl-view-company" class="font-black text-slate-800 uppercase">-</span>
-                    </div>
-                    <div>
-                        <span class="text-[10px] text-slate-400 font-bold uppercase block tracking-wide">Horodatage</span>
-                        <span id="lbl-view-date" class="font-bold text-slate-700">-</span>
-                    </div>
-                    <div>
-                        <span class="text-[10px] text-slate-400 font-bold uppercase block tracking-wide">Salarié</span>
-                        <span id="lbl-view-emp" class="font-bold text-slate-900">-</span>
-                        <span id="lbl-view-status" class="text-[10px] text-restev-magenta font-bold block mt-0.5 uppercase tracking-wide">-</span>
-                    </div>
-                    <div>
-                        <span class="text-[10px] text-slate-400 font-bold uppercase block tracking-wide">Tuteur / Encadrant</span>
-                        <span id="lbl-view-tutor" class="font-bold text-slate-900">-</span>
-                    </div>
-                </div>
-                <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 flex justify-between items-center shadow-inner">
-                    <span class="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1"><i class="fa-solid fa-square-poll-vertical text-restev-blue"></i> Évaluation QCM Sécurité :</span>
-                    <span id="lbl-view-qcm-score" class="bg-emerald-600 text-white font-black px-3 py-1 rounded-xl text-xs font-mono shadow-sm">4 / 4</span>
-                </div>
-                <div class="grid grid-cols-2 gap-4 pt-2">
-                    <div class="text-center">
-                        <span class="text-[9px] font-black text-slate-400 uppercase block mb-1.5 tracking-wider">Visa Salarié</span>
-                        <div class="border border-slate-200 rounded-xl bg-slate-50/50 p-2 h-20 flex items-center justify-center shadow-inner">
-                            <img id="img-render-emp" class="max-h-full max-w-full object-contain">
-                        </div>
-                    </div>
-                    <div class="text-center">
-                        <span class="text-[9px] font-black text-slate-400 uppercase block mb-1.5 tracking-wider">Visa Responsable</span>
-                        <div class="border border-slate-200 rounded-xl bg-slate-50/50 p-2 h-20 flex items-center justify-center shadow-inner">
-                            <img id="img-render-tutor" class="max-h-full max-w-full object-contain">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="space-y-2.5 no-print">
-                <button onclick="window.print()" class="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-md text-xs tracking-wider uppercase flex justify-center items-center gap-2 transition transform active:scale-[0.98]">
-                    <i class="fa-solid fa-print"></i> Imprimer / Export PDF
-                </button>
-                <button onclick="exportToPasseportPrevention()" class="w-full bg-gradient-to-r from-restev-blue to-restev-blue-dark text-white font-bold py-3.5 px-4 rounded-xl shadow-md text-xs tracking-wider uppercase flex justify-center items-center gap-2 transition transform active:scale-[0.98]">
-                    <i class="fa-solid fa-file-export"></i> Transférer au Passeport Prévention (JSON)
-                </button>
-                <button onclick="resetAllForms()" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 px-4 rounded-xl text-xs uppercase tracking-wide text-center block transition">Retour Espace Principal</button>
-            </div>
-        </section>
-
-        <section id="scr-flash-report" class="hidden space-y-4 no-print">
-            <div class="flex items-center gap-2 mb-2">
-                <button onclick="switchScreen('scr-dashboard')" class="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition"><i class="fa-solid fa-arrow-left"></i></button>
-                <h2 class="text-base font-bold text-slate-800">Signalement Flash Terrain</h2>
-            </div>
-            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4">
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Nature ou Intitulé du danger constaté</label>
-                    <input type="text" id="flash-title" placeholder="Ex: Fuite de liquide au sol, encombrement issue..." class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-magenta focus:border-restev-magenta outline-none bg-slate-50/50 transition">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Famille de risque</label>
-                        <select id="flash-risk-type" class="w-full border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-restev-magenta outline-none bg-slate-50/50 transition">
-                            <option value="Chute / Circulation">Chute / Circulation</option>
-                            <option value="Électrique">Risque Électrique</option>
-                            <option value="Chimique">Risque Chimique</option>
-                            <option value="Machine / Outil">Matériel / Machine</option>
-                            <option value="Autre">Autre anomalie</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Niveau d'urgence perçu</label>
-                        <select id="flash-urgency" class="w-full border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-restev-magenta outline-none bg-slate-50/50 font-bold transition">
-                            <option value="Mineur" class="text-green-600">🟢 À traiter sous peu</option>
-                            <option value="Important" class="text-amber-600">🟡 Risque potentiel d'accident</option>
-                            <option value="Critique" class="text-red-600">🔴 Danger Immédiat</option>
-                        </select>
-                    </div>
-                </div>
-                <div>
-                    <div class="flex justify-between items-center mb-1.5">
-                        <label class="block text-[11px] font-bold text-slate-600 uppercase">Localisation précise (GPS)</label>
-                        <button type="button" onclick="triggerHighAccuracyLocation()" id="btn-geo-action" class="bg-gradient-to-r from-restev-teal to-restev-teal-dark hover:from-restev-teal-dark hover:to-restev-teal text-white font-bold py-1.5 px-3 rounded-xl text-[10px] uppercase tracking-wider flex items-center gap-1 shadow-sm transition">
-                            <i class="fa-solid fa-location-crosshairs animate-pulse"></i> Capturer
-                        </button>
-                    </div>
-                    <div class="space-y-2">
-                        <div id="report-map" class="border border-slate-200 bg-slate-100 shadow-inner"></div>
-                        <input type="text" id="flash-geo-coords" readonly placeholder="Coordonnées GPS" class="w-full border border-slate-200 rounded-xl p-3 text-xs outline-none bg-slate-100 text-slate-600 font-mono">
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Preuve photo terrain</label>
-                        <input type="file" id="flash-camera-file" accept="image/*" capture="environment" class="hidden" onchange="handleFlashPhoto(event)">
-                        <button type="button" onclick="document.getElementById('flash-camera-file').click()" class="w-full bg-gradient-to-br from-restev-magenta to-restev-magenta-dark hover:from-restev-magenta-dark hover:to-restev-magenta text-white rounded-2xl h-24 flex flex-col items-center justify-center gap-1.5 shadow-md transition transform active:scale-[0.97]">
-                            <i class="fa-solid fa-camera text-2xl"></i>
-                            <span class="text-[10px] font-bold uppercase tracking-wide">Prendre un cliché</span>
-                        </button>
-                    </div>
-                    <div class="w-full h-24 border-2 border-dashed border-slate-200 bg-slate-50 rounded-2xl flex items-center justify-center p-1.5 overflow-hidden shadow-inner">
-                        <div id="flash-photo-placeholder" class="text-slate-400 text-[10px] font-medium uppercase tracking-wide">Aucun cliché</div>
-                        <img id="img-flash-preview" class="hidden w-full h-full object-cover rounded-xl shadow-sm">
-                    </div>
-                </div>
-            </div>
-            <button onclick="submitFlashReport()" class="w-full bg-gradient-to-r from-restev-magenta to-restev-magenta-dark text-white font-bold py-4 px-4 rounded-xl shadow-lg uppercase tracking-wider text-sm transition transform active:scale-[0.98]">Envoyer l'alerte</button>
-        </section>
-
-        <section id="scr-flash-success" class="hidden space-y-4 no-print text-center py-8">
-            <div class="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto border border-emerald-100">
-                <i class="fa-solid fa-circle-check text-emerald-500 text-4xl"></i>
-            </div>
-            <h2 class="text-xl font-black text-slate-800 uppercase tracking-wide">Alerte Transmise</h2>
-            <p class="text-xs text-slate-500 max-w-xs mx-auto">Merci pour votre vigilance. L'anomalie géolocalisée a été transmise aux services de prévention.</p>
-            <button onclick="resetAllForms()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3.5 px-4 rounded-xl shadow-md uppercase tracking-wider text-xs transition">Retour</button>
-        </section>
-
-    </main>
-
-    <nav class="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 h-16 flex items-center justify-around text-slate-400 z-40 no-print shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
-        <button onclick="switchScreen('scr-dashboard')" id="nav-home" class="flex flex-col items-center gap-1 focus:outline-none transition-colors duration-200">
-            <i class="fa-solid fa-chart-pie text-lg"></i>
-            <span class="text-[9px] font-black uppercase tracking-wider">Console</span>
-        </button>
-        <button onclick="switchScreen('scr-onboarding-1')" id="nav-onboard" class="flex flex-col items-center gap-1 focus:outline-none transition-colors duration-200">
-            <i class="fa-solid fa-user-check text-lg"></i>
-            <span class="text-[9px] font-black uppercase tracking-wider">Livret</span>
-        </button>
-        <button onclick="switchScreen('scr-flash-report')" id="nav-flash" class="flex flex-col items-center gap-1 focus:outline-none transition-colors duration-200">
-            <i class="fa-solid fa-bullseye text-lg"></i>
-            <span class="text-[9px] font-black uppercase tracking-wider">Signalement</span>
-        </button>
-    </nav>
-
-    <script>
-        // ==========================================
-    // CONFIGURATION & ETAT GLOBAL
-    // ==========================================
-    // Remplace par tes clés de projet Supabase si ce n'est pas déjà fait
-    const SUPABASE_URL = "https://votre-projet.supabase.co";
-    const SUPABASE_KEY = "votre-cle-anonyme";
-    const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
-
-    let currentUserRole = 'employee';
-    let currentPhotoFile = null;
-    let employeeSignatureData = null;
-    let tutorSignatureData = null;
-    let activeReviewItem = null; // Stocke l'onboarding sélectionné par le manager
-
-    // Réponses correctes au QCM
-    const CORRECT_ANSWERS = { q1: "B", q2: "A", q3: "A", q4: "B" };
-
-    // Initialisation au chargement de la page
-    window.addEventListener('DOMContentLoaded', () => {
-        initCanvas('canv-employee', (data) => { employeeSignatureData = data; });
-        initCanvas('canv-tutor', (data) => { tutorSignatureData = data; });
-        initCanvas('canv-tutor-rev', () => {});
-        
-        // Démarrage par défaut sur le portail d'authentification
-        switchScreen('scr-auth');
-    });
-
-    // ==========================================
-    // NAVIGATION ET ROLES
-    // ==========================================
-    function switchScreen(screenId) {
-        // Masquer toutes les sections
-        document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
-        
-        // Afficher l'écran demandé
-        const targetScreen = document.getElementById(screenId);
-        if (targetScreen) {
-            targetScreen.classList.remove('hidden');
-        }
-
-        // Logique spécifique lors de l'accès au tableau de bord
-        if (screenId === 'scr-dashboard') {
-            if (currentUserRole === 'manager') {
-                loadPendingOnboardings(); // Rafraîchir les alertes automatiquement
-            }
-        }
-    }
-
-    function setRole(role) {
-        currentUserRole = role;
-        const badge = document.getElementById('role-badge');
-        const mglPanel = document.getElementById('manager-only-panel');
-        const qrShortcut = document.getElementById('manager-qr-shortcut');
-
-        if (role === 'manager') {
-            badge.className = "cursor-pointer bg-restev-magenta text-white text-[10px] font-bold px-3 py-1.5 rounded-xl border border-restev-magenta-dark uppercase tracking-wide transition-all";
-            badge.innerText = "Profil : Manager";
-            if (mglPanel) mglPanel.classList.remove('hidden');
-            if (qrShortcut) qrShortcut.classList.remove('hidden');
-            
-            // Personnalisation textes dashboard
-            document.getElementById('dash-title').innerText = "Espace Responsable Site";
-            document.getElementById('dash-subtitle').innerText = "Pilote de Prévention Vendée & Suivi des Accueils";
-            
-            loadPendingOnboardings();
-        } else {
-            badge.className = "cursor-pointer bg-restev-blue text-white text-[10px] font-bold px-3 py-1.5 rounded-xl border border-restev-blue-dark uppercase tracking-wide transition-all";
-            badge.innerText = "Profil : Salarié";
-            if (mglPanel) mglPanel.classList.add('hidden');
-            if (qrShortcut) qrShortcut.classList.add('hidden');
-
-            document.getElementById('dash-title').innerText = "Mon Livret Sécurité PWA";
-            document.getElementById('dash-subtitle').innerText = "Complétez vos obligations réglementaires de sécurité";
-        }
-        switchScreen('scr-dashboard');
-    }
-
-    // ==========================================
-    // LOGIQUE METIER : ONBOARDING & QCM
-    // ==========================================
-    function validateFirstStep() {
-        const empName = document.getElementById('reg-emp-name').value.trim();
-        const company = document.getElementById('reg-company').value.trim();
-
-        if (!empName || !company) {
-            alert("⚠️ Veuillez renseigner votre Nom, Prénom ainsi que votre Entreprise.");
-            return;
-        }
-
-        // Vérifier si le QCM est entièrement coché
-        if (!getRadioValue('q1') || !getRadioValue('q2') || !getRadioValue('q3') || !getRadioValue('q4')) {
-            alert("⚠️ Veuillez répondre à l'ensemble des questions du QCM de prévention.");
-            return;
-        }
-
-        switchScreen('scr-onboarding-2');
-    }
-
-    // TRANSMISSION DU SALARIE VERS SUPABASE
-    async function submitToManagerQueue() {
-        if (!employeeSignatureData) {
-            alert("⚠️ La signature sur l'écran est obligatoire pour certifier votre parcours.");
-            return;
-        }
-
-        const btnSubmit = document.getElementById('btn-employee-submit');
-        btnSubmit.disabled = true;
-        btnSubmit.innerText = "Télétransmission en cours...";
-
-        // Calcul des réponses et du score de prévention
-        const answers = {
-            q1: getRadioValue('q1'),
-            q2: getRadioValue('q2'),
-            q3: getRadioValue('q3'),
-            q4: getRadioValue('q4')
-        };
-
-        let score = 0;
-        for (const key in CORRECT_ANSWERS) {
-            if (answers[key] === CORRECT_ANSWERS[key]) score++;
-        }
-
-        const payload = {
-            worker_name: document.getElementById('reg-emp-name').value.trim(),
-            public_status: document.getElementById('reg-emp-status').value,
-            company_name: document.getElementById('reg-company').value.trim(),
-            module_1_checked: document.getElementById('chk-module-1').checked,
-            module_2_checked: document.getElementById('chk-module-2').checked,
-            qcm_answers: answers,
-            qcm_score: score,
-            employee_signature: employeeSignatureData,
-            status: "pending", // Reste en attente de visa manager
-            created_at: new Date().toISOString()
-        };
-
-        try {
-            if (supabase) {
-                const { error } = await supabase.from('onboarding').insert([payload]);
-                if (error) throw error;
-            } else {
-                // Secours LocalStorage si hors-ligne / non configuré
-                let localData = JSON.parse(localStorage.getItem('local_onboardings') || '[]');
-                payload.id = 'LOCAL-' + Date.now();
-                localData.push(payload);
-                localStorage.setItem('local_onboardings', JSON.stringify(localData));
-            }
-
-            // CORRECTION: Redirection immédiate vers l'écran de succès du salarié
-            switchScreen('scr-employee-success');
-            
-        } catch (err) {
-            console.error("Erreur Supabase Onboarding:", err);
-            alert("Une erreur est survenue lors de l'envoi de vos données. Vérifiez votre connexion.");
-        } finally {
-            btnSubmit.disabled = false;
-            btnSubmit.innerText = "Transmettre le dossier";
-        }
-    }
-
-    // CHARGEMENT DES ALERTES ET PARCOURS CÔTE MANAGER
-    async function loadPendingOnboardings() {
-        const listContainer = document.getElementById('pending-onboardings-list');
-        const countBadge = document.getElementById('pending-count');
-        
-        if (!listContainer) return;
-        listContainer.innerHTML = '<p class="text-xs text-slate-400 py-2 text-center animate-pulse">Recherche des nouveaux livrets...</p>';
-
-        let pendingItems = [];
-
-        try {
-            if (supabase) {
-                const { data, error } = await supabase
-                    .from('onboarding')
-                    .select('*')
-                    .eq('status', 'pending')
-                    .order('created_at', { ascending: false });
-                
-                if (error) throw error;
-                pendingItems = data || [];
-            } else {
-                const localData = JSON.parse(localStorage.getItem('local_onboardings') || '[]');
-                pendingItems = localData.filter(item => item.status === 'pending');
-            }
-
-            // Mise à jour du compteur d'alertes
-            countBadge.innerText = `${pendingItems.length} À VISER`;
-            
-            if (pendingItems.length === 0) {
-                listContainer.innerHTML = `
-                    <div class="text-center py-4 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                        <i class="fa-solid fa-circle-check text-emerald-500 text-lg mb-1"></i>
-                        <p class="text-[11px] font-medium text-slate-500">Aucun parcours en attente de visa réglementaire.</p>
-                    </div>`;
-                return;
-            }
-
-            listContainer.innerHTML = '';
-            pendingItems.forEach(item => {
-                const dateClean = new Date(item.created_at).toLocaleDateString('fr-FR', {hour: '2-digit', minute:'2-digit'});
-                const div = document.createElement('div');
-                div.className = "p-3 bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl transition cursor-pointer flex justify-between items-center group";
-                div.onclick = () => openManagerReview(item);
-                
-                div.innerHTML = `
-                    <div class="space-y-0.5">
-                        <p class="text-xs font-bold text-slate-800 group-hover:text-restev-blue transition-colors">${item.worker_name}</p>
-                        <p class="text-[10px] text-slate-500 font-medium">${item.company_name} • <span class="text-restev-magenta">${item.public_status}</span></p>
-                        <p class="text-[9px] text-slate-400 font-mono">${dateClean}</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-black px-2 py-0.5 rounded-md ${item.qcm_score >= 3 ? 'bg-emerald-100 text-emerald-700':'bg-amber-100 text-amber-700'}">
-                            Score : ${item.qcm_score}/4
-                        </span>
-                        <i class="fa-solid fa-chevron-right text-slate-300 group-hover:transform group-hover:translate-x-0.5 transition-all text-xs"></i>
-                    </div>
-                `;
-                listContainer.appendChild(div);
-            });
-
-        } catch (err) {
-            console.error("Erreur de récupération des alertes manager:", err);
-            listContainer.innerHTML = '<p class="text-xs text-red-500 text-center py-2">⚠️ Impossible de charger les données synchronisées.</p>';
-        }
-    }
-
-    // OUVERTURE DE LA VUE DE VERIFICATION PAR LE MANAGER
-    function openManagerReview(item) {
-        activeReviewItem = item;
-        
-        // Hydratation des informations du salarié
-        document.getElementById('rev-emp-name-text').innerText = item.worker_name;
-        document.getElementById('rev-status').innerText = item.public_status;
-        document.getElementById('rev-company').innerText = item.company_name;
-        
-        // Affichage de la signature initiale du salarié
-        const imgSign = document.getElementById('img-rev-emp-sign');
-        if(imgSign) imgSign.src = item.employee_signature;
-
-        // Note et détails du QCM
-        const scoreBadge = document.getElementById('rev-qcm-score-badge');
-        scoreBadge.innerText = `Score : ${item.qcm_score} / 4`;
-        if (item.qcm_score === 4) {
-            scoreBadge.className = "font-black px-3 py-1 rounded-full text-xs bg-emerald-100 text-emerald-700";
-        } else {
-            scoreBadge.className = "font-black px-3 py-1 rounded-full text-xs bg-amber-100 text-amber-700";
-        }
-
-        // Détails des réponses fausses/justes
-        const detailsDiv = document.getElementById('rev-qcm-details');
-        detailsDiv.innerHTML = '';
-        for (let i = 1; i <= 4; i++) {
-            const userAns = item.qcm_answers['q' + i];
-            const isCorrect = userAns === CORRECT_ANSWERS['q' + i];
-            detailsDiv.innerHTML += `
-                <div class="flex items-center justify-between p-1.5 border-b border-slate-50">
-                    <span>Question n°${i}</span>
-                    <span class="font-bold ${isCorrect ? 'text-emerald-600':'text-red-500'}">
-                        ${isCorrect ? '✓ Correct' : `✗ Erreur (Réponse ${userAns})`}
-                    </span>
-                </div>
-            `;
-        }
-
-        switchScreen('scr-manager-review');
-    }
-
-    // CLÔTURE ET CO-SIGNATURE DU MANAGER
-    async function finalizeReviewSubmission() {
-        const tutorName = document.getElementById('reg-tutor-name-rev').value.trim();
-        const canvasTutor = document.getElementById('canv-tutor-rev');
-        const tutorSignData = canvasTutor.toDataURL();
-
-        if (!tutorName) {
-            alert("⚠️ Saisissez le nom du tuteur ou de l'encadrant pour signer le registre.");
-            return;
-        }
-
-        try {
-            if (supabase && activeReviewItem.id) {
-                const { error } = await supabase
-                    .from('onboarding')
-                    .update({ 
-                        status: 'validated',
-                        tutor_name: tutorName,
-                        tutor_signature: tutorSignData,
-                        validated_at: new Date().toISOString()
-                    })
-                    .eq('id', activeReviewItem.id);
-
-                if (error) throw error;
-            } else {
-                // Traitement LocalStorage
-                let localData = JSON.parse(localStorage.getItem('local_onboardings') || '[]');
-                localData = localData.map(item => {
-                    if (item.id === activeReviewItem.id || (item.worker_name === activeReviewItem.worker_name && item.created_at === activeReviewItem.created_at)) {
-                        return { 
-                            ...item, 
-                            status: 'validated', 
-                            tutor_name: tutorName, 
-                            tutor_signature: tutorSignData,
-                            validated_at: new Date().toISOString()
-                        };
-                    }
-                    return item;
-                });
-                localStorage.setItem('local_onboardings', JSON.stringify(localData));
-            }
-
-            // Génération de l'attestation finale imprimable
-            document.getElementById('attestation-id').innerText = `RE-85-${Math.floor(100000 + Math.random() * 900000)}`;
-            document.getElementById('lbl-view-company').innerText = activeReviewItem.company_name;
-            document.getElementById('lbl-view-date').innerText = new Date().toLocaleString('fr-FR');
-            document.getElementById('lbl-view-emp').innerText = activeReviewItem.worker_name;
-            document.getElementById('lbl-view-status').innerText = activeReviewItem.public_status;
-            document.getElementById('lbl-view-tutor').innerText = tutorName;
-            document.getElementById('lbl-view-qcm-score').innerText = `${activeReviewItem.qcm_score} / 4`;
-            
-            document.getElementById('img-render-emp').src = activeReviewItem.employee_signature;
-            document.getElementById('img-render-tutor').src = tutorSignData;
-
-            switchScreen('scr-attestation');
-
-        } catch (err) {
-            console.error("Erreur lors de la validation finale:", err);
-            alert("Impossible de valider et de sauvegarder la signature du manager.");
-        }
-    }
-
-    // ==========================================
-    // UTILITAIRES ET CANVAS DE SIGNATURE
-    // ==========================================
-    function initCanvas(canvasId, onSaveCallback) {
-        const canvas = document.getElementById(canvasId);
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        
-        // Ajustement précis de la résolution du canvas
-        canvas.width = canvas.parentElement.clientWidth;
-        canvas.height = 128;
-
-        ctx.strokeStyle = '#224d80';
-        ctx.lineWidth = 3;
-        ctx.lineCap = 'round';
-
-        let drawing = false;
-
-        function getPos(e) {
-            const rect = canvas.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            return { x: clientX - rect.left, y: clientY - rect.top };
-        }
-
-        function start(e) { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); }
-        function move(e) { if(!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }
-        function stop() { if(drawing) { drawing = false; if(onSaveCallback) onSaveCallback(canvas.toDataURL()); } }
-
-        canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); window.addEventListener('mouseup', stop);
-        canvas.addEventListener('touchstart', start, {passive: false}); canvas.addEventListener('touchmove', move, {passive: false}); canvas.addEventListener('touchend', stop);
-    }
-
-    function clearSign(canvasId) {
-        const canvas = document.getElementById(canvasId);
-        if(!canvas) return;
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        if(canvasId === 'canv-employee') employeeSignatureData = null;
-        if(canvasId === 'canv-tutor' || canvasId === 'canv-tutor-rev') tutorSignatureData = null;
-    }
-
-    function getRadioValue(name) {
-        const checked = document.querySelector(`input[name="${name}"]:checked`);
-        return checked ? checked.value : null;
-    }
-
-    function generateEmployeeQR() {
-        const canvas = document.getElementById('qr-canvas');
-        QRCode.toCanvas(canvas, window.location.href, { width: 180, margin: 1 }, function (error) {
-            if (error) console.error(error);
-            switchScreen('scr-qr-display');
-        });
-    }
-
-    function resetAllForms() {
-        document.getElementById('reg-emp-name').value = ""; 
-        document.getElementById('reg-company').value = "";
-        document.getElementById('reg-tutor-name-rev').value = "";
-        
-        const chk1 = document.getElementById('chk-module-1'); if(chk1) chk1.checked = true;
-        const chk2 = document.getElementById('chk-module-2'); if(chk2) chk2.checked = true;
-        
-        document.querySelectorAll('input[type="radio"]').forEach(el => el.checked = false);
-        clearSign('canv-employee');
-        clearSign('canv-tutor-rev');
-        
-        setRole(currentUserRole);
-    }
-
-    function exportToPasseportPrevention() {
-        const struct = { 
-            schema: "PST-2026", 
-            uid: document.getElementById('attestation-id').innerText, 
-            worker: document.getElementById('lbl-view-emp').innerText, 
-            score: document.getElementById('lbl-view-qcm-score').innerText 
-        };
-        const blob = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(struct, null, 2));
-        const a = document.createElement('a'); 
-        a.setAttribute("href", blob); 
-        a.setAttribute("download", `attestation-${struct.worker.replace(/\s+/g, '_')}.json`);
-        a.click();
-    }
-    </script>
-</body>
-</html>
+<body class="bg-slate-50 font-sans antialiased text-slate-800 pb-20 select-none">
+
+    <header class="bg-restev-blue text-white p-4 shadow-md sticky top-0 z-50 flex justify-between items-center no-print">
+        <div class="flex items-center gap-3">
+            <div class="h-10 bg-white rounded p-1 flex items-center justify-center shadow-inner">
+                <i class="fa-solid fa-shield-halved text-restev-blue text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-base font-black tracking-wider leading-none">RESTEV 85</h1>
+                <p class="text-[10px] opacity-80 mt-1 uppercase tracking-widest font-semibold">Expert Prévention</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <span id="role-badge" onclick="switchScreen('scr-auth')" class="cursor-pointer bg-white/20 text-white text-[10px] font-bold px-2 py-1 rounded border border-white/30 uppercase tracking-wide">
+                Choisir Profil
+            </span>
+        </div>
+    </header>
+
+    <div id="legal-banner" class="bg-amber-500 text-white px-4 py-2 text-center text-xs font-bold shadow-sm flex items-center justify-center gap-2 no-print">
+        <i class="fa-solid fa-gavel"></i>
+        <span>Conformité réglementaire Loi Santé au Travail</span>
+    </div>
+
+    <main class="p-4 max-w-md mx-auto">
+
+        <section id="scr-auth" class="space-y-6 block no-print py-4">
+            <div class="text-center space-y-2">
+                <h2 class="text-xl font-black text-slate-800 uppercase tracking-wide">Portail Connexion</h2>
+                <p class="text-xs text-slate-500 px-6">Sélectionnez votre profil d'accès pour adapter les fonctionnalités réglementaires du site.</p>
+            </div>
+
+            <div class="space-y-4">
+                <div onclick="setRole('employee')" class="bg-white border-2 border-slate-100 hover:border-restev-blue rounded-2xl p-5 shadow-sm transition cursor-pointer flex items-center gap-4 active:scale-[0.99]">
+                    <div class="w-14 h-14 rounded-xl bg-blue-50 flex items-center justify-center text-restev-blue text-2xl shrink-0">
+                        <i class="fa-solid fa-user-graduate"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-sm">Salarié / Nouvel Arrivant</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Compléter mon livret d'accueil, signer mes modules sécurité et remonter un danger.</p>
+                    </div>
+                </div>
+
+                <div onclick="setRole('manager')" class="bg-white border-2 border-slate-100 hover:border-restev-magenta rounded-2xl p-5 shadow-sm transition cursor-pointer flex items-center gap-4 active:scale-[0.99]">
+                    <div class="w-14 h-14 rounded-xl bg-pink-50 flex items-center justify-center text-restev-magenta text-2xl shrink-0">
+                        <i class="fa-solid fa-user-tie"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-sm">Manager / Responsable Site</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Piloter les intégrations, signer les attestations et traiter le registre des risques.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <section id="scr-dashboard" class="hidden space-y-6 no-print">
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                <h2 id="dash-title" class="text-lg font-bold text-slate-800 mb-1">Pilote de Prévention Vendée</h2>
+                <p id="dash-subtitle" class="text-xs text-slate-500"></p>
+            </div>
+
+            <div id="manager-qr-shortcut" class="hidden bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-4 shadow-md space-y-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center text-xl text-restev-teal">
+                        <i class="fa-solid fa-qrcode"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300">Intégration d'un Nouvel Arrivant</h4>
+                        <p class="text-[11px] text-slate-400">Faites scanner le code pour ouvrir son parcours sécurisé 1er jour.</p>
+                    </div>
+                </div>
+                <button onclick="generateEmployeeQR()" class="w-full bg-restev-blue text-white font-bold py-2.5 px-4 rounded-xl text-xs uppercase tracking-wide shadow transition active:scale-[0.98]">
+                    Générer le QR Code Écran
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4">
+                <div onclick="switchScreen('scr-onboarding-1')" class="bg-white border-l-4 border-restev-blue rounded-2xl p-4 shadow-sm hover:shadow-md transition cursor-pointer flex items-center gap-4 active:scale-[0.99]">
+                    <div class="w-14 h-14 rounded-xl bg-blue-50 flex items-center justify-center text-restev-blue text-2xl shrink-0">
+                        <i class="fa-solid fa-file-signature"></i>
+                    </div>
+                    <div class="flex-grow">
+                        <h3 id="card-onboard-title" class="font-bold text-slate-800 text-sm">Accueil Sécurité Intégration</h3>
+                        <p id="card-onboard-desc" class="text-xs text-slate-500 mt-0.5">Parcours d'arrivée obligatoire des publics vulnérables.</p>
+                        <span class="inline-block mt-2 text-[10px] bg-blue-100 text-restev-blue font-bold px-2 py-0.5 rounded uppercase">Force Probante</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-300 text-sm"></i>
+                </div>
+
+                <div onclick="switchScreen('scr-flash-report')" class="bg-white border-l-4 border-restev-magenta rounded-2xl p-4 shadow-sm hover:shadow-md transition cursor-pointer flex items-center gap-4 active:scale-[0.99]">
+                    <div class="w-14 h-14 rounded-xl bg-pink-50 flex items-center justify-center text-restev-magenta text-2xl shrink-0">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <div class="flex-grow">
+                        <h3 class="font-bold text-slate-800 text-sm">Signalement Flash Risque</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Remontée participative immédiate avec photo & GPS précis.</p>
+                        <span class="inline-block mt-2 text-[10px] bg-pink-100 text-restev-magenta font-bold px-2 py-0.5 rounded uppercase">Terrain</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-300 text-sm"></i>
+                </div>
+            </div>
+
+            <div id="manager-only-panel" class="hidden space-y-4">
+                
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                        <span><i class="fa-solid fa-user-clock text-restev-blue mr-1"></i> Accueils reçus via QR Code</span>
+                        <span id="pending-count" class="bg-blue-100 text-restev-blue px-1.5 py-0.5 rounded text-[9px] font-bold">1 À VISER</span>
+                    </h4>
+                    <div id="pending-onboardings-list" class="space-y-2">
+                        </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                        <span><i class="fa-solid fa-folder-open mr-1"></i> Registre Récent des Dangers</span>
+                        <span class="bg-red-100 text-red-600 px-1.5 py-0.5 rounded text-[9px] font-bold">2 À TRAITER</span>
+                    </h4>
+                    <div class="space-y-2">
+                        <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex justify-between items-center text-xs">
+                            <div>
+                                <p class="font-bold text-slate-800">Fuite hydraulique - Ligne d'emballage</p>
+                                <p class="text-[10px] text-slate-400 font-mono">Zone logistique | Lat: 46.671, Lng: -1.426</p>
+                            </div>
+                            <span class="bg-red-500 text-white font-bold text-[9px] px-2 py-0.5 rounded">Urgent</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <section id="scr-qr-display" class="hidden space-y-5 text-center py-4 no-print">
+            <div class="flex items-center gap-2 mb-2 text-left">
+                <button onclick="switchScreen('scr-dashboard')" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-arrow-left"></i></button>
+                <h2 class="text-base font-bold text-slate-800">Partager le livret d'accueil</h2>
+            </div>
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4 flex flex-col items-center">
+                <p class="text-xs text-slate-600 px-2 leading-relaxed">
+                    Présentez ce QR Code au **salarié nouvel arrivant**. En le scannant, son smartphone ouvrira l'application directement configurée sur son profil restreint.
+                </p>
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-inner flex justify-center items-center">
+                    <canvas id="qr-canvas" class="bg-white p-2 rounded-xl shadow-sm"></canvas>
+                </div>
+            </div>
+            <button onclick="switchScreen('scr-dashboard')" class="w-full bg-slate-800 text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider">
+                Fermer
+            </button>
+        </section>
+
+
+        <section id="scr-onboarding-1" class="hidden space-y-4 no-print">
+            <div class="flex items-center gap-2 mb-2">
+                <button onclick="switchScreen('scr-dashboard')" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-arrow-left"></i></button>
+                <h2 class="text-base font-bold text-slate-800">Parcours Intégration Sécurité</h2>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider"><i class="fa-solid fa-address-card mr-1"></i> Identification</h3>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Nom & Prénom du Travailleur</label>
+                    <input type="text" id="reg-emp-name" placeholder="Ex: Lucas Bernard" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue outline-none bg-slate-50">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Statut du public</label>
+                    <select id="reg-emp-status" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue outline-none bg-slate-50 font-medium">
+                        <option value="Intérimaire">Intérimaire (Mission temporaire)</option>
+                        <option value="Jeune Travailleur / Apprenti">Jeune Travailleur / Apprenti / Stagiaire</option>
+                        <option value="Nouvel Arrivant">Nouvel Arrivant (CDI / CDD)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Entreprise Utilisatrice / Établissement</label>
+                    <input type="text" id="reg-company" placeholder="Ex: Logistique Vendée SAS" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue outline-none bg-slate-50">
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider"><i class="fa-solid fa-list-check mr-1"></i> Contenu délivré (1er jour)</h3>
+                <div class="space-y-2">
+                    <label class="flex items-start gap-3 p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 cursor-pointer">
+                        <input type="checkbox" id="chk-module-1" checked class="mt-1 w-5 h-5 text-restev-blue rounded border-slate-300 focus:ring-restev-blue">
+                        <span class="text-xs text-slate-700 leading-tight"><strong>Risques Poste & EPI :</strong> Explications des risques liés au poste et remise des protections obligatoires.</span>
+                    </label>
+                    <label class="flex items-start gap-3 p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 cursor-pointer">
+                        <input type="checkbox" id="chk-module-2" class="mt-1 w-5 h-5 text-restev-blue rounded border-slate-300 focus:ring-restev-blue">
+                        <span class="text-xs text-slate-700 leading-tight"><strong>Secours & Évacuation :</strong> Repérage des issues, alarmes et points de rassemblement.</span>
+                    </label>
+                </div>
+            </div>
+
+            <button onclick="validateFirstStep()" class="w-full bg-restev-blue text-white font-bold py-3.5 px-4 rounded-xl shadow-md flex justify-center items-center gap-2 text-sm uppercase tracking-wider">
+                Passer à l'émargement <i class="fa-solid fa-arrow-right text-xs"></i>
+            </button>
+        </section>
+
+
+        <section id="scr-onboarding-2" class="hidden space-y-4 no-print">
+            <div class="flex items-center gap-2 mb-2">
+                <button onclick="switchScreen('scr-onboarding-1')" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-arrow-left"></i></button>
+                <h2 class="text-base font-bold text-slate-800">Émargement</h2>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-4">
+                <div class="space-y-1">
+                    <p class="text-xs font-bold text-slate-700 flex items-center gap-1"><i class="fa-solid fa-pen text-restev-magenta"></i> Signature du Salarié Nouvel Arrivant :</p>
+                    <div class="border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+                        <canvas id="canv-employee" class="w-full h-26 bg-white"></canvas>
+                    </div>
+                    <div class="text-right">
+                        <button onclick="clearSign('canv-employee')" class="text-[10px] text-red-500 font-bold"><i class="fa-solid fa-eraser"></i> Effacer</button>
+                    </div>
+                </div>
+
+                <div id="tutor-signature-block" class="space-y-4 border-t pt-4 border-slate-100">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Nom du Responsable / Tuteur Évaluateur</label>
+                        <input type="text" id="reg-tutor-name" placeholder="Ex: Robert Moreau" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue outline-none bg-slate-50">
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-xs font-bold text-slate-700 flex items-center gap-1"><i class="fa-solid fa-pen text-restev-blue"></i> Signature du Manager / Tuteur :</p>
+                        <div class="border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+                            <canvas id="canv-tutor" class="w-full h-26 bg-white"></canvas>
+                        </div>
+                        <div class="text-right">
+                            <button onclick="clearSign('canv-tutor')" class="text-[10px] text-red-500 font-bold"><i class="fa-solid fa-eraser"></i> Effacer</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button id="btn-employee-submit" onclick="submitToManagerQueue()" class="hidden w-full bg-restev-blue text-white font-bold py-4 px-4 rounded-xl shadow-lg flex justify-center items-center gap-2 text-sm uppercase tracking-wider">
+                <i class="fa-solid fa-paper-plane"></i> Transmettre au Responsable
+            </button>
+
+            <button id="btn-manager-finalize" onclick="processFinalAttestation()" class="hidden w-full bg-restev-magenta text-white font-bold py-4 px-4 rounded-xl shadow-lg flex justify-center items-center gap-2 text-sm uppercase tracking-wider">
+                <i class="fa-solid fa-lock"></i> Verrouiller & Valider le Livret
+            </button>
+        </section>
+
+
+        <section id="scr-manager-review" class="hidden space-y-4 no-print">
+            <div class="flex items-center gap-2 mb-2">
+                <button onclick="switchScreen('scr-dashboard')" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-arrow-left"></i></button>
+                <h2 class="text-base font-bold text-slate-800">Contrôle et Visa Tuteur</h2>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3 text-xs">
+                <h3 class="text-slate-400 font-bold uppercase text-[10px]">Informations Salarié</h3>
+                <p><strong>Nom :</strong> <span id="rev-emp-name">-</span></p>
+                <p><strong>Société :</strong> <span id="rev-company">-</span></p>
+                <p><strong>Statut :</strong> <span id="rev-status">-</span></p>
+                
+                <h3 class="text-slate-400 font-bold uppercase text-[10px] pt-2">Modules validés par le salarié</h3>
+                <ul id="rev-modules-list" class="space-y-1 bg-slate-50 p-2 rounded-xl border border-slate-100"></ul>
+
+                <h3 class="text-slate-400 font-bold uppercase text-[10px] pt-2">Émargement initial salarié</h3>
+                <div class="border border-slate-200 rounded-lg bg-slate-100 p-2 h-20 flex items-center justify-center">
+                    <img id="img-rev-emp-sign" class="max-h-full max-w-full object-contain">
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-3">
+                <h3 class="text-slate-400 font-bold uppercase text-[10px]"><i class="fa-solid fa-signature text-restev-blue"></i> Validation finale par l'employeur</h3>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Nom de l'encadrant / Tuteur</label>
+                    <input type="text" id="reg-tutor-name-rev" placeholder="Ex: Robert Moreau" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue outline-none bg-slate-50">
+                </div>
+                <div class="space-y-1">
+                    <p class="text-xs font-bold text-slate-700">Signature Manuelle Manager :</p>
+                    <div class="border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+                        <canvas id="canv-tutor-rev" class="w-full h-26 bg-white"></canvas>
+                    </div>
+                    <div class="text-right">
+                        <button onclick="clearSign('canv-tutor-rev')" class="text-[10px] text-red-500 font-bold"><i class="fa-solid fa-eraser"></i> Effacer</button>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="finalizeReviewSubmission()" class="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-xl text-xs uppercase tracking-wider shadow">
+                <i class="fa-solid fa-certificate mr-1"></i> Co-signer et Clôturer le livret
+            </button>
+        </section>
+
+
+        <section id="scr-employee-success" class="hidden space-y-4 no-print text-center py-6">
+            <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto border border-blue-100">
+                <i class="fa-solid fa-paper-plane text-restev-blue text-4xl animate-bounce"></i>
+            </div>
+            <div class="space-y-2 px-4">
+                <h2 class="text-lg font-black text-slate-800 uppercase">Livret Transmis</h2>
+                <p class="text-xs text-slate-500 leading-relaxed">Vos validations et votre signature ont été envoyées sur la console du responsable de site.</p>
+                <p class="text-xs font-bold text-slate-700 bg-slate-100 p-3 rounded-xl border border-dashed border-slate-200 mt-2">Veuillez vous rapprocher de votre tuteur pour la validation finale du document.</p>
+            </div>
+            <button onclick="resetAllForms()" class="w-full bg-slate-800 text-white font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider">
+                Retour à mon espace
+            </button>
+        </section>
+
+
+        <section id="scr-attestation" class="hidden space-y-4">
+            <div id="print-zone" class="bg-white rounded-2xl p-6 shadow-md border border-slate-200 print-card space-y-5">
+                <div class="flex justify-between items-start border-b pb-3 border-slate-200">
+                    <div>
+                        <h3 class="text-sm font-black text-slate-900 uppercase tracking-wide">Attestation d'Accueil Sécurité</h3>
+                        <p class="text-[10px] text-slate-500">Généré sous la supervision du RESTEV 85</p>
+                    </div>
+                    <span id="attestation-id" class="text-[9px] font-mono bg-slate-100 text-slate-600 px-2 py-1 rounded font-bold">RE-85-XXXXXX</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 text-xs border-b pb-3 border-slate-100">
+                    <div>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase block">Entreprise Utilisatrice</span>
+                        <span id="lbl-view-company" class="font-bold text-slate-800 uppercase">-</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase block">Date d'Horodatage</span>
+                        <span id="lbl-view-date" class="font-bold text-slate-800">-</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase block">Salarié Intégré</span>
+                        <span id="lbl-view-emp" class="font-bold text-slate-800">-</span>
+                        <span id="lbl-view-status" class="text-[10px] text-restev-magenta font-semibold block mt-0.5">-</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase block">Tuteur / Encadrant</span>
+                        <span id="lbl-view-tutor" class="font-bold text-slate-800">-</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-2">
+                    <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Instructions réglementaires validées :</h4>
+                    <ul id="lbl-view-modules" class="text-xs space-y-1 text-slate-700"></ul>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 pt-2">
+                    <div class="text-center">
+                        <span class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Visa Salarié</span>
+                        <div class="border border-slate-200 rounded-lg bg-slate-50 p-1 h-16 flex items-center justify-center">
+                            <img id="img-render-emp" class="max-h-full max-w-full object-contain">
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <span class="text-[9px] font-bold text-slate-400 uppercase block mb-1">Visa Responsable</span>
+                        <div class="border border-slate-200 rounded-lg bg-slate-50 p-1 h-16 flex items-center justify-center">
+                            <img id="img-render-tutor" class="max-h-full max-w-full object-contain">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-2 no-print">
+                <button onclick="window.print()" class="w-full bg-emerald-600 text-white font-bold py-3 px-4 rounded-xl shadow text-xs tracking-wider uppercase flex justify-center items-center gap-2">
+                    <i class="fa-solid fa-print"></i> Imprimer / Export PDF
+                </button>
+                <button onclick="exportToPasseportPrevention()" class="w-full bg-restev-blue text-white font-bold py-3 px-4 rounded-xl shadow text-xs tracking-wider uppercase flex justify-center items-center gap-2">
+                    <i class="fa-solid fa-file-export"></i> Transférer au Passeport Prévention (JSON)
+                </button>
+                <button onclick="resetAllForms()" class="w-full bg-slate-200 text-slate-700 font-bold py-2.5 px-4 rounded-xl text-xs uppercase text-center block">
+                    Retour au Tableau de Bord
+                </button>
+            </div>
+        </section>
+
+
+        <section id="scr-flash-report" class="hidden space-y-4 no-print">
+            <div class="flex items-center gap-2 mb-2">
+                <button onclick="switchScreen('scr-dashboard')" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-arrow-left"></i></button>
+                <h2 class="text-base font-bold text-slate-800">Signalement Flash Terrain</h2>
+            </div>
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 space-y-4">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Intitulé du danger constaté</label>
+                    <input type="text" id="flash-title" placeholder="Ex: Palette instable, fuite d'huile..." class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-magenta outline-none bg-slate-50">
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-[11px] font-bold text-slate-600 uppercase">Localisation précise (GPS Matériel)</label>
+                        <button type="button" onclick="triggerHighAccuracyLocation()" id="btn-geo-action" class="bg-restev-teal hover:opacity-95 text-white font-bold py-1 px-2.5 rounded-lg text-[10px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-location-crosshairs animate-pulse"></i> Capturer ma position
+                        </button>
+                    </div>
+                    <div class="space-y-2">
+                        <div id="report-map" class="border border-slate-200 bg-slate-100 shadow-inner"></div>
+                        <input type="text" id="flash-geo-coords" readonly placeholder="Coordonnées (Latitude, Longitude)" class="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none bg-slate-100 text-slate-600 font-mono">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Prise de vue</label>
+                        <input type="file" id="flash-camera-file" accept="image/*" capture="environment" class="hidden" onchange="handleFlashPhoto(event)">
+                        <button type="button" onclick="document.getElementById('flash-camera-file').click()" id="btn-flash-capture" class="w-full bg-restev-magenta text-white rounded-xl h-24 flex flex-col items-center justify-center gap-1 shadow-sm active:scale-95 transition">
+                            <i class="fa-solid fa-camera text-2xl"></i>
+                            <span class="text-[9px] font-bold uppercase tracking-wider">Ouvrir l'appareil</span>
+                        </button>
+                    </div>
+                    <div>
+                        <div class="w-full h-24 border-2 border-dashed border-slate-200 bg-slate-50 rounded-xl flex items-center justify-center p-1 overflow-hidden">
+                            <div id="flash-photo-placeholder" class="text-slate-400 flex flex-col items-center gap-0.5 text-center p-2">
+                                <i class="fa-solid fa-image text-lg opacity-50"></i>
+                                <span class="text-[9px]">Aucun cliché</span>
+                            </div>
+                            <img id="img-flash-preview" class="hidden w-full h-full object-cover rounded-lg">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Complément d'information</label>
+                    <textarea id="flash-desc" rows="2" placeholder="Précisez le contexte..." class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-magenta outline-none bg-slate-50"></textarea>
+                </div>
+            </div>
+
+            <button onclick="submitFlashReport()" class="w-full bg-restev-magenta text-white font-bold py-3.5 px-4 rounded-xl shadow-md flex justify-center items-center gap-2 text-sm uppercase tracking-wider">
+                <i class="fa-solid fa-paper-plane text-xs"></i> Envoyer au Responsable Site
+            </button>
+        </section>
+
+        <section id="scr-flash-success" class="hidd
