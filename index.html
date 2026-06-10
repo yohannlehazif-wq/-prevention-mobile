@@ -472,6 +472,40 @@
             alert("Scan EPI Validé. L'équipement de protection est conforme.");
             closeScanner();
         }
+        // Remplace ta fonction actuelle par celle-ci pour envoyer les données
+async function submitDanger(e) {
+    e.preventDefault();
+    
+    // 1. Récupération des données
+    const data = {
+        gravite: document.querySelector('input[name="dangerLvl"]:checked').value,
+        nature: document.querySelector('select').value,
+        commentaire: document.querySelector('textarea').value
+    };
+
+    // 2. Envoi vers une base de données (Exemple avec Supabase)
+    // C'est ici que tu stockes l'info pour que le Manager la voie
+    try {
+        const response = await fetch('TON_URL_SUPABASE_API/rest/v1/dangers', {
+            method: 'POST',
+            headers: {
+                'apikey': 'TA_CLE_API_SUPABASE',
+                'Authorization': 'Bearer TA_CLE_API_SUPABASE',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            alert("Alerte transmise au manager !");
+        }
+    } catch (error) {
+        // En cas d'erreur ou hors-ligne
+        console.error("Erreur, sauvegarde en local...");
+        localStorage.setItem('pending_danger', JSON.stringify(data));
+        alert("Rapport enregistré localement (Hors-ligne).");
+    }
+}
     </script>
 </body>
 </html>
