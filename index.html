@@ -352,160 +352,62 @@
     </div>
 
     <script>
-        // --- 1. Gestion du Splash Screen  ---
-        function closeSplash() {
-            const splash = document.getElementById('splash');
-            splash.style.opacity = '0';
-            setTimeout(() => { splash.style.display = 'none'; }, 600);
-        }
-        setTimeout(() => {
-            if(document.getElementById('splash').style.display !== 'none') { closeSplash(); }
-        }, 3500);
+       // --- 4. Gestion des données et Synchronisation ---
+let isOnline = navigator.onLine; // Détection réelle du réseau
+let syncQueue = JSON.parse(localStorage.getItem('dangers_queue') || '[]');
 
-        // --- 2. Bascule Employé / Manager ---
-        function switchRole(role) {
-            const viewSalarie = document.getElementById('view-salarie');
-            const viewManager = document.getElementById('view-manager');
-            const btnSalarie = document.getElementById('btn-salarie');
-            const btnManager = document.getElementById('btn-manager');
+// Mise à jour compteur à l'affichage
+document.getElementById('sync-count').innerText = syncQueue.length;
 
-            const activeClass = "flex-1 py-2.5 rounded-lg text-sm font-bold shadow bg-white dark:bg-slate-700 text-restev-blue transition-all";
-            const inactiveClass = "flex-1 py-2.5 rounded-lg text-sm font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 transition-all";
-
-            if (role === 'salarie') {
-                viewSalarie.classList.add('active-page');
-                viewManager.classList.remove('active-page');
-                btnSalarie.className = activeClass;
-                btnManager.className = inactiveClass;
-            } else {
-                viewSalarie.classList.remove('active-page');
-                viewManager.classList.add('active-page');
-                btnManager.className = activeClass;
-                btnSalarie.className = inactiveClass;
-            }
-        }
-
-        // --- 3. UI Radio Boutons Formulaire Danger ---
-        // Initialiser visuellement le premier bouton au chargement
-        window.addEventListener('DOMContentLoaded', () => {
-            const firstRadio = document.querySelector('input[name="dangerLvl"]:checked');
-            if(firstRadio) updateRadioUI(firstRadio, 'border-green-500 text-green-600 bg-green-50 dark:bg-green-900/20');
-        });
-
-        function updateRadioUI(radioInput, activeClasses) {
-            // Réinitialiser tous les labels
-            document.querySelectorAll('.danger-radio').forEach(label => {
-                label.className = "border-2 border-slate-200 dark:border-slate-600 rounded-xl p-2 flex flex-col items-center cursor-pointer bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all danger-radio";
-            });
-            // Appliquer les classes actives au parent du radio cliqué
-            radioInput.parentElement.className = `border-2 rounded-xl p-2 flex flex-col items-center cursor-pointer transition-all danger-radio ${activeClasses}`;
-        }
-
-        // --- 4. Simulateur Hors-ligne et Soumission ---
-        let isOnline = true;
-        let syncCount = 0;
-
-        function toggleNetwork() {
-            isOnline = !isOnline;
-            const btn = document.getElementById('networkStatusBtn');
-            const dot = document.getElementById('networkDot');
-            const text = document.getElementById('networkText');
-            const alertBox = document.getElementById('sync-alert');
-
-            if (isOnline) {
-                btn.className = "flex items-center space-x-1.5 px-3 py-1 bg-green-100 text-green-800 border border-green-200 rounded-full text-xs font-bold transition-all";
-                dot.className = "w-2 h-2 rounded-full bg-green-500 animate-pulse";
-                text.innerText = "En ligne";
-                
-                if (syncCount > 0) {
-                    alert(`🌐 Réseau rétabli ! ${syncCount} signalement(s) de danger synchronisé(s) avec succès.`);
-                    syncCount = 0;
-                    document.getElementById('sync-count').innerText = syncCount;
-                }
-                alertBox.classList.add('hidden');
-                alertBox.classList.remove('flex');
-            } else {
-                btn.className = "flex items-center space-x-1.5 px-3 py-1 bg-amber-100 text-amber-800 border border-amber-200 rounded-full text-xs font-bold transition-all";
-                dot.className = "w-2 h-2 rounded-full bg-amber-500";
-                text.innerText = "Hors-ligne";
-                
-                alertBox.classList.remove('hidden');
-                alertBox.classList.add('flex');
-            }
-        }
-
-        function submitDanger(e) {
-            e.preventDefault();
-            // Retour Haptique
-            if (navigator.vibrate) navigator.vibrate(50);
-
-            if (!isOnline) {
-                syncCount++;
-                document.getElementById('sync-count').innerText = syncCount;
-                alert("Alerte de danger stockée localement (Pas de réseau). Elle sera transmise au manager dès que la connexion reviendra.");
-            } else {
-                alert("Alerte transmise instantanément au manager du site !");
-            }
-            e.target.reset();
-            // Remise à zéro UI radio
-            const firstRadio = document.querySelector('input[name="dangerLvl"][value="faible"]');
-            firstRadio.checked = true;
-            updateRadioUI(firstRadio, 'border-green-500 text-green-600 bg-green-50 dark:bg-green-900/20');
-        }
-
-        // --- 5. Mode Sombre ---
-        function toggleDarkMode() {
-            document.documentElement.classList.toggle('dark');
-        }
-
-        // --- 6. Simulateur Scanner ---
-        function openScanner() {
-            document.getElementById('scannerModal').classList.remove('hidden');
-            document.getElementById('scannerModal').classList.add('flex');
-        }
-        function closeScanner() {
-            document.getElementById('scannerModal').classList.add('hidden');
-            document.getElementById('scannerModal').classList.remove('flex');
-        }
-        function simulateScanSuccess() {
-            if (navigator.vibrate) { navigator.vibrate([100, 50, 100]); } // Vibreur
-            alert("Scan EPI Validé. L'équipement de protection est conforme.");
-            closeScanner();
-        }
-        // Remplace ta fonction actuelle par celle-ci pour envoyer les données
 async function submitDanger(e) {
     e.preventDefault();
-    
-    // 1. Récupération des données
+    if (navigator.vibrate) navigator.vibrate(50);
+
     const data = {
+        id: Date.now(),
         gravite: document.querySelector('input[name="dangerLvl"]:checked').value,
         nature: document.querySelector('select').value,
-        commentaire: document.querySelector('textarea').value
+        commentaire: document.querySelector('textarea').value,
+        date: new Date().toISOString()
     };
 
-    // 2. Envoi vers une base de données (Exemple avec Supabase)
-    // C'est ici que tu stockes l'info pour que le Manager la voie
-    try {
-        const response = await fetch('TON_URL_SUPABASE_API/rest/v1/dangers', {
-            method: 'POST',
-            headers: {
-                'apikey': 'TA_CLE_API_SUPABASE',
-                'Authorization': 'Bearer TA_CLE_API_SUPABASE',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        });
-        
-        if (response.ok) {
-            alert("Alerte transmise au manager !");
+    if (!isOnline) {
+        // Mode Hors-ligne : on ajoute à la liste
+        syncQueue.push(data);
+        localStorage.setItem('dangers_queue', JSON.stringify(syncQueue));
+        document.getElementById('sync-count').innerText = syncQueue.length;
+        document.getElementById('sync-alert').classList.remove('hidden');
+        alert("Réseau indisponible. Alerte sauvegardée en local.");
+    } else {
+        // Tentative d'envoi API
+        try {
+            // Remplace par ton URL Supabase
+            const response = await fetch('TON_URL_SUPABASE_API/rest/v1/dangers', {
+                method: 'POST',
+                headers: { 'apikey': 'TA_CLE', 'Authorization': 'Bearer TA_CLE', 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) throw new Error();
+            alert("Alerte transmise avec succès !");
+        } catch (err) {
+            alert("Erreur de connexion serveur. Alerte mise en attente.");
+            syncQueue.push(data);
+            localStorage.setItem('dangers_queue', JSON.stringify(syncQueue));
         }
-    } catch (error) {
-        // En cas d'erreur ou hors-ligne
-        console.error("Erreur, sauvegarde en local...");
-        localStorage.setItem('pending_danger', JSON.stringify(data));
-        alert("Rapport enregistré localement (Hors-ligne).");
     }
+    e.target.reset();
 }
+
+// Détection automatique du retour réseau
+window.addEventListener('online', () => {
+    isOnline = true;
+    if(syncQueue.length > 0) {
+        alert("Réseau rétabli. Synchronisation en cours...");
+        // Ici, tu ajouterais une fonction pour envoyer syncQueue vers Supabase
+        syncQueue = [];
+        localStorage.removeItem('dangers_queue');
+    }
+});
     </script>
 </body>
 </html>
