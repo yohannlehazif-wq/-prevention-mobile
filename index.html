@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -44,7 +44,17 @@
     </style>
 </head>
 <body class="bg-slate-50 font-sans antialiased text-slate-800 pb-24 select-none">
-
+<div id="toast-alert" class="hidden fixed top-4 left-4 right-4 bg-slate-900/95 text-white p-4 rounded-2xl shadow-2xl z-[9999] border border-slate-700/50 flex gap-3 items-start animate-bounce no-print">
+    <div class="w-8 h-8 bg-restev-magenta rounded-xl flex items-center justify-center shrink-0 text-sm">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+    </div>
+    <div class="flex-1 min-w-0">
+        <h4 class="text-xs font-black uppercase text-restev-magenta">Alerte Terrain Reçue !</h4>
+        <p id="toast-msg" class="text-[11px] text-slate-200 mt-0.5 truncate">Nouveau signalement flash.</p>
+    </div>
+    <button onclick="document.getElementById('toast-alert').classList.add('hidden')" class="text-slate-400 hover:text-white text-xs p-1"><i class="fa-solid fa-xmark"></i></button>
+</div>
+    
     <header class="bg-gradient-to-r from-restev-blue to-restev-blue-dark text-white p-4 shadow-lg sticky top-0 z-50 flex justify-between items-center no-print backdrop-blur-md">
         <div class="flex items-center gap-3">
             <div class="h-10 w-10 bg-white rounded-xl flex items-center justify-center shadow-inner border border-white/20 overflow-hidden">
@@ -876,33 +886,71 @@
             if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
         }
 
-        function submitFlashReport() { switchScreen('scr-flash-success'); }
+// --- À AJOUTER AU TOUT DÉBUT DU <script> ---
+const SUPABASE_URL = "https://TON_URL.supabase.co"; // À remplacer par ton URL Supabase
+const SUPABASE_ANON_KEY = "TA_CLE_ANONYME"; // À remplacer par ta clé Supabase
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        function resetAllForms() {
-            document.getElementById('reg-emp-name').value = ""; document.getElementById('reg-company').value = "";
-            if(document.getElementById('reg-tutor-name')) document.getElementById('reg-tutor-name').value = "";
-            if(document.getElementById('reg-tutor-name-rev')) document.getElementById('reg-tutor-name-rev').value = "";
-            document.querySelectorAll('input[type="radio"]').forEach(el => el.checked = false);
-            setRole(currentUserRole);
-            switchScreen('scr-dashboard');
-        }
+// Écouteur Temps Réel : Fait apparaître l'alerte chez le manager
+supabase.channel('custom-all-channel')
+  .on(
+    'postgres_changes',
+    { event: 'INSERT', schema: 'public', table: 'risques_flash' },
+    (payload) => {
+      // On n'affiche l'alerte que si on est en profil Manager
+      if (currentUserRole === 'manager') {
+        document.getElementById('toast-msg').innerText = payload.new.description || "Nouvelle anomalie géolocalisée.";
+        document.getElementById('toast-alert').classList.remove('hidden');
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]); // Fait vibrer le téléphone
+      }
+    }
+  )
+  .subscribe();
 
-        function exportToPasseportPrevention() {
-            const struct = { 
-                schema: "PST-2026-2030", 
-                uid: document.getElementById('attestation-id').innerText, 
-                company: document.getElementById('lbl-view-company').innerText,
-                worker: document.getElementById('lbl-view-emp').innerText, 
-                status: document.getElementById('lbl-view-status').innerText,
-                tutor: document.getElementById('lbl-view-tutor').innerText,
-                date: document.getElementById('lbl-view-date').innerText,
-                score: document.getElementById('lbl-view-qcm-score').innerText,
-                validation: true
-            };
-            const blob = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(struct, null, 2));
-            const a = document.createElement('a'); a.setAttribute("href", blob); a.setAttribute("download", `attestation_passeport_prevention.json`);
-            a.click();
-        }
+// --- À REMPLACER : L'ANCIENNE FONCTION submitFlashReport() ---
+async function submitFlashReport() { 
+    const title = document.getElementById('flash-title').value.trim();
+    const coords = document.getElementById('flash-geo-coords').value;
+    
+    if(!title) {
+        alert("Veuillez saisir un intitulé pour le danger.");
+        return;
+    }
+
+    // Extraction des coordonnées (Lat/Lng) si elles ont été capturées
+    let lat = defaultLat;
+    let lng = defaultLng;
+    if (mapMarker) {
+        const position = mapMarker.getLatLng();
+        lat = position.lat;
+        lng = position.lng;
+    }
+
+    // Récupération de la photo en base64
+    const photoPreview = document.getElementById('img-flash-preview');
+    const photoData = !photoPreview.classList.contains('hidden') ? photoPreview.src : null;
+
+    // Envoi vers Supabase
+    const { error } = await supabase
+        .from('risques_flash')
+        .insert([{ 
+            description: title, 
+            latitude: lat, 
+            longitude: lng,
+            photo: photoData
+        }]);
+
+    if (error) {
+        alert("Erreur de connexion au serveur : " + error.message);
+    } else {
+        // Succès : on vide le formulaire et on affiche l'écran de confirmation
+        document.getElementById('flash-title').value = "";
+        document.getElementById('flash-geo-coords').value = "";
+        document.getElementById('img-flash-preview').classList.add('hidden');
+        document.getElementById('flash-photo-placeholder').classList.remove('hidden');
+        switchScreen('scr-flash-success'); 
+    }
+}
     </script>
 </body>
 </html>
