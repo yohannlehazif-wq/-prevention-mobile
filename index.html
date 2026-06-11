@@ -8,8 +8,7 @@
     <meta name="theme-color" content="#2f6bb2">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+      <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -676,11 +675,19 @@
 
         // --- 6. LE RESTE DES FONCTIONS MÉTIERS EXISTANTES ---
         function generateEmployeeQR() {
-            switchScreen('scr-qr-display');
-            const employeeTargetUrl = window.location.origin + window.location.pathname + '?mode=onboarding';
-            new QRCode(document.getElementById("qr-canvas"), "https://votre-url-pwa.com/?mode=onboarding");
-            QRCode.toCanvas(document.getElementById('qr-canvas'), employeeTargetUrl, { width: 200, margin: 1 });
-        }
+    switchScreen('scr-qr-display');
+
+    const url = window.location.origin + window.location.pathname + '?mode=onboarding';
+
+    const canvas = document.getElementById('qr-canvas');
+
+    QRCode.toCanvas(canvas, url, {
+        width: 200,
+        margin: 2
+    }, function (error) {
+        if (error) console.error(error);
+    });
+}
 
         async function submitFlashReport() {
             const title = document.getElementById('flash-title').value.trim();
