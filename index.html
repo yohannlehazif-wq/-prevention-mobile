@@ -9,6 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- API Cartographie Leaflet -->
@@ -439,6 +440,11 @@
 
     <!-- LOGIQUE LOGICIELLE DE PARSING DES PARAMÈTRES WEB -->
     <script>
+        // Remplplace ces valeurs par celles de ton projet Supabase (Project Settings > API)
+const SUPABASE_URL = "https://swgaezpjlaacqutogmvb.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3Z2FlenBqbGFhY3F1dG9nbXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwODc2MjEsImV4cCI6MjA5NjY2MzYyMX0.Wf7gA8P9VnVCfqYGMxIE6Ovg4LjZf9qBL4gmdXHJ-DA";
+        
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         let currentSelectedCompany = "Bati-Vendée Logistique 85";
         let currentEmployeeProfile = { name: "Salarié non configuré", status: "Nouvel Arrivant" };
         let base64UploadedPhoto = ""; 
@@ -544,47 +550,68 @@
             showToast("QR Code GitHub Pages synchronisé.");
         }
 
-        function renderManagerZonesList() {
-            const container = document.getElementById('manager-zones-list');
-            const currentZones = corporateZonesDB[currentSelectedCompany] || [];
-            if (currentZones.length === 0) {
-                container.innerHTML = `<span class="text-[11px] text-amber-600 italic">Aucun secteur configuré.</span>`;
-                return;
-            }
-            container.innerHTML = "";
-            currentZones.forEach((zone) => {
-                container.innerHTML += `
-                    <span class="inline-flex items-center bg-slate-100 text-slate-700 text-[11px] font-bold px-3 py-1.5 rounded-xl border border-slate-200/60 shadow-sm">
-                        <i class="fa-solid fa-industry text-slate-400 mr-2 text-[9px]"></i> ${zone}
-                    </span>`;
-            });
-        }
+        // 1. Connexion du manager : On récupère ses zones depuis Supabase
+async function handleManagerLogin() {
+    currentSelectedCompany = document.getElementById('manager-company-name').value;
+    document.getElementById('lbl-manager-comp-name').innerText = currentSelectedCompany;
+    datasetAdherents.add(currentSelectedCompany);
+    updateDirectionDashboardCounters();
+    
+    // Charger les zones depuis Supabase
+    await fetchCompanyZones();
+    refreshManagerRiskView();
+    switchScreen('scr-manager');
+}
 
-        function registerCustomZone() {
-            const input = document.getElementById('txt-new-zone');
-            const zoneName = input.value.trim();
-            if (!zoneName) return alert("Veuillez saisir un nom d'atelier ou de zone.");
-            if (!corporateZonesDB[currentSelectedCompany]) corporateZonesDB[currentSelectedCompany] = [];
-            if (corporateZonesDB[currentSelectedCompany].includes(zoneName)) return alert("Ce secteur existe déjà.");
+// 2. Récupération des zones en base de données
+async function fetchCompanyZones() {
+    const { data, error } = await supabase
+        .from('company_zones')
+        .select('zone_name')
+        .eq('company_name', currentSelectedCompany);
 
-            corporateZonesDB[currentSelectedCompany].push(zoneName);
-            input.value = "";
-            renderManagerZonesList();
-            showToast("Zone ajoutée au catalogue d'usine.");
-        }
+    if (error) return console.error("Erreur de chargement des zones:", error);
 
-        function buildZoneDropdownOptions() {
-            const dropdown = document.getElementById('risk-location');
-            const currentZones = corporateZonesDB[currentSelectedCompany] || [];
-            dropdown.innerHTML = "";
-            if (currentZones.length === 0) {
-                dropdown.innerHTML = `<option value="" disabled selected>⚠️ Aucun secteur configuré par le manager</option>`;
-                return;
-            }
-            currentZones.forEach(zone => {
-                dropdown.innerHTML += `<option value="${zone}">📍 ${zone}</option>`;
-            });
-        }
+    // On reconstruit notre tableau local à partir de Supabase
+    corporateZonesDB[currentSelectedCompany] = data.map(item => item.zone_name);
+    renderManagerZonesList();
+}
+
+// 3. Rendu visuel de la liste des zones
+function renderManagerZonesList() {
+    const container = document.getElementById('manager-zones-list');
+    const currentZones = corporateZonesDB[currentSelectedCompany] || [];
+    if (currentZones.length === 0) {
+        container.innerHTML = `<span class="text-[11px] text-amber-600 italic">Aucun secteur configuré.</span>`;
+        return;
+    }
+    container.innerHTML = "";
+    currentZones.forEach((zone) => {
+        container.innerHTML += `
+            <span class="inline-flex items-center bg-slate-100 text-slate-700 text-[11px] font-bold px-3 py-1.5 rounded-xl border border-slate-200/60 shadow-sm">
+                <i class="fa-solid fa-industry text-slate-400 mr-2 text-[9px]"></i> ${zone}
+            </span>`;
+    });
+}
+
+// 4. Ajouter une nouvelle zone dans Supabase
+async function registerCustomZone() {
+    const input = document.getElementById('txt-new-zone');
+    const zoneName = input.value.trim();
+    if (!zoneName) return alert("Veuillez saisir un nom d'atelier ou de zone.");
+    if (corporateZonesDB[currentSelectedCompany]?.includes(zoneName)) return alert("Ce secteur existe déjà.");
+
+    // Insertion dans Supabase
+    const { error } = await supabase
+        .from('company_zones')
+        .insert([{ company_name: currentSelectedCompany, zone_name: zoneName }]);
+
+    if (error) return alert("Impossible d'enregistrer la zone : " + error.message);
+
+    input.value = "";
+    await fetchCompanyZones(); // Recharger la liste mise à jour
+    showToast("Zone ajoutée au catalogue d'usine.");
+}
 
         function acquireRealtimeGPSLocation() {
             const indicator = document.getElementById('geo-status');
@@ -697,71 +724,74 @@
             }
         }
 
-        function submitRealRiskReport() {
-            const desc = document.getElementById('risk-desc').value.trim();
-            const loc = document.getElementById('risk-location').value;
-            const sev = document.getElementById('risk-level').value;
-            const cat = document.getElementById('risk-category').value;
-            
-            if(!loc) return alert("Le manager n'a pas configuré les secteurs.");
-            if(!desc) return alert("Veuillez rédiger une brève description.");
+        // 1. Envoyer le rapport du salarié sur Supabase
+async function submitRealRiskReport() {
+    const desc = document.getElementById('risk-desc').value.trim();
+    const loc = document.getElementById('risk-location').value;
+    const sev = document.getElementById('risk-level').value;
+    const cat = document.getElementById('risk-category').value;
+    
+    if(!loc) return alert("Le manager n'a pas configuré les secteurs.");
+    if(!desc) return alert("Veuillez rédiger une brève description.");
 
-            const newReport = {
-                id: Date.now(),
-                company: currentSelectedCompany,
-                employee: currentEmployeeProfile.name,
-                category: cat,
-                description: desc,
-                location: loc,
-                severity: sev,
-                gps: currentGPSCoords, 
-                photo: base64UploadedPhoto
-            };
-            
-            risksDB.unshift(newReport);
-            updateDirectionDashboardCounters();
-            
-            document.getElementById('feed-live-risk').innerHTML = `
-                <div class="border-l-2 border-restev-magenta pl-3 py-1.5 bg-slate-50 rounded-r-lg">
-                    <p class="font-bold text-slate-800 text-[11px]">${cat}</p>
-                    <p class="text-slate-500 text-[10px]">Atelier : ${loc}</p>
-                </div>`;
+    const newReport = {
+        company: currentSelectedCompany,
+        employee: currentEmployeeProfile.name,
+        category: cat,
+        description: desc,
+        location: loc,
+        severity: sev,
+        gps: currentGPSCoords, 
+        photo: base64UploadedPhoto // Stockage de l'image en texte brut
+    };
+    
+    // Insertion dans Supabase
+    const { error } = await supabase.from('risk_reports').insert([newReport]);
+    if (error) return alert("Erreur lors de l'envoi du signalement : " + error.message);
 
-            updateChartStatsDynamically();
-            refreshManagerRiskView();
+    // Réinitialisation des champs du formulaire
+    document.getElementById('risk-desc').value = "";
+    document.getElementById('photo-preview').classList.add('hidden');
+    document.getElementById('photo-placeholder').classList.remove('hidden');
+    base64UploadedPhoto = "";
 
-            document.getElementById('risk-desc').value = "";
-            document.getElementById('photo-preview').classList.add('hidden');
-            document.getElementById('photo-placeholder').classList.remove('hidden');
-            base64UploadedPhoto = "";
+    showToast("Signalement géolocalisé envoyé.");
+    switchScreen('scr-employee');
+}
 
-            showToast("Signalement géolocalisé envoyé.");
-            switchScreen('scr-employee');
-        }
+// 2. Charger et afficher les risques spécifiques à l'entreprise connectée
+async function refreshManagerRiskView() {
+    const box = document.getElementById('manager-risk-box');
+    
+    // Récupération des données fraîches depuis Supabase
+    const { data: filtered, error } = await supabase
+        .from('risk_reports')
+        .select('*')
+        .eq('company', currentSelectedCompany)
+        .order('created_at', { ascending: false });
 
-        function refreshManagerRiskView() {
-            const box = document.getElementById('manager-risk-box');
-            const filtered = risksDB.filter(r => r.company === currentSelectedCompany);
-            if(filtered.length === 0) {
-                box.innerHTML = `<p class="text-center py-8 text-slate-400 text-[11px] italic">Aucune anomalie signalée.</p>`;
-                return;
-            }
-            box.innerHTML = "";
-            filtered.forEach(r => {
-                let imgHtml = r.photo ? `<img src="${r.photo}" class="w-full h-32 object-cover rounded-xl border border-slate-100 mt-2">` : "";
-                box.innerHTML += `
-                <div class="bg-white p-4 rounded-xl border border-slate-100 text-[11px] space-y-1.5 shadow-sm">
-                    <div class="flex justify-between font-bold items-center">
-                        <span class="text-slate-900 font-extrabold">${r.employee}</span>
-                        <span class="text-red-600 bg-red-50 px-2 py-0.5 rounded text-[9px] font-black">${r.severity}</span>
-                    </div>
-                    <p class="text-slate-500"><i class="fa-solid fa-folder mr-1"></i> ${r.category}</p>
-                    <p class="text-restev-blue font-bold"><i class="fa-solid fa-location-dot text-restev-magenta mr-1"></i> ${r.location}</p>
-                    <p class="text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100 mt-1">${r.description}</p>
-                    ${imgHtml}
-                </div>`;
-            });
-        }
+    if (error) return console.error("Erreur de chargement des risques:", error);
+
+    if(!filtered || filtered.length === 0) {
+        box.innerHTML = `<p class="text-center py-8 text-slate-400 text-[11px] italic">Aucune anomalie signalée.</p>`;
+        return;
+    }
+    box.innerHTML = "";
+    filtered.forEach(r => {
+        let imgHtml = r.photo ? `<img src="${r.photo}" class="w-full h-32 object-cover rounded-xl border border-slate-100 mt-2">` : "";
+        box.innerHTML += `
+        <div class="bg-white p-4 rounded-xl border border-slate-100 text-[11px] space-y-1.5 shadow-sm">
+            <div class="flex justify-between font-bold items-center">
+                <span class="text-slate-900 font-extrabold">${r.employee}</span>
+                <span class="text-red-600 bg-red-50 px-2 py-0.5 rounded text-[9px] font-black">${r.severity}</span>
+            </div>
+            <p class="text-slate-500"><i class="fa-solid fa-folder mr-1"></i> ${r.category}</p>
+            <p class="text-restev-blue font-bold"><i class="fa-solid fa-location-dot text-restev-magenta mr-1"></i> ${r.location}</p>
+            <p class="text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100 mt-1">${r.description}</p>
+            ${imgHtml}
+        </div>`;
+    });
+}
 
         function initCanvas(id) {
             const canvas = document.getElementById(id); if(!canvas) return;
