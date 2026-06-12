@@ -5,10 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RESTEV - Passeport Prévention & Gestion des Risques</title>
 
+    <!-- Frameworks & Bibliothèques Graphiques Premium -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- API Cartographie Leaflet (Ajoutée pour la géolocalisation visuelle) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -30,6 +36,8 @@
         .screen.active { display: block; animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
         canvas { touch-action: none; }
+        /* Fix pour s'assurer que les contrôles Leaflet ne cassent pas le design */
+        .leaflet-control-container { z-index: 10 !important; }
         @media print {
             .no-print { display: none !important; }
             .print-view { display: block !important; background: white; color: black; border: none !important; }
@@ -38,6 +46,7 @@
 </head>
 <body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen flex flex-col">
 
+    <!-- EN-TÊTE CORPORATE -->
     <header class="bg-white border-b border-slate-200 p-4 shadow-sm no-print">
         <div class="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
             <div class="flex items-center cursor-pointer" onclick="switchScreen('scr-home')">
@@ -55,13 +64,16 @@
         </div>
     </header>
 
+    <!-- NOTIFICATION TOAST -->
     <div id="toast" class="fixed bottom-4 right-4 bg-slate-900 text-white text-xs py-3 px-4 rounded-xl shadow-2xl z-50 transition-all transform translate-y-20 opacity-0 flex items-center space-x-2 border border-slate-700 no-print">
         <i class="fa-solid fa-circle-info text-restev-teal text-base"></i>
         <span id="toast-text">Notification</span>
     </div>
 
+    <!-- CONTENU PRINCIPAL -->
     <main class="max-w-5xl mx-auto p-4 md:p-6 flex-1 w-full flex flex-col justify-center">
         
+        <!-- ================= PORTAIL D'ACCÈS DE L'APPLICATION ================= -->
         <section id="scr-home" class="screen active max-w-xl mx-auto w-full space-y-6">
             <div class="text-center space-y-2">
                 <h1 class="text-2xl font-black text-slate-900 tracking-tight">Passeport Prévention SST</h1>
@@ -92,13 +104,14 @@
             </div>
         </section>
 
+        <!-- ================= CONSOLE DE SUPERVISION REGIONALE (DIRECTION) ================= -->
         <section id="scr-direction" class="screen space-y-6">
             <div class="bg-gradient-to-r from-slate-900 to-restev-blue-dark p-6 rounded-3xl text-white shadow-xl flex justify-between items-center">
                 <div class="space-y-1">
                     <span class="bg-restev-gold text-slate-950 font-black text-[10px] px-2 py-0.5 rounded uppercase tracking-wider">Console Régionale Vendée</span>
                     <h2 class="text-xl md:text-2xl font-black tracking-tight">Vue d'Ensemble Haute Direction</h2>
                 </div>
-                <button onclick="switchScreen('scr-home')" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-xl font-bold transition"><i class="fa-solid fa-house"></i> Accueil</button>
+                <button onclick="switchScreen('scr-home')" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-xl font-bold transition"><i class="fa-solid fa-arrow-left"></i> Retour Accueil</button>
             </div>
 
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -111,27 +124,26 @@
                     <div><span class="block text-[10px] font-bold text-slate-400 uppercase">Passeports</span><span class="text-xl font-black">3 841</span></div>
                 </div>
                 <div class="bg-white p-4 rounded-2xl border shadow-sm flex items-center space-x-3">
-                    <div class="p-3 bg-restev-magenta/10 text-restev-magenta rounded-xl text-lg"><i class="fa-solid fa-shield-virus"></i></div>
-                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase">Taux Conformité</span><span class="text-xl font-black">92,4 %</span></div>
+                    <div class="p-3 bg-restev-magenta/10 text-restev-magenta rounded-xl text-lg"><i class="fa-solid fa-id-card"></i></div>
+                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase">Taux Conformité</span><span class="text-xl font-black">100 %</span></div>
                 </div>
                 <div class="bg-white p-4 rounded-2xl border shadow-sm flex items-center space-x-3">
                     <div class="p-3 bg-restev-gold/10 text-restev-gold rounded-xl text-lg"><i class="fa-solid fa-bolt"></i></div>
-                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase">Alertes Actives</span><span id="lbl-dir-alert-count" class="text-xl font-black">1</span></div>
+                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase">Alertes Actives</span><span id="lbl-dir-alert-count" class="text-xl font-black">0</span></div>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="bg-white p-5 rounded-2xl border shadow-sm lg:col-span-2 space-y-4">
-                    <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider"><i class="fa-solid fa-chart-pie text-restev-blue mr-1"></i> Typologie des Risques Remontés</h3>
+                    <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider"><i class="fa-solid fa-chart-pie text-restev-blue mr-1"></i> Typologie des Risques Remontés (Données Réelles)</h3>
                     <div class="h-60 relative"><canvas id="chart-restev-risks"></canvas></div>
                 </div>
                 <div class="bg-white p-5 rounded-2xl border shadow-sm flex flex-col justify-between">
                     <div>
-                        <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider mb-3"><i class="fa-solid fa-wave-square text-restev-magenta mr-1"></i> Activité Récente des Ateliers</h3>
+                        <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider mb-3"><i class="fa-solid fa-wave-square text-restev-magenta mr-1"></i> Flux d'Activité en Direct</h3>
                         <div id="direction-activity-feed" class="space-y-3 text-[11px] max-h-60 overflow-y-auto">
-                            <div class="border-l-2 border-emerald-500 pl-3 py-0.5" id="feed-live-risk">
-                                <p class="font-bold text-slate-800">Aucun nouveau signalement</p>
-                                <p class="text-slate-400">En attente de remontées terrain...</p>
+                            <div class="border-l-2 border-slate-300 pl-3 py-1" id="feed-live-risk">
+                                <p class="text-slate-400 italic">Aucune anomalie signalée pour le moment. Le flux est à jour.</p>
                             </div>
                         </div>
                     </div>
@@ -139,15 +151,16 @@
             </div>
         </section>
 
+        <!-- ================= CONNEXION ENTREPRISE ADHÉRENTE ================= -->
         <section id="scr-auth" class="screen max-w-md mx-auto w-full space-y-4">
             <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
                 <div class="flex items-center justify-between border-b pb-2">
-                    <h2 class="text-base font-black text-slate-900">Authentification Adhérent</h2>
-                    <button onclick="switchScreen('scr-home')" class="text-xs text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+                    <h2 class="text-base font-black text-slate-900">Espace Entreprise Adhérente</h2>
+                    <button onclick="switchScreen('scr-home')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-2.5 py-1 rounded-lg font-bold"><i class="fa-solid fa-arrow-left"></i> Retour</button>
                 </div>
                 <div class="space-y-3">
                     <div class="space-y-1">
-                        <label class="text-[10px] font-black uppercase text-slate-400">Entreprise</label>
+                        <label class="text-[10px] font-black uppercase text-slate-400">Sélectionner votre Établissement</label>
                         <select id="manager-company-name" class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs font-bold">
                             <option value="Bati-Vendée Logistique 85">🏢 Bati-Vendée Logistique 85</option>
                             <option value="Manufacture Ouest Sables">🏢 Manufacture Ouest Sables</option>
@@ -159,22 +172,24 @@
                         <input type="text" class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs" value="responsable-qse@restev85.fr" readonly>
                     </div>
                     <button onclick="handleManagerLogin()" class="w-full bg-gradient-to-r from-restev-blue to-restev-blue-dark text-white py-2.5 rounded-xl text-xs font-bold shadow-md">
-                        Ouvrir l'Espace Management RH
+                        Ouvrir la Console Management
                     </button>
                 </div>
             </div>
         </section>
 
+        <!-- ================= TABLEAU DE BORD MANAGER ENTREPRISE ================= -->
         <section id="scr-manager" class="screen space-y-6">
             <div class="bg-white p-4 rounded-2xl border shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div class="flex items-center space-x-2">
-                    <div class="w-2.5 h-2.5 bg-emerald-500 rounded-full"></div>
-                    <h2 class="text-xs font-black text-slate-900">Session Entreprise : <span id="lbl-manager-comp-name" class="text-restev-blue"></span></h2>
+                    <div class="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                    <h2 class="text-xs font-black text-slate-900">Session Active : <span id="lbl-manager-comp-name" class="text-restev-blue"></span></h2>
                 </div>
-                <button onclick="switchScreen('scr-home')" class="text-xs bg-slate-100 font-bold px-3 py-1.5 text-slate-600 rounded-xl hover:bg-slate-200"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</button>
+                <button onclick="switchScreen('scr-home')" class="text-xs bg-slate-100 font-bold px-3 py-1.5 text-slate-600 rounded-xl hover:bg-slate-200"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion (Retour Accueil)</button>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- ACCUEIL SÉCURITÉ & GÉNÉRATION DU ACCÈS -->
                 <div class="bg-white p-5 rounded-2xl border shadow-sm space-y-4">
                     <div class="flex items-center space-x-2 text-restev-magenta font-black text-xs uppercase tracking-wider">
                         <i class="fa-solid fa-qrcode text-sm"></i>
@@ -200,14 +215,17 @@
                     </div>
                 </div>
 
+                <!-- SIGNALEMENTS DE L'ÉTABLISSEMENT -->
                 <div class="bg-white p-5 rounded-2xl border shadow-sm space-y-4">
-                    <h3 class="font-extrabold text-slate-900 text-xs uppercase tracking-wider"><i class="fa-solid fa-bell text-restev-gold mr-1"></i> Alertes et Anomalies Internes</h3>
+                    <h3 class="font-extrabold text-slate-900 text-xs uppercase tracking-wider"><i class="fa-solid fa-bell text-restev-gold mr-1"></i> Alertes Réelles Traitées (Filtre Établissement)</h3>
                     <div id="manager-risk-box" class="space-y-3 max-h-72 overflow-y-auto">
-                        </div>
+                        <!-- Alimenté par le tableau des risques réels -->
+                    </div>
                 </div>
             </div>
         </section>
 
+        <!-- ================= INTERFACE MOBILE DU SALARIÉ ================= -->
         <section id="scr-employee" class="screen max-w-md mx-auto w-full space-y-4">
             <div class="bg-gradient-to-br from-slate-900 to-restev-blue text-white p-5 rounded-3xl shadow-lg space-y-1 relative">
                 <span class="bg-restev-gold text-slate-950 text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider">Parcours Individuel Obligatoire</span>
@@ -228,57 +246,83 @@
                     <div class="w-9 h-9 bg-restev-magenta/10 text-restev-magenta rounded-full flex items-center justify-center text-base"><i class="fa-solid fa-camera"></i></div>
                     <div class="flex-1">
                         <p class="text-xs font-bold text-slate-800">2. Signaler un Danger Immédiat</p>
-                        <p class="text-[10px] text-slate-400">Prendre une photo et remonter une anomalie.</p>
+                        <p class="text-[10px] text-slate-400">Géolocaliser et remonter une anomalie en direct.</p>
                     </div>
                     <i class="fa-solid fa-chevron-right text-slate-300 text-xs"></i>
                 </button>
             </div>
-            <button onclick="switchScreen('scr-home')" class="w-full text-center text-xs text-slate-400 hover:text-slate-600 font-medium py-2"><i class="fa-solid fa-arrow-left"></i> Retour à l'accueil principal</button>
+            <button onclick="switchScreen('scr-home')" class="w-full text-center text-xs text-slate-400 hover:text-slate-600 font-medium py-2"><i class="fa-solid fa-arrow-left"></i> Quitter la session et revenir à l'accueil</button>
         </section>
 
+        <!-- ================= SIGNALEMENT DE RISQUE CRITIQUE + MAP LIVE ZOOM MAX ================= -->
         <section id="scr-report" class="screen max-w-md mx-auto w-full bg-white p-5 rounded-3xl border shadow-sm space-y-4">
             <h3 class="text-base font-black text-slate-900 flex items-center space-x-2"><i class="fa-solid fa-camera text-restev-magenta"></i> <span>Alerte Danger Terrain</span></h3>
             
+            <!-- Affichage GPS Textuel & Statut -->
+            <div class="p-2 bg-slate-50 border rounded-xl text-center">
+                <p id="geo-status" class="text-[11px] font-medium text-slate-600">
+                    <i class="fa-solid fa-spinner animate-spin mr-1"></i> Initialisation du module cartographique...
+                </p>
+            </div>
+
+            <!-- CONTENEUR DE LA CARTE ZOOM MAXIMUM (Natif Mobile) -->
+            <div id="map" class="h-44 w-full rounded-2xl border border-slate-200 shadow-inner bg-slate-100 z-0"></div>
+
             <div class="space-y-1">
                 <label class="block text-xs font-bold text-slate-700">Prendre un cliché terrain ou charger un fichier :</label>
-                <div class="flex flex-col items-center justify-center w-full border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 p-4 relative min-h-[140px] group overflow-hidden">
+                <div class="flex flex-col items-center justify-center w-full border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 p-3 relative min-h-[110px] group overflow-hidden">
                     <input type="file" id="risk-file" accept="image/*" onchange="processRealPhoto(this)" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
                     <div id="photo-placeholder" class="text-center space-y-1">
-                        <div class="w-10 h-10 bg-white shadow rounded-full flex items-center justify-center text-slate-500 mx-auto">
-                            <i class="fa-solid fa-camera text-base text-restev-blue"></i>
+                        <div class="w-8 h-8 bg-white shadow rounded-full flex items-center justify-center text-slate-500 mx-auto">
+                            <i class="fa-solid fa-camera text-sm text-restev-blue"></i>
                         </div>
-                        <span class="block text-xs font-bold text-slate-700">Déclencher la caméra / Galerie</span>
+                        <span class="block text-[11px] font-bold text-slate-700">Déclencher la caméra / Galerie</span>
                     </div>
-                    <img id="photo-preview" class="w-full h-36 object-cover rounded-xl hidden border relative z-20" alt="Preuve image">
+                    <img id="photo-preview" class="w-full h-32 object-cover rounded-xl hidden border relative z-20" alt="Preuve image">
                 </div>
             </div>
 
-            <div class="space-y-1">
-                <label class="block text-xs font-bold text-slate-700">Zone de l'anomalie :</label>
-                <select id="risk-location" class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs font-bold">
-                    <option value="Atelier B7 (Usinage / Découpe)">📍 Atelier B7 (Usinage / Découpe)</option>
-                    <option value="Zone de Stockage / Logistique">📍 Zone de Stockage / Logistique</option>
-                    <option value="Quais de Réception & Fret">📍 Quais de Réception & Fret</option>
-                    <option value="Bureaux & Communs R+1">📍 Bureaux & Communs R+1</option>
-                </select>
-            </div>
-            <div class="space-y-1">
-                <label class="block text-xs font-bold text-slate-700">Gravité estimée :</label>
-                <select id="risk-level" class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs font-bold text-red-600">
-                    <option value="Critique 🔴">Danger Critique (Intervention Urgente)</option>
-                    <option value="Modéré 🟠">Alerte Standard (Traitement sous 24h)</option>
-                </select>
-            </div>
-            <div class="space-y-1">
-                <label class="block text-xs font-bold text-slate-700">Description des faits :</label>
-                <textarea id="risk-desc" rows="2" class="w-full p-2 bg-slate-50 border rounded-xl text-xs" placeholder="Décrivez précisément le danger observé..."></textarea>
-            </div>
             <div class="grid grid-cols-2 gap-2">
-                <button type="button" onclick="switchScreen('scr-employee')" class="bg-slate-100 text-slate-600 py-2 rounded-xl text-xs font-bold">Retour</button>
-                <button type="button" onclick="submitRealRiskReport()" class="bg-restev-magenta text-white py-2 rounded-xl text-xs font-bold shadow-md">Envoyer au Manager</button>
+                <div class="space-y-1">
+                    <label class="block text-xs font-bold text-slate-700">Type de risque :</label>
+                    <select id="risk-category" class="w-full p-2 bg-slate-50 border rounded-xl text-xs font-bold">
+                        <option value="Risques de Chute / Sol">Risques de Chute / Sol</option>
+                        <option value="Engins / Manutention">Engins / Manutention</option>
+                        <option value="EPI non portés">EPI non portés</option>
+                        <option value="Produits Chimiques / SGH">Produits Chimiques / SGH</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-bold text-slate-700">Zone / Atelier :</label>
+                    <select id="risk-location" class="w-full p-2 bg-slate-50 border rounded-xl text-xs font-bold">
+                        <option value="Atelier B7 (Usinage)">📍 Atelier B7</option>
+                        <option value="Zone Stockage / Logistique">📍 Logistique</option>
+                        <option value="Quais de Réception & Fret">📍 Quais Fret</option>
+                        <option value="Bureaux & Communs R+1">📍 Communs R+1</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="space-y-1">
+                <label class="block text-xs font-bold text-slate-700">Gravité :</label>
+                <select id="risk-level" class="w-full p-2 bg-slate-50 border rounded-xl text-xs font-bold text-red-600">
+                    <option value="Critique 🔴">Danger Critique (Immédiat)</option>
+                    <option value="Modéré 🟠">Alerte Standard (Sous 24h)</option>
+                </select>
+            </div>
+            
+            <div class="space-y-1">
+                <label class="block text-xs font-bold text-slate-700">Description textuelle :</label>
+                <textarea id="risk-desc" rows="2" class="w-full p-2 bg-slate-50 border rounded-xl text-xs" placeholder="Décrivez l'anomalie..."></textarea>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2">
+                <button type="button" onclick="switchScreen('scr-employee')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 py-2 rounded-xl text-xs font-bold border">Retour</button>
+                <button type="button" onclick="submitRealRiskReport()" class="bg-restev-magenta text-white py-2 rounded-xl text-xs font-bold shadow-md">Envoyer l'Alerte</button>
             </div>
         </section>
 
+        <!-- ================= CHARTE & QCM SÉCURITÉ ================= -->
         <section id="scr-onboarding-1" class="screen max-w-md mx-auto w-full bg-white p-5 rounded-3xl border shadow-sm space-y-4">
             <h3 class="text-base font-black text-slate-900">Charte Interne de Prévention</h3>
             <div class="space-y-2 text-xs text-slate-600">
@@ -288,24 +332,26 @@
                 </div>
                 <div class="p-3 bg-slate-50 rounded-xl border-l-4 border-restev-magenta">
                     <p class="font-bold text-slate-900">Règle 2 : Droit de retrait & Alerte</p>
-                    <p>Tout travailleur constatant une situation de travail présentant un danger grave et imminent doit le signaler immédiatement.</p>
+                    <p>Tout travailleur constatant une situation présentant un danger grave et imminent doit le signaler immédiatement.</p>
                 </div>
             </div>
             <div class="border-t pt-3 space-y-2">
                 <label class="block text-xs font-bold text-slate-700">Contrôle d'assimilation : Quand devez-vous porter vos EPI ?</label>
                 <label class="flex items-center space-x-2 bg-slate-50 p-2.5 rounded-xl text-xs cursor-pointer"><input type="radio" checked name="q1" class="text-restev-blue"> <span class="font-medium">De manière continue dès l'accès au site</span></label>
-                <label class="flex items-center space-x-2 bg-slate-50 p-2.5 rounded-xl text-xs cursor-pointer"><input type="radio" name="q1" class="text-restev-blue"> <span class="font-medium">Uniquement en cas de contrôle de la hiérarchie</span></label>
+                <label class="flex items-center space-x-2 bg-slate-50 p-2.5 rounded-xl text-xs cursor-pointer"><input type="radio" name="q1" class="text-restev-blue"> <span class="font-medium">Uniquement en cas de contrôle</span></label>
             </div>
-            <button onclick="switchScreen('scr-signature')" class="w-full bg-restev-blue text-white py-2.5 rounded-xl text-xs font-bold shadow">
-                Valider et passer à l'émargement
-            </button>
+            <div class="grid grid-cols-2 gap-2 border-t pt-3">
+                <button onclick="switchScreen('scr-employee')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 py-2.5 rounded-xl text-xs font-bold border">Retour</button>
+                <button onclick="switchScreen('scr-signature')" class="bg-restev-blue text-white py-2.5 rounded-xl text-xs font-bold shadow">Valider & Émarger</button>
+            </div>
         </section>
 
+        <!-- ================= ESPACE ÉMARGEMENT LEGAL ================= -->
         <section id="scr-signature" class="screen max-w-md mx-auto w-full bg-white p-5 rounded-3xl border shadow-sm space-y-4">
-            <h3 class="text-base font-black text-slate-900 text-center">Clôture Juridique du Parcours</h3>
+            <h3 class="text-base font-black text-slate-900 text-center">Signature Numérique du Parcours</h3>
             <div class="space-y-3">
                 <div>
-                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Signature Numérique du Nouvel Arrivant :</label>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Signature du Nouvel Arrivant :</label>
                     <div class="border rounded-xl bg-slate-50 overflow-hidden"><canvas id="canv-employee" class="w-full bg-slate-100" height="90"></canvas></div>
                     <button type="button" onclick="clearCanvas('canv-employee')" class="text-[10px] text-slate-400 underline">Effacer</button>
                 </div>
@@ -316,11 +362,13 @@
                     <button type="button" onclick="clearCanvas('canv-tutor')" class="text-[10px] text-slate-400 underline">Effacer</button>
                 </div>
             </div>
-            <button type="button" onclick="finalizeOfficialAttestation()" class="w-full bg-emerald-600 text-white py-2.5 rounded-xl text-xs font-bold shadow-md">
-                Émettre le Procès-Verbal de Validation
-            </button>
+            <div class="grid grid-cols-2 gap-2 border-t pt-3">
+                <button type="button" onclick="switchScreen('scr-onboarding-1')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 py-2.5 rounded-xl text-xs font-bold border">Retour</button>
+                <button type="button" onclick="finalizeOfficialAttestation()" class="bg-emerald-600 text-white py-2.5 rounded-xl text-xs font-bold shadow-md">Générer le PV</button>
+            </div>
         </section>
 
+        <!-- ================= PROCES-VERBAL VALIDE ET IMPRIMABLE ================= -->
         <section id="scr-attestation" class="screen max-w-lg mx-auto w-full bg-white p-6 rounded-3xl shadow-xl border-2 border-emerald-500 space-y-6">
             <div class="text-center space-y-1 no-print">
                 <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-xl mx-auto"><i class="fa-solid fa-file-signature"></i></div>
@@ -342,7 +390,7 @@
                     <p class="col-span-2"><strong>Délivré le :</strong> <span id="lbl-view-date" class="font-mono text-slate-600">...</span></p>
                 </div>
                 <div class="bg-emerald-50 p-2.5 rounded-lg text-[10px] text-emerald-800 font-medium border border-emerald-200">
-                    <i class="fa-solid fa-circle-check"></i> Le bénéficiaire atteste sur l'honneur avoir reçu la formation pratique appropriée relative à la sécurité du site d'affectation et avoir validé l'évaluation d'assimilation des risques inhérents.
+                    <i class="fa-solid fa-circle-check"></i> Formation réglementaire validée sur l'honneur. Émargements électroniques verrouillés ci-dessous.
                 </div>
                 <div class="grid grid-cols-2 gap-4 pt-3 border-t">
                     <div class="text-center">
@@ -366,15 +414,18 @@
         </section>
     </main>
 
+    <!-- ARCHITECTURE LOGIQUE APPLICATIVE RESTRUCTURÉE -->
     <script>
         let currentSelectedCompany = "Bati-Vendée Logistique 85";
         let currentEmployeeProfile = { name: "Salarié non configuré", status: "Nouvel Arrivant" };
-        let base64UploadedPhoto = ""; // Contiendra la vraie image chargée en local
+        let base64UploadedPhoto = ""; 
+        let currentGPSCoords = "En attente...";
         
-        let risksDB = [
-            { id: 1, company: "Bati-Vendée Logistique 85", employee: "Lucas M.", description: "Palettes instables obstruant la sortie de secours principale de la zone arrière.", location: "Zone de Stockage / Logistique", severity: "Critique 🔴", photo: "" }
-        ];
-        
+        // Variables globales pour l'instance Map Leaflet
+        let myLeafletMap = null;
+        let myMapMarker = null;
+
+        let risksDB = []; 
         let activeCanvas = {}; let ctxCanvas = {}; let isDrawing = false;
         let chartInstance = null;
 
@@ -400,20 +451,78 @@
             if (screenId === 'scr-signature') {
                 setTimeout(() => { initCanvas('canv-employee'); initCanvas('canv-tutor'); }, 150);
             }
+            
+            // DÉCLENCHEMENT DE LA GÉOLOCALISATION ET RENDU MAP ZOOM MAX
+            if (screenId === 'scr-report') {
+                acquireRealtimeGPSLocation();
+            }
         }
 
-        // GRAPHIQUE ANALYTICS SGH / DIRECTION
+        // CAPTURE GPS + INTEGRATION VISUELLE MAP (ZOOM MAXIMUM)
+        function acquireRealtimeGPSLocation() {
+            const indicator = document.getElementById('geo-status');
+            if (!navigator.geolocation) {
+                currentGPSCoords = "Non supporté";
+                indicator.innerHTML = `<span class="text-red-500 font-bold"><i class="fa-solid fa-triangle-exclamation"></i> GPS indisponible</span>`;
+                return;
+            }
+
+            indicator.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-restev-blue text-xs"></i> Acquisition de votre position précise (Zoom Max)...`;
+            
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    currentGPSCoords = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+                    
+                    indicator.innerHTML = `<span class="text-emerald-600 font-bold"><i class="fa-solid fa-location-crosshairs animate-pulse"></i> Position détectée : ${currentGPSCoords}</span>`;
+                    
+                    // Injection et rendu de la map Leaflet synchrone
+                    setTimeout(() => {
+                        const mapDiv = document.getElementById('map');
+                        if (!mapDiv) return;
+
+                        // Si la carte n'existe pas encore, on l'initialise au Zoom Maximum (19)
+                        if (!myLeafletMap) {
+                            myLeafletMap = L.map('map').setView([lat, lon], 19);
+                            
+                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                maxZoom: 19,
+                                attribution: '© OpenStreetMap'
+                            }).addTo(myLeafletMap);
+
+                            myMapMarker = L.marker([lat, lon]).addTo(myLeafletMap)
+                                .bindPopup('<b class="text-xs">Danger détecté ici</b>').openPopup();
+                        } else {
+                            // Si elle existe déjà, on la re-centre immédiatement au zoom maximum
+                            myLeafletMap.setView([lat, lon], 19);
+                            myMapMarker.setLatLng([lat, lon]);
+                        }
+                        
+                        // Sécurité responsive : force Leaflet à recalculer sa boîte d'affichage
+                        myLeafletMap.invalidateSize();
+                    }, 200);
+                },
+                (error) => {
+                    currentGPSCoords = "Indisponible / Bloqué";
+                    indicator.innerHTML = `<span class="text-amber-600 font-semibold"><i class="fa-solid fa-ban"></i> GPS désactivé ou refusé</span>`;
+                },
+                { enableHighAccuracy: true, timeout: 9000 }
+            );
+        }
+
         function initRestevAnalyticsChart() {
             const canvas = document.getElementById('chart-restev-risks');
             if(!canvas) return;
             const ctx = canvas.getContext('2d');
             if(chartInstance) chartInstance.destroy();
+            
             chartInstance = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: ['Risques de Chute / Sol', 'Engins / Manutention', 'EPI non portés', 'Produits Chimiques / SGH'],
                     datasets: [{
-                        data: [45, 25, 20, 10],
+                        data: [0, 0, 0, 0], 
                         backgroundColor: ['#2f6bb2', '#b8257b', '#f2a104', '#69b3a5'],
                         borderWidth: 2
                     }]
@@ -421,16 +530,30 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } }
+                    plugins: { 
+                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } }
+                    }
                 }
             });
         }
 
-        // ESPACE ENTREPRISE
+        function updateChartStatsDynamically() {
+            if (!chartInstance) return;
+            let counts = [0, 0, 0, 0];
+            risksDB.forEach(r => {
+                if (r.category === 'Risques de Chute / Sol') counts[0]++;
+                else if (r.category === 'Engins / Manutention') counts[1]++;
+                else if (r.category === 'EPI non portés') counts[2]++;
+                else if (r.category === 'Produits Chimiques / SGH') counts[3]++;
+            });
+            chartInstance.data.datasets[0].data = counts;
+            chartInstance.update();
+        }
+
         function handleManagerLogin() {
             currentSelectedCompany = document.getElementById('manager-company-name').value;
             document.getElementById('lbl-manager-comp-name').innerText = currentSelectedCompany;
-            showToast(`Accès sécurisé validé pour l'entité : ${currentSelectedCompany}`);
+            showToast(`Connexion à l'entité : ${currentSelectedCompany}`);
             refreshManagerRiskView();
             switchScreen('scr-manager');
         }
@@ -438,32 +561,30 @@
         function generateEmployeeAccess() {
             const name = document.getElementById('reg-emp-name').value.trim();
             const status = document.getElementById('reg-emp-status').value;
-            if(!name) return alert("Veuillez saisir le nom du salarié.");
+            if(!name) return alert("Veuillez renseigner l'identité complète.");
             
             currentEmployeeProfile.name = name;
             currentEmployeeProfile.status = status;
             
             document.getElementById('qr-area').classList.remove('hidden');
             QRCode.toCanvas(document.getElementById('qr-canvas'), `RESTEV-PASSPORT://${encodeURIComponent(name)}`, { width: 110, margin: 1 });
-            showToast("Autorisation générée. Le salarié peut maintenant s'enregistrer.");
+            showToast("Accès généré.");
         }
 
         function accessEmployeeViaQR() {
             document.getElementById('lbl-emp-welcome').innerText = `Bonjour ${currentEmployeeProfile.name}`;
-            document.getElementById('lbl-emp-company').innerText = `Structure d'accueil : ${currentSelectedCompany} (${currentEmployeeProfile.status})`;
-            showToast("Profil salarié synchronisé.");
+            document.getElementById('lbl-emp-company').innerText = `Structure : ${currentSelectedCompany} (${currentEmployeeProfile.status})`;
             switchScreen('scr-employee');
         }
 
         function accessEmployeeDirect() {
-            currentEmployeeProfile.name = "Salarié Nouvel Arrivant";
-            currentEmployeeProfile.status = "Contrat Standard / Intérim";
+            currentEmployeeProfile.name = "Salarié Connecté Direct";
+            currentEmployeeProfile.status = "Parcours Standard";
             document.getElementById('lbl-emp-welcome').innerText = `Bonjour ${currentEmployeeProfile.name}`;
             document.getElementById('lbl-emp-company').innerText = `Structure d'accueil : ${currentSelectedCompany}`;
             switchScreen('scr-employee');
         }
 
-        // CAPTURE ET TRAITEMENT RÉEL DE LA PHOTO (FILE READER)
         function processRealPhoto(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -473,7 +594,6 @@
                     preview.src = base64UploadedPhoto;
                     preview.classList.remove('hidden');
                     document.getElementById('photo-placeholder').classList.add('hidden');
-                    showToast("Cliché technique intégré au dossier d'anomalie.");
                 }
                 reader.readAsDataURL(input.files[0]);
             }
@@ -483,35 +603,42 @@
             const desc = document.getElementById('risk-desc').value.trim();
             const loc = document.getElementById('risk-location').value;
             const sev = document.getElementById('risk-level').value;
+            const cat = document.getElementById('risk-category').value;
             
-            if(!desc) return alert("Veuillez rédiger une brève description du danger.");
+            if(!desc) return alert("Veuillez rédiger une description textuelle de l'anomalie.");
 
             const newReport = {
                 id: Date.now(),
                 company: currentSelectedCompany,
                 employee: currentEmployeeProfile.name,
+                category: cat,
                 description: desc,
                 location: loc,
                 severity: sev,
-                photo: base64UploadedPhoto // Enregistrement de la vraie image
+                gps: currentGPSCoords, 
+                photo: base64UploadedPhoto
             };
             
             risksDB.unshift(newReport);
             document.getElementById('lbl-dir-alert-count').innerText = risksDB.length;
             
-            // Mise à jour du flux d'activité global de la Direction
             document.getElementById('feed-live-risk').innerHTML = `
-                <p class="font-bold text-slate-800">Signalement Anomalie - <span class="text-red-600">${sev}</span></p>
-                <p class="text-slate-400">Zone : <span class="text-slate-600 font-medium">${loc}</span> • À l'instant</p>
+                <div class="border-l-2 border-red-500 pl-3 py-1">
+                    <p class="font-bold text-slate-800">${cat} (${sev})</p>
+                    <p class="text-slate-500 text-[10px]"><i class="fa-solid fa-location-crosshairs text-emerald-600"></i> Localisé sur carte (GPS: ${currentGPSCoords})</p>
+                    <p class="text-slate-400 text-[10px]">Établissement : ${currentSelectedCompany} • À l'instant</p>
+                </div>
             `;
 
-            // Réinitialisation du formulaire
+            updateChartStatsDynamically();
+            refreshManagerRiskView();
+
             document.getElementById('risk-desc').value = "";
             document.getElementById('photo-preview').classList.add('hidden');
             document.getElementById('photo-placeholder').classList.remove('hidden');
             base64UploadedPhoto = "";
 
-            showToast("Alerte enregistrée et transmise instantanément aux autorités HSE.");
+            showToast("Alerte cartographiée transmise avec succès au manager.");
             switchScreen('scr-employee');
         }
 
@@ -520,32 +647,32 @@
             const filtered = risksDB.filter(r => r.company === currentSelectedCompany);
             
             if(filtered.length === 0) {
-                box.innerHTML = `<p class="text-center py-6 text-slate-400 text-[11px]">Aucun signalement en cours sur votre secteur.</p>`;
+                box.innerHTML = `<p class="text-center py-6 text-slate-400 text-[11px] italic">Aucune alerte active remontée sur votre périmètre.</p>`;
                 return;
             }
             
             box.innerHTML = "";
             filtered.forEach(r => {
-                let imgHtml = r.photo ? `<img src="${r.photo}" class="w-full h-32 object-cover rounded-lg border mt-2">` : `<div class="text-[10px] text-slate-400 italic py-1"><i class="fa-solid fa-image-slash"></i> Aucun cliché joint</div>`;
+                let imgHtml = r.photo ? `<img src="${r.photo}" class="w-full h-32 object-cover rounded-lg border mt-2">` : `<div class="text-[10px] text-slate-400 italic py-1"><i class="fa-solid fa-image-slash"></i> Aucun cliché d'illustration</div>`;
                 box.innerHTML += `
                 <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-[11px] space-y-1">
                     <div class="flex justify-between font-bold">
                         <span class="text-slate-900">${r.employee}</span>
                         <span class="text-red-600 text-[10px] font-black">${r.severity}</span>
                     </div>
+                    <p class="text-slate-500 font-medium"><i class="fa-solid fa-tag text-slate-400"></i> Catégorie : ${r.category}</p>
                     <p class="text-restev-blue font-bold"><i class="fa-solid fa-location-dot text-red-500"></i> Zone : ${r.location}</p>
+                    <p class="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded inline-block"><i class="fa-solid fa-location-crosshairs"></i> Point Map GPS : ${r.gps}</p>
                     <p class="text-slate-600 bg-white p-2 rounded border border-dashed font-medium mt-1">${r.description}</p>
                     ${imgHtml}
                 </div>`;
             });
         }
 
-        // SIGNATURES TACTILES DYNAMIQUES
         function initCanvas(id) {
             const canvas = document.getElementById(id); if(!canvas) return;
             canvas.width = canvas.parentElement.clientWidth || 300;
             canvas.height = 90;
-            
             const ctx = canvas.getContext('2d'); 
             ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.strokeStyle = '#0f172a';
             activeCanvas[id] = canvas; ctxCanvas[id] = ctx;
@@ -558,24 +685,17 @@
                 };
             };
             const start = (e) => { 
-                e.preventDefault(); 
-                isDrawing = true; 
-                let p = getMousePos(e); 
-                ctx.beginPath(); 
-                ctx.moveTo(p.x, p.y); 
+                e.preventDefault(); isDrawing = true; 
+                let p = getMousePos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); 
             };
             const move = (e) => { 
-                if(!isDrawing) return; 
-                e.preventDefault(); 
-                let p = getMousePos(e); 
-                ctx.lineTo(p.x, p.y); 
-                ctx.stroke(); 
+                if(!isDrawing) return; e.preventDefault(); 
+                let p = getMousePos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); 
             };
 
             canvas.addEventListener('mousedown', start); 
             canvas.addEventListener('mousemove', move); 
             window.addEventListener('mouseup', () => isDrawing = false);
-            
             canvas.addEventListener('touchstart', start, {passive:false}); 
             canvas.addEventListener('touchmove', move, {passive:false}); 
             window.addEventListener('touchend', () => isDrawing = false);
@@ -592,15 +712,12 @@
             document.getElementById('lbl-view-tutor').innerText = document.getElementById('tutor-name').value;
             document.getElementById('lbl-view-date').innerText = new Date().toLocaleDateString('fr-FR') + " à " + new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
             
-            // Extraction des signatures vers le PV d'impression
             document.getElementById('img-render-emp').src = activeCanvas['canv-employee'].toDataURL();
             document.getElementById('img-render-tutor').src = activeCanvas['canv-tutor'].toDataURL();
             
-            showToast("Procès-verbal de sécurité ancré avec succès.");
+            showToast("Procès-verbal de sécurité ancré.");
             switchScreen('scr-attestation');
         }
     </script>
 </body>
 </html>
-
-```
