@@ -1,4111 +1,505 @@
-&lt;!DOCTYPE html&gt;
-&lt;html lang=&quot;fr&quot;&gt;
-&lt;head&gt;
-&lt;meta charset=&quot;UTF-
-8&quot;&gt;
-&lt;meta name=&quot;viewport&quot;
-content=&quot;width=device-
-width, initial-scale=1.0,
-maximum-scale=1.0,
-user-scalable=no&quot;&gt;
-&lt;title&gt;RESTEV
-Innovation Hub - Version
-Direction
-Générale&lt;/title&gt;
-&lt;!-- Frameworks &amp;
-Bibliothèques
-Graphiques Premium --&gt;
-&lt;script
-src=&quot;https://cdn.tailwindcs
-s.com&quot;&gt;&lt;/script&gt;
-&lt;script
-src=&quot;https://cdn.jsdelivr.net
-/npm/chart.js&quot;&gt;&lt;/script&gt;
-&lt;script
-src=&quot;https://cdn.jsdelivr.net
-/npm/qrcode@1.5.1/buil
-d/qrcode.min.js&quot;&gt;&lt;/script
-&gt;
-&lt;link rel=&quot;stylesheet&quot;
-href=&quot;https://cdnjs.cloudfla
-re.com/ajax/libs/font-
-awesome/6.4.0/css/all.m
-in.css&quot;&gt;
-&lt;script&gt;
-tailwind.config = {
-theme: {
-extend: {
-colors: {
-&#39;restev-
-blue&#39;: &#39;#2f6bb2&#39;,
-&#39;restev-
-blue-dark&#39;: &#39;#224d80&#39;,
-&#39;restev-
-magenta&#39;: &#39;#b8257b&#39;,
-
-&#39;restev-
-magenta-dark&#39;:
-&#39;#911d61&#39;,
-&#39;restev-
-teal&#39;: &#39;#69b3a5&#39;,
-&#39;restev-
-gold&#39;: &#39;#f2a104&#39;
-}
-}
-}
-}
-&lt;/script&gt;
-&lt;style&gt;
-.screen { display:
-none; }
-.screen.active {
-display: block;
-animation: fadeIn 0.4s
-ease-out; }
-@keyframes fadeIn {
-from { opacity: 0;
-transform:
-translateY(8px); } to {
-opacity: 1; transform:
-translateY(0); } }
-canvas { touch-
-action: none; }
-.glass { background:
-rgba(255, 255, 255,
-0.85); backdrop-filter:
-blur(12px); }
-@media print {
-.no-print { display:
-none !important; }
-.print-view {
-display: block !important;
-background: white; color:
-black; }
-}
-&lt;/style&gt;
-&lt;/head&gt;
-&lt;body class=&quot;bg-slate-50
-font-sans text-slate-800
-antialiased min-h-
-screen&quot;&gt;
-
-&lt;!-- BARRE DE
-SIMULATION ET
-CONTRÔLE DE
-PRÉSENTATION (Pour
-le présentateur) --&gt;
-&lt;div class=&quot;bg-slate-
-900 text-white p-2 text-
-xs font-semibold flex
-justify-between items-
-center px-4 sticky top-0
-z-50 no-print shadow-
-md&quot;&gt;
-&lt;div class=&quot;flex
-items-center space-x-2&quot;&gt;
-&lt;span
-class=&quot;inline-flex w-2 h-2
-rounded-full bg-emerald-
-400 animate-
-ping&quot;&gt;&lt;/span&gt;
-&lt;span class=&quot;text-
-slate-300 font-mono text-
-[11px]&quot;&gt;TÉLÉCOMMAN
-DE DE DÉMO LIVE
-:&lt;/span&gt;
-&lt;/div&gt;
-&lt;div class=&quot;flex
-space-x-2&quot;&gt;
-&lt;button
-onclick=&quot;switchScreen(&#39;scr
--direction&#39;)&quot; class=&quot;bg-
-restev-blue px-3 py-1
-rounded font-bold
-hover:bg-opacity-80
-transition&quot;&gt;1. Vue
-Direction
-(RESTEV)&lt;/button&gt;
-&lt;button
-onclick=&quot;switchScreen(&#39;scr
--auth&#39;)&quot; class=&quot;bg-
-restev-magenta px-3 py-
-1 rounded font-bold
-hover:bg-opacity-80
-transition&quot;&gt;2. Vue
-Entreprise
-Client&lt;/button&gt;
-
-&lt;button
-onclick=&quot;simulateDirectEm
-ployeeAccess()&quot;
-class=&quot;bg-emerald-600
-px-3 py-1 rounded font-
-bold hover:bg-opacity-80
-transition&quot;&gt;3. Vue
-Salarié Terrain&lt;/button&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;!-- EN-TÊTE
-CORPORATE AVEC
-INTÉGRATION DU
-LOGO --&gt;
-&lt;header class=&quot;bg-
-white border-b border-
-slate-200 p-4 shadow-
-sm relative transition-
-all&quot;&gt;
-&lt;div class=&quot;max-w-
-5xl mx-auto flex flex-col
-sm:flex-row justify-
-between items-center
-gap-4&quot;&gt;
-&lt;img
-src=&quot;logo.png&quot; alt=&quot;Logo
-RESTEV 85&quot; class=&quot;h-
-14 md:h-16 object-
-contain&quot;
-onerror=&quot;this.style.displa
-y=&#39;none&#39;; this.after(&#39;��
-RESTEV 85&#39;)&quot;&gt;
-&lt;div class=&quot;text-
-right sm:text-right text-
-center&quot;&gt;
-&lt;span
-class=&quot;bg-gradient-to-r
-from-restev-blue to-
-restev-magenta text-
-white font-black text-
-[10px] px-3 py-1
-rounded-full uppercase
-tracking-wider shadow-
-sm&quot;&gt;
-
-Passeport
-Prévention Numérique
-(PST 2026-2030)
-&lt;/span&gt;
-&lt;p class=&quot;text-
-xs text-slate-400 mt-1
-font-medium font-
-mono&quot;&gt;Pilote RLS Multi-
-Sociétés v4.0&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/header&gt;
-&lt;!-- NOTIFICATION
-TOAST FLOTTANTE
-POUR RENDRE L&#39;APP
-VIVANTE --&gt;
-&lt;div id=&quot;toast&quot;
-class=&quot;fixed bottom-4
-right-4 bg-slate-900 text-
-white text-xs py-3 px-4
-rounded-xl shadow-2xl
-z-50 transition-all
-transform translate-y-20
-opacity-0 flex items-
-center space-x-2 border
-border-slate-700&quot;&gt;
-&lt;i class=&quot;fa-solid fa-
-circle-info text-restev-
-teal text-base&quot;&gt;&lt;/i&gt;
-&lt;span id=&quot;toast-
-text&quot;&gt;Notification
-démo&lt;/span&gt;
-&lt;/div&gt;
-&lt;main class=&quot;max-w-
-5xl mx-auto p-4 md:p-
-6&quot;&gt;
-&lt;!--
-=================
-EC-0 : TABLEAU DE
-BORD EXÉCUTIF
-================= --
-&gt;
-
-&lt;section id=&quot;scr-
-direction&quot; class=&quot;screen
-active space-y-6&quot;&gt;
-&lt;div class=&quot;bg-
-gradient-to-r from-slate-
-900 to-restev-blue-dark
-p-6 rounded-3xl text-
-white shadow-xl relative
-overflow-hidden&quot;&gt;
-&lt;div
-class=&quot;absolute -right-10
--bottom-10 opacity-10
-text-[180px] font-
-black&quot;&gt;&lt;i class=&quot;fa-solid
-fa-chart-line&quot;&gt;&lt;/i&gt;&lt;/div&gt;
-&lt;div
-class=&quot;relative z-10
-space-y-2&quot;&gt;
-&lt;span
-class=&quot;bg-restev-gold
-text-slate-950 font-black
-text-[10px] px-2.5 py-0.5
-rounded uppercase
-tracking-wider&quot;&gt;Console
-de Supervision
-Régionale&lt;/span&gt;
-&lt;h2
-class=&quot;text-2xl md:text-
-3xl font-black tracking-
-tight&quot;&gt;Vue d&#39;Ensemble
-Haute Direction&lt;/h2&gt;
-&lt;p
-class=&quot;text-slate-300
-text-xs max-w-
-xl&quot;&gt;Indicateurs clés de
-performance et de
-conformité réglementaire
-des entreprises
-adhérentes au RESTEV
-sur le département de la
-Vendée.&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;!-- COMPTEURS
-DYNAMIQUES --&gt;
-
-&lt;div class=&quot;grid
-grid-cols-1 sm:grid-cols-
-2 lg:grid-cols-4 gap-4&quot;&gt;
-&lt;div class=&quot;bg-
-white p-4 rounded-2xl
-border border-slate-200
-shadow-sm flex items-
-center space-x-4&quot;&gt;
-&lt;div class=&quot;p-
-3 bg-restev-blue/10 text-
-restev-blue rounded-xl
-text-xl&quot;&gt;&lt;i class=&quot;fa-
-solid fa-
-building&quot;&gt;&lt;/i&gt;&lt;/div&gt;
-&lt;div&gt;
-&lt;span
-class=&quot;block text-[11px]
-font-bold text-slate-400
-uppercase&quot;&gt;Sociétés
-Affiliées&lt;/span&gt;
-&lt;span
-class=&quot;text-2xl font-black
-text-slate-
-900&quot;&gt;142&lt;/span&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div class=&quot;bg-
-white p-4 rounded-2xl
-border border-slate-200
-shadow-sm flex items-
-center space-x-4&quot;&gt;
-&lt;div class=&quot;p-
-3 bg-emerald-500/10
-text-emerald-600
-rounded-xl text-xl&quot;&gt;&lt;i
-class=&quot;fa-solid fa-id-
-card-clip&quot;&gt;&lt;/i&gt;&lt;/div&gt;
-&lt;div&gt;
-&lt;span
-class=&quot;block text-[11px]
-font-bold text-slate-400
-uppercase&quot;&gt;Passeports
-Émis&lt;/span&gt;
-&lt;span
-class=&quot;text-2xl font-black
-
-text-slate-900&quot;&gt;3
-841&lt;/span&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div class=&quot;bg-
-white p-4 rounded-2xl
-border border-slate-200
-shadow-sm flex items-
-center space-x-4&quot;&gt;
-&lt;div class=&quot;p-
-3 bg-restev-magenta/10
-text-restev-magenta
-rounded-xl text-xl&quot;&gt;&lt;i
-class=&quot;fa-solid fa-shield-
-virus&quot;&gt;&lt;/i&gt;&lt;/div&gt;
-&lt;div&gt;
-&lt;span
-class=&quot;block text-[11px]
-font-bold text-slate-400
-uppercase&quot;&gt;Risques
-Endigués&lt;/span&gt;
-&lt;span
-class=&quot;text-2xl font-black
-text-slate-900&quot;&gt;92,4
-%&lt;/span&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div class=&quot;bg-
-white p-4 rounded-2xl
-border border-slate-200
-shadow-sm flex items-
-center space-x-4&quot;&gt;
-&lt;div class=&quot;p-
-3 bg-restev-gold/10 text-
-restev-gold rounded-xl
-text-xl&quot;&gt;&lt;i class=&quot;fa-
-solid fa-bolt&quot;&gt;&lt;/i&gt;&lt;/div&gt;
-&lt;div&gt;
-&lt;span
-class=&quot;block text-[11px]
-font-bold text-slate-400
-uppercase&quot;&gt;Alertes en
-cours&lt;/span&gt;
-&lt;span
-id=&quot;lbl-dir-alert-count&quot;
-class=&quot;text-2xl font-black
-
-text-slate-
-900&quot;&gt;1&lt;/span&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;!-- PARTIE
-GRAPHIQUE AVANCÉE
---&gt;
-&lt;div class=&quot;grid
-grid-cols-1 lg:grid-cols-3
-gap-6&quot;&gt;
-&lt;div class=&quot;bg-
-white p-5 rounded-2xl
-border shadow-sm
-lg:col-span-2 space-y-
-4&quot;&gt;
-&lt;h3
-class=&quot;text-xs font-
-extrabold text-slate-900
-uppercase tracking-
-wider flex items-center
-space-x-2&quot;&gt;
-&lt;i
-class=&quot;fa-solid fa-chart-
-pie text-restev-blue&quot;&gt;&lt;/i&gt;
-&lt;span&gt;Répartition
-Départementale des
-Risques
-Signalés&lt;/span&gt;
-&lt;/h3&gt;
-&lt;div class=&quot;h-
-64 flex items-center
-justify-center&quot;&gt;
-&lt;canvas
-id=&quot;chart-restev-
-risks&quot;&gt;&lt;/canvas&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;!-- LIVE FEED
-DES DERNIÈRES
-ACTIONS CLIENTS --&gt;
-&lt;div class=&quot;bg-
-white p-5 rounded-2xl
-border shadow-sm
-
-space-y-4 flex flex-col
-justify-between&quot;&gt;
-&lt;div&gt;
-&lt;h3
-class=&quot;text-xs font-
-extrabold text-slate-900
-uppercase tracking-
-wider flex items-center
-space-x-2 mb-3&quot;&gt;
-&lt;i
-class=&quot;fa-solid fa-wave-
-square text-restev-
-magenta animate-
-pulse&quot;&gt;&lt;/i&gt; &lt;span&gt;Flux
-d&#39;Activité en
-Direct&lt;/span&gt;
-&lt;/h3&gt;
-&lt;div
-id=&quot;direction-activity-
-feed&quot; class=&quot;space-y-3
-max-h-60 overflow-y-
-auto text-[11px]&quot;&gt;
-&lt;div
-class=&quot;border-l-2 border-
-emerald-500 pl-3 py-
-0.5&quot;&gt;
-&lt;p
-class=&quot;font-bold text-
-slate-800&quot;&gt;Validation
-Accueil Sécurité&lt;/p&gt;
-&lt;p
-class=&quot;text-slate-
-400&quot;&gt;Entreprise : &lt;span
-class=&quot;text-slate-600
-font-medium&quot;&gt;Bati-
-Vendée Logistique
-85&lt;/span&gt; • Il y a 2
-min&lt;/p&gt;
-&lt;/div&gt;
-&lt;div
-class=&quot;border-l-2 border-
-amber-500 pl-3 py-0.5&quot;
-id=&quot;feed-live-risk&quot;&gt;
-&lt;p
-class=&quot;font-bold text-
-slate-800&quot;&gt;Signalement
-
-Anomalie - &lt;span
-class=&quot;text-red-
-600&quot;&gt;Danger
-Critique&lt;/span&gt;&lt;/p&gt;
-&lt;p
-class=&quot;text-slate-
-400&quot;&gt;Zone : &lt;span
-class=&quot;text-slate-600
-font-medium&quot;&gt;Atelier
-B7&lt;/span&gt; • Cliché
-photo transmis&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;button
-onclick=&quot;switchScreen(&#39;scr
--auth&#39;)&quot; class=&quot;w-full bg-
-slate-900 text-white font-
-bold py-2.5 rounded-xl
-text-xs shadow
-hover:bg-slate-800
-transition text-center
-block&quot;&gt;
-Tester le
-portail d&#39;un Adhérent &lt;i
-class=&quot;fa-solid fa-arrow-
-right ml-1&quot;&gt;&lt;/i&gt;
-&lt;/button&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/section&gt;
-&lt;!--
-=================
-EC-1 : PORTAIL
-SÉCURISÉ
-ENTREPRISE
-ADHÉRENTE
-================= --
-&gt;
-&lt;section id=&quot;scr-
-auth&quot; class=&quot;screen
-max-w-md mx-auto
-space-y-6&quot;&gt;
-&lt;div class=&quot;text-
-center space-y-2&quot;&gt;
-
-&lt;h2 class=&quot;text-
-xl font-black text-slate-
-900&quot;&gt;Espace Entreprise
-Clé en main&lt;/h2&gt;
-&lt;p class=&quot;text-
-xs text-slate-
-500&quot;&gt;Chaque société
-possède son espace
-personnalisé auto-
-géré.&lt;/p&gt;
-&lt;/div&gt;
-&lt;div class=&quot;bg-
-white p-5 rounded-3xl
-border shadow-sm
-space-y-4&quot;&gt;
-&lt;div
-class=&quot;space-y-1&quot;&gt;
-&lt;label
-class=&quot;text-[10px] font-
-black uppercase text-
-slate-400&quot;&gt;Sélectionner
-un Adhérent de
-démonstration :&lt;/label&gt;
-&lt;select
-id=&quot;manager-company-
-name&quot; class=&quot;w-full p-3
-bg-slate-50 border-2
-border-slate-200
-rounded-xl text-xs font-
-bold text-slate-800
-focus:border-restev-blue
-outline-none transition&quot;&gt;
-&lt;option
-value=&quot;Bati-Vendée
-Logistique 85&quot;&gt;�� Bati-
-Vendée Logistique
-85&lt;/option&gt;
-&lt;option
-value=&quot;Manufacture
-Ouest Sables&quot;&gt;��
-Manufacture Ouest
-Sables&lt;/option&gt;
-&lt;option
-value=&quot;Agro-Alimentaire
-Yonnais&quot;&gt;�� Agro-
-
-Alimentaire
-Yonnais&lt;/option&gt;
-&lt;/select&gt;
-&lt;/div&gt;
-&lt;div
-class=&quot;space-y-1&quot;&gt;
-&lt;label
-class=&quot;text-[10px] font-
-black uppercase text-
-slate-400&quot;&gt;Identifiant de
-connexion&lt;/label&gt;
-&lt;input
-type=&quot;text&quot; class=&quot;w-full
-p-2.5 bg-slate-100
-border rounded-xl text-
-xs&quot; value=&quot;prev-
-qse@vendee.fr&quot;
-readonly&gt;
-&lt;/div&gt;
-&lt;button
-onclick=&quot;handleDemoAuth
-()&quot; class=&quot;w-full bg-
-gradient-to-r from-restev-
-blue to-restev-blue-dark
-text-white py-3 rounded-
-xl text-xs font-bold
-shadow-md
-hover:opacity-90
-transition&quot;&gt;
-Ouvrir la
-Console RH de
-l&#39;Entreprise
-&lt;/button&gt;
-&lt;/div&gt;
-&lt;/section&gt;
-&lt;!--
-=================
-EC-2 : DASHBOARD
-DU MANAGER CLIENT
-================= --
-&gt;
-&lt;section id=&quot;scr-
-manager&quot; class=&quot;screen
-max-w-4xl mx-auto
-space-y-6&quot;&gt;
-
-&lt;div class=&quot;bg-
-white p-4 rounded-2xl
-border shadow-sm flex
-flex-col sm:flex-row
-justify-between items-
-center gap-4&quot;&gt;
-&lt;div class=&quot;flex
-items-center space-x-3&quot;&gt;
-&lt;div
-class=&quot;w-3 h-3 bg-
-emerald-500 rounded-
-full animate-
-pulse&quot;&gt;&lt;/div&gt;
-&lt;h2
-class=&quot;text-sm font-black
-text-slate-900&quot;&gt;Session
-RH Active : &lt;span
-id=&quot;lbl-manager-comp-
-name&quot; class=&quot;text-
-restev-
-blue&quot;&gt;&lt;/span&gt;&lt;/h2&gt;
-&lt;/div&gt;
-&lt;button
-onclick=&quot;switchScreen(&#39;scr
--auth&#39;)&quot; class=&quot;text-xs
-bg-slate-100 font-bold
-px-3 py-1.5 text-slate-
-600 rounded-lg
-hover:bg-slate-200&quot;&gt;&lt;i
-class=&quot;fa-solid fa-right-
-from-bracket&quot;&gt;&lt;/i&gt;
-Quitter
-l&#39;espace&lt;/button&gt;
-&lt;/div&gt;
-&lt;div class=&quot;grid
-grid-cols-1 md:grid-cols-
-2 gap-6&quot;&gt;
-&lt;!-- BLOC
-GÉNÉRATEUR QR
-CODE D&#39;ACCUEIL --&gt;
-&lt;div class=&quot;bg-
-white p-5 rounded-2xl
-border shadow-sm
-space-y-4&quot;&gt;
-
-&lt;div
-class=&quot;flex items-center
-space-x-2 text-restev-
-magenta font-black text-
-xs uppercase tracking-
-wider&quot;&gt;
-&lt;i
-class=&quot;fa-solid fa-qrcode
-text-base&quot;&gt;&lt;/i&gt;
-&lt;h3&gt;Générer un
-Passeport Intégration
-Salarié&lt;/h3&gt;
-&lt;/div&gt;
-&lt;p
-class=&quot;text-xs text-slate-
-500&quot;&gt;Préparez l&#39;arrivée
-d&#39;un nouvel intérimaire
-ou CDD pour lui imposer
-son parcours de
-formation
-obligatoire.&lt;/p&gt;
-&lt;div
-class=&quot;space-y-2&quot;&gt;
-&lt;input
-type=&quot;text&quot; id=&quot;reg-emp-
-name&quot; value=&quot;Maxime
-Renault&quot;
-placeholder=&quot;Nom &amp;
-Prénom du salarié&quot;
-class=&quot;w-full p-2.5 bg-
-slate-50 border rounded-
-xl text-xs font-bold&quot;&gt;
-&lt;select
-id=&quot;reg-emp-status&quot;
-class=&quot;w-full p-2.5 bg-
-slate-50 border rounded-
-xl text-xs font-
-semibold&quot;&gt;
-&lt;option
-value=&quot;Intérimaire (Profil
-Vulnérable)&quot;&gt;Statut :
-Intérimaire (Profil
-Vulnérable)&lt;/option&gt;
-&lt;option
-value=&quot;Contrat CDD
-
-Saisonnier&quot;&gt;Statut :
-Contrat CDD
-Saisonnier&lt;/option&gt;
-&lt;option
-value=&quot;Nouvel Arrivant
-CDI&quot;&gt;Statut : Nouvel
-Arrivant CDI&lt;/option&gt;
-&lt;/select&gt;
-&lt;/div&gt;
-&lt;button
-onclick=&quot;generateDemoQ
-RCode()&quot; class=&quot;w-full
-bg-restev-magenta text-
-white py-2.5 rounded-xl
-text-xs font-bold
-shadow-md hover:bg-
-opacity-90 transition&quot;&gt;
-Générer
-l&#39;accès Smartphone
-unique
-&lt;/button&gt;
-&lt;div id=&quot;qr-
-area&quot; class=&quot;hidden flex
-flex-col items-center
-justify-center p-4 bg-
-slate-50 rounded-xl
-border border-dashed
-border-slate-200 space-
-y-3&quot;&gt;
-&lt;canvas
-id=&quot;qr-
-canvas&quot;&gt;&lt;/canvas&gt;
-&lt;button
-onclick=&quot;simulateQRScan(
-)&quot; class=&quot;bg-emerald-
-600 text-white px-4 py-2
-rounded-xl text-xs font-
-black uppercase flex
-items-center space-x-2
-shadow-lg hover:bg-
-emerald-700 transition
-w-full justify-center&quot;&gt;
-&lt;i
-class=&quot;fa-solid fa-
-
-mobile-screen animate-
-bounce&quot;&gt;&lt;/i&gt;
-&lt;span&gt;Simuler le Scan
-du Salarié&lt;/span&gt;
-&lt;/button&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;!-- ALERTES
-SUR LE SITE CLIENT --
-&gt;
-&lt;div class=&quot;bg-
-white p-5 rounded-2xl
-border shadow-sm
-space-y-4&quot;&gt;
-&lt;div
-class=&quot;flex justify-
-between items-center
-border-b pb-2&quot;&gt;
-&lt;h3
-class=&quot;font-extrabold
-text-slate-900 text-xs
-uppercase tracking-
-wider flex items-center
-space-x-2&quot;&gt;
-&lt;i
-class=&quot;fa-solid fa-bell
-text-restev-gold&quot;&gt;&lt;/i&gt;
-&lt;span&gt;Flux d&#39;Anomalies
-de vos Ateliers&lt;/span&gt;
-&lt;/h3&gt;
-&lt;span
-class=&quot;text-[9px] bg-red-
-100 font-bold px-2 py-0.5
-rounded text-red-
-700&quot;&gt;Sécurité RLS
-Active&lt;/span&gt;
-&lt;/div&gt;
-&lt;div
-id=&quot;manager-risk-box&quot;
-class=&quot;space-y-3 max-h-
-72 overflow-y-auto&quot;&gt;
-&lt;!--
-Alimenté en temps réel
-par JS --&gt;
-
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/section&gt;
-&lt;!--
-=================
-EC-3 : PARCOURS DU
-SALARIÉ EN MOBILITE
-BYOD
-================= --
-&gt;
-&lt;section id=&quot;scr-
-employee&quot;
-class=&quot;screen max-w-
-md mx-auto space-y-4&quot;&gt;
-&lt;div class=&quot;bg-
-gradient-to-br from-slate-
-900 to-restev-blue text-
-white p-5 rounded-3xl
-shadow-lg space-y-2
-relative overflow-
-hidden&quot;&gt;
-&lt;span
-class=&quot;bg-restev-gold
-text-slate-950 text-[9px]
-font-black px-2 py-0.5
-rounded uppercase
-tracking-
-widest&quot;&gt;Parcours
-d&#39;Accueil
-Obligatoire&lt;/span&gt;
-&lt;h2 class=&quot;text-
-xl font-black&quot; id=&quot;lbl-
-emp-welcome&quot;&gt;Bonjour
-!&lt;/h2&gt;
-&lt;p class=&quot;text-
-xs text-slate-200&quot; id=&quot;lbl-
-emp-
-company&quot;&gt;Chargement..
-.&lt;/p&gt;
-&lt;/div&gt;
-&lt;div class=&quot;bg-
-white p-4 rounded-2xl
-
-border shadow-sm
-space-y-3&quot;&gt;
-&lt;h3 class=&quot;text-
-xs font-black uppercase
-text-slate-400&quot;&gt;Vos
-actions prioritaires
-:&lt;/h3&gt;
-&lt;button
-onclick=&quot;switchScreen(&#39;scr
--onboarding-1&#39;)&quot;
-class=&quot;w-full bg-slate-50
-p-3.5 border rounded-xl
-text-left flex items-center
-space-x-3 hover:bg-
-slate-100/50 transition&quot;&gt;
-&lt;div
-class=&quot;w-9 h-9 bg-
-restev-blue/10 text-
-restev-blue rounded-full
-flex items-center justify-
-center text-base&quot;&gt;&lt;i
-class=&quot;fa-solid fa-book-
-open-reader&quot;&gt;&lt;/i&gt;&lt;/div&gt;
-&lt;div
-class=&quot;flex-1&quot;&gt;
-&lt;p
-class=&quot;text-xs font-bold
-text-slate-800&quot;&gt;1.
-Prendre connaissance
-des risques&lt;/p&gt;
-&lt;p
-class=&quot;text-[10px] text-
-slate-400&quot;&gt;Évaluation
-obligatoire avant prise
-de poste.&lt;/p&gt;
-&lt;/div&gt;
-&lt;i class=&quot;fa-
-solid fa-chevron-right
-text-slate-300 text-
-xs&quot;&gt;&lt;/i&gt;
-&lt;/button&gt;
-&lt;button
-onclick=&quot;switchScreen(&#39;scr
--report&#39;)&quot; class=&quot;w-full
-
-bg-slate-50 p-3.5 border
-rounded-xl text-left flex
-items-center space-x-3
-hover:bg-slate-100/50
-transition&quot;&gt;
-&lt;div
-class=&quot;w-9 h-9 bg-
-restev-magenta/10 text-
-restev-magenta
-rounded-full flex items-
-center justify-center text-
-base&quot;&gt;&lt;i class=&quot;fa-solid
-fa-camera&quot;&gt;&lt;/i&gt;&lt;/div&gt;
-&lt;div
-class=&quot;flex-1&quot;&gt;
-&lt;p
-class=&quot;text-xs font-bold
-text-slate-800&quot;&gt;2.
-Signaler un Danger
-Immédiat&lt;/p&gt;
-&lt;p
-class=&quot;text-[10px] text-
-slate-400&quot;&gt;Remontée
-photo avec Analyse
-Assistée.&lt;/p&gt;
-&lt;/div&gt;
-&lt;i class=&quot;fa-
-solid fa-chevron-right
-text-slate-300 text-
-xs&quot;&gt;&lt;/i&gt;
-&lt;/button&gt;
-&lt;/div&gt;
-&lt;/section&gt;
-&lt;!--
-=================
-EC-4 : MODULE
-SIGNALEMENT DE
-RISQUE AVEC
-SIMULATION IA
-================= --
-&gt;
-&lt;section id=&quot;scr-
-report&quot; class=&quot;screen
-max-w-md mx-auto bg-
-white p-5 rounded-3xl
-
-border shadow-sm
-space-y-4&quot;&gt;
-&lt;h3 class=&quot;text-
-base font-black text-
-slate-900 flex items-
-center space-x-2&quot;&gt;&lt;i
-class=&quot;fa-solid fa-
-camera text-restev-
-magenta&quot;&gt;&lt;/i&gt;
-&lt;span&gt;Alerte Danger
-Terrain&lt;/span&gt;&lt;/h3&gt;
-&lt;div class=&quot;space-
-y-1&quot;&gt;
-&lt;label
-class=&quot;block text-xs font-
-bold text-slate-
-700&quot;&gt;Prendre un cliché
-terrain :&lt;/label&gt;
-&lt;div class=&quot;flex
-flex-col items-center
-justify-center w-full
-border-2 border-dashed
-border-slate-300
-rounded-2xl bg-slate-50
-p-4 relative cursor-
-pointer min-h-[140px]
-group overflow-hidden&quot;&gt;
-&lt;input
-type=&quot;file&quot; id=&quot;risk-file&quot;
-accept=&quot;image/*&quot;
-capture=&quot;environment&quot;
-onchange=&quot;triggerAISca
-nSimulation(this)&quot;
-class=&quot;absolute inset-0
-opacity-0 cursor-pointer
-w-full h-full z-10&quot;&gt;
-&lt;!-- SCAN
-LOADER SIMULÉ --&gt;
-&lt;div id=&quot;ai-
-loader&quot; class=&quot;hidden
-absolute inset-0 bg-
-slate-900/90 z-30 flex
-flex-col items-center
-
-justify-center text-white
-space-y-2&quot;&gt;
-&lt;i
-class=&quot;fa-solid fa-circle-
-notch fa-spin text-2xl
-text-restev-teal&quot;&gt;&lt;/i&gt;
-&lt;span
-class=&quot;text-[10px] font-
-mono tracking-widest
-text-restev-teal font-bold
-uppercase animate-
-pulse&quot;&gt;RESTEV Vision
-AI Engine...&lt;/span&gt;
-&lt;span
-class=&quot;text-[9px] text-
-slate-400&quot;&gt;Détection
-d&#39;anomalies de sol
-active&lt;/span&gt;
-&lt;/div&gt;
-&lt;div
-id=&quot;photo-placeholder&quot;
-class=&quot;text-center
-space-y-1&quot;&gt;
-&lt;div
-class=&quot;w-10 h-10 bg-
-white shadow rounded-
-full flex items-center
-justify-center text-slate-
-500 mx-auto group-
-hover:scale-110
-transition&quot;&gt;
-&lt;i
-class=&quot;fa-solid fa-
-camera text-base text-
-restev-blue&quot;&gt;&lt;/i&gt;
-&lt;/div&gt;
-&lt;span
-class=&quot;block text-xs font-
-bold text-slate-
-700&quot;&gt;Ouvrir l&#39;appareil
-photo&lt;/span&gt;
-&lt;span
-class=&quot;block text-[10px]
-text-slate-400&quot;&gt;Cliquez
-
-pour simuler le
-déclenchement&lt;/span&gt;
-&lt;/div&gt;
-&lt;img
-id=&quot;photo-preview&quot;
-class=&quot;w-full h-36 object-
-cover rounded-xl hidden
-border relative z-20&quot;
-alt=&quot;Preuve image&quot;&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div class=&quot;space-
-y-1&quot;&gt;
-&lt;label
-class=&quot;block text-xs font-
-bold text-slate-
-700&quot;&gt;Localisation métier
-simplifiée :&lt;/label&gt;
-&lt;select id=&quot;risk-
-location&quot; class=&quot;w-full p-
-2.5 bg-slate-50 border
-rounded-xl text-xs font-
-bold text-slate-700&quot;&gt;
-&lt;option
-value=&quot;Atelier B7
-(Usinage)&quot;&gt;�� Atelier B7
-(Usinage)&lt;/option&gt;
-&lt;option
-value=&quot;Zone de
-Stockage / Réserve
-Générale&quot;&gt;�� Zone de
-Stockage / Réserve
-Générale&lt;/option&gt;
-&lt;option
-value=&quot;Parking Salariés
-&amp; Zone de Fret&quot;&gt;��
-Parking Salariés &amp; Zone
-de Fret&lt;/option&gt;
-&lt;option
-value=&quot;Quais
-d&#39;Expédition /
-Réception&quot;&gt;�� Quais
-d&#39;Expédition /
-Réception&lt;/option&gt;
-
-&lt;option
-value=&quot;Bureaux
-Administratifs R+1&quot;&gt;��
-Bureaux Administratifs
-R+1&lt;/option&gt;
-&lt;/select&gt;
-&lt;/div&gt;
-&lt;div class=&quot;space-
-y-1&quot;&gt;
-&lt;label
-class=&quot;block text-xs font-
-bold text-slate-
-700&quot;&gt;Gravité constatée
-:&lt;/label&gt;
-&lt;select id=&quot;risk-
-level&quot; class=&quot;w-full p-2.5
-bg-slate-50 border
-rounded-xl text-xs font-
-bold text-red-600&quot;&gt;
-&lt;option
-value=&quot;Critique
-��&quot;&gt;Danger Critique
-(Intervention
-Immédiate)&lt;/option&gt;
-&lt;option
-value=&quot;Modéré
-��&quot;&gt;Alerte Modérée
-(Traitement sous
-24h)&lt;/option&gt;
-&lt;/select&gt;
-&lt;/div&gt;
-&lt;div class=&quot;space-
-y-1&quot;&gt;
-&lt;label
-class=&quot;block text-xs font-
-bold text-slate-
-700&quot;&gt;Description
-textuelle :&lt;/label&gt;
-&lt;textarea
-id=&quot;risk-desc&quot; rows=&quot;2&quot;
-class=&quot;w-full p-2 bg-
-slate-50 border rounded-
-xl text-xs font-
-medium&quot;&gt;Fuite massive
-
-de liquide glissant
-constaté à la sortie de la
-ligne de découpe
-principale.&lt;/textarea&gt;
-&lt;/div&gt;
-&lt;div class=&quot;grid
-grid-cols-2 gap-2&quot;&gt;
-&lt;button
-type=&quot;button&quot;
-onclick=&quot;switchScreen(&#39;s
-cr-employee&#39;)&quot;
-class=&quot;bg-slate-100 text-
-slate-600 py-2 rounded-
-xl text-xs font-
-bold&quot;&gt;Annuler&lt;/button&gt;
-&lt;button
-type=&quot;button&quot;
-onclick=&quot;submitDemoRis
-kReport()&quot; class=&quot;bg-
-restev-magenta text-
-white py-2 rounded-xl
-text-xs font-bold
-shadow-
-md&quot;&gt;Transmettre
-l&#39;alerte&lt;/button&gt;
-&lt;/div&gt;
-&lt;/section&gt;
-&lt;!--
-=================
-EC-5 : QUIZ ET
-RÈGLES DE SÉCURITÉ
-================= --
-&gt;
-&lt;section id=&quot;scr-
-onboarding-1&quot;
-class=&quot;screen max-w-
-md mx-auto bg-white p-5
-rounded-3xl border
-shadow-sm space-y-4&quot;&gt;
-&lt;span class=&quot;text-
-[10px] font-black text-
-restev-blue uppercase
-tracking-widest
-block&quot;&gt;Étape de
-
-Contrôle
-Obligatoire&lt;/span&gt;
-&lt;h3 class=&quot;text-
-base font-black text-
-slate-900&quot;&gt;Charte de
-Prévention des
-Risques&lt;/h3&gt;
-&lt;div class=&quot;space-
-y-2 text-xs text-slate-
-600&quot;&gt;
-&lt;div class=&quot;p-3
-bg-slate-50 rounded-xl
-border-l-4 border-restev-
-blue&quot;&gt;
-&lt;p
-class=&quot;font-bold text-
-slate-900&quot;&gt;Règle 1 :
-Équipements
-obligatoires&lt;/p&gt;
-&lt;p&gt;Le port de
-vos chaussures de
-sécurité et du gilet
-haute-visibilité est
-obligatoire dès l&#39;accès
-au site.&lt;/p&gt;
-&lt;/div&gt;
-&lt;div class=&quot;p-3
-bg-slate-50 rounded-xl
-border-l-4 border-restev-
-magenta&quot;&gt;
-&lt;p
-class=&quot;font-bold text-
-slate-900&quot;&gt;Règle 2 :
-Signalement
-immédiat&lt;/p&gt;
-&lt;p&gt;Tout
-incident, presqu&#39;accident
-ou anomalie doit être
-remonté par l&#39;application
-en moins de 15
-minutes.&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-
-&lt;div
-class=&quot;border-t pt-3
-space-y-2&quot;&gt;
-&lt;label
-class=&quot;block text-xs font-
-bold text-slate-
-700&quot;&gt;QCM : À quel
-moment devez-vous
-porter vos EPI ?&lt;/label&gt;
-&lt;label
-class=&quot;flex items-center
-space-x-2 bg-slate-50 p-
-2.5 rounded-xl text-xs
-cursor-pointer&quot;&gt;&lt;input
-type=&quot;radio&quot; checked
-name=&quot;q1&quot; class=&quot;text-
-restev-blue&quot;&gt; &lt;span
-class=&quot;font-
-medium&quot;&gt;Dès la prise
-de poste de manière
-continue&lt;/span&gt;&lt;/label&gt;
-&lt;label
-class=&quot;flex items-center
-space-x-2 bg-slate-50 p-
-2.5 rounded-xl text-xs
-cursor-pointer&quot;&gt;&lt;input
-type=&quot;radio&quot; name=&quot;q1&quot;
-class=&quot;text-restev-blue&quot;&gt;
-&lt;span class=&quot;font-
-medium&quot;&gt;Uniquement
-lors des opérations à
-haut
-risque&lt;/span&gt;&lt;/label&gt;
-&lt;/div&gt;
-&lt;button
-onclick=&quot;switchScreen(&#39;scr
--signature&#39;)&quot; class=&quot;w-
-full bg-restev-blue text-
-white py-2.5 rounded-xl
-text-xs font-bold
-shadow&quot;&gt;
-Valider et passer
-à l&#39;émargement
-&lt;/button&gt;
-&lt;/section&gt;
-
-&lt;!--
-=================
-EC-6 : ÉMARGEMENT
-ET SIGNATURES
-TACTILES
-================= --
-&gt;
-&lt;section id=&quot;scr-
-signature&quot; class=&quot;screen
-max-w-md mx-auto bg-
-white p-5 rounded-3xl
-border shadow-sm
-space-y-4&quot;&gt;
-&lt;h3 class=&quot;text-
-base font-black text-
-slate-900 text-
-center&quot;&gt;Clôture des
-engagements
-Sécurité&lt;/h3&gt;
-&lt;div class=&quot;space-
-y-3&quot;&gt;
-&lt;div&gt;
-&lt;label
-class=&quot;block text-[11px]
-font-bold text-slate-600
-mb-1&quot;&gt;Signature
-Numérique du Salarié
-:&lt;/label&gt;
-&lt;div
-class=&quot;border rounded-xl
-bg-slate-50 overflow-
-hidden&quot;&gt;&lt;canvas
-id=&quot;canv-employee&quot;
-class=&quot;w-full bg-slate-
-100&quot;
-height=&quot;90&quot;&gt;&lt;/canvas&gt;&lt;
-/div&gt;
-&lt;button
-type=&quot;button&quot;
-onclick=&quot;clearCanvas(&#39;c
-anv-employee&#39;)&quot;
-class=&quot;text-[10px] text-
-slate-400
-
-underline&quot;&gt;Effacer le
-tracé&lt;/button&gt;
-&lt;/div&gt;
-&lt;div&gt;
-&lt;input
-type=&quot;text&quot; id=&quot;tutor-
-name&quot; value=&quot;M.
-Vigneron (Tuteur
-Référent)&quot; class=&quot;w-full
-p-2 bg-slate-50 border
-rounded-xl text-xs mb-
-1.5 font-bold&quot;&gt;
-&lt;label
-class=&quot;block text-[11px]
-font-bold text-slate-600
-mb-1&quot;&gt;Signature du
-Tuteur / Responsable de
-site :&lt;/label&gt;
-&lt;div
-class=&quot;border rounded-xl
-bg-slate-50 overflow-
-hidden&quot;&gt;&lt;canvas
-id=&quot;canv-tutor&quot; class=&quot;w-
-full bg-slate-100&quot;
-height=&quot;90&quot;&gt;&lt;/canvas&gt;&lt;
-/div&gt;
-&lt;button
-type=&quot;button&quot;
-onclick=&quot;clearCanvas(&#39;c
-anv-tutor&#39;)&quot; class=&quot;text-
-[10px] text-slate-400
-underline&quot;&gt;Effacer le
-tracé&lt;/button&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;button
-type=&quot;button&quot;
-onclick=&quot;finalizeDemoAtt
-estation()&quot; class=&quot;w-full
-bg-emerald-600 text-
-white py-2.5 rounded-xl
-text-xs font-bold
-shadow-md hover:bg-
-emerald-700 transition&quot;&gt;
-
-Générer
-l&#39;Attestation Officielle
-Probante
-&lt;/button&gt;
-&lt;/section&gt;
-&lt;!--
-=================
-EC-7 : PROCES-
-VERBAL JURIDIQUE
-PRÊT POUR
-L&#39;IMPRESSION
-================= --
-&gt;
-&lt;section id=&quot;scr-
-attestation&quot;
-class=&quot;screen max-w-lg
-mx-auto bg-white p-6
-rounded-3xl shadow-xl
-border-2 border-
-emerald-500 space-y-
-6&quot;&gt;
-&lt;div class=&quot;text-
-center space-y-1 no-
-print&quot;&gt;
-&lt;div class=&quot;w-
-12 h-12 bg-emerald-100
-text-emerald-600
-rounded-full flex items-
-center justify-center text-
-xl mx-auto&quot;&gt;&lt;i class=&quot;fa-
-solid fa-file-
-signature&quot;&gt;&lt;/i&gt;&lt;/div&gt;
-&lt;h3 class=&quot;text-
-base font-black text-
-slate-900&quot;&gt;Procès-
-Verbal de Validation
-Sécurité&lt;/h3&gt;
-&lt;p class=&quot;text-
-xs text-slate-
-500&quot;&gt;Document généré
-en totale conformité
-avec l&#39;Article L4141-
-2.&lt;/p&gt;
-&lt;/div&gt;
-
-&lt;!-- LE
-DOCUMENT PREUVE --
-&gt;
-&lt;div
-class=&quot;border-2 border-
-slate-900 p-4 rounded-xl
-space-y-4 text-xs bg-
-white print-view&quot;
-id=&quot;print-area&quot;&gt;
-&lt;div class=&quot;flex
-justify-between items-
-center border-b pb-2&quot;&gt;
-&lt;span
-class=&quot;font-mono text-
-[9px] text-slate-400&quot;&gt;ID
-Preuve : RE-85-
-PASSPORT-
-2026&lt;/span&gt;
-&lt;span
-class=&quot;bg-slate-900 text-
-white font-mono font-
-bold px-2 py-0.5 rounded
-text-[9px]&quot;&gt;CONFORME
-RGPD&lt;/span&gt;
-&lt;/div&gt;
-&lt;h4 class=&quot;text-
-center font-black
-uppercase text-slate-900
-text-xs tracking-
-wide&quot;&gt;Attestation
-d&#39;Accueil Sécurité
-Renforcée&lt;/h4&gt;
-&lt;div class=&quot;grid
-grid-cols-2 gap-2 text-
-[11px] pt-1&quot;&gt;
-&lt;p&gt;&lt;strong&gt;Bénéficiaire
-:&lt;/strong&gt; &lt;span id=&quot;lbl-
-view-emp&quot;&gt;Maxime
-Renault&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Structure
-d&#39;accueil :&lt;/strong&gt;
-&lt;span id=&quot;lbl-view-
-company&quot;&gt;Bati-Vendée
-
-Logistique
-85&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Statut légal
-:&lt;/strong&gt; &lt;span id=&quot;lbl-
-view-status&quot; class=&quot;text-
-restev-blue font-
-bold&quot;&gt;Intérimaire&lt;/span
-&gt;&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Tuteur
-agréé :&lt;/strong&gt; &lt;span
-id=&quot;lbl-view-tutor&quot;&gt;M.
-Vigneron&lt;/span&gt;&lt;/p&gt;
-&lt;p class=&quot;col-
-span-2&quot;&gt;&lt;strong&gt;Date
-de Certification
-:&lt;/strong&gt; &lt;span id=&quot;lbl-
-view-date&quot; class=&quot;font-
-mono text-slate-
-600&quot;&gt;12/06/2026&lt;/span
-&gt;&lt;/p&gt;
-&lt;/div&gt;
-&lt;div class=&quot;bg-
-emerald-50 p-2.5
-rounded-lg text-[10px]
-text-emerald-800 font-
-medium border border-
-emerald-200&quot;&gt;
-&lt;i class=&quot;fa-
-solid fa-circle-
-check&quot;&gt;&lt;/i&gt; Le candidat
-a répondu avec succès à
-l&#39;ensemble des
-questions d&#39;assimilation
-des risques inhérents à
-son poste de travail.
-&lt;/div&gt;
-&lt;div class=&quot;grid
-grid-cols-2 gap-4 pt-3
-border-t&quot;&gt;
-&lt;div
-class=&quot;text-center&quot;&gt;
-&lt;span
-class=&quot;block text-[10px]
-font-bold text-slate-500
-
-mb-1&quot;&gt;Visa Salarié
-:&lt;/span&gt;
-&lt;img
-id=&quot;img-render-emp&quot;
-class=&quot;h-12 mx-auto
-object-contain bg-slate-
-50 border rounded p-1&quot;
-alt=&quot;Visa Salarié&quot;&gt;
-&lt;/div&gt;
-&lt;div
-class=&quot;text-center&quot;&gt;
-&lt;span
-class=&quot;block text-[10px]
-font-bold text-slate-500
-mb-1&quot;&gt;Visa
-Représentant :&lt;/span&gt;
-&lt;img
-id=&quot;img-render-tutor&quot;
-class=&quot;h-12 mx-auto
-object-contain bg-slate-
-50 border rounded p-1&quot;
-alt=&quot;Visa Tuteur&quot;&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div class=&quot;grid
-grid-cols-1 gap-2 no-
-print&quot;&gt;
-&lt;button
-onclick=&quot;window.print()&quot;
-class=&quot;w-full bg-slate-
-900 text-white py-2.5
-rounded-xl text-xs font-
-bold flex items-center
-justify-center space-x-2
-shadow hover:bg-slate-
-800 transition&quot;&gt;
-&lt;i class=&quot;fa-
-solid fa-print&quot;&gt;&lt;/i&gt;
-&lt;span&gt;Lancer
-l&#39;Impression / Export
-PDF&lt;/span&gt;
-&lt;/button&gt;
-&lt;button
-onclick=&quot;switchScreen(&#39;scr
-
--direction&#39;)&quot; class=&quot;w-full
-bg-slate-100 text-slate-
-600 py-2.5 rounded-xl
-text-xs font-bold border
-text-center&quot;&gt;
-Retourner au
-Tableau de Bord
-RESTEV
-&lt;/button&gt;
-&lt;/div&gt;
-&lt;/section&gt;
-&lt;/main&gt;
-&lt;!--
-=================
-ARCHITECTURE DE
-CALCUL DE LA DEMO
-(EN-MÉMOIRE)
-================= --
-&gt;
-&lt;script&gt;
-let
-currentSelectedCompany
-= &quot;Bati-Vendée
-Logistique 85&quot;;
-let candidateProfile =
-{ name: &quot;Maxime
-Renault&quot;, status:
-&quot;Intérimaire (Profil
-Vulnérable)&quot; };
-let localRisksDB = [
-{
-id: 101,
-company: &quot;Bati-
-Vendée Logistique 85&quot;,
-employee:
-&quot;Lucas M.&quot;,
-description:
-&quot;Obstruction majeure
-des voies d&#39;évacuation
-par des palettes de fret
-non filmées.&quot;,
-
-location: &quot;Zone
-de Stockage / Réserve
-Générale&quot;,
-severity:
-&quot;Critique ��&quot;,
-photo:
-&quot;https://images.unsplash.c
-om/photo-
-1586528116300-
-48520ef355ec?w=500&quot;
-}
-];
-// --- CONTRÔLE
-DES ÉCRANS ---
-function
-switchScreen(screenId) {
-document.querySelectorAl
-l(&#39;.screen&#39;).forEach(scr
-=&gt;
-scr.classList.remove(&#39;acti
-ve&#39;));
-const target =
-document.getElementById
-(screenId);
-if (target) {
-target.classList.add(&#39;active
-&#39;);
-window.scrollTo(0, 0);
-}
-showToast(&quot;Navigation :
-&quot; + screenId.replace(&#39;scr-
-&#39;, &#39;&#39;).toUpperCase());
-}
-function
-showToast(text) {
-const toast =
-document.getElementById
-(&#39;toast&#39;);
-document.getElementById
-(&#39;toast-text&#39;).innerText =
-text;
-toast.className =
-&quot;fixed bottom-4 right-4
-bg-slate-900 text-white
-
-text-xs py-3 px-4
-rounded-xl shadow-2xl
-z-50 transition-all
-transform translate-y-0
-opacity-100 flex items-
-center space-x-2 border
-border-slate-700&quot;;
-setTimeout(() =&gt; {
-toast.className
-= &quot;fixed bottom-4 right-4
-bg-slate-900 text-white
-text-xs py-3 px-4
-rounded-xl shadow-2xl
-z-50 transition-all
-transform translate-y-20
-opacity-0 flex items-
-center space-x-2 border
-border-slate-700&quot;;
-}, 2500);
-}
-// ---
-AUTHENTIFICATION
-SIMULÉE ADHÉRENT --
--
-function
-handleDemoAuth() {
-currentSelectedCompany
-=
-document.getElementBy
-Id(&#39;manager-company-
-name&#39;).value;
-document.getElementById
-(&#39;lbl-manager-comp-
-name&#39;).innerText =
-currentSelectedCompan
-y;
-renderCompanyRisks();
-switchScreen(&#39;scr-
-manager&#39;);
-}
-function
-simulateDirectEmployeeA
-ccess() {
-document.getElementById
-
-(&#39;lbl-emp-
-welcome&#39;).innerText =
-&quot;Bonjour &quot; +
-candidateProfile.name +
-&quot; !&quot;;
-document.getElementById
-(&#39;lbl-emp-
-company&#39;).innerText =
-&quot;Parcours rattaché à : &quot;
-+
-currentSelectedCompan
-y;
-switchScreen(&#39;scr-
-employee&#39;);
-}
-// --- GÉNÉRATION &amp;
-SCAN QR CODE ---
-function
-generateDemoQRCode()
-{
-const nameInput =
-document.getElementById
-(&#39;reg-emp-name&#39;).value;
-const statusSelect
-=
-document.getElementBy
-Id(&#39;reg-emp-
-status&#39;).value;
-if(!nameInput)
-return
-showToast(&quot;Veuillez
-entrer un nom !&quot;);
-candidateProfile.name =
-nameInput;
-candidateProfile.status =
-statusSelect;
-const qrCanvas =
-document.getElementById
-(&#39;qr-canvas&#39;);
-const
-mockPayload =
-JSON.stringify({ name:
-candidateProfile.name,
-
-company:
-currentSelectedCompan
-y });
-QRCode.toCanvas(qrCan
-vas, mockPayload, {
-width: 160, margin: 1 },
-function (error) {
-if (error)
-console.error(error);
-document.getElementById
-(&#39;qr-
-area&#39;).classList.remove(&#39;
-hidden&#39;);
-showToast(&quot;Passeport
-QR généré avec succès
-!&quot;);
-});
-}
-function
-simulateQRScan() {
-showToast(&quot;Scan
-smartphone détecté !
-Synchro BYOD
-réussie.&quot;);
-setTimeout(() =&gt; {
-simulateDirectEmployeeA
-ccess();
-}, 800);
-}
-// --- MODULE
-APPAREIL PHOTO &amp;
-INTELLIGENCE
-ARTIFICIELLE ---
-function
-triggerAIScanSimulation(in
-put) {
-const loader =
-document.getElementById
-(&#39;ai-loader&#39;);
-const placeholder
-=
-document.getElementBy
-Id(&#39;photo-placeholder&#39;);
-
-const preview =
-document.getElementById
-(&#39;photo-preview&#39;);
-loader.classList.remove(&#39;hi
-dden&#39;);
-setTimeout(() =&gt; {
-loader.classList.add(&#39;hidde
-n&#39;);
-placeholder.classList.add(&#39;
-hidden&#39;);
-preview.classList.remove(&#39;
-hidden&#39;);
-// Image par
-défaut si aucun fichier
-réel n&#39;est fourni durant le
-test
-if (input.files &amp;&amp;
-input.files[0]) {
-const reader
-= new FileReader();
-reader.onload
-= function(e) {
-preview.src =
-e.target.result; }
-reader.readAsDataURL(in
-put.files[0]);
-} else {
-preview.src =
-&quot;https://images.unsplash.c
-om/photo-1532634922-
-8fe0b757fb13?w=500&quot;;
-}
-document.getElementById
-(&#39;risk-desc&#39;).value =
-&quot;[Vision AI] Détection
-d&#39;une anomalie critique
-au sol. Substance
-glissante épanchée de
-type huileuse.&quot;;
-showToast(&quot;Analyse
-prédictive IA complétée
-!&quot;);
-
-}, 1800);
-}
-// ---
-TRANSMISSION DU
-SIGNALEMENT ---
-function
-submitDemoRiskReport()
-{
-const desc =
-document.getElementById
-(&#39;risk-desc&#39;).value;
-const loc =
-document.getElementById
-(&#39;risk-location&#39;).value;
-const level =
-document.getElementById
-(&#39;risk-level&#39;).value;
-const previewImg
-=
-document.getElementBy
-Id(&#39;photo-preview&#39;).src;
-const newRisk = {
-id: Date.now(),
-company:
-currentSelectedCompany,
-employee:
-candidateProfile.name,
-description:
-desc,
-location: loc,
-severity: level,
-photo:
-previewImg ||
-&quot;https://images.unsplash
-.com/photo-
-1532634922-
-8fe0b757fb13?w=500&quot;
-};
-localRisksDB.unshift(new
-Risk);
-
-// Notification et
-mise à jour des
-interfaces globales
-document.getElementById
-(&#39;lbl-dir-alert-
-count&#39;).innerText =
-localRisksDB.length;
-// Injection
-dynamique dans le flux
-d&#39;activité Direction
-const feed =
-document.getElementById
-(&#39;direction-activity-feed&#39;);
-const alertItem =
-document.createElement(&#39;
-div&#39;);
-alertItem.className =
-&quot;border-l-2 border-red-
-500 pl-3 py-0.5 animate-
-bounce&quot;;
-alertItem.innerHTML =
-`&lt;p class=&quot;font-bold text-
-slate-800&quot;&gt;Alerte Terrain
-- ${level}&lt;/p&gt;
-&lt;p
-class=&quot;text-slate-
-400&quot;&gt;Société : &lt;span
-class=&quot;text-slate-600
-font-
-medium&quot;&gt;${currentSelec
-tedCompany}&lt;/span&gt; •
-À l&#39;instant&lt;/p&gt;`;
-feed.insertBefore(alertItem
-, feed.firstChild);
-renderCompanyRisks();
-showToast(&quot;Alerte
-synchronisée avec le
-serveur RESTEV !&quot;);
-switchScreen(&#39;scr-
-employee&#39;);
-}
-// --- CONSOLE RH
-CLIENT : MISE À JOUR
-
-DU TABLEAU DES
-RISQUES ---
-function
-renderCompanyRisks() {
-const container =
-document.getElementById
-(&#39;manager-risk-box&#39;);
-container.innerHTML =
-&quot;&quot;;
-const filtered =
-localRisksDB.filter(r =&gt;
-r.company ===
-currentSelectedCompan
-y);
-if(filtered.length
-=== 0) {
-container.innerHTML =
-&quot;&lt;p class=&#39;text-xs text-
-slate-400 py-4 text-
-center&#39;&gt;Aucune
-anomalie signalée sur
-vos secteurs.&lt;/p&gt;&quot;;
-return;
-}
-filtered.forEach(r
-=&gt; {
-const card =
-document.createElement(&#39;
-div&#39;);
-card.className
-= &quot;p-3 bg-slate-50
-rounded-xl border flex
-gap-3 items-center&quot;;
-card.innerHTML
-= `
-&lt;img
-src=&quot;${r.photo}&quot;
-class=&quot;w-12 h-12 object-
-cover rounded-lg border
-shadow-sm&quot;&gt;
-&lt;div
-class=&quot;flex-1 text-
-[11px]&quot;&gt;
-
-&lt;div
-class=&quot;flex justify-
-between font-bold text-
-slate-900&quot;&gt;
-&lt;span&gt;${r.location}&lt;/span
-&gt;
-&lt;span
-class=&quot;text-red-
-600&quot;&gt;${r.severity}&lt;/span
-&gt;
-&lt;/div&gt;
-&lt;p
-class=&quot;text-slate-600 mt-
-0.5 line-clamp-
-2&quot;&gt;${r.description}&lt;/p&gt;
-&lt;p
-class=&quot;text-[9px] text-
-slate-400 mt-1&quot;&gt;Par :
-${r.employee} • ID:
-#${r.id.toString().slice(-
-4)}&lt;/p&gt;
-&lt;/div&gt;
-`;
-container.appendChild(car
-d);
-});
-}
-// --- LOGIQUE DE
-SIGNATURES
-TACTILES ---
-const canvasProfiles
-= [&#39;canv-employee&#39;,
-&#39;canv-tutor&#39;];
-const canvasCtxs =
-{};
-window.onload =
-function() {
-canvasProfiles.forEach(id
-=&gt; {
-const canv =
-document.getElementById
-(id);
-if(canv) {
-
-const ctx =
-canv.getContext(&#39;2d&#39;);
-canvasCtxs[id] = ctx;
-ctx.strokeStyle =
-&#39;#1e293b&#39;;
-ctx.lineWidth
-= 2.5;
-ctx.lineCap =
-&#39;round&#39;;
-let drawing =
-false;
-// Mouse
-Events
-canv.addEventListener(&#39;m
-ousedown&#39;, () =&gt;
-drawing = true);
-canv.addEventListener(&#39;m
-ouseup&#39;, () =&gt; { drawing
-= false; ctx.beginPath();
-});
-canv.addEventListener(&#39;m
-ousemove&#39;, (e) =&gt;
-draw(e, canv, ctx,
-drawing));
-// Touch
-Events
-canv.addEventListener(&#39;to
-uchstart&#39;, (e) =&gt; {
-drawing = true;
-e.preventDefault(); });
-canv.addEventListener(&#39;to
-uchend&#39;, () =&gt; { drawing
-= false; ctx.beginPath();
-});
-canv.addEventListener(&#39;to
-uchmove&#39;, (e) =&gt;
-drawTouch(e, canv, ctx,
-drawing));
-}
-});
-
-// Initialisation
-Graphique Global
-(ChartJS)
-const ctxChart =
-document.getElementById
-(&#39;chart-restev-
-risks&#39;).getContext(&#39;2d&#39;);
-new
-Chart(ctxChart, {
-type: &#39;doughnut&#39;,
-data: {
-labels:
-[&#39;Risques Mécaniques&#39;,
-&#39;Substances Chimiques&#39;,
-&#39;Chutes &amp; Sols&#39;, &#39;Risques
-Routiers&#39;],
-datasets: [{
-data: [35,
-20, 30, 15],
-backgroundColor:
-[&#39;#2f6bb2&#39;, &#39;#b8257b&#39;,
-&#39;#69b3a5&#39;, &#39;#f2a104&#39;],
-borderWidth: 2
-}]
-},
-options: {
-responsive:
-true,
-maintainAspectRatio:
-false,
-plugins: {
-legend: { position:
-&#39;bottom&#39;, labels: {
-boxWidth: 12, font: {
-size: 10 } } } }
-}
-});
-};
-function draw(e,
-canvas, ctx, drawing) {
-if (!drawing) return;
-const rect =
-canvas.getBoundingClient
-Rect();
-
-currentSelectedCompany;
-document.getElementById
-(&#39;lbl-view-
-status&#39;).innerText =
-candidateProfile.status;
-document.getElementById
-(&#39;lbl-view-tutor&#39;).innerText
-=
-document.getElementBy
-Id(&#39;tutor-name&#39;).value;
-// Formatage de la
-date du jour
-const today = new
-Date();
-document.getElementById
-(&#39;lbl-view-date&#39;).innerText
-=
-today.toLocaleDateStrin
-g(&#39;fr-FR&#39;) + &quot; à &quot; +
-today.toLocaleTimeStrin
-g(&#39;fr-FR&#39;, {hour: &#39;2-digit&#39;,
-minute:&#39;2-digit&#39;});
-// Conversion des
-tracés de signatures en
-images figées
-document.getElementById
-(&#39;img-render-emp&#39;).src =
-document.getElementBy
-Id(&#39;canv-
-employee&#39;).toDataURL();
-document.getElementById
-(&#39;img-render-tutor&#39;).src =
-document.getElementBy
-Id(&#39;canv-
-tutor&#39;).toDataURL();
-switchScreen(&#39;scr-
-attestation&#39;);
-}
-&lt;/script&gt;
-&lt;/body&gt;
-&lt;/html&gt;&lt;!DOCTYPE html&gt;
-&lt;html lang=&quot;fr&quot;&gt;
-&lt;head&gt;
-&lt;meta charset=&quot;UTF-
-8&quot;&gt;
-&lt;meta name=&quot;viewport&quot;
-content=&quot;width=device-
-width, initial-scale=1.0,
-maximum-scale=1.0,
-user-scalable=no&quot;&gt;
-&lt;title&gt;RESTEV
-Innovation Hub - Version
-Direction
-Générale&lt;/title&gt;
-&lt;!-- Frameworks &amp;
-Bibliothèques
-Graphiques Premium --&gt;
-&lt;script
-src=&quot;https://cdn.tailwindcs
-s.com&quot;&gt;&lt;/script&gt;
-&lt;script
-src=&quot;https://cdn.jsdelivr.net
-/npm/chart.js&quot;&gt;&lt;/script&gt;
-&lt;script
-src=&quot;https://cdn.jsdelivr.net
-/npm/qrcode@1.5.1/buil
-d/qrcode.min.js&quot;&gt;&lt;/script
-&gt;
-&lt;link rel=&quot;stylesheet&quot;
-href=&quot;https://cdnjs.cloudfla
-re.com/ajax/libs/font-
-awesome/6.4.0/css/all.m
-in.css&quot;&gt;
-&lt;script&gt;
-tailwind.config = {
-theme: {
-extend: {
-colors: {
-&#39;restev-
-blue&#39;: &#39;#2f6bb2&#39;,
-&#39;restev-
-blue-dark&#39;: &#39;#224d80&#39;,
-&#39;restev-
-magenta&#39;: &#39;#b8257b&#39;,
-
-&#39;restev-
-magenta-dark&#39;:
-&#39;#911d61&#39;,
-&#39;restev-
-teal&#39;: &#39;#69b3a5&#39;,
-&#39;restev-
-gold&#39;: &#39;#f2a104&#39;
-}
-}
-}
-}
-&lt;/script&gt;
-&lt;style&gt;
-.screen { display:
-none; }
-.screen.active {
-display: block;
-animation: fadeIn 0.4s
-ease-out; }
-@keyframes fadeIn {
-from { opacity: 0;
-transform:
-translateY(8px); } to {
-opacity: 1; transform:
-translateY(0); } }
-canvas { touch-
-action: none; }
-.glass { background:
-rgba(255, 255, 255,
-0.85); backdrop-filter:
-blur(12px); }
-@media print {
-.no-print { display:
-none !important; }
-.print-view {
-display: block !important;
-background: white; color:
-black; }
-}
-&lt;/style&gt;
-&lt;/head&gt;
-&lt;body class=&quot;bg-slate-50
-font-sans text-slate-800
-antialiased min-h-
-screen&quot;&gt;
-
-&lt;!-- BARRE DE
-SIMULATION ET
-CONTRÔLE DE
-PRÉSENTATION (Pour
-le présentateur) --&gt;
-&lt;div class=&quot;bg-slate-
-900 text-white p-2 text-
-xs font-semibold flex
-justify-between items-
-center px-4 sticky top-0
-z-50 no-print shadow-
-md&quot;&gt;
-&lt;div class=&quot;flex
-items-center space-x-2&quot;&gt;
-&lt;span
-class=&quot;inline-flex w-2 h-2
-rounded-full bg-emerald-
-400 animate-
-ping&quot;&gt;&lt;/span&gt;
-&lt;span class=&quot;text-
-slate-300 font-mono text-
-[11px]&quot;&gt;TÉLÉCOMMAN
-DE DE DÉMO LIVE
-:&lt;/span&gt;
-&lt;/div&gt;
-&lt;div class=&quot;flex
-space-x-2&quot;&gt;
-&lt;button
-onclick=&quot;switchScreen(&#39;scr
--direction&#39;)&quot; class=&quot;bg-
-restev-blue px-3 py-1
-rounded font-bold
-hover:bg-opacity-80
-transition&quot;&gt;1. Vue
-Direction
-(RESTEV)&lt;/button&gt;
-&lt;button
-onclick=&quot;switchScreen(&#39;scr
--auth&#39;)&quot; class=&quot;bg-
-restev-magenta px-3 py-
-1 rounded font-bold
-hover:bg-opacity-80
-transition&quot;&gt;2. Vue
-Entreprise
-Client&lt;/button&gt;
-
-&lt;button
-onclick=&quot;simulateDirectEm
-ployeeAccess()&quot;
-class=&quot;bg-emerald-600
-px-3 py-1 rounded font-
-bold hover:bg-opacity-80
-transition&quot;&gt;3. Vue
-Salarié Terrain&lt;/button&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;!-- EN-TÊTE
-CORPORATE AVEC
-INTÉGRATION DU
-LOGO --&gt;
-&lt;header class=&quot;bg-
-white border-b border-
-slate-200 p-4 shadow-
-sm relative transition-
-all&quot;&gt;
-&lt;div class=&quot;max-w-
-5xl mx-auto flex flex-col
-sm:flex-row justify-
-between items-center
-gap-4&quot;&gt;
-&lt;img
-src=&quot;logo.png&quot; alt=&quot;Logo
-RESTEV 85&quot; class=&quot;h-
-14 md:h-16 object-
-contain&quot;
-onerror=&quot;this.style.displa
-y=&#39;none&#39;; this.after(&#39;��
-RESTEV 85&#39;)&quot;&gt;
-&lt;div class=&quot;text-
-right sm:text-right text-
-center&quot;&gt;
-&lt;span
-class=&quot;bg-gradient-to-r
-from-restev-blue to-
-restev-magenta text-
-white font-black text-
-[10px] px-3 py-1
-rounded-full uppercase
-tracking-wider shadow-
-sm&quot;&gt;
-
-Passeport
-Prévention Numérique
-(PST 2026-2030)
-&lt;/span&gt;
-&lt;p class=&quot;text-
-xs text-slate-400 mt-1
-font-medium font-
-mono&quot;&gt;Pilote RLS Multi-
-Sociétés v4.0&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/header&gt;
-&lt;!-- NOTIFICATION
-TOAST FLOTTANTE
-POUR RENDRE L&#39;APP
-VIVANTE --&gt;
-&lt;div id=&quot;toast&quot;
-class=&quot;fixed bottom-4
-right-4 bg-slate-900 text-
-white text-xs py-3 px-4
-rounded-xl shadow-2xl
-z-50 transition-all
-transform translate-y-20
-opacity-0 flex items-
-center space-x-2 border
-border-slate-700&quot;&gt;
-&lt;i class=&quot;fa-solid fa-
-circle-info text-restev-
-teal text-base&quot;&gt;&lt;/i&gt;
-&lt;span id=&quot;toast-
-text&quot;&gt;Notification
-démo&lt;/span&gt;
-&lt;/div&gt;
-&lt;main class=&quot;max-w-
-5xl mx-auto p-4 md:p-
-6&quot;&gt;
-&lt;!--
-=================
-EC-0 : TABLEAU DE
-BORD EXÉCUTIF
-================= --
-&gt;
-
-&lt;section id=&quot;scr-
-direction&quot; class=&quot;screen
-active space-y-6&quot;&gt;
-&lt;div class=&quot;bg-
-gradient-to-r from-slate-
-900 to-restev-blue-dark
-p-6 rounded-3xl text-
-white shadow-xl relative
-overflow-hidden&quot;&gt;
-&lt;div
-class=&quot;absolute -right-10
--bottom-10 opacity-10
-text-[180px] font-
-black&quot;&gt;&lt;i class=&quot;fa-solid
-fa-chart-line&quot;&gt;&lt;/i&gt;&lt;/div&gt;
-&lt;div
-class=&quot;relative z-10
-space-y-2&quot;&gt;
-&lt;span
-class=&quot;bg-restev-gold
-text-slate-950 font-black
-text-[10px] px-2.5 py-0.5
-rounded uppercase
-tracking-wider&quot;&gt;Console
-de Supervision
-Régionale&lt;/span&gt;
-&lt;h2
-class=&quot;text-2xl md:text-
-3xl font-black tracking-
-tight&quot;&gt;Vue d&#39;Ensemble
-Haute Direction&lt;/h2&gt;
-&lt;p
-class=&quot;text-slate-300
-text-xs max-w-
-xl&quot;&gt;Indicateurs clés de
-performance et de
-conformité réglementaire
-des entreprises
-adhérentes au RESTEV
-sur le département de la
-Vendée.&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;!-- COMPTEURS
-DYNAMIQUES --&gt;
-
-&lt;div class=&quot;grid
-grid-cols-1 sm:grid-cols-
-2 lg:grid-cols-4 gap-4&quot;&gt;
-&lt;div class=&quot;bg-
-white p-4 rounded-2xl
-border border-slate-200
-shadow-sm flex items-
-center space-x-4&quot;&gt;
-&lt;div class=&quot;p-
-3 bg-restev-blue/10 text-
-restev-blue rounded-xl
-text-xl&quot;&gt;&lt;i class=&quot;fa-
-solid fa-
-building&quot;&gt;&lt;/i&gt;&lt;/div&gt;
-&lt;div&gt;
-&lt;span
-class=&quot;block text-[11px]
-font-bold text-slate-400
-uppercase&quot;&gt;Sociétés
-Affiliées&lt;/span&gt;
-&lt;span
-class=&quot;text-2xl font-black
-text-slate-
-900&quot;&gt;142&lt;/span&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div class=&quot;bg-
-white p-4 rounded-2xl
-border border-slate-200
-shadow-sm flex items-
-center space-x-4&quot;&gt;
-&lt;div class=&quot;p-
-3 bg-emerald-500/10
-text-emerald-600
-rounded-xl text-xl&quot;&gt;&lt;i
-class=&quot;fa-solid fa-id-
-card-clip&quot;&gt;&lt;/i&gt;&lt;/div&gt;
-&lt;div&gt;
-&lt;span
-class=&quot;block text-[11px]
-font-bold text-slate-400
-uppercase&quot;&gt;Passeports
-Émis&lt;/span&gt;
-&lt;span
-class=&quot;text-2xl font-black
-
-text-slate-900&quot;&gt;3
-841&lt;/span&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div class=&quot;bg-
-white p-4 rounded-2xl
-border border-slate-200
-shadow-sm flex items-
-center space-x-4&quot;&gt;
-&lt;div class=&quot;p-
-3 bg-restev-magenta/10
-text-restev-magenta
-rounded-xl text-xl&quot;&gt;&lt;i
-class=&quot;fa-solid fa-shield-
-virus&quot;&gt;&lt;/i&gt;&lt;/div&gt;
-&lt;div&gt;
-&lt;span
-class=&quot;block text-[11px]
-font-bold text-slate-400
-uppercase&quot;&gt;Risques
-Endigués&lt;/span&gt;
-&lt;span
-class=&quot;text-2xl font-black
-text-slate-900&quot;&gt;92,4
-%&lt;/span&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div class=&quot;bg-
-white p-4 rounded-2xl
-border border-slate-200
-shadow-sm flex items-
-center space-x-4&quot;&gt;
-&lt;div class=&quot;p-
-3 bg-restev-gold/10 text-
-restev-gold rounded-xl
-text-xl&quot;&gt;&lt;i class=&quot;fa-
-solid fa-bolt&quot;&gt;&lt;/i&gt;&lt;/div&gt;
-&lt;div&gt;
-&lt;span
-class=&quot;block text-[11px]
-font-bold text-slate-400
-uppercase&quot;&gt;Alertes en
-cours&lt;/span&gt;
-&lt;span
-id=&quot;lbl-dir-alert-count&quot;
-class=&quot;text-2xl font-black
-
-text-slate-
-900&quot;&gt;1&lt;/span&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;!-- PARTIE
-GRAPHIQUE AVANCÉE
---&gt;
-&lt;div class=&quot;grid
-grid-cols-1 lg:grid-cols-3
-gap-6&quot;&gt;
-&lt;div class=&quot;bg-
-white p-5 rounded-2xl
-border shadow-sm
-lg:col-span-2 space-y-
-4&quot;&gt;
-&lt;h3
-class=&quot;text-xs font-
-extrabold text-slate-900
-uppercase tracking-
-wider flex items-center
-space-x-2&quot;&gt;
-&lt;i
-class=&quot;fa-solid fa-chart-
-pie text-restev-blue&quot;&gt;&lt;/i&gt;
-&lt;span&gt;Répartition
-Départementale des
-Risques
-Signalés&lt;/span&gt;
-&lt;/h3&gt;
-&lt;div class=&quot;h-
-64 flex items-center
-justify-center&quot;&gt;
-&lt;canvas
-id=&quot;chart-restev-
-risks&quot;&gt;&lt;/canvas&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;!-- LIVE FEED
-DES DERNIÈRES
-ACTIONS CLIENTS --&gt;
-&lt;div class=&quot;bg-
-white p-5 rounded-2xl
-border shadow-sm
-
-space-y-4 flex flex-col
-justify-between&quot;&gt;
-&lt;div&gt;
-&lt;h3
-class=&quot;text-xs font-
-extrabold text-slate-900
-uppercase tracking-
-wider flex items-center
-space-x-2 mb-3&quot;&gt;
-&lt;i
-class=&quot;fa-solid fa-wave-
-square text-restev-
-magenta animate-
-pulse&quot;&gt;&lt;/i&gt; &lt;span&gt;Flux
-d&#39;Activité en
-Direct&lt;/span&gt;
-&lt;/h3&gt;
-&lt;div
-id=&quot;direction-activity-
-feed&quot; class=&quot;space-y-3
-max-h-60 overflow-y-
-auto text-[11px]&quot;&gt;
-&lt;div
-class=&quot;border-l-2 border-
-emerald-500 pl-3 py-
-0.5&quot;&gt;
-&lt;p
-class=&quot;font-bold text-
-slate-800&quot;&gt;Validation
-Accueil Sécurité&lt;/p&gt;
-&lt;p
-class=&quot;text-slate-
-400&quot;&gt;Entreprise : &lt;span
-class=&quot;text-slate-600
-font-medium&quot;&gt;Bati-
-Vendée Logistique
-85&lt;/span&gt; • Il y a 2
-min&lt;/p&gt;
-&lt;/div&gt;
-&lt;div
-class=&quot;border-l-2 border-
-amber-500 pl-3 py-0.5&quot;
-id=&quot;feed-live-risk&quot;&gt;
-&lt;p
-class=&quot;font-bold text-
-slate-800&quot;&gt;Signalement
-
-Anomalie - &lt;span
-class=&quot;text-red-
-600&quot;&gt;Danger
-Critique&lt;/span&gt;&lt;/p&gt;
-&lt;p
-class=&quot;text-slate-
-400&quot;&gt;Zone : &lt;span
-class=&quot;text-slate-600
-font-medium&quot;&gt;Atelier
-B7&lt;/span&gt; • Cliché
-photo transmis&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;button
-onclick=&quot;switchScreen(&#39;scr
--auth&#39;)&quot; class=&quot;w-full bg-
-slate-900 text-white font-
-bold py-2.5 rounded-xl
-text-xs shadow
-hover:bg-slate-800
-transition text-center
-block&quot;&gt;
-Tester le
-portail d&#39;un Adhérent &lt;i
-class=&quot;fa-solid fa-arrow-
-right ml-1&quot;&gt;&lt;/i&gt;
-&lt;/button&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/section&gt;
-&lt;!--
-=================
-EC-1 : PORTAIL
-SÉCURISÉ
-ENTREPRISE
-ADHÉRENTE
-================= --
-&gt;
-&lt;section id=&quot;scr-
-auth&quot; class=&quot;screen
-max-w-md mx-auto
-space-y-6&quot;&gt;
-&lt;div class=&quot;text-
-center space-y-2&quot;&gt;
-
-&lt;h2 class=&quot;text-
-xl font-black text-slate-
-900&quot;&gt;Espace Entreprise
-Clé en main&lt;/h2&gt;
-&lt;p class=&quot;text-
-xs text-slate-
-500&quot;&gt;Chaque société
-possède son espace
-personnalisé auto-
-géré.&lt;/p&gt;
-&lt;/div&gt;
-&lt;div class=&quot;bg-
-white p-5 rounded-3xl
-border shadow-sm
-space-y-4&quot;&gt;
-&lt;div
-class=&quot;space-y-1&quot;&gt;
-&lt;label
-class=&quot;text-[10px] font-
-black uppercase text-
-slate-400&quot;&gt;Sélectionner
-un Adhérent de
-démonstration :&lt;/label&gt;
-&lt;select
-id=&quot;manager-company-
-name&quot; class=&quot;w-full p-3
-bg-slate-50 border-2
-border-slate-200
-rounded-xl text-xs font-
-bold text-slate-800
-focus:border-restev-blue
-outline-none transition&quot;&gt;
-&lt;option
-value=&quot;Bati-Vendée
-Logistique 85&quot;&gt;�� Bati-
-Vendée Logistique
-85&lt;/option&gt;
-&lt;option
-value=&quot;Manufacture
-Ouest Sables&quot;&gt;��
-Manufacture Ouest
-Sables&lt;/option&gt;
-&lt;option
-value=&quot;Agro-Alimentaire
-Yonnais&quot;&gt;�� Agro-
-
-Alimentaire
-Yonnais&lt;/option&gt;
-&lt;/select&gt;
-&lt;/div&gt;
-&lt;div
-class=&quot;space-y-1&quot;&gt;
-&lt;label
-class=&quot;text-[10px] font-
-black uppercase text-
-slate-400&quot;&gt;Identifiant de
-connexion&lt;/label&gt;
-&lt;input
-type=&quot;text&quot; class=&quot;w-full
-p-2.5 bg-slate-100
-border rounded-xl text-
-xs&quot; value=&quot;prev-
-qse@vendee.fr&quot;
-readonly&gt;
-&lt;/div&gt;
-&lt;button
-onclick=&quot;handleDemoAuth
-()&quot; class=&quot;w-full bg-
-gradient-to-r from-restev-
-blue to-restev-blue-dark
-text-white py-3 rounded-
-xl text-xs font-bold
-shadow-md
-hover:opacity-90
-transition&quot;&gt;
-Ouvrir la
-Console RH de
-l&#39;Entreprise
-&lt;/button&gt;
-&lt;/div&gt;
-&lt;/section&gt;
-&lt;!--
-=================
-EC-2 : DASHBOARD
-DU MANAGER CLIENT
-================= --
-&gt;
-&lt;section id=&quot;scr-
-manager&quot; class=&quot;screen
-max-w-4xl mx-auto
-space-y-6&quot;&gt;
-
-&lt;div class=&quot;bg-
-white p-4 rounded-2xl
-border shadow-sm flex
-flex-col sm:flex-row
-justify-between items-
-center gap-4&quot;&gt;
-&lt;div class=&quot;flex
-items-center space-x-3&quot;&gt;
-&lt;div
-class=&quot;w-3 h-3 bg-
-emerald-500 rounded-
-full animate-
-pulse&quot;&gt;&lt;/div&gt;
-&lt;h2
-class=&quot;text-sm font-black
-text-slate-900&quot;&gt;Session
-RH Active : &lt;span
-id=&quot;lbl-manager-comp-
-name&quot; class=&quot;text-
-restev-
-blue&quot;&gt;&lt;/span&gt;&lt;/h2&gt;
-&lt;/div&gt;
-&lt;button
-onclick=&quot;switchScreen(&#39;scr
--auth&#39;)&quot; class=&quot;text-xs
-bg-slate-100 font-bold
-px-3 py-1.5 text-slate-
-600 rounded-lg
-hover:bg-slate-200&quot;&gt;&lt;i
-class=&quot;fa-solid fa-right-
-from-bracket&quot;&gt;&lt;/i&gt;
-Quitter
-l&#39;espace&lt;/button&gt;
-&lt;/div&gt;
-&lt;div class=&quot;grid
-grid-cols-1 md:grid-cols-
-2 gap-6&quot;&gt;
-&lt;!-- BLOC
-GÉNÉRATEUR QR
-CODE D&#39;ACCUEIL --&gt;
-&lt;div class=&quot;bg-
-white p-5 rounded-2xl
-border shadow-sm
-space-y-4&quot;&gt;
-
-&lt;div
-class=&quot;flex items-center
-space-x-2 text-restev-
-magenta font-black text-
-xs uppercase tracking-
-wider&quot;&gt;
-&lt;i
-class=&quot;fa-solid fa-qrcode
-text-base&quot;&gt;&lt;/i&gt;
-&lt;h3&gt;Générer un
-Passeport Intégration
-Salarié&lt;/h3&gt;
-&lt;/div&gt;
-&lt;p
-class=&quot;text-xs text-slate-
-500&quot;&gt;Préparez l&#39;arrivée
-d&#39;un nouvel intérimaire
-ou CDD pour lui imposer
-son parcours de
-formation
-obligatoire.&lt;/p&gt;
-&lt;div
-class=&quot;space-y-2&quot;&gt;
-&lt;input
-type=&quot;text&quot; id=&quot;reg-emp-
-name&quot; value=&quot;Maxime
-Renault&quot;
-placeholder=&quot;Nom &amp;
-Prénom du salarié&quot;
-class=&quot;w-full p-2.5 bg-
-slate-50 border rounded-
-xl text-xs font-bold&quot;&gt;
-&lt;select
-id=&quot;reg-emp-status&quot;
-class=&quot;w-full p-2.5 bg-
-slate-50 border rounded-
-xl text-xs font-
-semibold&quot;&gt;
-&lt;option
-value=&quot;Intérimaire (Profil
-Vulnérable)&quot;&gt;Statut :
-Intérimaire (Profil
-Vulnérable)&lt;/option&gt;
-&lt;option
-value=&quot;Contrat CDD
-
-Saisonnier&quot;&gt;Statut :
-Contrat CDD
-Saisonnier&lt;/option&gt;
-&lt;option
-value=&quot;Nouvel Arrivant
-CDI&quot;&gt;Statut : Nouvel
-Arrivant CDI&lt;/option&gt;
-&lt;/select&gt;
-&lt;/div&gt;
-&lt;button
-onclick=&quot;generateDemoQ
-RCode()&quot; class=&quot;w-full
-bg-restev-magenta text-
-white py-2.5 rounded-xl
-text-xs font-bold
-shadow-md hover:bg-
-opacity-90 transition&quot;&gt;
-Générer
-l&#39;accès Smartphone
-unique
-&lt;/button&gt;
-&lt;div id=&quot;qr-
-area&quot; class=&quot;hidden flex
-flex-col items-center
-justify-center p-4 bg-
-slate-50 rounded-xl
-border border-dashed
-border-slate-200 space-
-y-3&quot;&gt;
-&lt;canvas
-id=&quot;qr-
-canvas&quot;&gt;&lt;/canvas&gt;
-&lt;button
-onclick=&quot;simulateQRScan(
-)&quot; class=&quot;bg-emerald-
-600 text-white px-4 py-2
-rounded-xl text-xs font-
-black uppercase flex
-items-center space-x-2
-shadow-lg hover:bg-
-emerald-700 transition
-w-full justify-center&quot;&gt;
-&lt;i
-class=&quot;fa-solid fa-
-
-mobile-screen animate-
-bounce&quot;&gt;&lt;/i&gt;
-&lt;span&gt;Simuler le Scan
-du Salarié&lt;/span&gt;
-&lt;/button&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;!-- ALERTES
-SUR LE SITE CLIENT --
-&gt;
-&lt;div class=&quot;bg-
-white p-5 rounded-2xl
-border shadow-sm
-space-y-4&quot;&gt;
-&lt;div
-class=&quot;flex justify-
-between items-center
-border-b pb-2&quot;&gt;
-&lt;h3
-class=&quot;font-extrabold
-text-slate-900 text-xs
-uppercase tracking-
-wider flex items-center
-space-x-2&quot;&gt;
-&lt;i
-class=&quot;fa-solid fa-bell
-text-restev-gold&quot;&gt;&lt;/i&gt;
-&lt;span&gt;Flux d&#39;Anomalies
-de vos Ateliers&lt;/span&gt;
-&lt;/h3&gt;
-&lt;span
-class=&quot;text-[9px] bg-red-
-100 font-bold px-2 py-0.5
-rounded text-red-
-700&quot;&gt;Sécurité RLS
-Active&lt;/span&gt;
-&lt;/div&gt;
-&lt;div
-id=&quot;manager-risk-box&quot;
-class=&quot;space-y-3 max-h-
-72 overflow-y-auto&quot;&gt;
-&lt;!--
-Alimenté en temps réel
-par JS --&gt;
-
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/section&gt;
-&lt;!--
-=================
-EC-3 : PARCOURS DU
-SALARIÉ EN MOBILITE
-BYOD
-================= --
-&gt;
-&lt;section id=&quot;scr-
-employee&quot;
-class=&quot;screen max-w-
-md mx-auto space-y-4&quot;&gt;
-&lt;div class=&quot;bg-
-gradient-to-br from-slate-
-900 to-restev-blue text-
-white p-5 rounded-3xl
-shadow-lg space-y-2
-relative overflow-
-hidden&quot;&gt;
-&lt;span
-class=&quot;bg-restev-gold
-text-slate-950 text-[9px]
-font-black px-2 py-0.5
-rounded uppercase
-tracking-
-widest&quot;&gt;Parcours
-d&#39;Accueil
-Obligatoire&lt;/span&gt;
-&lt;h2 class=&quot;text-
-xl font-black&quot; id=&quot;lbl-
-emp-welcome&quot;&gt;Bonjour
-!&lt;/h2&gt;
-&lt;p class=&quot;text-
-xs text-slate-200&quot; id=&quot;lbl-
-emp-
-company&quot;&gt;Chargement..
-.&lt;/p&gt;
-&lt;/div&gt;
-&lt;div class=&quot;bg-
-white p-4 rounded-2xl
-
-border shadow-sm
-space-y-3&quot;&gt;
-&lt;h3 class=&quot;text-
-xs font-black uppercase
-text-slate-400&quot;&gt;Vos
-actions prioritaires
-:&lt;/h3&gt;
-&lt;button
-onclick=&quot;switchScreen(&#39;scr
--onboarding-1&#39;)&quot;
-class=&quot;w-full bg-slate-50
-p-3.5 border rounded-xl
-text-left flex items-center
-space-x-3 hover:bg-
-slate-100/50 transition&quot;&gt;
-&lt;div
-class=&quot;w-9 h-9 bg-
-restev-blue/10 text-
-restev-blue rounded-full
-flex items-center justify-
-center text-base&quot;&gt;&lt;i
-class=&quot;fa-solid fa-book-
-open-reader&quot;&gt;&lt;/i&gt;&lt;/div&gt;
-&lt;div
-class=&quot;flex-1&quot;&gt;
-&lt;p
-class=&quot;text-xs font-bold
-text-slate-800&quot;&gt;1.
-Prendre connaissance
-des risques&lt;/p&gt;
-&lt;p
-class=&quot;text-[10px] text-
-slate-400&quot;&gt;Évaluation
-obligatoire avant prise
-de poste.&lt;/p&gt;
-&lt;/div&gt;
-&lt;i class=&quot;fa-
-solid fa-chevron-right
-text-slate-300 text-
-xs&quot;&gt;&lt;/i&gt;
-&lt;/button&gt;
-&lt;button
-onclick=&quot;switchScreen(&#39;scr
--report&#39;)&quot; class=&quot;w-full
-
-bg-slate-50 p-3.5 border
-rounded-xl text-left flex
-items-center space-x-3
-hover:bg-slate-100/50
-transition&quot;&gt;
-&lt;div
-class=&quot;w-9 h-9 bg-
-restev-magenta/10 text-
-restev-magenta
-rounded-full flex items-
-center justify-center text-
-base&quot;&gt;&lt;i class=&quot;fa-solid
-fa-camera&quot;&gt;&lt;/i&gt;&lt;/div&gt;
-&lt;div
-class=&quot;flex-1&quot;&gt;
-&lt;p
-class=&quot;text-xs font-bold
-text-slate-800&quot;&gt;2.
-Signaler un Danger
-Immédiat&lt;/p&gt;
-&lt;p
-class=&quot;text-[10px] text-
-slate-400&quot;&gt;Remontée
-photo avec Analyse
-Assistée.&lt;/p&gt;
-&lt;/div&gt;
-&lt;i class=&quot;fa-
-solid fa-chevron-right
-text-slate-300 text-
-xs&quot;&gt;&lt;/i&gt;
-&lt;/button&gt;
-&lt;/div&gt;
-&lt;/section&gt;
-&lt;!--
-=================
-EC-4 : MODULE
-SIGNALEMENT DE
-RISQUE AVEC
-SIMULATION IA
-================= --
-&gt;
-&lt;section id=&quot;scr-
-report&quot; class=&quot;screen
-max-w-md mx-auto bg-
-white p-5 rounded-3xl
-
-border shadow-sm
-space-y-4&quot;&gt;
-&lt;h3 class=&quot;text-
-base font-black text-
-slate-900 flex items-
-center space-x-2&quot;&gt;&lt;i
-class=&quot;fa-solid fa-
-camera text-restev-
-magenta&quot;&gt;&lt;/i&gt;
-&lt;span&gt;Alerte Danger
-Terrain&lt;/span&gt;&lt;/h3&gt;
-&lt;div class=&quot;space-
-y-1&quot;&gt;
-&lt;label
-class=&quot;block text-xs font-
-bold text-slate-
-700&quot;&gt;Prendre un cliché
-terrain :&lt;/label&gt;
-&lt;div class=&quot;flex
-flex-col items-center
-justify-center w-full
-border-2 border-dashed
-border-slate-300
-rounded-2xl bg-slate-50
-p-4 relative cursor-
-pointer min-h-[140px]
-group overflow-hidden&quot;&gt;
-&lt;input
-type=&quot;file&quot; id=&quot;risk-file&quot;
-accept=&quot;image/*&quot;
-capture=&quot;environment&quot;
-onchange=&quot;triggerAISca
-nSimulation(this)&quot;
-class=&quot;absolute inset-0
-opacity-0 cursor-pointer
-w-full h-full z-10&quot;&gt;
-&lt;!-- SCAN
-LOADER SIMULÉ --&gt;
-&lt;div id=&quot;ai-
-loader&quot; class=&quot;hidden
-absolute inset-0 bg-
-slate-900/90 z-30 flex
-flex-col items-center
-
-justify-center text-white
-space-y-2&quot;&gt;
-&lt;i
-class=&quot;fa-solid fa-circle-
-notch fa-spin text-2xl
-text-restev-teal&quot;&gt;&lt;/i&gt;
-&lt;span
-class=&quot;text-[10px] font-
-mono tracking-widest
-text-restev-teal font-bold
-uppercase animate-
-pulse&quot;&gt;RESTEV Vision
-AI Engine...&lt;/span&gt;
-&lt;span
-class=&quot;text-[9px] text-
-slate-400&quot;&gt;Détection
-d&#39;anomalies de sol
-active&lt;/span&gt;
-&lt;/div&gt;
-&lt;div
-id=&quot;photo-placeholder&quot;
-class=&quot;text-center
-space-y-1&quot;&gt;
-&lt;div
-class=&quot;w-10 h-10 bg-
-white shadow rounded-
-full flex items-center
-justify-center text-slate-
-500 mx-auto group-
-hover:scale-110
-transition&quot;&gt;
-&lt;i
-class=&quot;fa-solid fa-
-camera text-base text-
-restev-blue&quot;&gt;&lt;/i&gt;
-&lt;/div&gt;
-&lt;span
-class=&quot;block text-xs font-
-bold text-slate-
-700&quot;&gt;Ouvrir l&#39;appareil
-photo&lt;/span&gt;
-&lt;span
-class=&quot;block text-[10px]
-text-slate-400&quot;&gt;Cliquez
-
-pour simuler le
-déclenchement&lt;/span&gt;
-&lt;/div&gt;
-&lt;img
-id=&quot;photo-preview&quot;
-class=&quot;w-full h-36 object-
-cover rounded-xl hidden
-border relative z-20&quot;
-alt=&quot;Preuve image&quot;&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div class=&quot;space-
-y-1&quot;&gt;
-&lt;label
-class=&quot;block text-xs font-
-bold text-slate-
-700&quot;&gt;Localisation métier
-simplifiée :&lt;/label&gt;
-&lt;select id=&quot;risk-
-location&quot; class=&quot;w-full p-
-2.5 bg-slate-50 border
-rounded-xl text-xs font-
-bold text-slate-700&quot;&gt;
-&lt;option
-value=&quot;Atelier B7
-(Usinage)&quot;&gt;�� Atelier B7
-(Usinage)&lt;/option&gt;
-&lt;option
-value=&quot;Zone de
-Stockage / Réserve
-Générale&quot;&gt;�� Zone de
-Stockage / Réserve
-Générale&lt;/option&gt;
-&lt;option
-value=&quot;Parking Salariés
-&amp; Zone de Fret&quot;&gt;��
-Parking Salariés &amp; Zone
-de Fret&lt;/option&gt;
-&lt;option
-value=&quot;Quais
-d&#39;Expédition /
-Réception&quot;&gt;�� Quais
-d&#39;Expédition /
-Réception&lt;/option&gt;
-
-&lt;option
-value=&quot;Bureaux
-Administratifs R+1&quot;&gt;��
-Bureaux Administratifs
-R+1&lt;/option&gt;
-&lt;/select&gt;
-&lt;/div&gt;
-&lt;div class=&quot;space-
-y-1&quot;&gt;
-&lt;label
-class=&quot;block text-xs font-
-bold text-slate-
-700&quot;&gt;Gravité constatée
-:&lt;/label&gt;
-&lt;select id=&quot;risk-
-level&quot; class=&quot;w-full p-2.5
-bg-slate-50 border
-rounded-xl text-xs font-
-bold text-red-600&quot;&gt;
-&lt;option
-value=&quot;Critique
-��&quot;&gt;Danger Critique
-(Intervention
-Immédiate)&lt;/option&gt;
-&lt;option
-value=&quot;Modéré
-��&quot;&gt;Alerte Modérée
-(Traitement sous
-24h)&lt;/option&gt;
-&lt;/select&gt;
-&lt;/div&gt;
-&lt;div class=&quot;space-
-y-1&quot;&gt;
-&lt;label
-class=&quot;block text-xs font-
-bold text-slate-
-700&quot;&gt;Description
-textuelle :&lt;/label&gt;
-&lt;textarea
-id=&quot;risk-desc&quot; rows=&quot;2&quot;
-class=&quot;w-full p-2 bg-
-slate-50 border rounded-
-xl text-xs font-
-medium&quot;&gt;Fuite massive
-
-de liquide glissant
-constaté à la sortie de la
-ligne de découpe
-principale.&lt;/textarea&gt;
-&lt;/div&gt;
-&lt;div class=&quot;grid
-grid-cols-2 gap-2&quot;&gt;
-&lt;button
-type=&quot;button&quot;
-onclick=&quot;switchScreen(&#39;s
-cr-employee&#39;)&quot;
-class=&quot;bg-slate-100 text-
-slate-600 py-2 rounded-
-xl text-xs font-
-bold&quot;&gt;Annuler&lt;/button&gt;
-&lt;button
-type=&quot;button&quot;
-onclick=&quot;submitDemoRis
-kReport()&quot; class=&quot;bg-
-restev-magenta text-
-white py-2 rounded-xl
-text-xs font-bold
-shadow-
-md&quot;&gt;Transmettre
-l&#39;alerte&lt;/button&gt;
-&lt;/div&gt;
-&lt;/section&gt;
-&lt;!--
-=================
-EC-5 : QUIZ ET
-RÈGLES DE SÉCURITÉ
-================= --
-&gt;
-&lt;section id=&quot;scr-
-onboarding-1&quot;
-class=&quot;screen max-w-
-md mx-auto bg-white p-5
-rounded-3xl border
-shadow-sm space-y-4&quot;&gt;
-&lt;span class=&quot;text-
-[10px] font-black text-
-restev-blue uppercase
-tracking-widest
-block&quot;&gt;Étape de
-
-Contrôle
-Obligatoire&lt;/span&gt;
-&lt;h3 class=&quot;text-
-base font-black text-
-slate-900&quot;&gt;Charte de
-Prévention des
-Risques&lt;/h3&gt;
-&lt;div class=&quot;space-
-y-2 text-xs text-slate-
-600&quot;&gt;
-&lt;div class=&quot;p-3
-bg-slate-50 rounded-xl
-border-l-4 border-restev-
-blue&quot;&gt;
-&lt;p
-class=&quot;font-bold text-
-slate-900&quot;&gt;Règle 1 :
-Équipements
-obligatoires&lt;/p&gt;
-&lt;p&gt;Le port de
-vos chaussures de
-sécurité et du gilet
-haute-visibilité est
-obligatoire dès l&#39;accès
-au site.&lt;/p&gt;
-&lt;/div&gt;
-&lt;div class=&quot;p-3
-bg-slate-50 rounded-xl
-border-l-4 border-restev-
-magenta&quot;&gt;
-&lt;p
-class=&quot;font-bold text-
-slate-900&quot;&gt;Règle 2 :
-Signalement
-immédiat&lt;/p&gt;
-&lt;p&gt;Tout
-incident, presqu&#39;accident
-ou anomalie doit être
-remonté par l&#39;application
-en moins de 15
-minutes.&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-
-&lt;div
-class=&quot;border-t pt-3
-space-y-2&quot;&gt;
-&lt;label
-class=&quot;block text-xs font-
-bold text-slate-
-700&quot;&gt;QCM : À quel
-moment devez-vous
-porter vos EPI ?&lt;/label&gt;
-&lt;label
-class=&quot;flex items-center
-space-x-2 bg-slate-50 p-
-2.5 rounded-xl text-xs
-cursor-pointer&quot;&gt;&lt;input
-type=&quot;radio&quot; checked
-name=&quot;q1&quot; class=&quot;text-
-restev-blue&quot;&gt; &lt;span
-class=&quot;font-
-medium&quot;&gt;Dès la prise
-de poste de manière
-continue&lt;/span&gt;&lt;/label&gt;
-&lt;label
-class=&quot;flex items-center
-space-x-2 bg-slate-50 p-
-2.5 rounded-xl text-xs
-cursor-pointer&quot;&gt;&lt;input
-type=&quot;radio&quot; name=&quot;q1&quot;
-class=&quot;text-restev-blue&quot;&gt;
-&lt;span class=&quot;font-
-medium&quot;&gt;Uniquement
-lors des opérations à
-haut
-risque&lt;/span&gt;&lt;/label&gt;
-&lt;/div&gt;
-&lt;button
-onclick=&quot;switchScreen(&#39;scr
--signature&#39;)&quot; class=&quot;w-
-full bg-restev-blue text-
-white py-2.5 rounded-xl
-text-xs font-bold
-shadow&quot;&gt;
-Valider et passer
-à l&#39;émargement
-&lt;/button&gt;
-&lt;/section&gt;
-
-&lt;!--
-=================
-EC-6 : ÉMARGEMENT
-ET SIGNATURES
-TACTILES
-================= --
-&gt;
-&lt;section id=&quot;scr-
-signature&quot; class=&quot;screen
-max-w-md mx-auto bg-
-white p-5 rounded-3xl
-border shadow-sm
-space-y-4&quot;&gt;
-&lt;h3 class=&quot;text-
-base font-black text-
-slate-900 text-
-center&quot;&gt;Clôture des
-engagements
-Sécurité&lt;/h3&gt;
-&lt;div class=&quot;space-
-y-3&quot;&gt;
-&lt;div&gt;
-&lt;label
-class=&quot;block text-[11px]
-font-bold text-slate-600
-mb-1&quot;&gt;Signature
-Numérique du Salarié
-:&lt;/label&gt;
-&lt;div
-class=&quot;border rounded-xl
-bg-slate-50 overflow-
-hidden&quot;&gt;&lt;canvas
-id=&quot;canv-employee&quot;
-class=&quot;w-full bg-slate-
-100&quot;
-height=&quot;90&quot;&gt;&lt;/canvas&gt;&lt;
-/div&gt;
-&lt;button
-type=&quot;button&quot;
-onclick=&quot;clearCanvas(&#39;c
-anv-employee&#39;)&quot;
-class=&quot;text-[10px] text-
-slate-400
-
-underline&quot;&gt;Effacer le
-tracé&lt;/button&gt;
-&lt;/div&gt;
-&lt;div&gt;
-&lt;input
-type=&quot;text&quot; id=&quot;tutor-
-name&quot; value=&quot;M.
-Vigneron (Tuteur
-Référent)&quot; class=&quot;w-full
-p-2 bg-slate-50 border
-rounded-xl text-xs mb-
-1.5 font-bold&quot;&gt;
-&lt;label
-class=&quot;block text-[11px]
-font-bold text-slate-600
-mb-1&quot;&gt;Signature du
-Tuteur / Responsable de
-site :&lt;/label&gt;
-&lt;div
-class=&quot;border rounded-xl
-bg-slate-50 overflow-
-hidden&quot;&gt;&lt;canvas
-id=&quot;canv-tutor&quot; class=&quot;w-
-full bg-slate-100&quot;
-height=&quot;90&quot;&gt;&lt;/canvas&gt;&lt;
-/div&gt;
-&lt;button
-type=&quot;button&quot;
-onclick=&quot;clearCanvas(&#39;c
-anv-tutor&#39;)&quot; class=&quot;text-
-[10px] text-slate-400
-underline&quot;&gt;Effacer le
-tracé&lt;/button&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;button
-type=&quot;button&quot;
-onclick=&quot;finalizeDemoAtt
-estation()&quot; class=&quot;w-full
-bg-emerald-600 text-
-white py-2.5 rounded-xl
-text-xs font-bold
-shadow-md hover:bg-
-emerald-700 transition&quot;&gt;
-
-Générer
-l&#39;Attestation Officielle
-Probante
-&lt;/button&gt;
-&lt;/section&gt;
-&lt;!--
-=================
-EC-7 : PROCES-
-VERBAL JURIDIQUE
-PRÊT POUR
-L&#39;IMPRESSION
-================= --
-&gt;
-&lt;section id=&quot;scr-
-attestation&quot;
-class=&quot;screen max-w-lg
-mx-auto bg-white p-6
-rounded-3xl shadow-xl
-border-2 border-
-emerald-500 space-y-
-6&quot;&gt;
-&lt;div class=&quot;text-
-center space-y-1 no-
-print&quot;&gt;
-&lt;div class=&quot;w-
-12 h-12 bg-emerald-100
-text-emerald-600
-rounded-full flex items-
-center justify-center text-
-xl mx-auto&quot;&gt;&lt;i class=&quot;fa-
-solid fa-file-
-signature&quot;&gt;&lt;/i&gt;&lt;/div&gt;
-&lt;h3 class=&quot;text-
-base font-black text-
-slate-900&quot;&gt;Procès-
-Verbal de Validation
-Sécurité&lt;/h3&gt;
-&lt;p class=&quot;text-
-xs text-slate-
-500&quot;&gt;Document généré
-en totale conformité
-avec l&#39;Article L4141-
-2.&lt;/p&gt;
-&lt;/div&gt;
-
-&lt;!-- LE
-DOCUMENT PREUVE --
-&gt;
-&lt;div
-class=&quot;border-2 border-
-slate-900 p-4 rounded-xl
-space-y-4 text-xs bg-
-white print-view&quot;
-id=&quot;print-area&quot;&gt;
-&lt;div class=&quot;flex
-justify-between items-
-center border-b pb-2&quot;&gt;
-&lt;span
-class=&quot;font-mono text-
-[9px] text-slate-400&quot;&gt;ID
-Preuve : RE-85-
-PASSPORT-
-2026&lt;/span&gt;
-&lt;span
-class=&quot;bg-slate-900 text-
-white font-mono font-
-bold px-2 py-0.5 rounded
-text-[9px]&quot;&gt;CONFORME
-RGPD&lt;/span&gt;
-&lt;/div&gt;
-&lt;h4 class=&quot;text-
-center font-black
-uppercase text-slate-900
-text-xs tracking-
-wide&quot;&gt;Attestation
-d&#39;Accueil Sécurité
-Renforcée&lt;/h4&gt;
-&lt;div class=&quot;grid
-grid-cols-2 gap-2 text-
-[11px] pt-1&quot;&gt;
-&lt;p&gt;&lt;strong&gt;Bénéficiaire
-:&lt;/strong&gt; &lt;span id=&quot;lbl-
-view-emp&quot;&gt;Maxime
-Renault&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Structure
-d&#39;accueil :&lt;/strong&gt;
-&lt;span id=&quot;lbl-view-
-company&quot;&gt;Bati-Vendée
-
-Logistique
-85&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Statut légal
-:&lt;/strong&gt; &lt;span id=&quot;lbl-
-view-status&quot; class=&quot;text-
-restev-blue font-
-bold&quot;&gt;Intérimaire&lt;/span
-&gt;&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;Tuteur
-agréé :&lt;/strong&gt; &lt;span
-id=&quot;lbl-view-tutor&quot;&gt;M.
-Vigneron&lt;/span&gt;&lt;/p&gt;
-&lt;p class=&quot;col-
-span-2&quot;&gt;&lt;strong&gt;Date
-de Certification
-:&lt;/strong&gt; &lt;span id=&quot;lbl-
-view-date&quot; class=&quot;font-
-mono text-slate-
-600&quot;&gt;12/06/2026&lt;/span
-&gt;&lt;/p&gt;
-&lt;/div&gt;
-&lt;div class=&quot;bg-
-emerald-50 p-2.5
-rounded-lg text-[10px]
-text-emerald-800 font-
-medium border border-
-emerald-200&quot;&gt;
-&lt;i class=&quot;fa-
-solid fa-circle-
-check&quot;&gt;&lt;/i&gt; Le candidat
-a répondu avec succès à
-l&#39;ensemble des
-questions d&#39;assimilation
-des risques inhérents à
-son poste de travail.
-&lt;/div&gt;
-&lt;div class=&quot;grid
-grid-cols-2 gap-4 pt-3
-border-t&quot;&gt;
-&lt;div
-class=&quot;text-center&quot;&gt;
-&lt;span
-class=&quot;block text-[10px]
-font-bold text-slate-500
-
-mb-1&quot;&gt;Visa Salarié
-:&lt;/span&gt;
-&lt;img
-id=&quot;img-render-emp&quot;
-class=&quot;h-12 mx-auto
-object-contain bg-slate-
-50 border rounded p-1&quot;
-alt=&quot;Visa Salarié&quot;&gt;
-&lt;/div&gt;
-&lt;div
-class=&quot;text-center&quot;&gt;
-&lt;span
-class=&quot;block text-[10px]
-font-bold text-slate-500
-mb-1&quot;&gt;Visa
-Représentant :&lt;/span&gt;
-&lt;img
-id=&quot;img-render-tutor&quot;
-class=&quot;h-12 mx-auto
-object-contain bg-slate-
-50 border rounded p-1&quot;
-alt=&quot;Visa Tuteur&quot;&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;div class=&quot;grid
-grid-cols-1 gap-2 no-
-print&quot;&gt;
-&lt;button
-onclick=&quot;window.print()&quot;
-class=&quot;w-full bg-slate-
-900 text-white py-2.5
-rounded-xl text-xs font-
-bold flex items-center
-justify-center space-x-2
-shadow hover:bg-slate-
-800 transition&quot;&gt;
-&lt;i class=&quot;fa-
-solid fa-print&quot;&gt;&lt;/i&gt;
-&lt;span&gt;Lancer
-l&#39;Impression / Export
-PDF&lt;/span&gt;
-&lt;/button&gt;
-&lt;button
-onclick=&quot;switchScreen(&#39;scr
-
--direction&#39;)&quot; class=&quot;w-full
-bg-slate-100 text-slate-
-600 py-2.5 rounded-xl
-text-xs font-bold border
-text-center&quot;&gt;
-Retourner au
-Tableau de Bord
-RESTEV
-&lt;/button&gt;
-&lt;/div&gt;
-&lt;/section&gt;
-&lt;/main&gt;
-&lt;!--
-=================
-ARCHITECTURE DE
-CALCUL DE LA DEMO
-(EN-MÉMOIRE)
-================= --
-&gt;
-&lt;script&gt;
-let
-currentSelectedCompany
-= &quot;Bati-Vendée
-Logistique 85&quot;;
-let candidateProfile =
-{ name: &quot;Maxime
-Renault&quot;, status:
-&quot;Intérimaire (Profil
-Vulnérable)&quot; };
-let localRisksDB = [
-{
-id: 101,
-company: &quot;Bati-
-Vendée Logistique 85&quot;,
-employee:
-&quot;Lucas M.&quot;,
-description:
-&quot;Obstruction majeure
-des voies d&#39;évacuation
-par des palettes de fret
-non filmées.&quot;,
-
-location: &quot;Zone
-de Stockage / Réserve
-Générale&quot;,
-severity:
-&quot;Critique ��&quot;,
-photo:
-&quot;https://images.unsplash.c
-om/photo-
-1586528116300-
-48520ef355ec?w=500&quot;
-}
-];
-// --- CONTRÔLE
-DES ÉCRANS ---
-function
-switchScreen(screenId) {
-document.querySelectorAl
-l(&#39;.screen&#39;).forEach(scr
-=&gt;
-scr.classList.remove(&#39;acti
-ve&#39;));
-const target =
-document.getElementById
-(screenId);
-if (target) {
-target.classList.add(&#39;active
-&#39;);
-window.scrollTo(0, 0);
-}
-showToast(&quot;Navigation :
-&quot; + screenId.replace(&#39;scr-
-&#39;, &#39;&#39;).toUpperCase());
-}
-function
-showToast(text) {
-const toast =
-document.getElementById
-(&#39;toast&#39;);
-document.getElementById
-(&#39;toast-text&#39;).innerText =
-text;
-toast.className =
-&quot;fixed bottom-4 right-4
-bg-slate-900 text-white
-
-text-xs py-3 px-4
-rounded-xl shadow-2xl
-z-50 transition-all
-transform translate-y-0
-opacity-100 flex items-
-center space-x-2 border
-border-slate-700&quot;;
-setTimeout(() =&gt; {
-toast.className
-= &quot;fixed bottom-4 right-4
-bg-slate-900 text-white
-text-xs py-3 px-4
-rounded-xl shadow-2xl
-z-50 transition-all
-transform translate-y-20
-opacity-0 flex items-
-center space-x-2 border
-border-slate-700&quot;;
-}, 2500);
-}
-// ---
-AUTHENTIFICATION
-SIMULÉE ADHÉRENT --
--
-function
-handleDemoAuth() {
-currentSelectedCompany
-=
-document.getElementBy
-Id(&#39;manager-company-
-name&#39;).value;
-document.getElementById
-(&#39;lbl-manager-comp-
-name&#39;).innerText =
-currentSelectedCompan
-y;
-renderCompanyRisks();
-switchScreen(&#39;scr-
-manager&#39;);
-}
-function
-simulateDirectEmployeeA
-ccess() {
-document.getElementById
-
-(&#39;lbl-emp-
-welcome&#39;).innerText =
-&quot;Bonjour &quot; +
-candidateProfile.name +
-&quot; !&quot;;
-document.getElementById
-(&#39;lbl-emp-
-company&#39;).innerText =
-&quot;Parcours rattaché à : &quot;
-+
-currentSelectedCompan
-y;
-switchScreen(&#39;scr-
-employee&#39;);
-}
-// --- GÉNÉRATION &amp;
-SCAN QR CODE ---
-function
-generateDemoQRCode()
-{
-const nameInput =
-document.getElementById
-(&#39;reg-emp-name&#39;).value;
-const statusSelect
-=
-document.getElementBy
-Id(&#39;reg-emp-
-status&#39;).value;
-if(!nameInput)
-return
-showToast(&quot;Veuillez
-entrer un nom !&quot;);
-candidateProfile.name =
-nameInput;
-candidateProfile.status =
-statusSelect;
-const qrCanvas =
-document.getElementById
-(&#39;qr-canvas&#39;);
-const
-mockPayload =
-JSON.stringify({ name:
-candidateProfile.name,
-
-company:
-currentSelectedCompan
-y });
-QRCode.toCanvas(qrCan
-vas, mockPayload, {
-width: 160, margin: 1 },
-function (error) {
-if (error)
-console.error(error);
-document.getElementById
-(&#39;qr-
-area&#39;).classList.remove(&#39;
-hidden&#39;);
-showToast(&quot;Passeport
-QR généré avec succès
-!&quot;);
-});
-}
-function
-simulateQRScan() {
-showToast(&quot;Scan
-smartphone détecté !
-Synchro BYOD
-réussie.&quot;);
-setTimeout(() =&gt; {
-simulateDirectEmployeeA
-ccess();
-}, 800);
-}
-// --- MODULE
-APPAREIL PHOTO &amp;
-INTELLIGENCE
-ARTIFICIELLE ---
-function
-triggerAIScanSimulation(in
-put) {
-const loader =
-document.getElementById
-(&#39;ai-loader&#39;);
-const placeholder
-=
-document.getElementBy
-Id(&#39;photo-placeholder&#39;);
-
-const preview =
-document.getElementById
-(&#39;photo-preview&#39;);
-loader.classList.remove(&#39;hi
-dden&#39;);
-setTimeout(() =&gt; {
-loader.classList.add(&#39;hidde
-n&#39;);
-placeholder.classList.add(&#39;
-hidden&#39;);
-preview.classList.remove(&#39;
-hidden&#39;);
-// Image par
-défaut si aucun fichier
-réel n&#39;est fourni durant le
-test
-if (input.files &amp;&amp;
-input.files[0]) {
-const reader
-= new FileReader();
-reader.onload
-= function(e) {
-preview.src =
-e.target.result; }
-reader.readAsDataURL(in
-put.files[0]);
-} else {
-preview.src =
-&quot;https://images.unsplash.c
-om/photo-1532634922-
-8fe0b757fb13?w=500&quot;;
-}
-document.getElementById
-(&#39;risk-desc&#39;).value =
-&quot;[Vision AI] Détection
-d&#39;une anomalie critique
-au sol. Substance
-glissante épanchée de
-type huileuse.&quot;;
-showToast(&quot;Analyse
-prédictive IA complétée
-!&quot;);
-
-}, 1800);
-}
-// ---
-TRANSMISSION DU
-SIGNALEMENT ---
-function
-submitDemoRiskReport()
-{
-const desc =
-document.getElementById
-(&#39;risk-desc&#39;).value;
-const loc =
-document.getElementById
-(&#39;risk-location&#39;).value;
-const level =
-document.getElementById
-(&#39;risk-level&#39;).value;
-const previewImg
-=
-document.getElementBy
-Id(&#39;photo-preview&#39;).src;
-const newRisk = {
-id: Date.now(),
-company:
-currentSelectedCompany,
-employee:
-candidateProfile.name,
-description:
-desc,
-location: loc,
-severity: level,
-photo:
-previewImg ||
-&quot;https://images.unsplash
-.com/photo-
-1532634922-
-8fe0b757fb13?w=500&quot;
-};
-localRisksDB.unshift(new
-Risk);
-
-// Notification et
-mise à jour des
-interfaces globales
-document.getElementById
-(&#39;lbl-dir-alert-
-count&#39;).innerText =
-localRisksDB.length;
-// Injection
-dynamique dans le flux
-d&#39;activité Direction
-const feed =
-document.getElementById
-(&#39;direction-activity-feed&#39;);
-const alertItem =
-document.createElement(&#39;
-div&#39;);
-alertItem.className =
-&quot;border-l-2 border-red-
-500 pl-3 py-0.5 animate-
-bounce&quot;;
-alertItem.innerHTML =
-`&lt;p class=&quot;font-bold text-
-slate-800&quot;&gt;Alerte Terrain
-- ${level}&lt;/p&gt;
-&lt;p
-class=&quot;text-slate-
-400&quot;&gt;Société : &lt;span
-class=&quot;text-slate-600
-font-
-medium&quot;&gt;${currentSelec
-tedCompany}&lt;/span&gt; •
-À l&#39;instant&lt;/p&gt;`;
-feed.insertBefore(alertItem
-, feed.firstChild);
-renderCompanyRisks();
-showToast(&quot;Alerte
-synchronisée avec le
-serveur RESTEV !&quot;);
-switchScreen(&#39;scr-
-employee&#39;);
-}
-// --- CONSOLE RH
-CLIENT : MISE À JOUR
-
-DU TABLEAU DES
-RISQUES ---
-function
-renderCompanyRisks() {
-const container =
-document.getElementById
-(&#39;manager-risk-box&#39;);
-container.innerHTML =
-&quot;&quot;;
-const filtered =
-localRisksDB.filter(r =&gt;
-r.company ===
-currentSelectedCompan
-y);
-if(filtered.length
-=== 0) {
-container.innerHTML =
-&quot;&lt;p class=&#39;text-xs text-
-slate-400 py-4 text-
-center&#39;&gt;Aucune
-anomalie signalée sur
-vos secteurs.&lt;/p&gt;&quot;;
-return;
-}
-filtered.forEach(r
-=&gt; {
-const card =
-document.createElement(&#39;
-div&#39;);
-card.className
-= &quot;p-3 bg-slate-50
-rounded-xl border flex
-gap-3 items-center&quot;;
-card.innerHTML
-= `
-&lt;img
-src=&quot;${r.photo}&quot;
-class=&quot;w-12 h-12 object-
-cover rounded-lg border
-shadow-sm&quot;&gt;
-&lt;div
-class=&quot;flex-1 text-
-[11px]&quot;&gt;
-
-&lt;div
-class=&quot;flex justify-
-between font-bold text-
-slate-900&quot;&gt;
-&lt;span&gt;${r.location}&lt;/span
-&gt;
-&lt;span
-class=&quot;text-red-
-600&quot;&gt;${r.severity}&lt;/span
-&gt;
-&lt;/div&gt;
-&lt;p
-class=&quot;text-slate-600 mt-
-0.5 line-clamp-
-2&quot;&gt;${r.description}&lt;/p&gt;
-&lt;p
-class=&quot;text-[9px] text-
-slate-400 mt-1&quot;&gt;Par :
-${r.employee} • ID:
-#${r.id.toString().slice(-
-4)}&lt;/p&gt;
-&lt;/div&gt;
-`;
-container.appendChild(car
-d);
-});
-}
-// --- LOGIQUE DE
-SIGNATURES
-TACTILES ---
-const canvasProfiles
-= [&#39;canv-employee&#39;,
-&#39;canv-tutor&#39;];
-const canvasCtxs =
-{};
-window.onload =
-function() {
-canvasProfiles.forEach(id
-=&gt; {
-const canv =
-document.getElementById
-(id);
-if(canv) {
-
-const ctx =
-canv.getContext(&#39;2d&#39;);
-canvasCtxs[id] = ctx;
-ctx.strokeStyle =
-&#39;#1e293b&#39;;
-ctx.lineWidth
-= 2.5;
-ctx.lineCap =
-&#39;round&#39;;
-let drawing =
-false;
-// Mouse
-Events
-canv.addEventListener(&#39;m
-ousedown&#39;, () =&gt;
-drawing = true);
-canv.addEventListener(&#39;m
-ouseup&#39;, () =&gt; { drawing
-= false; ctx.beginPath();
-});
-canv.addEventListener(&#39;m
-ousemove&#39;, (e) =&gt;
-draw(e, canv, ctx,
-drawing));
-// Touch
-Events
-canv.addEventListener(&#39;to
-uchstart&#39;, (e) =&gt; {
-drawing = true;
-e.preventDefault(); });
-canv.addEventListener(&#39;to
-uchend&#39;, () =&gt; { drawing
-= false; ctx.beginPath();
-});
-canv.addEventListener(&#39;to
-uchmove&#39;, (e) =&gt;
-drawTouch(e, canv, ctx,
-drawing));
-}
-});
-
-// Initialisation
-Graphique Global
-(ChartJS)
-const ctxChart =
-document.getElementById
-(&#39;chart-restev-
-risks&#39;).getContext(&#39;2d&#39;);
-new
-Chart(ctxChart, {
-type: &#39;doughnut&#39;,
-data: {
-labels:
-[&#39;Risques Mécaniques&#39;,
-&#39;Substances Chimiques&#39;,
-&#39;Chutes &amp; Sols&#39;, &#39;Risques
-Routiers&#39;],
-datasets: [{
-data: [35,
-20, 30, 15],
-backgroundColor:
-[&#39;#2f6bb2&#39;, &#39;#b8257b&#39;,
-&#39;#69b3a5&#39;, &#39;#f2a104&#39;],
-borderWidth: 2
-}]
-},
-options: {
-responsive:
-true,
-maintainAspectRatio:
-false,
-plugins: {
-legend: { position:
-&#39;bottom&#39;, labels: {
-boxWidth: 12, font: {
-size: 10 } } } }
-}
-});
-};
-function draw(e,
-canvas, ctx, drawing) {
-if (!drawing) return;
-const rect =
-canvas.getBoundingClient
-Rect();
-
-currentSelectedCompany;
-document.getElementById
-(&#39;lbl-view-
-status&#39;).innerText =
-candidateProfile.status;
-document.getElementById
-(&#39;lbl-view-tutor&#39;).innerText
-=
-document.getElementBy
-Id(&#39;tutor-name&#39;).value;
-// Formatage de la
-date du jour
-const today = new
-Date();
-document.getElementById
-(&#39;lbl-view-date&#39;).innerText
-=
-today.toLocaleDateStrin
-g(&#39;fr-FR&#39;) + &quot; à &quot; +
-today.toLocaleTimeStrin
-g(&#39;fr-FR&#39;, {hour: &#39;2-digit&#39;,
-minute:&#39;2-digit&#39;});
-// Conversion des
-tracés de signatures en
-images figées
-document.getElementById
-(&#39;img-render-emp&#39;).src =
-document.getElementBy
-Id(&#39;canv-
-employee&#39;).toDataURL();
-document.getElementById
-(&#39;img-render-tutor&#39;).src =
-document.getElementBy
-Id(&#39;canv-
-tutor&#39;).toDataURL();
-switchScreen(&#39;scr-
-attestation&#39;);
-}
-&lt;/script&gt;
-&lt;/body&gt;
-&lt;/html&gt;
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RESTEV 85 - Hub Multi-Entreprises (PST 2026-2030)</title>
+    <meta name="theme-color" content="#2f6bb2">
+
+    <!-- Bibliothèques Externes -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'restev-blue': '#2f6bb2',
+                        'restev-blue-dark': '#224d80',
+                        'restev-magenta': '#b8257b',
+                        'restev-magenta-dark': '#911d61',
+                        'restev-teal': '#69b3a5',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .screen { display: none; }
+        .screen.active { display: block; }
+        canvas { touch-action: none; border-radius: 12px; }
+        @media print {
+            body { background: white; color: black; }
+            header, button, .no-print, form { display: none !important; }
+            .screen { display: none !important; }
+            #scr-attestation { display: block !important; border: none !important; box-shadow: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen pb-12">
+
+    <!-- HEADER GLOBAL -->
+    <header class="bg-gradient-to-r from-restev-blue to-restev-blue-dark text-white p-4 shadow-md sticky top-0 z-50 flex justify-between items-center">
+        <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-shield-halved text-2xl text-restev-teal"></i>
+            <div>
+                <h1 class="font-black text-sm tracking-tight sm:text-lg">RESTEV 85</h1>
+                <p id="lbl-global-company" class="text-[9px] opacity-80 uppercase tracking-wider">Multi-Entreprises Pro</p>
+            </div>
+        </div>
+        <span id="role-badge" class="bg-white/20 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">Public</span>
+    </header>
+
+    <main class="p-4 max-w-md mx-auto space-y-4">
+
+        <!-- ================= SCR 1 : CHOIX DU PROFIL ================= -->
+        <section id="scr-auth" class="screen active space-y-6 pt-2">
+            <div class="text-center space-y-2">
+                <div class="inline-block bg-restev-blue/10 text-restev-blue rounded-full px-3 py-1 text-xs font-bold uppercase">SaaS Multi-Sociétés</div>
+                <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Portail Sécurité Renforcée</h2>
+                <p class="text-xs text-slate-500">Conforme Art. L4141-2. Choisissez votre profil pour continuer.</p>
+            </div>
+            <div class="grid grid-cols-1 gap-4">
+                <button onclick="switchScreen('scr-login-manager')" class="bg-white border-2 border-restev-magenta hover:bg-restev-magenta/5 p-5 rounded-2xl shadow-sm text-left transition flex items-center justify-between group">
+                    <div>
+                        <span class="block text-xs font-bold uppercase tracking-wider text-restev-magenta">Accès Sécurisé</span>
+                        <span class="block text-base font-bold text-slate-800">Espace Manager / Tuteur</span>
+                    </div>
+                    <i class="fa-solid fa-building-shield text-xl text-restev-magenta group-hover:scale-110 transition"></i>
+                </button>
+
+                <button onclick="setRole('employee')" class="bg-white border-2 border-restev-blue hover:bg-restev-blue/5 p-5 rounded-2xl shadow-sm text-left transition flex items-center justify-between group">
+                    <div>
+                        <span class="block text-xs font-bold uppercase tracking-wider text-restev-blue">Scan requis</span>
+                        <span class="block text-base font-bold text-slate-800">Espace Salarié / Intérimaire</span>
+                    </div>
+                    <i class="fa-solid fa-user-check text-xl text-restev-blue group-hover:scale-110 transition"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- ================= SCR 1B : CONNEXION / INSCRIPTION MANAGER ================= -->
+        <section id="scr-login-manager" class="screen space-y-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+            <h3 id="auth-title" class="text-lg font-bold text-slate-900">Connexion Entreprise</h3>
+            
+            <div class="space-y-3">
+                <div id="register-only-fields" class="hidden space-y-3">
+                    <input type="text" id="manager-company-name" placeholder="Nom de votre Entreprise (ex: Restev Logistique)" class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs">
+                </div>
+                <input type="email" id="manager-email" placeholder="Adresse e-mail professionnelle" class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs">
+                <input type="password" id="manager-password" placeholder="Mot de passe" class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs">
+            </div>
+
+            <button id="btn-primary-auth" onclick="handleAuth()" class="w-full bg-restev-magenta text-white py-2.5 rounded-xl text-xs font-bold shadow-md">Se connecter</button>
+            
+            <div class="text-center pt-2">
+                <button id="btn-toggle-auth" onclick="toggleAuthMode()" class="text-xs text-restev-blue font-semibold underline">Pas encore de compte ? Créer un espace Société</button>
+            </div>
+            <button onclick="switchScreen('scr-auth')" class="w-full text-center text-xs text-slate-400 font-medium pt-2"><i class="fa-solid fa-arrow-left"></i> Retour</button>
+        </section>
+
+        <!-- ================= SCR 2 : DASHBOARD MANAGER ================= -->
+        <section id="scr-manager" class="screen space-y-4">
+            <div class="flex justify-between items-center">
+                <h2 class="text-base font-bold text-slate-900"><i class="fa-solid fa-circle-user text-restev-magenta"></i> Console <span id="lbl-manager-comp-name">Entreprise</span></h2>
+                <button onclick="logout()" class="text-xs text-red-500 font-semibold"><i class="fa-solid fa-sign-out-alt"></i> Quitter</button>
+            </div>
+
+            <!-- Générateur de QR Code -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 space-y-3">
+                <div class="flex items-center space-x-2 text-restev-magenta font-bold text-xs">
+                    <i class="fa-solid fa-qrcode"></i>
+                    <h3>Créer une fiche d'accueil Salarié</h3>
+                </div>
+                <input type="text" id="reg-emp-name" placeholder="Nom & Prénom du salarié" class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs">
+                <select id="reg-emp-status" class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs">
+                    <option value="Intérimaire">Statut : Intérimaire (Public Vulnérable)</option>
+                    <option value="CDD">Statut : CDD</option>
+                    <option value="CDI">Statut : CDI</option>
+                </select>
+                <button onclick="generateEmployeeAccess()" class="w-full bg-restev-magenta text-white py-2.5 rounded-xl text-xs font-bold shadow-md">Générer le QR Code d'Intégration</button>
+                <div id="qr-area" class="hidden flex flex-col items-center justify-center p-4 bg-slate-50 rounded-xl border border-dashed border-slate-300 space-y-2">
+                    <canvas id="qr-canvas"></canvas>
+                    <p class="text-[10px] text-center text-slate-500 max-w-[200px] mt-1">Faites scanner ce code au salarié à son arrivée.</p>
+                </div>
+            </div>
+
+            <!-- Flux des risques -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 space-y-3">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-slate-900 text-xs flex items-center space-x-2">
+                        <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+                        <span>Alertes Risques Déclenchées</span>
+                    </h3>
+                    <button onclick="loadRisksInManagerPanel()" class="text-[10px] bg-slate-100 text-slate-700 px-2 py-1 rounded border"><i class="fa-solid fa-sync"></i></button>
+                </div>
+                <div id="manager-risk-box" class="space-y-3 max-h-60 overflow-y-auto pr-1 text-xs text-slate-500">
+                    Chargement des données exclusives de votre entreprise...
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SCR 3 : DASHBOARD SALARIÉ ================= -->
+        <section id="scr-employee" class="screen space-y-4">
+            <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-5 rounded-2xl shadow-lg space-y-2">
+                <span class="bg-restev-teal text-slate-900 text-[9px] font-black px-2 py-0.5 rounded uppercase">Session d'Intégration Active</span>
+                <h2 class="text-lg font-bold" id="lbl-emp-welcome">Bonjour !</h2>
+                <p class="text-xs text-slate-300" id="lbl-emp-company">Scannez un QR code pour commencer...</p>
+            </div>
+
+            <div class="grid grid-cols-1 gap-3">
+                <button onclick="switchScreen('scr-onboarding-1')" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center space-x-3 text-left hover:bg-slate-50 transition">
+                    <div class="w-10 h-10 rounded-full bg-restev-blue/10 text-restev-blue flex items-center justify-center text-lg shrink-0"><i class="fa-solid fa-graduation-cap"></i></div>
+                    <div>
+                        <h4 class="font-bold text-xs text-slate-800">1. Accueil & Validation Sécurité</h4>
+                        <p class="text-[11px] text-slate-500">Obligatoire dès le premier jour de travail.</p>
+                    </div>
+                </button>
+
+                <button onclick="switchScreen('scr-report')" class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center space-x-3 text-left hover:bg-slate-50 transition">
+                    <div class="w-10 h-10 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center text-lg shrink-0"><i class="fa-solid fa-camera"></i></div>
+                    <div>
+                        <h4 class="font-bold text-xs text-slate-800">2. Signaler une anomalie / Risque</h4>
+                        <p class="text-[11px] text-slate-500">Remontée terrain d'urgence avec photo.</p>
+                    </div>
+                </button>
+            </div>
+        </section>
+
+        <!-- ================= SCR 4 : CONSIGNES DE SÉCURITÉ ================= -->
+        <section id="scr-onboarding-1" class="screen space-y-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+            <span class="text-[10px] font-bold text-restev-blue uppercase tracking-wider">Étape 1 / 2</span>
+            <h3 class="text-base font-bold text-slate-900">Vos Obligations de Sécurité</h3>
+            <div class="space-y-3 pt-1">
+                <div class="bg-slate-50 p-3 rounded-xl border-l-4 border-restev-blue flex items-start space-x-2">
+                    <i class="fa-solid fa-hard-hat text-restev-blue text-base mt-0.5"></i>
+                    <p class="text-xs text-slate-600"><strong>Équipements (EPI) :</strong> Vos chaussures de sécurité et vos protections doivent être portées de manière ininterrompue.</p>
+                </div>
+            </div>
+            <button onclick="switchScreen('scr-onboarding-2')" class="w-full bg-restev-blue text-white py-2.5 rounded-xl text-xs font-bold shadow-md">Passer au test de contrôle</button>
+        </section>
+
+        <!-- ================= SCR 5 : QUIZ ================= -->
+        <section id="scr-onboarding-2" class="screen space-y-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+            <h3 class="text-base font-bold text-slate-900">Vérification des Acquis</h3>
+            <form id="quiz-form" class="space-y-4">
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-bold text-slate-700">1. Quand devez-vous porter vos EPI ?</label>
+                    <label class="flex items-center space-x-2 bg-slate-50 p-2.5 rounded-xl text-xs"><input type="radio" name="q1" value="1" class="text-restev-blue"> <span>Dès l'embauche et durant toute l'activité</span></label>
+                    <label class="flex items-center space-x-2 bg-slate-50 p-2.5 rounded-xl text-xs"><input type="radio" name="q1" value="0" class="text-restev-blue"> <span>Seulement en présence d'un danger apparent</span></label>
+                </div>
+                <button type="button" onclick="switchScreen('scr-signature')" class="w-full bg-restev-teal text-white py-2.5 rounded-xl text-xs font-bold shadow-md">Valider et Signer</button>
+            </form>
+        </section>
+
+        <!-- ================= SCR 6 : EMAGEMENT ================= -->
+        <section id="scr-signature" class="screen space-y-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+            <h3 class="text-base font-bold text-slate-900">Émargement Électronique Obligatoire</h3>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Signature du Salarié :</label>
+                    <div class="border rounded-xl bg-slate-100 overflow-hidden"><canvas id="canv-employee" class="w-full" height="100"></canvas></div>
+                    <button type="button" onclick="clearCanvas('canv-employee')" class="text-[10px] text-slate-400 underline mt-0.5">Effacer</button>
+                </div>
+                <div>
+                    <input type="text" id="tutor-name" placeholder="Nom & Prénom du tuteur" class="w-full p-2 bg-slate-50 border rounded-xl text-xs mb-1.5">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Signature du Tuteur / Manager :</label>
+                    <div class="border rounded-xl bg-slate-100 overflow-hidden"><canvas id="canv-tutor" class="w-full" height="100"></canvas></div>
+                    <button type="button" onclick="clearCanvas('canv-tutor')" class="text-[10px] text-slate-400 underline mt-0.5">Effacer</button>
+                </div>
+            </div>
+            <button type="button" onclick="finalizeAttestation()" class="w-full bg-emerald-600 text-white py-2.5 rounded-xl text-xs font-bold shadow-md">Clôturer et Enregistrer l'Attestation</button>
+        </section>
+
+        <!-- ================= SCR 7 : ACCUSÉ ATTESTATION ================= -->
+        <section id="scr-attestation" class="screen space-y-4 bg-white p-5 rounded-2xl shadow-md border-2 border-emerald-500">
+            <div class="text-center space-y-1">
+                <div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-xl mx-auto"><i class="fa-solid fa-circle-check"></i></div>
+                <h3 class="text-base font-black text-slate-900">Attestation Validée</h3>
+                <p class="text-[11px] text-slate-500">Le procès-verbal a été téléversé avec succès dans le passeport prévention de l'entreprise.</p>
+            </div>
+            <div class="border p-3 rounded-xl bg-slate-50 text-[11px] space-y-1 font-medium">
+                <p><strong>Salarié :</strong> <span id="lbl-view-emp">-</span></p>
+                <p><strong>Entreprise :</strong> <span id="lbl-view-company">-</span></p>
+                <p><strong>Tuteur :</strong> <span id="lbl-view-tutor">-</span></p>
+                <p><strong>Date d'Émission :</strong> <span id="lbl-view-date">-</span></p>
+            </div>
+            <button onclick="location.reload()" class="w-full bg-slate-900 text-white py-2.5 rounded-xl text-xs font-bold no-print">Fermer la session d'accueil</button>
+        </section>
+
+        <!-- ================= SCR 8 : SIGNALEMENT DE RISQUE (REDESIGN APPAREIL PHOTO & GÉOLOC MÉTIER) ================= -->
+        <section id="scr-report" class="screen space-y-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+            <h3 class="text-base font-bold text-slate-900 flex items-center space-x-2"><i class="fa-solid fa-camera text-amber-500"></i> <span>Alerte Danger Immédiat</span></h3>
+            
+            <!-- REDESIGN APPAREIL PHOTO STYLE DEVICE INTEGRATED -->
+            <div class="space-y-1">
+                <label class="block text-xs font-bold text-slate-700">Prendre un cliché terrain :</label>
+                <div class="flex flex-col items-center justify-center w-full border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 p-4 hover:bg-slate-100 transition relative cursor-pointer group">
+                    <input type="file" id="risk-file" accept="image/*" capture="environment" onchange="previewRiskPhoto(this)" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
+                    <div id="photo-placeholder" class="text-center space-y-1 py-2">
+                        <div class="w-10 h-10 bg-white shadow rounded-full flex items-center justify-center text-slate-500 mx-auto group-hover:scale-110 transition">
+                            <i class="fa-solid fa-camera text-base"></i>
+                        </div>
+                        <span class="block text-[11px] text-slate-500 font-bold">Déclencher l'objectif photo</span>
+                        <span class="block text-[9px] text-slate-400">Compatible Smartphone & BYOD</span>
+                    </div>
+                    <img id="photo-preview" class="w-full h-32 object-cover rounded-lg hidden border relative z-20" alt="Preuve image">
+                </div>
+            </div>
+
+            <!-- REDESIGN GÉOLOCALISATION MÉTIER LISIBLE -->
+            <div class="space-y-1">
+                <label class="block text-xs font-bold text-slate-700"><i class="fa-solid fa-map-pin text-red-500"></i> Localisation précise sur le site :</label>
+                <select id="risk-location" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700">
+                    <option value="Atelier B7">📍 Atelier B7</option>
+                    <option value="Zone de Stockage / Réserve">📍 Zone de Stockage / Réserve</option>
+                    <option value="Zone d'Expédition / Quais">📍 Zone d'Expédition / Quais</option>
+                    <option value="Parking Personnel & Visiteurs">📍 Parking Personnel & Visiteurs</option>
+                    <option value="Bureaux Administratifs">📍 Bureaux Administratifs</option>
+                    <option value="Ligne de Production Principale">📍 Ligne de Production Principale</option>
+                    <option value="Autre (Préciser dans la description)">📍 Autre zone (À détailler ci-dessous)</option>
+                </select>
+            </div>
+
+            <div class="space-y-1">
+                <label class="block text-xs font-bold text-slate-700">Gravité constaté :</label>
+                <select id="risk-level" class="w-full p-2 bg-slate-50 border rounded-xl text-xs font-bold">
+                    <option value="Modéré 🟠">Modéré (Action requise sous 24h)</option>
+                    <option value="Critique 🔴">Danger Critique (Intervention Immédiate)</option>
+                </select>
+            </div>
+
+            <div class="space-y-1">
+                <label class="block text-xs font-bold text-slate-700">Description du danger :</label>
+                <textarea id="risk-desc" rows="2" placeholder="Détaillez le problème (ex: Fuite d'huile au sol, éclairage défaillant...)" class="w-full p-2 bg-slate-50 border rounded-xl text-xs"></textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-1">
+                <button type="button" onclick="switchScreen('scr-employee')" class="bg-slate-100 text-slate-600 py-2 rounded-xl text-xs font-bold">Annuler</button>
+                <button type="button" onclick="saveRiskReport()" class="bg-amber-500 text-white py-2 rounded-xl text-xs font-bold shadow-md">Transmettre l'alerte</button>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Instance Supabase partagée - Version SaaS automatique
+        const SUPABASE_URL = "https://hrxnksbmugavmqiftckk.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhyeG5rc2JtdWdhdm1xaWZ0Y2trIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyMjExOTUsImV4cCI6MjA5Njc5NzE5NX0.TMKdNbyvq8WKHJ6f0fq2DGgmpU0dnE9RvqBk1bgPDWc";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let activeCanvas = {}; let ctxCanvas = {}; let isDrawing = false;
+        let base64Photo = "";
+        let isRegisterMode = false;
+        
+        let currentEmployeeData = { name: "Anonyme", status: "Intérimaire", company_id: null, company_name: "Inconnue" };
+
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId === 'scr-signature') { initCanvas('canv-employee'); initCanvas('canv-tutor'); }
+        }
+
+        function setRole(role) {
+            const badge = document.getElementById('role-badge');
+            if(role === 'employee') {
+                badge.innerText = "Salarié";
+                badge.className = "bg-restev-blue text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase";
+                switchScreen('scr-employee');
+            }
+        }
+
+        function toggleAuthMode() {
+            isRegisterMode = !isRegisterMode;
+            document.getElementById('auth-title').innerText = isRegisterMode ? "Créer un espace Entreprise" : "Connexion Entreprise";
+            document.getElementById('btn-primary-auth').innerText = isRegisterMode ? "Créer mon compte" : "Se connecter";
+            document.getElementById('btn-toggle-auth').innerText = isRegisterMode ? "Déjà inscrit ? Connectez votre société" : "Pas encore de compte ? Créer un espace Société";
+            document.getElementById('register-only-fields').classList.toggle('hidden', !isRegisterMode);
+        }
+
+        // DOUBLE AUTOMATISATION AUTHENTIFICATION (SaaS AUTOMATIQUE)
+        async function handleAuth() {
+            const email = document.getElementById('manager-email').value.trim();
+            const password = document.getElementById('manager-password').value.trim();
+            const companyName = document.getElementById('manager-company-name').value.trim();
+
+            if(!email || !password) return alert("Veuillez renseigner vos identifiants.");
+
+            if (isRegisterMode) {
+                if(!companyName) return alert("Le nom de l'entreprise est obligatoire pour formater les données.");
+                // 1. Inscription Auth
+                const { data: authData, error: authError } = await supabaseClient.auth.signUp({ email, password });
+                if(authError) return alert(authError.message);
+                
+                // 2. Liaison Profil Entreprise
+                await supabaseClient.from('profiles').insert([{ id: authData.user.id, company_name: companyName }]);
+                alert("Compte Société créé ! Connexion en cours...");
+            }
+
+            // Connexion d'établissement
+            const { data: logData, error: logError } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if(logError) return alert(logError.message);
+
+            // Récupération automatique du nom d'entreprise
+            const { data: prof } = await supabaseClient.from('profiles').select('company_name').eq('id', logData.user.id).single();
+            
+            document.getElementById('role-badge').innerText = "Manager";
+            document.getElementById('role-badge').className = "bg-restev-magenta text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase";
+            document.getElementById('lbl-manager-comp-name').innerText = prof.company_name;
+            document.getElementById('lbl-global-company').innerText = prof.company_name;
+            
+            loadRisksInManagerPanel();
+            switchScreen('scr-manager');
+        }
+
+        async function logout() {
+            await supabaseClient.auth.signOut();
+            document.getElementById('lbl-global-company').innerText = "Multi-Entreprises Pro";
+            document.getElementById('role-badge').innerText = "Public";
+            document.getElementById('role-badge').className = "bg-white/20 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase";
+            switchScreen('scr-auth');
+        }
+
+        // GENERATION AUTOMATIQUE SANS URL BRUTE (L'ID Entreprise provient de la session active)
+        async function generateEmployeeAccess() {
+            const name = document.getElementById('reg-emp-name').value.trim();
+            const stat = document.getElementById('reg-emp-status').value;
+            if(!name) return alert("Saisissez le nom complet de l'arrivant.");
+
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            const { data: prof } = await supabaseClient.from('profiles').select('company_name').eq('id', user.id).single();
+
+            const cleanUrl = window.location.href.split('?')[0];
+            const link = `${cleanUrl}?empName=${encodeURIComponent(name)}&empStat=${encodeURIComponent(stat)}&cId=${user.id}&cName=${encodeURIComponent(prof.company_name)}`;
+            
+            document.getElementById('qr-area').classList.remove('hidden');
+            QRCode.toCanvas(document.getElementById('qr-canvas'), link, { width: 140, margin: 1 });
+        }
+
+        // REDESIGN APPAREIL PHOTO PHOTO
+        function previewRiskPhoto(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    base64Photo = e.target.result;
+                    document.getElementById('photo-preview').src = base64Photo;
+                    document.getElementById('photo-preview').classList.remove('hidden');
+                    document.getElementById('photo-placeholder').classList.add('hidden');
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // REMONTÉE AVEC LOCALISATION LISIBLE EN APPARTENANCE ENTREPRISE
+        async function saveRiskReport() {
+            const desc = document.getElementById('risk-desc').value.trim();
+            if(!desc) return alert("Veuillez synthétiser le danger constaté.");
+
+            const item = {
+                employee: currentEmployeeData.name,
+                company_id: currentEmployeeData.company_id, // Filtrage SaaS strict
+                company_name: currentEmployeeData.company_name,
+                description: desc,
+                severity: document.getElementById('risk-level').value,
+                photo: base64Photo,
+                location_text: document.getElementById('risk-location').value // Localisation lisible (ex: Atelier B7)
+            };
+
+            const { error } = await supabaseClient.from('risks').insert([item]);
+            if(error) return alert(error.message);
+
+            alert("Danger signalé avec succès ! Envoyé sur la console de votre tuteur.");
+            document.getElementById('risk-desc').value = "";
+            document.getElementById('photo-preview').classList.add('hidden');
+            document.getElementById('photo-placeholder').classList.remove('hidden');
+            base64Photo = "";
+            switchScreen('scr-employee');
+        }
+
+        // CHARGEMENT FILTRÉ SUR L'ENTREPRISE CONNECTÉE
+        async function loadRisksInManagerPanel() {
+            const box = document.getElementById('manager-risk-box');
+            box.innerHTML = "<div class='text-center py-2'><i class='fa-solid fa-spinner fa-spin'></i> Extraction sécurisée...</div>";
+
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            
+            // Requête filtrée par l'ID de l'entreprise connectée uniquement
+            const { data, error } = await supabaseClient.from('risks')
+                .select('*')
+                .eq('company_id', user.id)
+                .order('id', { ascending: false });
+
+            if(error || !data || data.length === 0) { box.innerHTML = "Aucun signalement actif sur vos secteurs."; return; }
+
+            box.innerHTML = "";
+            data.forEach(r => {
+                let img = r.photo ? `<img src="${r.photo}" class="w-full h-32 object-cover rounded-xl mt-2 border">` : '';
+                box.innerHTML += `
+                    <div class="bg-slate-50 p-3 rounded-xl border text-[11px] space-y-1">
+                        <div class="flex justify-between font-bold">
+                            <span class="text-slate-900">${r.employee}</span>
+                            <span class="text-red-600 bg-white border px-1 rounded text-[9px]">${r.severity}</span>
+                        </div>
+                        <p class="text-restev-blue font-bold text-[10px]"><i class="fa-solid fa-location-dot"></i> Zone : ${r.location_text}</p>
+                        <p class="text-slate-600 bg-white p-2 rounded border border-dashed mt-1">${r.description}</p>
+                        ${img}
+                    </div>`;
+            });
+        }
+
+        // CANVA SIGNATURES
+        function initCanvas(id) {
+            const canvas = document.getElementById(id); canvas.width = canvas.parentElement.clientWidth;
+            const ctx = canvas.getContext('2d'); ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.strokeStyle = '#000';
+            activeCanvas[id] = canvas; ctxCanvas[id] = ctx;
+            const getMousePos = (e) => {
+                let r = canvas.getBoundingClientRect();
+                return { x: (e.touches ? e.touches[0].clientX : e.clientX) - r.left, y: (e.touches ? e.touches[0].clientY : e.clientY) - r.top };
+            };
+            const start = (e) => { e.preventDefault(); isDrawing = true; let p = getMousePos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); };
+            const move = (e) => { if(!isDrawing) return; e.preventDefault(); let p = getMousePos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
+            canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); window.addEventListener('mouseup', () => isDrawing = false);
+            canvas.addEventListener('touchstart', start, {passive:false}); canvas.addEventListener('touchmove', move, {passive:false}); window.addEventListener('touchend', () => isDrawing = false);
+        }
+        function clearCanvas(id) { if(ctxCanvas[id]) ctxCanvas[id].clearRect(0,0,activeCanvas[id].width,activeCanvas[id].height); }
+
+        async function finalizeAttestation() {
+            const data = {
+                employee: currentEmployeeData.name,
+                company_name: currentEmployeeData.company_name,
+                company_id: currentEmployeeData.company_id,
+                tutor: document.getElementById('tutor-name').value || "Tuteur Référent",
+                date: new Date().toLocaleDateString('fr-FR')
+            };
+
+            document.getElementById('lbl-view-emp').innerText = data.employee;
+            document.getElementById('lbl-view-company').innerText = data.company_name;
+            document.getElementById('lbl-view-tutor').innerText = data.tutor;
+            document.getElementById('lbl-view-date').innerText = data.date;
+
+            switchScreen('scr-attestation');
+        }
+
+        // CAPTURE DU PARAMETRE MULTI-ENTREPRISE ENTRANT
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if(urlParams.get('empName') && urlParams.get('cId')) {
+                currentEmployeeData.name = urlParams.get('empName');
+                currentEmployeeData.status = urlParams.get('empStat') || "Intérimaire";
+                currentEmployeeData.company_id = urlParams.get('cId');
+                currentEmployeeData.company_name = urlParams.get('cName');
+
+                document.getElementById('lbl-global-company').innerText = currentEmployeeData.company_name;
+                document.getElementById('lbl-emp-welcome').innerText = "Bonjour " + currentEmployeeData.name;
+                document.getElementById('lbl-emp-company').innerText = `Intégration chez : ${currentEmployeeData.company_name} (${currentEmployeeData.status})`;
+                
+                setRole('employee');
+            }
+        };
+    </script>
+</body>
+</html>
