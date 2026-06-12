@@ -54,7 +54,7 @@
     <header class="bg-white border-b border-slate-100 py-3 px-4 shadow-sm no-print sticky top-0 z-40 backdrop-blur-md bg-white/95">
         <div class="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
             <div class="flex items-center cursor-pointer transition hover:opacity-90" onclick="clearUrlParamsAndHome()">
-                <img src="logo.png" alt="Logo RESTEV 85" class="h-12 md:h-14 w-auto object-contain">
+                <div class="font-black text-xl text-restev-blue tracking-tight">RESTEV <span class="text-restev-magenta">85</span></div>
             </div>
             <div class="text-center sm:text-right flex items-center gap-2">
                 <span class="bg-restev-gold-light text-restev-gold border border-restev-gold/20 font-extrabold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
@@ -425,10 +425,12 @@
         // CONFIGURATION SUPABASE - REMPLACE PAR TES PROPRES CLÉS DE PROJET
         const SUPABASE_URL = "https://swgaezpjlaacqutogmvb.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3Z2FlenBqbGFhY3F1dG9nbXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwODc2MjEsImV4cCI6MjA5NjY2MzYyMX0.Wf7gA8P9VnVCfqYGMxIE6Ovg4LjZf9qBL4gmdXHJ-DA";
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // CORRECTION DE L'INITIALISATION GLOBALE ICI :
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let currentSelectedCompany = "Bati-Vendée Logistique 85";
-        let currentEmployeeProfile = { name: "Salarié non configuré", status: "Nouvel Arrivant" };
+        let currentEmployeeProfile = { name: "Collaborateur Externe", status: "Parcours Standard" };
         let base64UploadedPhoto = ""; 
         let currentGPSCoords = "En attente...";
         
@@ -511,8 +513,9 @@
             currentEmployeeProfile.name = name;
             currentEmployeeProfile.status = status;
             
-            const baseUrl = "https://yohannlehazif-wq.github.io/-prevention-mobile/";
-            const targetWebUrl = `${baseUrl}?emp=${encodeURIComponent(name)}&comp=${encodeURIComponent(currentSelectedCompany)}&status=${encodeURIComponent(status)}`;
+            // Récupère l'adresse web actuelle du projet de façon dynamique
+            const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            const targetWebUrl = `${cleanUrl}?emp=${encodeURIComponent(name)}&comp=${encodeURIComponent(currentSelectedCompany)}&status=${encodeURIComponent(status)}`;
             
             document.getElementById('qr-area').classList.remove('hidden');
             QRCode.toCanvas(document.getElementById('qr-canvas'), targetWebUrl, { 
@@ -520,7 +523,7 @@
                 margin: 1,
                 color: { dark: '#1e4575', light: '#ffffff' }
             });
-            showToast("QR Code GitHub Pages synchronisé.");
+            showToast("QR Code d'accès généré.");
         }
 
         // --- GESTION DES ZONES AVEC SUPABASE ---
@@ -536,15 +539,18 @@
         }
 
         async function fetchCompanyZones() {
-            const { data, error } = await supabase
-                .from('company_zones')
-                .select('zone_name')
-                .eq('company_name', currentSelectedCompany);
+            try {
+                const { data, error } = await supabase
+                    .from('company_zones')
+                    .select('zone_name')
+                    .eq('company_name', currentSelectedCompany);
 
-            if (error) return console.error("Erreur Supabase lors du chargement des secteurs :", error);
-            
-            corporateZonesDB[currentSelectedCompany] = data.map(item => item.zone_name);
-            renderManagerZonesList();
+                if (error) throw error;
+                corporateZonesDB[currentSelectedCompany] = data.map(item => item.zone_name);
+                renderManagerZonesList();
+            } catch (err) {
+                console.error("Erreur de chargement des secteurs :", err.message);
+            }
         }
 
         function renderManagerZonesList() {
@@ -569,15 +575,18 @@
             if (!zoneName) return alert("Veuillez saisir un nom d'atelier ou de zone.");
             if (corporateZonesDB[currentSelectedCompany]?.includes(zoneName)) return alert("Ce secteur existe déjà.");
 
-            const { error } = await supabase
-                .from('company_zones')
-                .insert([{ company_name: currentSelectedCompany, zone_name: zoneName }]);
+            try {
+                const { error } = await supabase
+                    .from('company_zones')
+                    .insert([{ company_name: currentSelectedCompany, zone_name: zoneName }]);
 
-            if (error) return alert("Impossible d'enregistrer la zone : " + error.message);
-
-            input.value = "";
-            await fetchCompanyZones();
-            showToast("Zone ajoutée au catalogue d'usine.");
+                if (error) throw error;
+                input.value = "";
+                await fetchCompanyZones();
+                showToast("Zone ajoutée au catalogue d'usine.");
+            } catch (err) {
+                alert("Impossible d'enregistrer la zone : " + err.message);
+            }
         }
 
         function buildZoneDropdownOptions() {
@@ -614,48 +623,55 @@
                 photo: base64UploadedPhoto
             };
             
-            const { error } = await supabase.from('risk_reports').insert([newReport]);
-            if (error) return alert("Erreur lors de l'envoi du signalement : " + error.message);
+            try {
+                const { error } = await supabase.from('risk_reports').insert([newReport]);
+                if (error) throw error;
 
-            document.getElementById('risk-desc').value = "";
-            document.getElementById('photo-preview').classList.add('hidden');
-            document.getElementById('photo-placeholder').classList.remove('hidden');
-            base64UploadedPhoto = "";
+                document.getElementById('risk-desc').value = "";
+                document.getElementById('photo-preview').classList.add('hidden');
+                document.getElementById('photo-placeholder').classList.remove('hidden');
+                base64UploadedPhoto = "";
 
-            showToast("Signalement géolocalisé envoyé.");
-            switchScreen('scr-employee');
+                showToast("Signalement géolocalisé envoyé.");
+                switchScreen('scr-employee');
+            } catch (err) {
+                alert("Erreur lors de l'envoi du signalement : " + err.message);
+            }
         }
 
         async function refreshManagerRiskView() {
             const box = document.getElementById('manager-risk-box');
-            
-            const { data: filtered, error } = await supabase
-                .from('risk_reports')
-                .select('*')
-                .eq('company', currentSelectedCompany)
-                .order('created_at', { ascending: false });
+            try {
+                const { data: filtered, error } = await supabase
+                    .from('risk_reports')
+                    .select('*')
+                    .eq('company', currentSelectedCompany)
+                    .order('created_at', { ascending: false });
 
-            if (error) return console.error("Erreur lors du chargement des alertes :", error);
+                if (error) throw error;
 
-            if(!filtered || filtered.length === 0) {
-                box.innerHTML = `<p class="text-center py-8 text-slate-400 text-[11px] italic">Aucune anomalie signalée.</p>`;
-                return;
+                if(!filtered || filtered.length === 0) {
+                    box.innerHTML = `<p class="text-center py-8 text-slate-400 text-[11px] italic">Aucune anomalie signalée.</p>`;
+                    return;
+                }
+                box.innerHTML = "";
+                filtered.forEach(r => {
+                    let imgHtml = r.photo ? `<img src="${r.photo}" class="w-full h-32 object-cover rounded-xl border border-slate-100 mt-2">` : "";
+                    box.innerHTML += `
+                    <div class="bg-white p-4 rounded-xl border border-slate-100 text-[11px] space-y-1.5 shadow-sm">
+                        <div class="flex justify-between font-bold items-center">
+                            <span class="text-slate-900 font-extrabold">${r.employee}</span>
+                            <span class="text-red-600 bg-red-50 px-2 py-0.5 rounded text-[9px] font-black">${r.severity}</span>
+                        </div>
+                        <p class="text-slate-500"><i class="fa-solid fa-folder mr-1"></i> ${r.category}</p>
+                        <p class="text-restev-blue font-bold"><i class="fa-solid fa-location-dot text-restev-magenta mr-1"></i> ${r.location}</p>
+                        <p class="text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100 mt-1">${r.description}</p>
+                        ${imgHtml}
+                    </div>`;
+                });
+            } catch (err) {
+                console.error("Erreur lors du chargement des alertes :", err.message);
             }
-            box.innerHTML = "";
-            filtered.forEach(r => {
-                let imgHtml = r.photo ? `<img src="${r.photo}" class="w-full h-32 object-cover rounded-xl border border-slate-100 mt-2">` : "";
-                box.innerHTML += `
-                <div class="bg-white p-4 rounded-xl border border-slate-100 text-[11px] space-y-1.5 shadow-sm">
-                    <div class="flex justify-between font-bold items-center">
-                        <span class="text-slate-900 font-extrabold">${r.employee}</span>
-                        <span class="text-red-600 bg-red-50 px-2 py-0.5 rounded text-[9px] font-black">${r.severity}</span>
-                    </div>
-                    <p class="text-slate-500"><i class="fa-solid fa-folder mr-1"></i> ${r.category}</p>
-                    <p class="text-restev-blue font-bold"><i class="fa-solid fa-location-dot text-restev-magenta mr-1"></i> ${r.location}</p>
-                    <p class="text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100 mt-1">${r.description}</p>
-                    ${imgHtml}
-                </div>`;
-            });
         }
 
         // --- CARTOGRAPHIE ET AUTRES FONCTIONS ---
