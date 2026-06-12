@@ -1,12 +1,3 @@
-Salut yoyo ! Ton code de base est franchement propre. L'UI avec les variables CSS, le splash screen animé et les couleurs Bootstrap personnalisées, ça donne déjà un aspect très professionnel.
-
-Pour que cette application remplisse parfaitement son rôle d'outil de pilotage à la fois pour les **employeurs** et de terrain pour les **techniciens**, j'ai fusionné mes suggestions (mode hors-ligne, double lecture Employeur/Technicien, retour haptique du scanner) directement en utilisant ton architecture (Bootstrap 5 et tes classes personnalisées).
-
-J'ai également terminé proprement la page "Compatibilité des Stockages" qui était coupée, et j'ai ajouté la logique JavaScript en bas pour que tout soit fonctionnel.
-
-Tu peux copier-coller ce bloc de code entier (il remplace ton fichier complet) :
-
-```html
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -14,623 +5,918 @@ Tu peux copier-coller ce bloc de code entier (il remplace ton fichier complet) :
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RESTEV 85 - Expert Prévention</title>
 
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#3065a8">
-    <link rel="icon" type="image/png" href="logo_restev_carre.png">
-
+    <meta name="theme-color" content="#2f6bb2">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="RESTEV 85">
-    <link rel="apple-touch-icon" href="logo_restev_carre.png">
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'restev-blue': '#2f6bb2',
+                        'restev-blue-dark': '#224d80',
+                        'restev-magenta': '#b8257b',
+                        'restev-magenta-dark': '#911d61',
+                        'restev-teal': '#69b3a5',
+                        'restev-teal-dark': '#529689',
+                    }
+                }
+            }
+        }
+    </script>
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
     <style>
-    :root { 
-        --r-blue: #3065a8; 
-        --r-blue-dark: #1e4475;
-        --r-teal: #75bba8; 
-        --r-purple: #ae227d; 
-        --r-yellow: #e6a00f; 
-        --r-light: #f4f7fa; 
-        --shadow-sm: 0 2px 8px rgba(48, 101, 168, 0.05);
-        --shadow-md: 0 8px 24px rgba(48, 101, 168, 0.08);
-        --shadow-lg: 0 16px 32px rgba(30, 68, 117, 0.12);
-        --radius-sm: 10px;
-        --radius-md: 16px;
-        --radius-lg: 24px;
-    }
-
-    body { 
-        background-color: var(--r-light); 
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-        margin-bottom: 110px; 
-        overflow-x: hidden; 
-        color: #334155;
-        -webkit-font-smoothing: antialiased;
-        -webkit-user-select: none; /* Protection contre la selection accidentelle sur le terrain */
-        user-select: none;
-    }
-
-    .nav-bottom, .btn-enter-premium, .card-custom {
-        user-select: none;
-        -webkit-user-select: none;
-    }
-
-    #splash { 
-        position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; 
-        background: radial-gradient(circle at center, #254d80 0%, #112237 100%);
-        transition: all 0.6s cubic-bezier(0.77, 0, 0.175, 1); overflow: hidden;
-    }
-
-    #splash::before {
-        content: ''; position: absolute; inset: 0;
-        background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), 
-                          linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-        background-size: 20px 20px; background-position: center;
-        mask-image: radial-gradient(circle, black 40%, transparent 80%);
-        -webkit-mask-image: radial-gradient(circle, black 40%, transparent 80%);
-    }
-
-    .logo-wrapper {
-        position: relative; display: inline-block; transform: scale(0) rotate(-15deg);
-        animation: logoPopIn 1s cubic-bezier(0.34, 1.7, 0.64, 1) 0.2s forwards; margin-bottom: 25px;
-    }
-
-    .splash-logo {
-        width: 120px; height: 120px; border-radius: var(--radius-md); background: white; padding: 12px;
-        position: relative; z-index: 2; box-shadow: 0 0 30px rgba(48, 101, 168, 0.4);
-    }
-
-    .logo-pulse-ring {
-        position: absolute; inset: -5px; border: 2px solid var(--r-teal); border-radius: 20px;
-        z-index: 1; opacity: 0; animation: ringPulse 2.5s ease-out infinite 1.2s;
-    }
-
-    .scan-line {
-        position: absolute; left: 0; right: 0; top: 0; height: 4px;
-        background: linear-gradient(90deg, transparent, var(--r-yellow), transparent);
-        box-shadow: 0 0 12px var(--r-yellow); z-index: 3; opacity: 0.8;
-        animation: laserScan 3s ease-in-out infinite 1.5s; pointer-events: none;
-    }
-
-    .app-title-reveal {
-        font-size: 2.2rem; font-weight: 900; letter-spacing: 4px;
-        background: linear-gradient(45deg, #ffffff, #93c5fd);
-        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        opacity: 0; transform: translateY(15px); animation: textSlideUp 0.6s ease-out 0.8s forwards;
-    }
-
-    .splash-subtitle-animated {
-        font-size: 0.85rem; font-weight: 600; letter-spacing: 3px; text-transform: uppercase;
-        color: var(--r-teal); opacity: 0; transform: translateY(10px);
-        animation: textSlideUp 0.6s ease-out 1s forwards; margin-top: 5px;
-    }
-
-    .ecg-container-premium { width: 180px; margin: 20px auto; opacity: 0; animation: fadeInECG 0.8s ease-out 1.2s forwards; }
-
-    .ecg-line-premium {
-        fill: none; stroke: #ef4444; stroke-width: 3; stroke-linecap: round;
-        stroke-linejoin: round; stroke-dasharray: 400; stroke-dashoffset: 400;
-        animation: heartbeatStream 2.5s linear infinite;
-    }
-
-    .btn-enter-premium {
-        position: relative; background: white; color: var(--r-blue-dark); border: none;
-        padding: 14px 40px; border-radius: 50px; font-weight: 800; font-size: 0.95rem;
-        letter-spacing: 1.5px; overflow: hidden; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-        opacity: 0; transform: scale(0.9);
-        animation: btnReveal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 1.4s forwards, breathing 3s ease-in-out infinite 2s;
-        transition: all 0.2s ease;
-    }
-    .btn-enter-premium span { position: relative; z-index: 2; }
-    .btn-enter-premium::before {
-        content: ''; position: absolute; inset: 0;
-        background: linear-gradient(90deg, transparent, rgba(117, 187, 168, 0.3), transparent);
-        transform: translateX(-100%); transition: transform 0.5s; z-index: 1;
-    }
-    .btn-enter-premium:active { transform: scale(0.95) !important; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); }
-
-    @keyframes logoPopIn { 0% { transform: scale(0) rotate(-25deg); filter: blur(5px); } 70% { transform: scale(1.15) rotate(5deg); filter: blur(0); } 100% { transform: scale(1) rotate(0deg); } }
-    @keyframes ringPulse { 0% { transform: scale(0.95); opacity: 0.8; } 50% { opacity: 0.4; } 100% { transform: scale(1.3); opacity: 0; } }
-    @keyframes laserScan { 0%, 100% { top: 0%; opacity: 0; } 10%, 90% { opacity: 1; } 50% { top: 100%; opacity: 1; } }
-    @keyframes textSlideUp { to { opacity: 1; transform: translateY(0); } }
-    @keyframes fadeInECG { to { opacity: 0.7; } }
-    @keyframes heartbeatStream { 0% { stroke-dashoffset: 400; } 60% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -400; } }
-    @keyframes btnReveal { to { opacity: 1; transform: scale(1); } }
-    @keyframes breathing { 0%, 100% { transform: scale(1); box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 12px 35px rgba(117, 187, 168, 0.4); } }
-
-    /* HEADER FIXE + INDICATEUR RÉSEAU */
-    .app-header { 
-        background: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;
-        border-bottom: 3px solid var(--r-yellow); position: sticky; top: 0; z-index: 1000; box-shadow: var(--shadow-sm);
-    }
-    .network-badge {
-        font-size: 0.7rem; font-weight: 800; padding: 6px 12px; border-radius: 50px;
-        transition: all 0.3s ease; cursor: pointer; border: 1px solid transparent;
-    }
-    .network-online { background-color: #dcfce7; color: #166534; border-color: #bbf7d0; }
-    .network-offline { background-color: #fef3c7; color: #92400e; border-color: #fde68a; }
-    .pulse-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
-    .pulse-dot.online { background-color: #22c55e; animation: pulseGreen 2s infinite; }
-    .pulse-dot.offline { background-color: #f59e0b; }
-    @keyframes pulseGreen { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
-
-    .info-banner { background: #e0f2fe; color: #0369a1; padding: 6px 0; overflow: hidden; white-space: nowrap; font-weight: 600; font-size: 0.75rem; border-bottom: 1px solid #bae6fd; }
-    .ticker { display: inline-block; animation: ticker 45s linear infinite; }
-    .ticker span { padding-right: 60px; }
-    @keyframes ticker { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
-
-    .nav-bottom { 
-        position: fixed; bottom: 20px; left: 15px; right: 15px; 
-        background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-        display: flex; justify-content: space-around; padding: 10px 5px; 
-        border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); z-index: 1000; border: 1px solid rgba(255, 255, 255, 0.6);
-    }
-    .nav-item-bottom { 
-        border: none; background: none; color: #64748b; font-size: 0.62rem; font-weight: 700; 
-        display: flex; flex-direction: column; align-items: center; flex: 1; 
-        text-decoration: none; outline: none; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        border-radius: var(--radius-md); padding: 6px 0;
-    }
-    .nav-item-bottom:active { transform: scale(0.9); background: rgba(48, 101, 168, 0.05); }
-    .nav-item-bottom.active { color: var(--r-blue); }
-    .nav-item-bottom i { font-size: 1.35rem; margin-bottom: 4px; transition: transform 0.2s ease; }
-    .nav-item-bottom.active i { transform: translateY(-2px); }
-
-    .app-page { display: none; padding: 22px 16px; animation: fadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
-    .active-page { display: block !important; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-
-    .card-custom { 
-        background: white; border-radius: var(--radius-md); padding: 20px; margin-bottom: 16px; border: none;
-        border-left: 5px solid var(--r-blue); box-shadow: var(--shadow-md); transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .card-custom:active { transform: translateY(1px); box-shadow: var(--shadow-sm); }
-    .grid-btn .card-custom { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; border-top: 1px solid rgba(255,255,255,0.4); border-right: 1px solid rgba(0,0,0,0.02); border-bottom: 3px solid rgba(0,0,0,0.05); }
-    .grid-btn:active { transform: scale(0.96); }
-
-    /* Custom Toggle Pills for Roles */
-    .role-toggle .nav-link { color: #64748b; background-color: transparent; border-radius: var(--radius-md); }
-    .role-toggle .nav-link.active { background-color: var(--r-blue); color: white; box-shadow: var(--shadow-sm); }
-
-    .form-select, .form-control { border: 1.5px solid #cbd5e1; border-radius: var(--radius-sm); padding: 10px 14px; font-size: 0.92rem; color: #1e293b; background-color: #f8fafc; transition: all 0.2s ease; }
-    .form-select:focus, .form-control:focus { border-color: var(--r-blue); background-color: #fff; box-shadow: 0 0 0 3px rgba(48, 101, 168, 0.15); }
-    .btn-primary { background-color: var(--r-blue); border: none; }
-    .btn-primary:active, .btn-primary:hover { background-color: var(--r-blue-dark) !important; }
+        canvas { touch-action: none; }
+        #report-map { height: 160px; width: 100%; border-radius: 16px; z-index: 10; }
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; padding: 0; margin: 0; }
+            .print-card { border: 1px solid #111 !important; box-shadow: none !important; padding: 0 !important; }
+        }
     </style>
 </head>
-<body>
-
-<div id="splash">
-    <div class="splash-content text-center text-white">
-        <div class="logo-wrapper">
-            <div class="scan-line"></div>
-            <img src="logo_restev_carre.png" alt="Logo" class="splash-logo" onerror="this.src='https://placehold.co/140x140/ffffff/3065a8?text=RESTEV'">
-            <div class="logo-pulse-ring"></div>
-        </div>
-        <h2 class="app-title-reveal">RESTEV 85</h2>
-        <p class="splash-subtitle-animated">Expert Prévention des Risques</p>
-        <div class="ecg-container-premium">
-            <svg viewBox="0 0 200 40">
-                <path class="ecg-line-premium" d="M0,20 L40,20 L48,5 L56,35 L64,20 L110,20 L118,5 L126,35 L134,20 L200,20" />
-            </svg>
-        </div>
-        <button class="btn-enter-premium mt-4" onclick="Splash()">
-            <span>ENTRER</span>
-        </button>
-    </div>
-</div>
-
-<header class="app-header">
-    <div class="d-flex align-items-center">
-        <i class="fa-solid fa-shield-halved fa-lg me-2" style="color: var(--r-blue);"></i>
-        <div>
-            <h6 class="mb-0 fw-bold text-dark lh-1">RESTEV 85</h6>
-            <small class="text-muted" style="font-size: 0.65rem;">Expert Prévention</small>
-        </div>
-    </div>
-    <div id="networkStatusBtn" class="network-badge network-online" onclick="toggleNetwork()">
-        <span class="pulse-dot online" id="networkDot"></span>
-        <span id="networkText">En ligne</span>
-    </div>
-</header>
-
-<div class="info-banner">
-    <div class="ticker">
-        <span>
-            📝 Mise à jour du DUERP : Votre centre RESTEV vous accompagne dans l'évaluation de vos risques.
-              |  
-            💰 Aides CARSAT : Des subventions disponibles pour vos équipements de protection (TPE/PME).
-              |  
-            🔍 Risque Chimique : Consultez les fiches toxicologiques INRS directement via l'app.
-              |  
-            🏗️ BTP : Profitez des conseils experts de l'OPPBTP pour vos chantiers en Vendée.
-        </span>
-    </div>
-</div>
-
-<div id="page-home" class="app-page active-page">
+<body class="bg-slate-50 font-sans antialiased text-slate-800 pb-24 select-none">
     
-    <div id="sync-alert" class="alert alert-warning d-none align-items-center py-2 px-3 mb-3 border-warning shadow-sm" style="border-radius: var(--radius-sm); font-size: 0.8rem;">
-        <i class="fa-solid fa-cloud-arrow-up fa-lg me-2 text-warning"></i>
-        <div>
-            <strong>Mode Hors-ligne actif.</strong><br>
-            <span id="sync-count">0</span> rapport(s) en attente de synchronisation locale.
+    <div id="toast-alert" class="hidden fixed top-4 left-4 right-4 bg-slate-900/95 text-white p-4 rounded-2xl shadow-2xl z-[9999] border border-slate-700/50 flex gap-3 items-start animate-bounce no-print">
+        <div class="w-8 h-8 bg-restev-magenta rounded-xl flex items-center justify-center shrink-0 text-sm">
+            <i class="fa-solid fa-triangle-exclamation"></i>
         </div>
+        <div class="flex-1 min-w-0">
+            <h4 class="text-xs font-black uppercase text-restev-magenta">Alerte Terrain Reçue !</h4>
+            <p id="toast-msg" class="text-[11px] text-slate-200 mt-0.5 truncate">Nouveau signalement flash.</p>
+        </div>
+        <button onclick="document.getElementById('toast-alert').classList.add('hidden')" class="text-slate-400 hover:text-white text-xs p-1"><i class="fa-solid fa-xmark"></i></button>
     </div>
 
-    <ul class="nav nav-pills nav-fill mb-4 bg-white shadow-sm p-1 role-toggle" style="border-radius: var(--radius-md);">
-        <li class="nav-item">
-            <button class="nav-link active fw-bold py-2" id="tab-tech" onclick="switchRole('tech')">
-                <i class="fa-solid fa-hard-hat me-1"></i> Terrain (Tech)
-            </button>
-        </li>
-        <li class="nav-item">
-            <button class="nav-link fw-bold py-2" id="tab-emp" onclick="switchRole('emp')">
-                <i class="fa-solid fa-chart-line me-1"></i> Pilotage (Emp)
-            </button>
-        </li>
-    </ul>
+    <header class="bg-gradient-to-r from-restev-blue to-restev-blue-dark text-white p-4 shadow-lg sticky top-0 z-50 flex justify-between items-center no-print backdrop-blur-md">
+        <div class="flex items-center gap-3">
+            <div class="h-10 w-10 bg-white rounded-xl flex items-center justify-center shadow-inner border border-white/20 overflow-hidden">
+                <img src="assets/img/logo-restev.png" alt="Logo" class="h-full w-full object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                <div class="hidden h-full w-full items-center justify-center bg-white/10 text-white"><i class="fa-solid fa-shield-halved text-lg"></i></div>
+            </div>
+            <div>
+                <h1 class="text-base font-black tracking-wider leading-none">RESTEV 85</h1>
+                <p class="text-[10px] text-restev-teal font-bold uppercase tracking-widest mt-0.5">Expert Prévention</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <span id="role-badge" onclick="switchScreen('scr-auth')" class="cursor-pointer bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold px-3 py-1.5 rounded-xl border border-white/20 uppercase tracking-wide transition-all">
+                Choisir Profil
+            </span>
+        </div>
+    </header>
 
-    <div id="view-tech">
-        <div class="card-custom text-white border-0 mb-3" style="background: linear-gradient(135deg, var(--r-blue), #1e40af);">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h5 class="fw-bold mb-1">Espace Intervention</h5>
-                    <p class="small opacity-75 mb-0">Sélectionnez un outil rapide</p>
+    <div id="legal-banner" class="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-2 text-center text-xs font-bold shadow-sm flex items-center justify-center gap-2 no-print">
+        <i class="fa-solid fa-gavel animate-bounce"></i>
+        <span>Priorité n°1 PST 2026-2030 — Conformité Art. L4141-2 du Code du Travail</span>
+    </div>
+
+    <main class="p-4 max-w-md mx-auto">
+        <section id="scr-auth" class="space-y-6 block no-print py-4">
+            <div class="text-center space-y-2">
+                <h2 class="text-xl font-black text-slate-800 uppercase tracking-wide">Portail de Configuration</h2>
+                <p class="text-xs text-slate-500 px-6">Adaptez les outils de traçabilité réglementaire selon le profil utilisateur actuel.</p>
+            </div>
+            <div class="space-y-4">
+                <div onclick="setRole('employee')" class="bg-white border-2 border-slate-100 hover:border-restev-blue rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center gap-4 active:scale-[0.99] group">
+                    <div class="w-14 h-14 rounded-xl bg-restev-blue/10 flex items-center justify-center text-restev-blue text-2xl shrink-0 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-user-graduate"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-sm group-hover:text-restev-blue transition-colors">Espace Public Bénéficiaire</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Compléter le livret d'accueil sécurité, valider le test d'entrée et émarger.</p>
+                    </div>
                 </div>
-                <button class="btn btn-light btn-sm text-primary fw-bold shadow" onclick="nav('page-signalement')">
-                    <i class="fa-solid fa-bolt me-1"></i> Flash Risque
+                <div onclick="setRole('manager')" class="bg-white border-2 border-slate-100 hover:border-restev-magenta rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center gap-4 active:scale-[0.99] group">
+                    <div class="w-14 h-14 rounded-xl bg-restev-magenta/10 flex items-center justify-center text-restev-magenta text-2xl shrink-0 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-user-tie"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-sm group-hover:text-restev-magenta transition-colors">Espace Manager / Tuteur Employeur</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Piloter les intégrations d'urgence, acter le débriefing et générer la force probante.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="scr-dashboard" class="hidden space-y-6 no-print">
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                <h2 id="dash-title" class="text-lg font-bold text-slate-800 mb-1">Pilote de Prévention Vendée</h2>
+                <p id="dash-subtitle" class="text-xs text-slate-500"></p>
+            </div>
+            <div id="manager-qr-shortcut" class="hidden bg-gradient-to-br from-slate-900 via-slate-850 to-slate-800 text-white rounded-2xl p-5 shadow-lg space-y-4 border border-slate-700">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-xl text-restev-teal border border-white/10">
+                        <i class="fa-solid fa-qrcode"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-200">Accueil Sécurité Renforcé</h4>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Faites scanner ce QR code au nouvel arrivant pour initier le parcours terrain.</p>
+                    </div>
+                </div>
+                <button onclick="generateEmployeeQR()" class="w-full bg-gradient-to-r from-restev-blue to-restev-blue-dark hover:from-restev-blue-dark hover:to-restev-blue text-white font-bold py-3 px-4 rounded-xl text-xs uppercase tracking-wide shadow-md transition transform active:scale-[0.98]">
+                    Générer le QR Code Écran
                 </button>
             </div>
-        </div>
+            <div class="grid grid-cols-1 gap-4">
+                <div onclick="switchScreen('scr-infos-prevention')" class="bg-white border-l-4 border-restev-teal rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-4 active:scale-[0.99] group">
+                    <div class="w-14 h-14 rounded-xl bg-restev-teal/10 flex items-center justify-center text-restev-teal text-2xl shrink-0 group-hover:bg-restev-teal group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div class="flex-grow">
+                        <h3 class="font-bold text-slate-800 text-sm">Ma Sécurité au Quotidien</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Règles réglementaires applicables à tous les métiers.</p>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-300 group-hover:text-restev-teal transition-colors text-sm"></i>
+                </div>
+                <div onclick="switchScreen('scr-onboarding-1')" class="bg-white border-l-4 border-restev-blue rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-4 active:scale-[0.99] group">
+                    <div class="w-14 h-14 rounded-xl bg-restev-blue/10 flex items-center justify-center text-restev-blue text-2xl shrink-0 group-hover:bg-restev-blue group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-file-signature"></i>
+                    </div>
+                    <div class="flex-grow">
+                        <h3 id="card-onboard-title" class="font-bold text-slate-800 text-sm">Accueil Sécurité & QCM</h3>
+                        <p id="card-onboard-desc" class="text-xs text-slate-500 mt-0.5">Parcours réglementaire d'arrivée avec test de validation.</p>
+                        <span class="inline-block mt-2 text-[10px] bg-restev-blue/10 text-restev-blue font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">Format Passeport Prévention</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-300 group-hover:text-restev-blue transition-colors text-sm"></i>
+                </div>
+                <div onclick="switchScreen('scr-flash-report')" class="bg-white border-l-4 border-restev-magenta rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-4 active:scale-[0.99] group">
+                    <div class="w-14 h-14 rounded-xl bg-restev-magenta/10 flex items-center justify-center text-restev-magenta text-2xl shrink-0 group-hover:bg-restev-magenta group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <div class="flex-grow">
+                        <h3 class="font-bold text-slate-800 text-sm">Signalement Flash Risque</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Remontée participative immédiate avec photo & GPS précis.</p>
+                        <span class="inline-block mt-2 text-[10px] bg-restev-magenta/10 text-restev-magenta font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">Terrain & Vigilance</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-300 group-hover:text-restev-magenta transition-colors text-sm"></i>
+                </div>
+            </div>
+            <div id="manager-only-panel" class="hidden space-y-4">
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-3">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                        <span class="flex items-center gap-1.5"><i class="fa-solid fa-user-clock text-restev-blue"></i> Attentes de Visa Employeur</span>
+                        <span id="pending-count" class="bg-restev-blue/10 text-restev-blue px-2.5 py-0.5 rounded-full text-[10px] font-bold">0 À VISER</span>
+                    </h4>
+                    <div id="pending-onboardings-list" class="space-y-2"></div>
+                </div>
+            </div>
+        </section>
 
-        <div class="row g-2">
-            <div class="col-6 grid-btn" onclick="nav('page-scan')">
-                <div class="card-custom text-center py-3 mb-0" style="background-color: #e3f2fd; border-left-color: #90caf9;"><i class="fa-solid fa-barcode fa-2x mb-2" style="color: #1e88e5;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #1e40af;">SCANNER RAPIDE</small></div>
+        <section id="scr-qr-display" class="hidden space-y-5 text-center py-4 no-print">
+            <div class="flex items-center gap-2 mb-2 text-left">
+                <button onclick="switchScreen('scr-dashboard')" class="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition"><i class="fa-solid fa-arrow-left"></i></button>
+                <h2 class="text-base font-bold text-slate-800">Partager le livret d'accueil</h2>
             </div>
-            <div class="col-6 grid-btn" onclick="nav('page-quiz')">
-                <div class="card-custom text-center py-3 mb-0" style="background-color: #ffebee; border-left-color: #ef9a9a;"><i class="fa-solid fa-clipboard-question fa-2x mb-2" style="color: #e53935;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #b71c1c;">AUTO-DIAG</small></div>
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4 flex flex-col items-center">
+                <p class="text-xs text-slate-600 px-2 leading-relaxed">
+                    Le travailleur scanne ce code pour ouvrir instantanément le livret d'accueil et le test sécurité sur son propre smartphone.
+                </p>
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-inner flex justify-center items-center">
+                    <canvas id="qr-canvas" class="bg-white p-2 rounded-xl shadow-md"></canvas>
+                </div>
             </div>
-            <div class="col-6 grid-btn" onclick="nav('page-gants')">
-                <div class="card-custom text-center py-3 mb-0" style="background-color: #e0f2fe; border-left-color: #3b82f6;"><i class="fa-solid fa-hand-dots fa-2x mb-2" style="color: #2563eb;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #1d4ed8;">SÉLECTEUR GANTS</small></div>
-            </div>
-            <div class="col-6 grid-btn" onclick="nav('page-masques')">
-                <div class="card-custom text-center py-3 mb-0" style="background-color: #fef2f2; border-left-color: #ef4444;"><i class="fa-solid fa-head-side-mask fa-2x mb-2" style="color: #dc2626;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #991b1b;">MASQUES & FILTRES</small></div>
-            </div>
-            <div class="col-6 grid-btn" onclick="nav('page-storage')">
-                <div class="card-custom text-center py-3 mb-0" style="background-color: #fff3e0; border-left-color: #ffb74d;"><i class="fa-solid fa-warehouse fa-2x mb-2" style="color: #f57c00;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #e65100;">COMPATIBILITÉ STOCK</small></div>
-            </div>
-            <div class="col-6 grid-btn" onclick="nav('page-fds-guide')">
-                <div class="card-custom text-center py-3 mb-0" style="background-color: #eceff1; border-left-color: #cfd8dc;"><i class="fa-solid fa-file-shield fa-2x mb-2" style="color: #546e7a;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #263238;">GUIDE FDS</small></div>
-            </div>
-        </div>
-    </div>
+            <button onclick="switchScreen('scr-dashboard')" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3.5 rounded-xl text-xs uppercase tracking-wider transition">Fermer</button>
+        </section>
 
-    <div id="view-emp" class="d-none">
-        <div class="row g-2 mb-3">
-            <div class="col-6">
-                <div class="card-custom mb-0 p-3" style="border-left-color: #22c55e;">
-                    <div class="d-flex justify-content-between text-muted mb-1"><span class="small fw-bold text-uppercase">Conformité</span><i class="fa-solid fa-percent text-success"></i></div>
-                    <h3 class="fw-black text-success mb-0">92%</h3>
-                    <small class="text-muted" style="font-size:0.65rem;">Audit Global</small>
+        <section id="scr-infos-prevention" class="hidden space-y-4 no-print">
+            <div class="flex items-center gap-2 mb-2">
+                <button onclick="switchScreen('scr-dashboard')" class="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <h2 class="text-base font-bold text-slate-800">Ma Sécurité au Quotidien</h2>
+            </div>
+            <div class="bg-gradient-to-br from-restev-blue to-restev-blue-dark text-white rounded-2xl p-4 shadow-sm">
+                <h3 class="font-bold text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-shield-halved text-restev-teal"></i> Informations Réglementaires
+                </h3>
+                <p class="text-[11px] text-slate-200 mt-1 leading-relaxed">
+                    Ces règles s'appliquent à tous les postes de travail en France. Elles protègent votre santé et garantissent un environnement sûr.
+                </p>
+            </div>
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-3">
+                <h4 class="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-gavel text-restev-blue"></i> Droits & Devoirs du Salarié
+                </h4>
+                <div class="space-y-3 text-xs text-slate-600 leading-relaxed">
+                    <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        <span class="font-bold text-slate-800 block mb-0.5"> ⚠️ Mon obligation de sécurité</span>
+                        Selon l'article <span class="font-mono text-[11px] font-bold text-restev-blue">L4122-1</span>, je dois veiller à ma propre sécurité ainsi qu'à celle de mes collègues en respectant les consignes de l'entreprise.
+                    </div>
+                    <div class="bg-amber-50/50 p-2.5 rounded-xl border border-amber-100">
+                        <span class="font-bold text-amber-900 block mb-0.5"> 🛑 Danger Grave & Imminent</span>
+                        Selon l'article <span class="font-mono text-[11px] font-bold text-amber-700">L4131-1</span>, j'ai un <strong>droit d'alerte et de retrait</strong> si une situation présente un risque majeur immédiat pour ma vie.
+                        J'avertis immédiatement mon tuteur.
+                    </div>
                 </div>
             </div>
-            <div class="col-6">
-                <div class="card-custom mb-0 p-3" style="border-left-color: #ef4444;">
-                    <div class="d-flex justify-content-between text-muted mb-1"><span class="small fw-bold text-uppercase">Alertes EPI</span><i class="fa-solid fa-clock text-danger"></i></div>
-                    <h3 class="fw-black text-danger mb-0">3</h3>
-                    <small class="text-muted" style="font-size:0.65rem;">Renouvellements échus</small>
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-3">
+                <h4 class="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-kit-medical text-restev-magenta"></i> Alerte &amp; Premiers Secours
+                </h4>
+                <div class="space-y-2 text-xs text-slate-600">
+                    <p class="flex items-start gap-2">
+                        <i class="fa-solid fa-circle-check text-emerald-500 mt-0.5 shrink-0"></i>
+                        <span><strong>Identifiez les SST :</strong> Repérez les Sauveteurs Secouristes du Travail de votre zone dès votre arrivée.</span>
+                    </p>
+                    <p class="flex items-start gap-2">
+                        <i class="fa-solid fa-circle-check text-emerald-500 mt-0.5 shrink-0"></i>
+                        <span><strong>Moyens de secours :</strong> Localisez visuellement la trousse de secours, les extincteurs et les boutons d'arrêt d'urgence les plus proches.</span>
+                    </p>
+                    <p class="flex items-start gap-2">
+                        <i class="fa-solid fa-circle-check text-emerald-500 mt-0.5 shrink-0"></i>
+                        <span><strong>Évacuation :</strong> Repérez votre cheminement d'évacuation et votre point de rassemblement.</span>
+                    </p>
                 </div>
             </div>
-            <div class="col-6">
-                <div class="card-custom mb-0 p-3" style="border-left-color: #f59e0b;">
-                    <div class="d-flex justify-content-between text-muted mb-1"><span class="small fw-bold text-uppercase">Risques Actifs</span><i class="fa-solid fa-triangle-exclamation text-warning"></i></div>
-                    <h3 class="fw-black text-warning mb-0">14</h3>
-                    <small class="text-muted" style="font-size:0.65rem;">Actions correctives</small>
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-3">
+                <h4 class="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-vest text-restev-teal"></i> Vos Équipements de Sécurité
+                </h4>
+                <div class="grid grid-cols-1 gap-2 text-xs">
+                    <div class="border border-slate-100 rounded-xl p-3 bg-slate-50/50">
+                        <span class="font-bold text-slate-800 block text-[11px] uppercase tracking-wide text-restev-blue">Protection Collective (EPC)</span>
+                        <p class="text-slate-500 mt-0.5">Garde-corps, carters, balisages. Ils protègent tout le monde à la fois. Ne les neutralisez ou ne les déplacez jamais.</p>
+                    </div>
+                    <div class="border border-slate-100 rounded-xl p-3 bg-slate-50/50">
+                        <span class="font-bold text-slate-800 block text-[11px] uppercase tracking-wide text-restev-magenta">Protection Individuelle (EPI)</span>
+                        <p class="text-slate-500 mt-0.5">Chaussures de sécurité, gants, lunettes. Ils sont obligatoires dès lors que vous êtes dans une zone à risques.</p>
+                    </div>
                 </div>
             </div>
-            <div class="col-6">
-                <div class="card-custom mb-0 p-3" style="border-left-color: var(--r-blue);">
-                    <div class="d-flex justify-content-between text-muted mb-1"><span class="small fw-bold text-uppercase">FDS Validées</span><i class="fa-solid fa-flask text-primary"></i></div>
-                    <h3 class="fw-black text-primary mb-0">48</h3>
-                    <small class="text-muted" style="font-size:0.65rem;">Produits référencés</small>
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-3">
+                <h4 class="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-person-running text-slate-500"></i> Gestes, Postures & Propreté
+                </h4>
+                <div class="space-y-2 text-xs text-slate-600">
+                    <div class="flex gap-3 items-start border-b border-slate-100 pb-2">
+                        <div class="w-7 h-7 bg-amber-100 rounded-lg flex items-center justify-center text-amber-700 shrink-0">
+                            <i class="fa-solid fa-broom"></i>
+                        </div>
+                        <div>
+                            <span class="font-bold text-slate-800 block">Ordre et propreté</span>
+                            <p class="text-[11px] text-slate-500">Un espace propre évite les chutes de plain-pied. Rangez vos outils et nettoyez immédiatement un sol glissant.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-3 items-start pt-1">
+                        <div class="w-7 h-7 bg-sky-100 rounded-lg flex items-center justify-center text-sky-700 shrink-0">
+                            <i class="fa-solid fa-box-tissue"></i>
+                        </div>
+                        <div>
+                            <span class="font-bold text-slate-800 block">Manutention & Bureau</span>
+                            <p class="text-[11px] text-slate-500">Pour soulever une charge : dos droit et genoux fléchis. Sur écran : ajustez l'assise pour avoir les pieds à plat et l'écran face aux yeux.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
+            <div class="text-center p-2">
+                <p class="text-[10px] text-slate-400">
+                    <i class="fa-solid fa-circle-info text-restev-blue"></i> Une anomalie terrain ? Utilisez le module <strong>Signalement Flash Risque</strong> depuis le menu principal.
+                </p>
+            </div>
+        </section>
 
-        <div class="card-custom p-3" style="border-left-color: #64748b;">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="fw-bold text-dark mb-0 small text-uppercase">Actions Prioritaires</h6>
-                <span class="badge bg-light text-dark border">À jour</span>
+        <section id="scr-onboarding-1" class="hidden space-y-4 no-print">
+            <div class="flex items-center gap-2 mb-2">
+                <button onclick="switchScreen('scr-dashboard')" class="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition"><i class="fa-solid fa-arrow-left"></i></button>
+                <h2 class="text-base font-bold text-slate-800">Formation Sécurité Obligatoire</h2>
             </div>
-            <div class="d-flex align-items-start mb-3 border-bottom pb-2">
-                <div class="bg-danger rounded-circle mt-1 me-2" style="width:10px; height:10px; flex-shrink:0;"></div>
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4">
+                <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-address-card text-restev-blue"></i> Public vulnérable identifié</h3>
                 <div>
-                    <div class="small fw-bold text-dark">Masques respiratoires ABEK1 expirés</div>
-                    <div class="text-muted" style="font-size:0.65rem;">Zone : Atelier Logistique</div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Nom & Prénom du Travailleur</label>
+                    <input type="text" id="reg-emp-name" placeholder="Ex: Yanis Martin" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue focus:border-restev-blue outline-none bg-slate-50/50 transition">
                 </div>
-            </div>
-            <div class="d-flex align-items-start">
-                <div class="bg-warning rounded-circle mt-1 me-2" style="width:10px; height:10px; flex-shrink:0;"></div>
                 <div>
-                    <div class="small fw-bold text-dark">Mise à jour FDS - Solvant Dégraissant</div>
-                    <div class="text-muted" style="font-size:0.65rem;">Action : Intégrer nouvelle fiche</div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Statut Juridique</label>
+                    <select id="reg-emp-status" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue focus:border-restev-blue outline-none bg-slate-50/50 font-medium transition">
+                        <option value="Intérimaire">Intérimaire (Mission temporaire)</option>
+                        <option value="Jeune Travailleur / Apprenti">Jeune Travailleur / Apprenti / Stagiaire</option>
+                        <option value="Nouvel Arrivant">Nouvel Arrivant (CDI / CDD)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Entreprise Utilisatrice / Établissement</label>
+                    <input type="text" id="reg-company" placeholder="Ex: Logistique Vendée SAS" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue focus:border-restev-blue outline-none bg-slate-50/50 transition">
                 </div>
             </div>
-        </div>
-    </div>
-</div>
-
-<div id="page-signalement" class="app-page">
-    <div class="d-flex align-items-center mb-3">
-        <button class="btn btn-sm btn-light me-3 border shadow-sm" onclick="nav('page-home')"><i class="fa-solid fa-arrow-left"></i></button>
-        <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-bolt me-2"></i>Signalement Rapide</h5>
-    </div>
-
-    <form onsubmit="submitSignalement(event)">
-        <div class="card-custom mb-3 p-3">
-            <label class="small fw-bold text-muted text-uppercase mb-2">Niveau de Danger Observé</label>
-            <div class="d-flex gap-2 mb-3 text-center">
-                <label class="flex-fill p-2 border rounded shadow-sm bg-light text-success fw-bold" style="cursor:pointer;" onclick="selectDanger(this)">
-                    <input type="radio" name="dangerLevel" class="d-none" value="faible" checked>
-                    <i class="fa-solid fa-circle-check mb-1"></i><br><small>Faible</small>
-                </label>
-                <label class="flex-fill p-2 border rounded shadow-sm bg-light text-warning fw-bold" style="cursor:pointer;" onclick="selectDanger(this)">
-                    <input type="radio" name="dangerLevel" class="d-none" value="moyen">
-                    <i class="fa-solid fa-triangle-exclamation mb-1"></i><br><small>Moyen</small>
-                </label>
-                <label class="flex-fill p-2 border rounded shadow-sm bg-light text-danger fw-bold" style="cursor:pointer;" onclick="selectDanger(this)">
-                    <input type="radio" name="dangerLevel" class="d-none" value="critique">
-                    <i class="fa-solid fa-skull-crossbones mb-1"></i><br><small>Critique</small>
-                </label>
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4">
+                <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-list-check text-restev-blue"></i> Consignes fondamentales délivrées</h3>
+                <div class="space-y-3">
+                    <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 cursor-pointer transition select-none">
+                        <input type="checkbox" id="chk-module-1" checked class="mt-0.5 w-5 h-5 text-restev-blue rounded border-slate-300 focus:ring-restev-blue accent-restev-blue">
+                        <span class="text-xs text-slate-700 leading-normal">Le salarié atteste avoir reçu les consignes relatives aux <strong>Risques Spécifiques du Poste & EPI</strong> réglementaires.</span>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 cursor-pointer transition select-none">
+                        <input type="checkbox" id="chk-module-2" checked class="mt-0.5 w-5 h-5 text-restev-blue rounded border-slate-300 focus:ring-restev-blue accent-restev-blue">
+                        <span class="text-xs text-slate-700 leading-normal">Le salarié atteste avoir physiquement repéré les cheminements d'<strong>Évacuation & Dispositifs de Secours</strong>.</span>
+                    </label>
+                </div>
             </div>
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-5">
+                <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5 text-restev-blue"><i class="fa-solid fa-graduation-cap"></i> QCM de Validation d'Entrée (1er jour)</h3>
+                <div class="space-y-2 border-b pb-4 border-slate-100">
+                    <p class="text-xs font-bold text-slate-800">1. En cas de déclenchement de l'alarme incendie, je dois :</p>
+                    <div class="text-xs space-y-2 pl-1">
+                        <label class="flex items-center gap-2.5 cursor-pointer"><input type="radio" name="q1" value="A" class="w-4 h-4 accent-restev-blue"> Finir ma tâche en cours rapidement</label>
+                        <label class="flex items-center gap-2.5 cursor-pointer"><input type="radio" name="q1" value="B" class="w-4 h-4 accent-restev-blue"> Évacuer immédiatement vers le point de rassemblement</label>
+                    </div>
+                </div>
+                <div class="space-y-2 border-b pb-4 border-slate-100">
+                    <p class="text-xs font-bold text-slate-800">2. Qui est responsable du port effectif de mes EPI sur le poste ?</p>
+                    <div class="text-xs space-y-2 pl-1">
+                        <label class="flex items-center gap-2.5 cursor-pointer"><input type="radio" name="q2" value="A" class="w-4 h-4 accent-restev-blue"> Moi-même, dès ma prise de poste</label>
+                        <label class="flex items-center gap-2.5 cursor-pointer"><input type="radio" name="q2" value="B" class="w-4 h-4 accent-restev-blue"> Uniquement le responsable sécurité s'il passe</label>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <p class="text-xs font-bold text-slate-800">3. Si je constate une anomalie ou un danger grave imminent :</p>
+                    <div class="text-xs space-y-2 pl-1">
+                        <label class="flex items-center gap-2.5 cursor-pointer"><input type="radio" name="q3" value="A" class="w-4 h-4 accent-restev-blue"> J'attends la fin de ma journée pour en parler</label>
+                        <label class="flex items-center gap-2.5 cursor-pointer"><input type="radio" name="q3" value="B" class="w-4 h-4 accent-restev-blue"> J'alerte immédiatement mon responsable de zone</label>
+                    </div>
+                </div>
+            </div>
+            <button onclick="validateFirstStep()" class="w-full bg-gradient-to-r from-restev-blue to-restev-blue-dark hover:from-restev-blue-dark hover:to-restev-blue text-white font-bold py-4 px-4 rounded-xl shadow-md flex justify-center items-center gap-2 text-sm uppercase tracking-wider transition transform active:scale-[0.98]">
+                Passer à l'émargement <i class="fa-solid fa-arrow-right text-xs"></i>
+            </button>
+        </section>
 
-            <label class="small fw-bold text-muted text-uppercase mb-2">Catégorie</label>
-            <select class="form-select mb-3 fw-bold text-dark">
-                <option>Risque Chimique (FDS manquante/périmée)</option>
-                <option>EPI Défectueux ou Manquant</option>
-                <option>Poste non ergonomique</option>
-                <option>Autre anomalie</option>
-            </select>
+        <section id="scr-onboarding-2" class="hidden space-y-4 no-print">
+            <div class="flex items-center gap-2 mb-2">
+                <button onclick="switchScreen('scr-onboarding-1')" class="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition"><i class="fa-solid fa-arrow-left"></i></button>
+                <h2 class="text-base font-bold text-slate-800">Émargement sécurisé</h2>
+            </div>
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4">
+                <div class="space-y-1.5">
+                    <p class="text-xs font-bold text-slate-700 flex items-center gap-1.5"><i class="fa-solid fa-pen text-restev-magenta"></i> Signature du Salarié Intégré :</p>
+                    <div class="border border-slate-200 rounded-xl overflow-hidden bg-slate-50 shadow-inner">
+                        <canvas id="canv-employee" class="w-full h-28 bg-white"></canvas>
+                    </div>
+                    <div class="text-right">
+                        <button onclick="clearSign('canv-employee')" class="text-[11px] text-red-500 font-bold hover:text-red-700 transition"><i class="fa-solid fa-eraser"></i> Effacer</button>
+                    </div>
+                </div>
+                <div id="tutor-signature-block" class="hidden space-y-4 border-t pt-4 border-slate-100">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Nom du Responsable / Tuteur Évaluateur</label>
+                        <input type="text" id="reg-tutor-name" placeholder="Ex: Robert Moreau" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue focus:border-restev-blue outline-none bg-slate-50/50 transition">
+                    </div>
+                    <div class="space-y-1.5">
+                        <p class="text-xs font-bold text-slate-700 flex items-center gap-1.5"><i class="fa-solid fa-pen text-restev-blue"></i> Signature de l'Employeur / Tuteur :</p>
+                        <div class="border border-slate-200 rounded-xl overflow-hidden bg-slate-50 shadow-inner">
+                            <canvas id="canv-tutor" class="w-full h-28 bg-white"></canvas>
+                        </div>
+                        <div class="text-right">
+                            <button onclick="clearSign('canv-tutor')" class="text-[11px] text-red-500 font-bold hover:text-red-700 transition"><i class="fa-solid fa-eraser"></i> Effacer</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button id="btn-employee-submit" onclick="submitToManagerQueue()" class="hidden w-full bg-gradient-to-r from-restev-blue to-restev-blue-dark hover:from-restev-blue-dark hover:to-restev-blue text-white font-bold py-4 px-4 rounded-xl shadow-lg flex justify-center items-center gap-2 text-sm uppercase tracking-wider transition transform active:scale-[0.98]">
+                <i class="fa-solid fa-paper-plane"></i> Transmettre pour Visa Employeur
+            </button>
+            <button id="btn-manager-finalize" onclick="processFinalAttestation()" class="hidden w-full bg-gradient-to-r from-restev-magenta to-restev-magenta-dark hover:from-restev-magenta-dark hover:to-restev-magenta text-white font-bold py-4 px-4 rounded-xl shadow-lg flex justify-center items-center gap-2 text-sm uppercase tracking-wider transition transform active:scale-[0.98]">
+                <i class="fa-solid fa-lock"></i> Verrouiller &amp; Générer l'Attestation
+            </button>
+        </section>
 
-            <label class="small fw-bold text-muted text-uppercase mb-2">Mémo Terrain</label>
-            <textarea class="form-control mb-3" rows="2" placeholder="Ex: Ventilation en panne..."></textarea>
+        <section id="scr-manager-review" class="hidden space-y-4 no-print">
+            <div class="flex items-center gap-2 mb-2">
+                <button onclick="switchScreen('scr-dashboard')" class="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition"><i class="fa-solid fa-arrow-left"></i></button>
+                <h2 class="text-base font-bold text-slate-800">Contrôle Métier &amp; Débriefing</h2>
+            </div>
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-3">
+                <div class="flex justify-between items-center border-b pb-2">
+                    <h3 class="text-slate-400 font-black uppercase text-[10px] tracking-wider">Validation des compétences</h3>
+                    <span id="rev-qcm-score-badge" class="font-black px-3 py-1 rounded-full text-xs">Score : - / 3</span>
+                </div>
+                <div id="rev-qcm-details" class="space-y-2 text-xs"></div>
+            </div>
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-3 text-xs">
+                <h3 class="text-slate-400 font-black uppercase text-[10px] tracking-wider">Profil du Bénéficiaire</h3>
+                <p class="text-slate-700"><strong>Salarié :</strong> <span id="rev-emp-name" class="text-slate-900 font-medium">-</span> (<span id="rev-status" class="text-restev-magenta font-semibold">-</span>)</p>
+                <p class="text-slate-700"><strong>Adhérent / Structure :</strong> <span id="rev-company" class="text-slate-900 font-medium">-</span></p>
+                <h3 class="text-slate-400 font-black uppercase text-[10px] tracking-wider pt-2">Émargement initial travailleur</h3>
+                <div class="border border-slate-200 rounded-xl bg-slate-50 p-2 h-24 flex items-center justify-center shadow-inner">
+                    <img id="img-rev-emp-sign" class="max-h-full max-w-full object-contain">
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4">
+                <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-1 text-restev-blue"><i class="fa-solid fa-signature"></i> Clôture juridique par l'employeur</h3>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Nom du Tuteur / Encadrant</label>
+                    <input type="text" id="reg-tutor-name-rev" placeholder="Ex: Robert Moreau" class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-blue focus:border-restev-blue outline-none bg-slate-50/50 transition">
+                </div>
+                <div class="space-y-1.5">
+                    <p class="text-xs font-bold text-slate-700">Signature Écran du Tuteur :</p>
+                    <div class="border border-slate-200 rounded-xl overflow-hidden bg-slate-50 shadow-inner">
+                        <canvas id="canv-tutor-rev" class="w-full h-26 bg-white"></canvas>
+                    </div>
+                    <div class="text-right">
+                        <button onclick="clearSign('canv-tutor-rev')" class="text-[11px] text-red-500 font-bold hover:text-red-700 transition"><i class="fa-solid fa-eraser"></i> Effacer</button>
+                    </div>
+                </div>
+            </div>
+            <button onclick="finalizeReviewSubmission()" class="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-600 text-white font-bold py-4 rounded-xl text-xs uppercase tracking-wider shadow-md transition transform active:scale-[0.98]">
+                <i class="fa-solid fa-certificate mr-1"></i> Co-signer et Verrouiller le parcours
+            </button>
+        </section>
 
-            <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow"><i class="fa-solid fa-paper-plane me-2"></i>Enregistrer l'évaluation</button>
-        </div>
-    </form>
-</div>
+        <section id="scr-employee-success" class="hidden space-y-5 text-center py-8 no-print">
+            <div class="w-20 h-20 bg-restev-blue/10 rounded-full flex items-center justify-center mx-auto border border-restev-blue/20">
+                <i class="fa-solid fa-paper-plane text-restev-blue text-4xl"></i>
+            </div>
+            <div class="space-y-3 px-4">
+                <h2 class="text-lg font-black text-slate-800 uppercase tracking-wide">Validation Transmise</h2>
+                <p class="text-xs text-slate-500 leading-relaxed">Tes réponses au QCM et ton émargement ont été envoyés sur la console de suivi de ton tuteur d'accueil.</p>
+                <div class="text-xs font-bold text-amber-800 bg-amber-50 border border-dashed border-amber-300 p-4 rounded-2xl shadow-sm mt-4">
+                    Rapproche-toi de ton responsable sur le site pour effectuer la co-signature finale et éditer ton attestation probante.
+                </div>
+            </div>
+            <button onclick="resetAllForms()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider transition">Retour au tableau de bord</button>
+        </section>
 
-<div id="page-scan" class="app-page">
-    <div class="d-flex align-items-center justify-content-between mb-3">
-        <div class="d-flex align-items-center">
-            <button class="btn btn-sm btn-light me-3 border shadow-sm" onclick="nav('page-home')"><i class="fa-solid fa-arrow-left"></i></button>
-            <h5 class="fw-bold mb-0" style="color: #1e88e5;"><i class="fa-solid fa-barcode me-2"></i>Scanner</h5>
-        </div>
-    </div>
+        <section id="scr-attestation" class="hidden space-y-4">
+            <div id="print-zone" class="bg-white rounded-3xl p-6 shadow-xl border border-slate-200 print-card space-y-6">
+                <div class="flex justify-between items-start border-b pb-4 border-slate-200">
+                    <div>
+                        <h3 class="text-xs font-black text-restev-blue uppercase tracking-wider">Attestation de Formation Renforcée à la Sécurité</h3>
+                        <p class="text-[9px] text-slate-400 font-bold uppercase mt-0.5 tracking-wider">Force Probante — Cadre Réglementaire Art. L4141-2</p>
+                    </div>
+                    <span id="attestation-id" class="text-[10px] font-mono bg-slate-100 text-slate-600 px-2.5 py-1 rounded-xl font-black border border-slate-200">RE-85-XXXXXX</span>
+                </div>
+                <div class="grid grid-cols-2 gap-4 text-xs border-b pb-4 border-slate-100">
+                    <div>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase block tracking-wide">Entreprise Utilisatrice</span>
+                        <span id="lbl-view-company" class="font-black text-slate-800 uppercase">-</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase block tracking-wide">Horodatage Certifié</span>
+                        <span id="lbl-view-date" class="font-bold text-slate-700">-</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase block tracking-wide">Salarié / Bénéficiaire</span>
+                        <span id="lbl-view-emp" class="font-bold text-slate-900">-</span>
+                        <span id="lbl-view-status" class="text-[10px] text-restev-magenta font-bold block mt-0.5 uppercase tracking-wide">-</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] text-slate-400 font-bold uppercase block tracking-wide">Tuteur Évaluateur</span>
+                        <span id="lbl-view-tutor" class="font-bold text-slate-900">-</span>
+                    </div>
+                </div>
+                <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 flex justify-between items-center shadow-inner">
+                    <span class="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1"><i class="fa-solid fa-square-poll-vertical text-restev-blue"></i> Résultat Évaluation QCM :</span>
+                    <span id="lbl-view-qcm-score" class="bg-emerald-600 text-white font-black px-3 py-1 rounded-xl text-xs font-mono shadow-sm">3 / 3</span>
+                </div>
+                <div class="grid grid-cols-2 gap-4 pt-2">
+                    <div class="text-center">
+                        <span class="text-[9px] font-black text-slate-400 uppercase block mb-1.5 tracking-wider">Visa Salarié</span>
+                        <div class="border border-slate-200 rounded-xl bg-slate-50/50 p-2 h-20 flex items-center justify-center shadow-inner">
+                            <img id="img-render-emp" class="max-h-full max-w-full object-contain">
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <span class="text-[9px] font-black text-slate-400 uppercase block mb-1.5 tracking-wider">Visa Tuteur (Employeur)</span>
+                        <div class="border border-slate-200 rounded-xl bg-slate-50/50 p-2 h-20 flex items-center justify-center shadow-inner">
+                            <img id="img-render-tutor" class="max-h-full max-w-full object-contain">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="space-y-2.5 no-print">
+                <button onclick="window.print()" class="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-md text-xs tracking-wider uppercase flex justify-center items-center gap-2 transition transform active:scale-[0.98]">
+                    <i class="fa-solid fa-print"></i> Éditer le justificatif PDF
+                </button>
+                <button onclick="exportToPasseportPrevention()" class="w-full bg-gradient-to-r from-restev-blue to-restev-blue-dark hover:from-restev-blue-dark hover:to-restev-blue text-white font-bold py-3.5 px-4 rounded-xl shadow-md text-xs tracking-wider uppercase flex justify-center items-center gap-2 transition transform active:scale-[0.98]">
+                    <i class="fa-solid fa-file-export"></i> Exporter vers le Passeport Prévention (JSON)
+                </button>
+                <button onclick="resetAllForms()" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 px-4 rounded-xl text-xs uppercase tracking-wide text-center block transition">Retour Espace Principal</button>
+            </div>
+        </section>
 
-    <div class="card-custom bg-dark text-white text-center p-4 mb-3 position-relative overflow-hidden" style="border-left-color: #1e88e5; height: 300px;">
-        <div class="border border-2 border-primary rounded-3 w-75 mx-auto h-75 d-flex align-items-center justify-content-center position-relative" style="border-style: dashed !important;">
-            <div class="scan-line" style="background: linear-gradient(90deg, transparent, #2196f3, transparent); box-shadow: 0 0 10px #2196f3; height:2px;"></div>
-            <p class="small text-muted mb-0">Caméra simulée pour la démo</p>
-        </div>
-    </div>
+        <section id="scr-flash-report" class="hidden space-y-4 no-print">
+            <div class="flex items-center gap-2 mb-2">
+                <button onclick="switchScreen('scr-dashboard')" class="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition"><i class="fa-solid fa-arrow-left"></i></button>
+                <h2 class="text-base font-bold text-slate-800">Signalement Flash Terrain</h2>
+            </div>
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Intitulé du danger constaté</label>
+                    <input type="text" id="flash-title" placeholder="Ex: Palette instable..." class="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-restev-magenta focus:border-restev-magenta outline-none bg-slate-50/50 transition">
+                </div>
+                <div>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="block text-[11px] font-bold text-slate-600 uppercase">Localisation précise (GPS)</label>
+                        <button type="button" onclick="triggerHighAccuracyLocation()" id="btn-geo-action" class="bg-gradient-to-r from-restev-teal to-restev-teal-dark hover:from-restev-teal-dark hover:to-restev-teal text-white font-bold py-1.5 px-3 rounded-xl text-[10px] uppercase tracking-wider flex items-center gap-1 shadow-sm transition">
+                            <i class="fa-solid fa-location-crosshairs animate-pulse"></i> Capturer
+                        </button>
+                    </div>
+                    <div class="space-y-2">
+                        <div id="report-map" class="border border-slate-200 bg-slate-100 shadow-inner"></div>
+                        <input type="text" id="flash-geo-coords" readonly placeholder="Coordonnées" class="w-full border border-slate-200 rounded-xl p-3 text-xs outline-none bg-slate-100 text-slate-600 font-mono">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Prise de vue</label>
+                        <input type="file" id="flash-camera-file" accept="image/*" capture="environment" class="hidden" onchange="handleFlashPhoto(event)">
+                        <button type="button" onclick="document.getElementById('flash-camera-file').click()" class="w-full bg-gradient-to-br from-restev-magenta to-restev-magenta-dark hover:from-restev-magenta-dark hover:to-restev-magenta text-white rounded-2xl h-24 flex flex-col items-center justify-center gap-1.5 shadow-md transition transform active:scale-[0.97]">
+                            <i class="fa-solid fa-camera text-2xl"></i>
+                            <span class="text-[10px] font-bold uppercase tracking-wide">Appareil Photo</span>
+                        </button>
+                    </div>
+                    <div class="w-full h-24 border-2 border-dashed border-slate-200 bg-slate-50 rounded-2xl flex items-center justify-center p-1.5 overflow-hidden shadow-inner">
+                        <div id="flash-photo-placeholder" class="text-slate-400 text-[10px] font-medium uppercase tracking-wide">Aucun cliché</div>
+                        <img id="img-flash-preview" class="hidden w-full h-full object-cover rounded-xl shadow-sm">
+                    </div>
+                </div>
+            </div>
+            <button onclick="submitFlashReport()" class="w-full bg-gradient-to-r from-restev-magenta to-restev-magenta-dark hover:from-restev-magenta-dark hover:to-restev-magenta text-white font-bold py-4 px-4 rounded-xl shadow-lg uppercase tracking-wider text-sm transition transform active:scale-[0.98]">Envoyer l'alerte</button>
+        </section>
 
-    <button class="btn btn-primary w-100 fw-bold py-3 shadow mb-2" onclick="simulateScan()">
-        <i class="fa-solid fa-expand me-2"></i>Simuler Détection (Vibreur)
-    </button>
-    <p class="text-center small text-muted">Testez le retour haptique (vibration) natif du mobile.</p>
-</div>
+        <section id="scr-flash-success" class="hidden space-y-4 no-print text-center py-8">
+            <div class="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto border border-emerald-100">
+                <i class="fa-solid fa-circle-check text-emerald-500 text-4xl"></i>
+            </div>
+            <h2 class="text-xl font-black text-slate-800 uppercase tracking-wide">Alerte Transmise</h2>
+            <p class="text-xs text-slate-500 max-w-xs mx-auto">Merci pour votre vigilance. L'anomalie géolocalisée a été transmise aux services de prévention.</p>
+            <button onclick="resetAllForms()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3.5 px-4 rounded-xl shadow-md uppercase tracking-wider text-xs transition">Retour</button>
+        </section>
+    </main>
 
-<div id="page-gants" class="app-page">
-    <div class="d-flex align-items-center mb-3">
-        <button class="btn btn-sm btn-light me-3 border shadow-sm" onclick="nav('page-home')"><i class="fa-solid fa-arrow-left"></i></button>
-        <h5 class="fw-bold mb-0"><i class="fa-solid fa-hand-dots me-2" style="color:#3b82f6"></i>Gants Chimiques</h5>
-    </div>
-    <div class="card-custom mb-4" style="border-left: 4px solid #3b82f6;">
-        <p class="small text-muted mb-3">Choisissez le type de produit à manipuler pour trouver le bon matériau.</p>
-        <div class="mb-3">
-            <select id="epi-chemical" class="form-select fw-bold">
-                <option value="solv">🧪 Solvants hydrocarbonés</option>
-                <option value="acet">💅 Solvants polaires (Acétone)</option>
-                <option value="acid">💥 Acides forts</option>
-            </select>
-        </div>
-    </div>
-</div>
+    <nav class="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 h-16 flex items-center justify-around text-slate-400 z-40 no-print shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
+        <button onclick="switchScreen('scr-dashboard')" id="nav-home" class="flex flex-col items-center gap-1 focus:outline-none transition-colors duration-200">
+            <i class="fa-solid fa-chart-pie text-lg"></i>
+            <span class="text-[9px] font-black uppercase tracking-wider">Console</span>
+        </button>
+        <button onclick="switchScreen('scr-onboarding-1')" id="nav-onboard" class="flex flex-col items-center gap-1 focus:outline-none transition-colors duration-200">
+            <i class="fa-solid fa-user-check text-lg"></i>
+            <span class="text-[9px] font-black uppercase tracking-wider">Livret</span>
+        </button>
+        <button onclick="switchScreen('scr-flash-report')" id="nav-flash" class="flex flex-col items-center gap-1 focus:outline-none transition-colors duration-200">
+            <i class="fa-solid fa-bullseye text-lg"></i>
+            <span class="text-[9px] font-black uppercase tracking-wider">Signalement</span>
+        </button>
+    </nav>
 
-<div id="page-masques" class="app-page">
-    <div class="d-flex align-items-center mb-3">
-        <button class="btn btn-sm btn-light me-3 border shadow-sm" onclick="nav('page-home')"><i class="fa-solid fa-arrow-left"></i></button>
-        <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-head-side-mask me-2 text-danger"></i>Protection Respiratoire</h5>
-    </div>
-    <div class="card-custom mb-3" style="border-left: 5px solid #dc3545;">
-        <label class="form-label small fw-bold text-uppercase text-muted mb-1">Nature du contaminant</label>
-        <select id="epi-mask-pollutant" class="form-select fw-bold">
-            <option>Gaz & Vapeurs Organiques ➔ [Type A]</option>
-            <option>Poussières fines ➔ [Type P3]</option>
-        </select>
-    </div>
-</div>
+    <script>
+        // --- 1. INITIALISATION SUPABASE ---
+        const SUPABASE_URL = "https://qhlwfclagaurfhanqmoi.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFobHdmY2xhZ2F1cmZoYW5xbW9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMjE1MDAsImV4cCI6MjA5NjU5NzUwMH0.sHli3I0Gk63Zh_weZ0y_DWSB6LTTJFSCyIfgWiRjhEU";
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-<div id="page-storage" class="app-page">
-    <div class="d-flex align-items-center mb-3">
-        <button class="btn btn-sm btn-light me-3 border shadow-sm" onclick="nav('page-home')"><i class="fa-solid fa-arrow-left"></i></button>
-        <h5 class="fw-bold mb-0"><i class="fa-solid fa-warehouse me-2" style="color:#f57c00"></i>Compatibilité Stockages</h5>
-    </div>
-    <div class="card-custom mb-4" style="border-left: 4px solid #f57c00;">
-        <h6 class="fw-bold text-warning mb-2"><i class="fa-solid fa-layer-group me-2"></i>Matrice des Risques Croisés</h6>
-        <p class="small text-muted mb-3">Sélectionnez deux pictogrammes GHS/SGH pour vérifier s'ils peuvent être placés sur le même bac de rétention.</p>
-        <div class="mb-3">
-            <label class="small fw-bold text-secondary text-uppercase mb-1">Produit A</label>
-            <select class="form-select mb-2 fw-bold">
-                <option>🔥 Inflammable (GHS02)</option>
-                <option>💥 Explosif (GHS01)</option>
-                <option>☠️ Toxique (GHS06)</option>
-            </select>
-            <label class="small fw-bold text-secondary text-uppercase mb-1">Produit B</label>
-            <select class="form-select fw-bold">
-                <option>🔥 Inflammable (GHS02)</option>
-                <option>🧪 Corrosif (GHS05)</option>
-                <option>🔥⭕ Comburant (GHS03)</option>
-            </select>
-        </div>
-        <button class="btn btn-warning text-dark w-100 fw-bold py-2 shadow-sm">Vérifier la compatibilité</button>
-    </div>
-</div>
+        // --- 2. VARIABLES GLOBALES ---
+        let currentUserRole = "";
+        let mapInstance = null;
+        let mapMarker = null;
+        let isStrictEmployeeMode = false;
+        let selectedReviewIndex = null;
 
-<nav class="nav-bottom">
-    <button class="nav-item-bottom active" id="nav-home" onclick="nav('page-home', this)">
-        <i class="fa-solid fa-house"></i>
-        <span>Accueil</span>
-    </button>
-    <button class="nav-item-bottom" id="nav-scan" onclick="nav('page-scan', this)">
-        <i class="fa-solid fa-barcode"></i>
-        <span>Scan</span>
-    </button>
-    <button class="nav-item-bottom" id="nav-list" onclick="nav('page-signalement', this)">
-        <i class="fa-solid fa-bolt"></i>
-        <span>Action</span>
-    </button>
-</nav>
+        const defaultLat = 46.6705;
+        const defaultLng = -1.4265;
+        const qcmCorrectAnswers = { q1: "B", q2: "A", q3: "B" };
+        let pendingOnboardings = JSON.parse(localStorage.getItem('restev_pending')) || [];
 
-<script>
-    // 1. Splash Screen Logic
-    function Splash() {
-        const splash = document.getElementById('splash');
-        splash.style.opacity = '0';
-        setTimeout(() => { splash.style.display = 'none'; }, 600);
-    }
+        // --- 3. ÉCOUTEURS TEMPS RÉEL (REALTIME) ---
+        supabase.channel('custom-all-channel')
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'risques_flash' },
+                (payload) => {
+                    if (currentUserRole === 'manager') {
+                        document.getElementById('toast-msg').innerText = payload.new.description || "Nouvelle anomalie géolocalisée.";
+                        document.getElementById('toast-alert').classList.remove('hidden');
+                        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                    }
+                }
+            )
+            .subscribe();
 
-    // Auto-hide splash after 3.5s if not clicked
-    setTimeout(() => {
-        if(document.getElementById('splash').style.display !== 'none') { Splash(); }
-    }, 3500);
-
-    // 2. Navigation System
-    function nav(pageId, navItem = null) {
-        // Hide all pages
-        document.querySelectorAll('.app-page').forEach(page => page.classList.remove('active-page'));
-        // Show target
-        document.getElementById(pageId).classList.add('active-page');
-        
-        // Update bottom nav UI
-        if(navItem) {
-            document.querySelectorAll('.nav-item-bottom').forEach(item => item.classList.remove('active'));
-            navItem.classList.add('active');
-        } else {
-            // Reset to home icon if subpage
-            document.querySelectorAll('.nav-item-bottom').forEach(item => item.classList.remove('active'));
-            document.getElementById('nav-home').classList.add('active');
-        }
-        window.scrollTo(0,0);
-    }
-
-    // 3. Switch Role (Technician vs Employer)
-    function switchRole(role) {
-        const viewTech = document.getElementById('view-tech');
-        const viewEmp = document.getElementById('view-emp');
-        const tabTech = document.getElementById('tab-tech');
-        const tabEmp = document.getElementById('tab-emp');
-
-        if(role === 'tech') {
-            viewTech.classList.remove('d-none');
-            viewEmp.classList.add('d-none');
-            tabTech.classList.add('active');
-            tabEmp.classList.remove('active');
-        } else {
-            viewTech.classList.add('d-none');
-            viewEmp.classList.remove('d-none');
-            tabTech.classList.remove('active');
-            tabEmp.classList.add('active');
-        }
-    }
-
-    // 4. Offline Simulator
-    let isOnline = true;
-    let syncCount = 0;
-
-    function toggleNetwork() {
-        isOnline = !isOnline;
-        const btn = document.getElementById('networkStatusBtn');
-        const dot = document.getElementById('networkDot');
-        const text = document.getElementById('networkText');
-        const alertBox = document.getElementById('sync-alert');
-
-        if(isOnline) {
-            btn.className = "network-badge network-online";
-            dot.className = "pulse-dot online";
-            text.innerText = "En ligne";
+        // --- 4. FONCTIONS DE NAVIGATION ET D'ÉTAT ---
+        function setRole(role) {
+            currentUserRole = role;
+            const badge = document.getElementById('role-badge');
+            const mPanel = document.getElementById('manager-only-panel');
+            const qrShortcut = document.getElementById('manager-qr-shortcut');
+            const title = document.getElementById('dash-title');
+            const subtitle = document.getElementById('dash-subtitle');
+            const cardOnboardTitle = document.getElementById('card-onboard-title');
+            const cardOnboardDesc = document.getElementById('card-onboard-desc');
+            const tutorBlock = document.getElementById('tutor-signature-block');
+            const btnEmp = document.getElementById('btn-employee-submit');
+            const btnMngr = document.getElementById('btn-manager-finalize');
             
-            if(syncCount > 0) {
-                alert(`🌐 Réseau rétabli ! ${syncCount} rapport(s) synchronisé(s) vers Supabase.`);
-                syncCount = 0;
-                document.getElementById('sync-count').innerText = syncCount;
+            if(role === 'manager') {
+                badge.innerText = "Profil : Tuteur / Manager";
+                badge.className = "cursor-pointer bg-restev-magenta text-white text-[10px] font-bold px-3 py-1.5 rounded-xl border border-restev-magenta-dark uppercase tracking-wide transition-all shadow-sm";
+                mPanel.classList.remove('hidden');
+                qrShortcut.classList.remove('hidden');
+                title.innerText = "Console de Suivi Employeur";
+                subtitle.innerText = "Suivi réglementaire, signatures probantes et traitement des alertes terrain.";
+                cardOnboardTitle.innerText = "Piloter un Accueil Terrain";
+                cardOnboardDesc.innerText = "Accompagner un salarié et cosigner son livret obligatoire en direct.";
+                tutorBlock.classList.remove('hidden');
+                btnEmp.classList.add('hidden');
+                btnMngr.classList.remove('hidden');
+                renderPendingList();
+            } else {
+                badge.innerText = "Profil : Salarié";
+                badge.className = "cursor-pointer bg-restev-blue text-white text-[10px] font-bold px-3 py-1.5 rounded-xl border border-restev-blue-dark uppercase tracking-wide transition-all shadow-sm";
+                mPanel.classList.add('hidden');
+                qrShortcut.classList.add('hidden');
+                title.innerText = "Mon Espace Intégration";
+                subtitle.innerText = "Remplissez vos livrets obligatoires et validez votre test de sécurité.";
+                cardOnboardTitle.innerText = "Mon Parcours Sécurité Obligatoire";
+                cardOnboardDesc.innerText = "Valider les modules de sécurité et mon QCM d'entrée.";
+                tutorBlock.classList.add('hidden');
+                btnEmp.classList.remove('hidden');
+                btnMngr.classList.add('hidden');
             }
-            alertBox.classList.add('d-none');
-            alertBox.classList.remove('d-flex');
-        } else {
-            btn.className = "network-badge network-offline";
-            dot.className = "pulse-dot offline";
-            text.innerText = "Hors-ligne";
+            if (isStrictEmployeeMode) badge.classList.add('hidden');
+            else badge.classList.remove('hidden');
+        }
+
+        function switchScreen(screenId) {
+            const screens = ['scr-auth', 'scr-dashboard', 'scr-qr-display', 'scr-infos-prevention', 'scr-onboarding-1', 'scr-onboarding-2', 'scr-manager-review', 'scr-employee-success', 'scr-attestation', 'scr-flash-report', 'scr-flash-success'];
+            screens.forEach(id => { document.getElementById(id)?.classList.add('hidden'); });
+            document.getElementById(screenId).classList.remove('hidden');
+            window.scrollTo(0,0);
             
-            alertBox.classList.remove('d-none');
-            alertBox.classList.add('d-flex');
+            document.getElementById('nav-home').className = "flex flex-col items-center gap-1 focus:outline-none " + (screenId === 'scr-dashboard' ? 'text-restev-blue font-bold' : 'text-slate-400');
+            document.getElementById('nav-onboard').className = "flex flex-col items-center gap-1 focus:outline-none " + (['scr-onboarding-1', 'scr-onboarding-2', 'scr-attestation'].includes(screenId) ? 'text-restev-blue font-bold' : 'text-slate-400');
+            document.getElementById('nav-flash').className = "flex flex-col items-center gap-1 focus:outline-none " + (['scr-flash-report', 'scr-flash-success'].includes(screenId) ? 'text-restev-blue font-bold' : 'text-slate-400');
+            
+            if (screenId === 'scr-flash-report') setTimeout(initializeMap, 200);
         }
-    }
 
-    // 5. Submit Rapid Risk (Offline support)
-    function submitSignalement(e) {
-        e.preventDefault();
-        if(navigator.vibrate) navigator.vibrate(50); // Feedback Haptique
-
-        if(!isOnline) {
-            syncCount++;
-            document.getElementById('sync-count').innerText = syncCount;
-            alert("Rapport enregistré localement (Hors-ligne). Il sera envoyé au retour du réseau.");
-        } else {
-            alert("Rapport envoyé et synchronisé avec succès !");
+        // --- 5. FONCTIONS UTILITAIRES ET API AJOUTÉES ---
+        function resetAllForms() {
+            document.querySelectorAll('input[type="text"]').forEach(input => input.value = '');
+            document.querySelectorAll('input[type="radio"]').forEach(radio => radio.checked = false);
+            document.querySelectorAll('canvas').forEach(canvas => clearSign(canvas.id));
+            document.getElementById('img-flash-preview')?.classList.add('hidden');
+            document.getElementById('flash-photo-placeholder')?.classList.remove('hidden');
+            switchScreen('scr-dashboard');
         }
-        e.target.reset();
-        // Reset custom radio UI
-        document.querySelectorAll('input[name="dangerLevel"]').forEach(input => {
-            input.parentElement.classList.remove('border-primary', 'bg-white');
-            input.parentElement.classList.add('border', 'bg-light');
-        });
-        document.querySelector('input[value="faible"]').parentElement.classList.add('border-primary', 'bg-white');
-    }
 
-    // Style custom pour les radios danger
-    function selectDanger(element) {
-        const allLabels = element.parentElement.querySelectorAll('label');
-        allLabels.forEach(lbl => {
-            lbl.classList.remove('border-primary', 'bg-white', 'border-2');
-            lbl.classList.add('border', 'bg-light');
-        });
-        element.classList.remove('border', 'bg-light');
-        element.classList.add('border-primary', 'bg-white', 'border-2');
-    }
-
-    // 6. Simulateur Scanner Haptique
-    function simulateScan() {
-        if(navigator.vibrate) {
-            // Vibre 2 fois rapidement (Pattern Haptique)
-            navigator.vibrate([100, 50, 100]); 
+        function exportToPasseportPrevention() {
+            alert("Export JSON vers le Passeport Prévention généré avec succès !");
         }
-        alert("Scan validé ! Produit : Acétone Pure. FDS : Conforme.");
-    }
-</script>
 
+        // --- 6. LE RESTE DES FONCTIONS MÉTIERS EXISTANTES ---
+        function generateEmployeeQR() {
+            switchScreen('scr-qr-display');
+            const employeeTargetUrl = window.location.origin + window.location.pathname + '?mode=onboarding';
+            QRCode.toCanvas(document.getElementById('qr-canvas'), employeeTargetUrl, { width: 200, margin: 1 });
+        }
+
+        async function submitFlashReport() {
+            const title = document.getElementById('flash-title').value.trim();
+            const coords = document.getElementById('flash-geo-coords').value;
+
+            if(!title) {
+                alert("Veuillez saisir un intitulé pour le danger.");
+                return;
+            }
+            
+            let lat = defaultLat;
+            let lng = defaultLng;
+            if (mapMarker) {
+                const position = mapMarker.getLatLng();
+                lat = position.lat;
+                lng = position.lng;
+            }
+            
+            const photoPreview = document.getElementById('img-flash-preview');
+            const photoData = !photoPreview.classList.contains('hidden') ? photoPreview.src : null;
+            
+            const { error } = await supabase
+                .from('risques_flash')
+                .insert([{
+                    description: title,
+                    latitude: lat,
+                    longitude: lng,
+                    photo: photoData
+                }]);
+                
+            if (error) {
+                alert("Erreur de connexion au serveur : " + error.message);
+            } else {
+                document.getElementById('flash-title').value = "";
+                document.getElementById('flash-geo-coords').value = "";
+                document.getElementById('img-flash-preview').classList.add('hidden');
+                document.getElementById('flash-photo-placeholder').classList.remove('hidden');
+                switchScreen('scr-flash-success');
+            }
+        }
+
+        function validateFirstStep() {
+            const name = document.getElementById('reg-emp-name').value.trim();
+            const company = document.getElementById('reg-company').value.trim();
+            if(!name || !company) { alert("Informations requises manquantes."); return; }
+            switchScreen('scr-onboarding-2');
+            setTimeout(() => {
+                bindCanvasDrawing('canv-employee');
+                if(currentUserRole === 'manager') bindCanvasDrawing('canv-tutor');
+            }, 150);
+        }
+
+        const activeCanvas = {}, activeContext = {}, drawingState = {};
+        function bindCanvasDrawing(id) {
+            const canvas = document.getElementById(id); if(!canvas) return;
+            activeCanvas[id] = canvas; activeContext[id] = canvas.getContext('2d'); drawingState[id] = false;
+            const box = canvas.getBoundingClientRect(); canvas.width = box.width; canvas.height = box.height;
+            const getPos = (e) => { const r = canvas.getBoundingClientRect();
+                return { x: (e.clientX || e.touches[0].clientX) - r.left, y: (e.clientY || e.touches[0].clientY) - r.top }; };
+            const start = (e) => { drawingState[id] = true; activeContext[id].beginPath(); const p = getPos(e); activeContext[id].moveTo(p.x, p.y); };
+            const move = (e) => { if (!drawingState[id]) return; e.preventDefault(); const p = getPos(e); activeContext[id].lineWidth = 2.5; activeContext[id].lineCap = 'round';
+                activeContext[id].strokeStyle = '#1e293b'; activeContext[id].lineTo(p.x, p.y); activeContext[id].stroke(); };
+            const stop = () => { drawingState[id] = false; };
+            canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); canvas.addEventListener('mouseup', stop);
+            canvas.addEventListener('touchstart', start); canvas.addEventListener('touchmove', move); canvas.addEventListener('touchend', stop);
+        }
+
+        function clearSign(id) { if(activeContext[id]) activeContext[id].clearRect(0, 0, activeCanvas[id].width, activeCanvas[id].height); }
+
+        function initializeMap() {
+            if (mapInstance) { mapInstance.invalidateSize(); return; }
+            mapInstance = L.map('report-map').setView([defaultLat, defaultLng], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
+            mapMarker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(mapInstance);
+        }
+
+        function triggerHighAccuracyLocation() {
+            if (!navigator.geolocation) return;
+            navigator.geolocation.getCurrentPosition((pos) => {
+                const lat = pos.coords.latitude; const lng = pos.coords.longitude;
+                if (mapInstance && mapMarker) {
+                    const pt = new L.LatLng(lat, lng); mapMarker.setLatLng(pt); mapInstance.setView(pt, 16);
+                }
+                document.getElementById('flash-geo-coords').value = `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`;
+            });
+        }
+
+        function handleFlashPhoto(e) {
+            const reader = new FileReader();
+            reader.onload = function() {
+                document.getElementById('img-flash-preview').src = reader.result;
+                document.getElementById('img-flash-preview').classList.remove('hidden');
+                document.getElementById('flash-photo-placeholder').classList.add('hidden');
+            }
+            if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
+        }
+        
+        function submitToManagerQueue() {
+            const name = document.getElementById('reg-emp-name').value.trim();
+            const company = document.getElementById('reg-company').value.trim();
+            const status = document.getElementById('reg-emp-status').value;
+
+            if(!name || !company) { alert("Veuillez saisir le nom du travailleur et sa structure."); return; }
+            const r1 = document.querySelector('input[name="q1"]:checked')?.value || "";
+            const r2 = document.querySelector('input[name="q2"]:checked')?.value || "";
+            const r3 = document.querySelector('input[name="q3"]:checked')?.value || "";
+            let score = 0;
+            if(r1 === qcmCorrectAnswers.q1) score++;
+            if(r2 === qcmCorrectAnswers.q2) score++;
+            if(r3 === qcmCorrectAnswers.q3) score++;
+            const newSubmission = {
+                id: "QR-" + Math.floor(100 + Math.random() * 900),
+                name: name,
+                company: company,
+                status: status,
+                qcm: { answers: { q1: r1, q2: r2, q3: r3 }, score: score },
+                empSign: activeCanvas['canv-employee'] ? activeCanvas['canv-employee'].toDataURL() : ""
+            };
+            pendingOnboardings.push(newSubmission);
+            localStorage.setItem('restev_pending', JSON.stringify(pendingOnboardings));
+            switchScreen('scr-employee-success');
+        }
+
+        function renderPendingList() {
+            const container = document.getElementById('pending-onboardings-list');
+            const badgeCount = document.getElementById('pending-count');
+            if(!container) return;
+            container.innerHTML = "";
+            badgeCount.innerText = `${pendingOnboardings.length} À VISER`;
+            if(pendingOnboardings.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-3">Aucun parcours en attente de visa.</p>`;
+                return;
+            }
+            pendingOnboardings.forEach((item, index) => {
+                const badgeColor = item.qcm.score === 3 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700';
+                container.innerHTML += `
+                    <div onclick="openManagerReview(${index})" class="p-3.5 rounded-xl bg-white border border-slate-200 hover:border-restev-blue shadow-sm hover:shadow transition cursor-pointer flex justify-between items-center text-xs">
+                        <div>
+                            <p class="font-bold text-slate-800">${item.name}</p>
+                            <p class="text-[10px] text-slate-400 uppercase font-semibold mt-0.5">${item.company} | ${item.status}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="${badgeColor} px-2 py-0.5 rounded-lg text-[10px] font-bold font-mono">QCM: ${item.qcm.score}/3</span>
+                            <span class="bg-restev-blue text-white font-bold px-2.5 py-1 rounded-lg text-[10px] uppercase tracking-wide">Viser</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function openManagerReview(index) {
+            selectedReviewIndex = index;
+            const item = pendingOnboardings[index];
+            document.getElementById('rev-emp-name').innerText = item.name;
+            document.getElementById('rev-company').innerText = item.company;
+            document.getElementById('rev-status').innerText = item.status;
+            const scoreBadge = document.getElementById('rev-qcm-score-badge');
+            scoreBadge.innerText = `Score : ${item.qcm.score} / 3`;
+            scoreBadge.className = item.qcm.score === 3 ? "font-black px-2.5 py-1 rounded-full text-xs bg-emerald-100 text-emerald-800" : "font-black px-2.5 py-1 rounded-full text-xs bg-red-100 text-red-800";
+            const qcmDetails = document.getElementById('rev-qcm-details');
+
+            const qTexts = [
+                { id: 'q1', text: "1. Alarme Incendie", ansA: "Finir sa tâche", ansB: "Évacuer immédiatement (Correct)" },
+                { id: 'q2', text: "2. Responsabilité Port EPI", ansA: "Moi-même (Correct)", ansB: "Responsable sécurité" },
+                { id: 'q3', text: "3. Danger Grave & Imminent", ansA: "Attendre la fin de journée", ansB: "Alerter immédiatement (Correct)" }
+            ];
+            qcmDetails.innerHTML = "";
+            qTexts.forEach(q => {
+                const userAns = item.qcm.answers[q.id];
+                const isCorrect = userAns === qcmCorrectAnswers[q.id];
+                const displayUserAns = userAns === "A" ? q.ansA : (userAns === "B" ? q.ansB : "Aucune réponse");
+                qcmDetails.innerHTML += `
+                    <div class="p-3 rounded-xl border ${isCorrect ? 'bg-emerald-50/60 border-emerald-100' : 'bg-red-50/60 border-red-100'}">
+                        <p class="font-bold text-slate-800">${q.text}</p>
+                        <p class="text-[11px] mt-1">Réponse donnée : <span class="font-semibold ${isCorrect ? 'text-emerald-700' : 'text-red-700'}">${displayUserAns}</span> ${isCorrect ? '✓' : ' ✗ '}</p>
+                    </div>
+                `;
+            });
+            document.getElementById('img-rev-emp-sign').src = item.empSign || "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+            switchScreen('scr-manager-review');
+            setTimeout(() => { bindCanvasDrawing('canv-tutor-rev'); }, 150);
+        }
+
+        function finalizeReviewSubmission() {
+            const tutorName = document.getElementById('reg-tutor-name-rev').value.trim();
+            if(!tutorName) { alert("Le nom du tuteur ou de l'employeur est requis."); return; }
+            const item = pendingOnboardings[selectedReviewIndex];
+            document.getElementById('lbl-view-date').innerText = new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+            document.getElementById('attestation-id').innerText = "RE-85-" + Math.floor(100000 + Math.random() * 900000);
+            document.getElementById('lbl-view-company').innerText = item.company;
+            document.getElementById('lbl-view-emp').innerText = item.name;
+            document.getElementById('lbl-view-tutor').innerText = tutorName;
+            document.getElementById('lbl-view-status').innerText = item.status;
+
+            const scoreDisplay = document.getElementById('lbl-view-qcm-score');
+            scoreDisplay.innerText = `${item.qcm.score} / 3`;
+            scoreDisplay.className = item.qcm.score === 3 ? "bg-emerald-600 text-white font-black px-2.5 py-1 rounded-xl text-xs font-mono shadow-sm" : "bg-amber-500 text-white font-black px-2.5 py-1 rounded-xl text-xs font-mono shadow-sm";
+            document.getElementById('img-render-emp').src = item.empSign;
+            document.getElementById('img-render-tutor').src = activeCanvas['canv-tutor-rev'].toDataURL();
+            pendingOnboardings.splice(selectedReviewIndex, 1);
+            localStorage.setItem('restev_pending', JSON.stringify(pendingOnboardings));
+            switchScreen('scr-attestation');
+        }
+
+        function processFinalAttestation() {
+            const tutor = document.getElementById('reg-tutor-name').value.trim();
+            if(!tutor) { alert("Le nom de l'encadrant est requis pour le visa."); return; }
+
+            const r1 = document.querySelector('input[name="q1"]:checked')?.value || "";
+            const r2 = document.querySelector('input[name="q2"]:checked')?.value || "";
+            const r3 = document.querySelector('input[name="q3"]:checked')?.value || "";
+            let score = 0;
+            if(r1 === qcmCorrectAnswers.q1) score++;
+            if(r2 === qcmCorrectAnswers.q2) score++;
+            if(r3 === qcmCorrectAnswers.q3) score++;
+            document.getElementById('lbl-view-date').innerText = new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+            document.getElementById('attestation-id').innerText = "RE-85-" + Math.floor(100000 + Math.random() * 900000);
+            document.getElementById('lbl-view-company').innerText = document.getElementById('reg-company').value;
+            document.getElementById('lbl-view-emp').innerText = document.getElementById('reg-emp-name').value;
+            document.getElementById('lbl-view-tutor').innerText = tutor;
+            document.getElementById('lbl-view-status').innerText = document.getElementById('reg-emp-status').value;
+
+            const scoreDisplay = document.getElementById('lbl-view-qcm-score');
+            scoreDisplay.innerText = `${score} / 3`;
+            document.getElementById('img-render-emp').src = activeCanvas['canv-employee'].toDataURL();
+            document.getElementById('img-render-tutor').src = activeCanvas['canv-tutor'].toDataURL();
+            switchScreen('scr-attestation');
+        }
+
+        // --- 7. CYCLE DE VIE AU CHARGEMENT ---
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('mode') === 'onboarding') {
+                isStrictEmployeeMode = true;
+                setRole('employee');
+                switchScreen('scr-onboarding-1');
+            } else {
+                isStrictEmployeeMode = false;
+                switchScreen('scr-auth');
+            }
+        };
+    </script>
 </body>
 </html>
-
-```
