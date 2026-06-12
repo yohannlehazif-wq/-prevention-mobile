@@ -403,29 +403,31 @@
         }
 
         // ENVOI REEL VERS LA BASE SUPABASE
-        async function submitLiveRisk() {
-            const desc = document.getElementById('risk-desc').value;
-            const loc = document.getElementById('risk-location').value;
+       async function submitLiveRisk() {
+    const desc = document.getElementById('risk-desc').value;
+    const loc = document.getElementById('risk-location').value;
 
-            if(!desc) return alert("Veuillez saisir une description.");
+    if(!desc) return alert("Veuillez saisir une description.");
 
-            const item = {
-                employee: employeeInfo.name,
-                description: desc,
-                location_text: loc,
-                severity: "Danger Critique",
-                photo: base64Photo
-            };
+    const item = {
+        employee: employeeInfo.name,
+        description: desc,
+        location_text: loc,
+        severity: "Danger Critique",
+        photo: base64Photo,
+        company_id: '00000000-0000-0000-0000-000000000000' // AJOUTEZ CETTE LIGNE
+    };
 
-            const { error } = await supabaseClient.from('risks').insert([item]);
-            if(error) {
-                alert("Erreur réseau : " + error.message + "\n\nAs-tu bien lancé le code SQL (ALTER TABLE risks DISABLE ROW LEVEL SECURITY;) dans Supabase ?");
-            } else {
-                showToast("✅ Danger transmis en direct au PC Manager !");
-                switchScreen('scr-employee');
-            }
-        }
-
+    const { error } = await supabaseClient.from('risks').insert([item]);
+    
+    if(error) {
+        console.error("Détail de l'erreur Supabase :", error);
+        alert("Erreur réseau : " + error.message);
+    } else {
+        showToast("✅ Danger transmis en direct au PC Manager !");
+        switchScreen('scr-employee');
+    }
+}
         // GESTION CANVAS (Signatures)
         function initCanvas(id) {
             const canvas = document.getElementById(id);
