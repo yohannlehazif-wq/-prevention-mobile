@@ -3,687 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RESTEV Innovation Hub - Version Direction Générale</title>
-    
-    <!-- Frameworks & Bibliothèques Graphiques Premium -->
+    <title>RESTEV 85 | Hub Prévention Santé</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'restev-blue': '#2f6bb2',
-                        'restev-blue-dark': '#224d80',
-                        'restev-magenta': '#b8257b',
-                        'restev-magenta-dark': '#911d61',
-                        'restev-teal': '#69b3a5',
-                        'restev-gold': '#f2a104'
-                    }
-                }
-            }
-        }
-    </script>
-
     <style>
         .screen { display: none; }
-        .screen.active { display: block; animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        canvas { touch-action: none; }
-        .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); }
-        @media print {
-            .no-print { display: none !important; }
-            .print-view { display: block !important; background: white; color: black; }
-        }
+        .active { display: block; animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        canvas { touch-action: none; border-radius: 12px; }
+        .btn-grad { background: linear-gradient(to right, #2f6bb2, #b8257b); }
     </style>
 </head>
-<body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen">
+<body class="bg-slate-50 min-h-screen font-sans text-slate-800">
 
-    <!-- BARRE DE SIMULATION ET CONTRÔLE DE PRÉSENTATION (Pour le présentateur) -->
-    <div class="bg-slate-900 text-white p-2 text-xs font-semibold flex justify-between items-center px-4 sticky top-0 z-50 no-print shadow-md">
-        <div class="flex items-center space-x-2">
-            <span class="inline-flex w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-            <span class="text-slate-300 font-mono text-[11px]">TÉLÉCOMMANDE DE DÉMO LIVE :</span>
-        </div>
-        <div class="flex space-x-2">
-            <button onclick="switchScreen('scr-direction')" class="bg-restev-blue px-3 py-1 rounded font-bold hover:bg-opacity-80 transition">1. Vue Direction (RESTEV)</button>
-            <button onclick="switchScreen('scr-auth')" class="bg-restev-magenta px-3 py-1 rounded font-bold hover:bg-opacity-80 transition">2. Vue Entreprise Client</button>
-            <button onclick="simulateDirectEmployeeAccess()" class="bg-emerald-600 px-3 py-1 rounded font-bold hover:bg-opacity-80 transition">3. Vue Salarié Terrain</button>
-        </div>
-    </div>
-
-    <!-- EN-TÊTE CORPORATE AVEC INTÉGRATION DU LOGO -->
-    <header class="bg-white border-b border-slate-200 p-4 shadow-sm relative transition-all">
-        <div class="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
-            <img src="logo.png" alt="Logo RESTEV 85" class="h-14 md:h-16 object-contain" onerror="this.style.display='none'; this.after('🏢 RESTEV 85')">
-            
-            <div class="text-right sm:text-right text-center">
-                <span class="bg-gradient-to-r from-restev-blue to-restev-magenta text-white font-black text-[10px] px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
-                    Passeport Prévention Numérique (PST 2026-2030)
-                </span>
-                <p class="text-xs text-slate-400 mt-1 font-medium font-mono">Pilote RLS Multi-Sociétés v4.0</p>
-            </div>
+    <header class="bg-white p-4 shadow-sm border-b sticky top-0 z-50">
+        <div class="max-w-md mx-auto flex justify-between items-center">
+            <h1 class="font-black text-xl text-blue-900">RESTEV <span class="text-magenta-600">85</span></h1>
+            <span class="text-[9px] font-bold uppercase bg-blue-100 text-blue-700 px-2 py-1 rounded">Mode Démo Multi-Entreprises</span>
         </div>
     </header>
 
-    <!-- NOTIFICATION TOAST FLOTTANTE POUR RENDRE L'APP VIVANTE -->
-    <div id="toast" class="fixed bottom-4 right-4 bg-slate-900 text-white text-xs py-3 px-4 rounded-xl shadow-2xl z-50 transition-all transform translate-y-20 opacity-0 flex items-center space-x-2 border border-slate-700">
-        <i class="fa-solid fa-circle-info text-restev-teal text-base"></i>
-        <span id="toast-text">Notification démo</span>
-    </div>
-
-    <main class="max-w-5xl mx-auto p-4 md:p-6">
-
-        <!-- ================= EC-0 : TABLEAU DE BORD EXÉCUTIF ================= -->
-        <section id="scr-direction" class="screen active space-y-6">
-            <div class="bg-gradient-to-r from-slate-900 to-restev-blue-dark p-6 rounded-3xl text-white shadow-xl relative overflow-hidden">
-                <div class="absolute -right-10 -bottom-10 opacity-10 text-[180px] font-black"><i class="fa-solid fa-chart-line"></i></div>
-                <div class="relative z-10 space-y-2">
-                    <span class="bg-restev-gold text-slate-950 font-black text-[10px] px-2.5 py-0.5 rounded uppercase tracking-wider">Console de Supervision Régionale</span>
-                    <h2 class="text-2xl md:text-3xl font-black tracking-tight">Vue d'Ensemble Haute Direction</h2>
-                    <p class="text-slate-300 text-xs max-w-xl">Indicateurs clés de performance et de conformité réglementaire des entreprises adhérentes au RESTEV sur le département de la Vendée.</p>
-                </div>
-            </div>
-
-            <!-- COMPTEURS DYNAMIQUES -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
-                    <div class="p-3 bg-restev-blue/10 text-restev-blue rounded-xl text-xl"><i class="fa-solid fa-building"></i></div>
-                    <div>
-                        <span class="block text-[11px] font-bold text-slate-400 uppercase">Sociétés Affiliées</span>
-                        <span class="text-2xl font-black text-slate-900">142</span>
-                    </div>
-                </div>
-                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
-                    <div class="p-3 bg-emerald-500/10 text-emerald-600 rounded-xl text-xl"><i class="fa-solid fa-id-card-clip"></i></div>
-                    <div>
-                        <span class="block text-[11px] font-bold text-slate-400 uppercase">Passeports Émis</span>
-                        <span class="text-2xl font-black text-slate-900">3 841</span>
-                    </div>
-                </div>
-                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
-                    <div class="p-3 bg-restev-magenta/10 text-restev-magenta rounded-xl text-xl"><i class="fa-solid fa-shield-virus"></i></div>
-                    <div>
-                        <span class="block text-[11px] font-bold text-slate-400 uppercase">Risques Endigués</span>
-                        <span class="text-2xl font-black text-slate-900">92,4 %</span>
-                    </div>
-                </div>
-                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
-                    <div class="p-3 bg-restev-gold/10 text-restev-gold rounded-xl text-xl"><i class="fa-solid fa-bolt"></i></div>
-                    <div>
-                        <span class="block text-[11px] font-bold text-slate-400 uppercase">Alertes en cours</span>
-                        <span id="lbl-dir-alert-count" class="text-2xl font-black text-slate-900">1</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- PARTIE GRAPHIQUE AVANCÉE -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="bg-white p-5 rounded-2xl border shadow-sm lg:col-span-2 space-y-4">
-                    <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
-                        <i class="fa-solid fa-chart-pie text-restev-blue"></i> <span>Répartition Départementale des Risques Signalés</span>
-                    </h3>
-                    <div class="h-64 flex items-center justify-center">
-                        <canvas id="chart-restev-risks"></canvas>
-                    </div>
-                </div>
-
-                <!-- LIVE FEED DES DERNIÈRES ACTIONS CLIENTS -->
-                <div class="bg-white p-5 rounded-2xl border shadow-sm space-y-4 flex flex-col justify-between">
-                    <div>
-                        <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center space-x-2 mb-3">
-                            <i class="fa-solid fa-wave-square text-restev-magenta animate-pulse"></i> <span>Flux d'Activité en Direct</span>
-                        </h3>
-                        <div id="direction-activity-feed" class="space-y-3 max-h-60 overflow-y-auto text-[11px]">
-                            <div class="border-l-2 border-emerald-500 pl-3 py-0.5">
-                                <p class="font-bold text-slate-800">Validation Accueil Sécurité</p>
-                                <p class="text-slate-400">Entreprise : <span class="text-slate-600 font-medium">Bati-Vendée Logistique 85</span> • Il y a 2 min</p>
-                            </div>
-                            <div class="border-l-2 border-amber-500 pl-3 py-0.5" id="feed-live-risk">
-                                <p class="font-bold text-slate-800">Signalement Anomalie - <span class="text-red-600">Danger Critique</span></p>
-                                <p class="text-slate-400">Zone : <span class="text-slate-600 font-medium">Atelier B7</span> • Cliché photo transmis</p>
-                            </div>
-                        </div>
-                    </div>
-                    <button onclick="switchScreen('scr-auth')" class="w-full bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs shadow hover:bg-slate-800 transition text-center block">
-                        Tester le portail d'un Adhérent <i class="fa-solid fa-arrow-right ml-1"></i>
-                    </button>
+    <main class="max-w-md mx-auto p-4 pb-12">
+        <section id="scr-home" class="screen active text-center pt-8 space-y-6">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border">
+                <h2 class="text-xl font-black">Bienvenue sur le Hub</h2>
+                <p class="text-xs text-slate-500 mb-6">Choisissez votre accès pour la présentation</p>
+                <div class="space-y-3">
+                    <button onclick="switchScreen('scr-manager')" class="w-full p-4 bg-slate-900 text-white rounded-xl font-bold">Accès Manager (RESTEV/RH)</button>
+                    <button onclick="switchScreen('scr-employee')" class="w-full p-4 bg-restev-blue text-white rounded-xl font-bold">Accès Salarié (Terrain)</button>
                 </div>
             </div>
         </section>
 
-        <!-- ================= EC-1 : PORTAIL SÉCURISÉ ENTREPRISE ADHÉRENTE ================= -->
-        <section id="scr-auth" class="screen max-w-md mx-auto space-y-6">
-            <div class="text-center space-y-2">
-                <h2 class="text-xl font-black text-slate-900">Espace Entreprise Clé en main</h2>
-                <p class="text-xs text-slate-500">Chaque société possède son espace personnalisé auto-géré.</p>
+        <section id="scr-manager" class="screen space-y-4">
+            <div class="bg-white p-4 rounded-2xl border shadow-sm">
+                <h3 class="font-black text-sm uppercase">Tableau de Bord Entreprises</h3>
+                <div id="live-feed" class="mt-4 space-y-2 h-64 overflow-y-auto bg-slate-50 p-2 rounded-xl text-xs">
+                    <p class="text-slate-400 text-center italic mt-10">En attente de signalement terrain...</p>
+                </div>
             </div>
-            
-            <div class="bg-white p-5 rounded-3xl border shadow-sm space-y-4">
-                <div class="space-y-1">
-                    <label class="text-[10px] font-black uppercase text-slate-400">Sélectionner un Adhérent de démonstration :</label>
-                    <select id="manager-company-name" class="w-full p-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:border-restev-blue outline-none transition">
-                        <option value="Bati-Vendée Logistique 85">🏢 Bati-Vendée Logistique 85</option>
-                        <option value="Manufacture Ouest Sables">🏢 Manufacture Ouest Sables</option>
-                        <option value="Agro-Alimentaire Yonnais">🏢 Agro-Alimentaire Yonnais</option>
-                    </select>
-                </div>
-                <div class="space-y-1">
-                    <label class="text-[10px] font-black uppercase text-slate-400">Identifiant de connexion</label>
-                    <input type="text" class="w-full p-2.5 bg-slate-100 border rounded-xl text-xs" value="prev-qse@vendee.fr" readonly>
-                </div>
-                <button onclick="handleDemoAuth()" class="w-full bg-gradient-to-r from-restev-blue to-restev-blue-dark text-white py-3 rounded-xl text-xs font-bold shadow-md hover:opacity-90 transition">
-                    Ouvrir la Console RH de l'Entreprise
-                </button>
+            <button onclick="switchScreen('scr-home')" class="w-full bg-slate-200 py-3 rounded-xl text-xs font-bold">Retour</button>
+        </section>
+
+        <section id="scr-employee" class="screen space-y-4">
+            <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
+                <h2 class="font-black text-lg">Parcours Sécurité</h2>
+                <button onclick="switchScreen('scr-ia')" class="w-full p-4 bg-restev-magenta text-white rounded-xl font-bold">📸 Analyser un danger (IA)</button>
+                <button onclick="startQuiz()" class="w-full p-4 bg-restev-blue text-white rounded-xl font-bold">📝 Valider mes acquis</button>
             </div>
         </section>
 
-        <!-- ================= EC-2 : DASHBOARD DU MANAGER CLIENT ================= -->
-        <section id="scr-manager" class="screen max-w-4xl mx-auto space-y-6">
-            <div class="bg-white p-4 rounded-2xl border shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div class="flex items-center space-x-3">
-                    <div class="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
-                    <h2 class="text-sm font-black text-slate-900">Session RH Active : <span id="lbl-manager-comp-name" class="text-restev-blue"></span></h2>
-                </div>
-                <button onclick="switchScreen('scr-auth')" class="text-xs bg-slate-100 font-bold px-3 py-1.5 text-slate-600 rounded-lg hover:bg-slate-200"><i class="fa-solid fa-right-from-bracket"></i> Quitter l'espace</button>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- BLOC GÉNÉRATEUR QR CODE D'ACCUEIL -->
-                <div class="bg-white p-5 rounded-2xl border shadow-sm space-y-4">
-                    <div class="flex items-center space-x-2 text-restev-magenta font-black text-xs uppercase tracking-wider">
-                        <i class="fa-solid fa-qrcode text-base"></i>
-                        <h3>Générer un Passeport Intégration Salarié</h3>
-                    </div>
-                    <p class="text-xs text-slate-500">Préparez l'arrivée d'un nouvel intérimaire ou CDD pour lui imposer son parcours de formation obligatoire.</p>
-                    
-                    <div class="space-y-2">
-                        <input type="text" id="reg-emp-name" value="Maxime Renault" placeholder="Nom & Prénom du salarié" class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs font-bold">
-                        <select id="reg-emp-status" class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs font-semibold">
-                            <option value="Intérimaire (Profil Vulnérable)">Statut : Intérimaire (Profil Vulnérable)</option>
-                            <option value="Contrat CDD Saisonnier">Statut : Contrat CDD Saisonnier</option>
-                            <option value="Nouvel Arrivant CDI">Statut : Nouvel Arrivant CDI</option>
-                        </select>
-                    </div>
-
-                    <button onclick="generateDemoQRCode()" class="w-full bg-restev-magenta text-white py-2.5 rounded-xl text-xs font-bold shadow-md hover:bg-opacity-90 transition">
-                        Générer l'accès Smartphone unique
-                    </button>
-
-                    <div id="qr-area" class="hidden flex flex-col items-center justify-center p-4 bg-slate-50 rounded-xl border border-dashed border-slate-200 space-y-3">
-                        <canvas id="qr-canvas"></canvas>
-                        <button onclick="simulateQRScan()" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-black uppercase flex items-center space-x-2 shadow-lg hover:bg-emerald-700 transition w-full justify-center">
-                            <i class="fa-solid fa-mobile-screen animate-bounce"></i> <span>Simuler le Scan du Salarié</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- ALERTES SUR LE SITE CLIENT -->
-                <div class="bg-white p-5 rounded-2xl border shadow-sm space-y-4">
-                    <div class="flex justify-between items-center border-b pb-2">
-                        <h3 class="font-extrabold text-slate-900 text-xs uppercase tracking-wider flex items-center space-x-2">
-                            <i class="fa-solid fa-bell text-restev-gold"></i>
-                            <span>Flux d'Anomalies de vos Ateliers</span>
-                        </h3>
-                        <span class="text-[9px] bg-red-100 font-bold px-2 py-0.5 rounded text-red-700">Sécurité RLS Active</span>
-                    </div>
-                    
-                    <div id="manager-risk-box" class="space-y-3 max-h-72 overflow-y-auto">
-                        <!-- Alimenté en temps réel par JS -->
-                    </div>
-                </div>
-            </div>
+        <section id="scr-ia" class="screen space-y-4">
+            <input type="file" accept="image/*" onchange="runIA(this)" class="w-full p-4 bg-white rounded-xl border">
+            <div id="ia-result" class="hidden p-4 bg-amber-50 rounded-xl text-xs font-bold text-amber-900"></div>
+            <button onclick="alertManager()" class="hidden w-full p-4 bg-red-600 text-white rounded-xl font-bold" id="btn-alert">Alerter mon Responsable</button>
         </section>
-
-        <!-- ================= EC-3 : PARCOURS DU SALARIÉ EN MOBILITE BYOD ================= -->
-        <section id="scr-employee" class="screen max-w-md mx-auto space-y-4">
-            <div class="bg-gradient-to-br from-slate-900 to-restev-blue text-white p-5 rounded-3xl shadow-lg space-y-2 relative overflow-hidden">
-                <span class="bg-restev-gold text-slate-950 text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest">Parcours d'Accueil Obligatoire</span>
-                <h2 class="text-xl font-black" id="lbl-emp-welcome">Bonjour !</h2>
-                <p class="text-xs text-slate-200" id="lbl-emp-company">Chargement...</p>
-            </div>
-
-            <div class="bg-white p-4 rounded-2xl border shadow-sm space-y-3">
-                <h3 class="text-xs font-black uppercase text-slate-400">Vos actions prioritaires :</h3>
-                
-                <button onclick="switchScreen('scr-onboarding-1')" class="w-full bg-slate-50 p-3.5 border rounded-xl text-left flex items-center space-x-3 hover:bg-slate-100/50 transition">
-                    <div class="w-9 h-9 bg-restev-blue/10 text-restev-blue rounded-full flex items-center justify-center text-base"><i class="fa-solid fa-book-open-reader"></i></div>
-                    <div class="flex-1">
-                        <p class="text-xs font-bold text-slate-800">1. Prendre connaissance des risques</p>
-                        <p class="text-[10px] text-slate-400">Évaluation obligatoire avant prise de poste.</p>
-                    </div>
-                    <i class="fa-solid fa-chevron-right text-slate-300 text-xs"></i>
-                </button>
-
-                <button onclick="switchScreen('scr-report')" class="w-full bg-slate-50 p-3.5 border rounded-xl text-left flex items-center space-x-3 hover:bg-slate-100/50 transition">
-                    <div class="w-9 h-9 bg-restev-magenta/10 text-restev-magenta rounded-full flex items-center justify-center text-base"><i class="fa-solid fa-camera"></i></div>
-                    <div class="flex-1">
-                        <p class="text-xs font-bold text-slate-800">2. Signaler un Danger Immédiat</p>
-                        <p class="text-[10px] text-slate-400">Remontée photo avec Analyse Assistée.</p>
-                    </div>
-                    <i class="fa-solid fa-chevron-right text-slate-300 text-xs"></i>
-                </button>
-            </div>
-        </section>
-
-        <!-- ================= EC-4 : MODULE SIGNALEMENT DE RISQUE AVEC SIMULATION IA ================= -->
-        <section id="scr-report" class="screen max-w-md mx-auto bg-white p-5 rounded-3xl border shadow-sm space-y-4">
-            <h3 class="text-base font-black text-slate-900 flex items-center space-x-2"><i class="fa-solid fa-camera text-restev-magenta"></i> <span>Alerte Danger Terrain</span></h3>
-            
-            <div class="space-y-1">
-                <label class="block text-xs font-bold text-slate-700">Prendre un cliché terrain :</label>
-                <div class="flex flex-col items-center justify-center w-full border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 p-4 relative cursor-pointer min-h-[140px] group overflow-hidden">
-                    <input type="file" id="risk-file" accept="image/*" capture="environment" onchange="triggerAIScanSimulation(this)" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
-                    
-                    <!-- SCAN LOADER SIMULÉ -->
-                    <div id="ai-loader" class="hidden absolute inset-0 bg-slate-900/90 z-30 flex flex-col items-center justify-center text-white space-y-2">
-                        <i class="fa-solid fa-circle-notch fa-spin text-2xl text-restev-teal"></i>
-                        <span class="text-[10px] font-mono tracking-widest text-restev-teal font-bold uppercase animate-pulse">RESTEV Vision AI Engine...</span>
-                        <span class="text-[9px] text-slate-400">Détection d'anomalies de sol active</span>
-                    </div>
-
-                    <div id="photo-placeholder" class="text-center space-y-1">
-                        <div class="w-10 h-10 bg-white shadow rounded-full flex items-center justify-center text-slate-500 mx-auto group-hover:scale-110 transition">
-                            <i class="fa-solid fa-camera text-base text-restev-blue"></i>
-                        </div>
-                        <span class="block text-xs font-bold text-slate-700">Ouvrir l'appareil photo</span>
-                        <span class="block text-[10px] text-slate-400">Cliquez pour simuler le déclenchement</span>
-                    </div>
-                    <img id="photo-preview" class="w-full h-36 object-cover rounded-xl hidden border relative z-20" alt="Preuve image">
-                </div>
-            </div>
-
-            <div class="space-y-1">
-                <label class="block text-xs font-bold text-slate-700">Localisation métier simplifiée :</label>
-                <select id="risk-location" class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs font-bold text-slate-700">
-                    <option value="Atelier B7 (Usinage)">📍 Atelier B7 (Usinage)</option>
-                    <option value="Zone de Stockage / Réserve Générale">📍 Zone de Stockage / Réserve Générale</option>
-                    <option value="Parking Salariés & Zone de Fret">📍 Parking Salariés & Zone de Fret</option>
-                    <option value="Quais d'Expédition / Réception">📍 Quais d'Expédition / Réception</option>
-                    <option value="Bureaux Administratifs R+1">📍 Bureaux Administratifs R+1</option>
-                </select>
-            </div>
-
-            <div class="space-y-1">
-                <label class="block text-xs font-bold text-slate-700">Gravité constatée :</label>
-                <select id="risk-level" class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs font-bold text-red-600">
-                    <option value="Critique 🔴">Danger Critique (Intervention Immédiate)</option>
-                    <option value="Modéré 🟠">Alerte Modérée (Traitement sous 24h)</option>
-                </select>
-            </div>
-
-            <div class="space-y-1">
-                <label class="block text-xs font-bold text-slate-700">Description textuelle :</label>
-                <textarea id="risk-desc" rows="2" class="w-full p-2 bg-slate-50 border rounded-xl text-xs font-medium">Fuite massive de liquide glissant constaté à la sortie de la ligne de découpe principale.</textarea>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2">
-                <button type="button" onclick="switchScreen('scr-employee')" class="bg-slate-100 text-slate-600 py-2 rounded-xl text-xs font-bold">Annuler</button>
-                <button type="button" onclick="submitDemoRiskReport()" class="bg-restev-magenta text-white py-2 rounded-xl text-xs font-bold shadow-md">Transmettre l'alerte</button>
-            </div>
-        </section>
-
-        <!-- ================= EC-5 : QUIZ ET RÈGLES DE SÉCURITÉ ================= -->
-        <section id="scr-onboarding-1" class="screen max-w-md mx-auto bg-white p-5 rounded-3xl border shadow-sm space-y-4">
-            <span class="text-[10px] font-black text-restev-blue uppercase tracking-widest block">Étape de Contrôle Obligatoire</span>
-            <h3 class="text-base font-black text-slate-900">Charte de Prévention des Risques</h3>
-            
-            <div class="space-y-2 text-xs text-slate-600">
-                <div class="p-3 bg-slate-50 rounded-xl border-l-4 border-restev-blue">
-                    <p class="font-bold text-slate-900">Règle 1 : Équipements obligatoires</p>
-                    <p>Le port de vos chaussures de sécurité et du gilet haute-visibilité est obligatoire dès l'accès au site.</p>
-                </div>
-                <div class="p-3 bg-slate-50 rounded-xl border-l-4 border-restev-magenta">
-                    <p class="font-bold text-slate-900">Règle 2 : Signalement immédiat</p>
-                    <p>Tout incident, presqu'accident ou anomalie doit être remonté par l'application en moins de 15 minutes.</p>
-                </div>
-            </div>
-
-            <div class="border-t pt-3 space-y-2">
-                <label class="block text-xs font-bold text-slate-700">QCM : À quel moment devez-vous porter vos EPI ?</label>
-                <label class="flex items-center space-x-2 bg-slate-50 p-2.5 rounded-xl text-xs cursor-pointer"><input type="radio" checked name="q1" class="text-restev-blue"> <span class="font-medium">Dès la prise de poste de manière continue</span></label>
-                <label class="flex items-center space-x-2 bg-slate-50 p-2.5 rounded-xl text-xs cursor-pointer"><input type="radio" name="q1" class="text-restev-blue"> <span class="font-medium">Uniquement lors des opérations à haut risque</span></label>
-            </div>
-
-            <button onclick="switchScreen('scr-signature')" class="w-full bg-restev-blue text-white py-2.5 rounded-xl text-xs font-bold shadow">
-                Valider et passer à l'émargement
-            </button>
-        </section>
-
-        <!-- ================= EC-6 : ÉMARGEMENT ET SIGNATURES TACTILES ================= -->
-        <section id="scr-signature" class="screen max-w-md mx-auto bg-white p-5 rounded-3xl border shadow-sm space-y-4">
-            <h3 class="text-base font-black text-slate-900 text-center">Clôture des engagements Sécurité</h3>
-            
-            <div class="space-y-3">
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Signature Numérique du Salarié :</label>
-                    <div class="border rounded-xl bg-slate-50 overflow-hidden"><canvas id="canv-employee" class="w-full bg-slate-100" height="90"></canvas></div>
-                    <button type="button" onclick="clearCanvas('canv-employee')" class="text-[10px] text-slate-400 underline">Effacer le tracé</button>
-                </div>
-                <div>
-                    <input type="text" id="tutor-name" value="M. Vigneron (Tuteur Référent)" class="w-full p-2 bg-slate-50 border rounded-xl text-xs mb-1.5 font-bold">
-                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Signature du Tuteur / Responsable de site :</label>
-                    <div class="border rounded-xl bg-slate-50 overflow-hidden"><canvas id="canv-tutor" class="w-full bg-slate-100" height="90"></canvas></div>
-                    <button type="button" onclick="clearCanvas('canv-tutor')" class="text-[10px] text-slate-400 underline">Effacer le tracé</button>
-                </div>
-            </div>
-
-            <button type="button" onclick="finalizeDemoAttestation()" class="w-full bg-emerald-600 text-white py-2.5 rounded-xl text-xs font-bold shadow-md hover:bg-emerald-700 transition">
-                Générer l'Attestation Officielle Probante
-            </button>
-        </section>
-
-        <!-- ================= EC-7 : PROCES-VERBAL JURIDIQUE PRÊT POUR L'IMPRESSION ================= -->
-        <section id="scr-attestation" class="screen max-w-lg mx-auto bg-white p-6 rounded-3xl shadow-xl border-2 border-emerald-500 space-y-6">
-            <div class="text-center space-y-1 no-print">
-                <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-xl mx-auto"><i class="fa-solid fa-file-signature"></i></div>
-                <h3 class="text-base font-black text-slate-900">Procès-Verbal de Validation Sécurité</h3>
-                <p class="text-xs text-slate-500">Document généré en totale conformité avec l'Article L4141-2.</p>
-            </div>
-
-            <!-- LE DOCUMENT PREUVE -->
-            <div class="border-2 border-slate-900 p-4 rounded-xl space-y-4 text-xs bg-white print-view" id="print-area">
-                <div class="flex justify-between items-center border-b pb-2">
-                    <span class="font-mono text-[9px] text-slate-400">ID Preuve : RE-85-PASSPORT-2026</span>
-                    <span class="bg-slate-900 text-white font-mono font-bold px-2 py-0.5 rounded text-[9px]">CONFORME RGPD</span>
-                </div>
-                
-                <h4 class="text-center font-black uppercase text-slate-900 text-xs tracking-wide">Attestation d'Accueil Sécurité Renforcée</h4>
-                
-                <div class="grid grid-cols-2 gap-2 text-[11px] pt-1">
-                    <p><strong>Bénéficiaire :</strong> <span id="lbl-view-emp">Maxime Renault</span></p>
-                    <p><strong>Structure d'accueil :</strong> <span id="lbl-view-company">Bati-Vendée Logistique 85</span></p>
-                    <p><strong>Statut légal :</strong> <span id="lbl-view-status" class="text-restev-blue font-bold">Intérimaire</span></p>
-                    <p><strong>Tuteur agréé :</strong> <span id="lbl-view-tutor">M. Vigneron</span></p>
-                    <p class="col-span-2"><strong>Date de Certification :</strong> <span id="lbl-view-date" class="font-mono text-slate-600">12/06/2026</span></p>
-                </div>
-
-                <div class="bg-emerald-50 p-2.5 rounded-lg text-[10px] text-emerald-800 font-medium border border-emerald-200">
-                    <i class="fa-solid fa-circle-check"></i> Le candidat a répondu avec succès à l'ensemble des questions d'assimilation des risques inhérents à son poste de travail.
-                </div>
-
-                <div class="grid grid-cols-2 gap-4 pt-3 border-t">
-                    <div class="text-center">
-                        <span class="block text-[10px] font-bold text-slate-500 mb-1">Visa Salarié :</span>
-                        <img id="img-render-emp" class="h-12 mx-auto object-contain bg-slate-50 border rounded p-1" alt="Visa Salarié">
-                    </div>
-                    <div class="text-center">
-                        <span class="block text-[10px] font-bold text-slate-500 mb-1">Visa Représentant :</span>
-                        <img id="img-render-tutor" class="h-12 mx-auto object-contain bg-slate-50 border rounded p-1" alt="Visa Tuteur">
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 gap-2 no-print">
-                <button onclick="window.print()" class="w-full bg-slate-900 text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 shadow hover:bg-slate-800 transition">
-                    <i class="fa-solid fa-print"></i> <span>Lancer l'Impression / Export PDF</span>
-                </button>
-                <button onclick="switchScreen('scr-direction')" class="w-full bg-slate-100 text-slate-600 py-2.5 rounded-xl text-xs font-bold border text-center">
-                    Retourner au Tableau de Bord RESTEV
-                </button>
-            </div>
-        </section>
-
     </main>
 
-    <!-- ================= ARCHITECTURE DE CALCUL DE LA DEMO (EN-MÉMOIRE) ================= -->
     <script>
-        let currentSelectedCompany = "Bati-Vendée Logistique 85";
-        let candidateProfile = { name: "Maxime Renault", status: "Intérimaire (Profil Vulnérable)" };
-        
-        let localRisksDB = [
-            { 
-                id: 101, 
-                company: "Bati-Vendée Logistique 85", 
-                employee: "Lucas M.", 
-                description: "Obstruction majeure des voies d'évacuation par des palettes de fret non filmées.", 
-                location: "Zone de Stockage / Réserve Générale", 
-                severity: "Critique 🔴", 
-                photo: "https://images.unsplash.com/photo-1586528116300-48520ef355ec?w=500" 
-            }
-        ];
-
-        // --- CONTRÔLE DES ÉCRANS ---
-        function switchScreen(screenId) {
-            document.querySelectorAll('.screen').forEach(scr => scr.classList.remove('active'));
-            const target = document.getElementById(screenId);
-            if (target) {
-                target.classList.add('active');
-                window.scrollTo(0, 0);
-            }
-            showToast("Navigation : " + screenId.replace('scr-', '').toUpperCase());
+        function switchScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
         }
 
-        function showToast(text) {
-            const toast = document.getElementById('toast');
-            document.getElementById('toast-text').innerText = text;
-            toast.className = "fixed bottom-4 right-4 bg-slate-900 text-white text-xs py-3 px-4 rounded-xl shadow-2xl z-50 transition-all transform translate-y-0 opacity-100 flex items-center space-x-2 border border-slate-700";
+        function runIA(input) {
+            document.getElementById('ia-result').classList.remove('hidden');
+            document.getElementById('ia-result').innerText = "Analyse en cours...";
             setTimeout(() => {
-                toast.className = "fixed bottom-4 right-4 bg-slate-900 text-white text-xs py-3 px-4 rounded-xl shadow-2xl z-50 transition-all transform translate-y-20 opacity-0 flex items-center space-x-2 border border-slate-700";
-            }, 2500);
+                document.getElementById('ia-result').innerText = "⚠️ DANGER DÉTECTÉ : Produit inflammable non conforme. Règle : Stockage en armoire ventilée requis.";
+                document.getElementById('btn-alert').classList.remove('hidden');
+            }, 1500);
         }
 
-        // --- AUTHENTIFICATION SIMULÉE ADHÉRENT ---
-        function handleDemoAuth() {
-            currentSelectedCompany = document.getElementById('manager-company-name').value;
-            document.getElementById('lbl-manager-comp-name').innerText = currentSelectedCompany;
-            renderCompanyRisks();
-            switchScreen('scr-manager');
+        function alertManager() {
+            const alertMsg = "Alerte de : Jean, Secteur Logistique. Danger : Produit chimique mal stocké.";
+            // Simulation d'envoi
+            localStorage.setItem('lastAlert', alertMsg);
+            alert("Alerte envoyée au Manager !");
+            switchScreen('scr-home');
         }
 
-        function simulateDirectEmployeeAccess() {
-            document.getElementById('lbl-emp-welcome').innerText = "Bonjour " + candidateProfile.name + " !";
-            document.getElementById('lbl-emp-company').innerText = "Parcours rattaché à : " + currentSelectedCompany;
-            switchScreen('scr-employee');
-        }
-
-        // --- GÉNÉRATION & SCAN QR CODE ---
-        function generateDemoQRCode() {
-            const nameInput = document.getElementById('reg-emp-name').value;
-            const statusSelect = document.getElementById('reg-emp-status').value;
-            if(!nameInput) return showToast("Veuillez entrer un nom !");
-            
-            candidateProfile.name = nameInput;
-            candidateProfile.status = statusSelect;
-            
-            const qrCanvas = document.getElementById('qr-canvas');
-            const mockPayload = JSON.stringify({ name: candidateProfile.name, company: currentSelectedCompany });
-            
-            QRCode.toCanvas(qrCanvas, mockPayload, { width: 160, margin: 1 }, function (error) {
-                if (error) console.error(error);
-                document.getElementById('qr-area').classList.remove('hidden');
-                showToast("Passeport QR généré avec succès !");
-            });
-        }
-
-        function simulateQRScan() {
-            showToast("Scan smartphone détecté ! Synchro BYOD réussie.");
-            setTimeout(() => {
-                simulateDirectEmployeeAccess();
-            }, 800);
-        }
-
-        // --- MODULE APPAREIL PHOTO & INTELLIGENCE ARTIFICIELLE ---
-        function triggerAIScanSimulation(input) {
-            const loader = document.getElementById('ai-loader');
-            const placeholder = document.getElementById('photo-placeholder');
-            const preview = document.getElementById('photo-preview');
-            
-            loader.classList.remove('hidden');
-            
-            setTimeout(() => {
-                loader.classList.add('hidden');
-                placeholder.classList.add('hidden');
-                preview.classList.remove('hidden');
-                
-                // Image par défaut si aucun fichier réel n'est fourni durant le test
-                if (input.files && input.files[0]) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) { preview.src = e.target.result; }
-                    reader.readAsDataURL(input.files[0]);
-                } else {
-                    preview.src = "https://images.unsplash.com/photo-1532634922-8fe0b757fb13?w=500";
-                }
-                
-                document.getElementById('risk-desc').value = "[Vision AI] Détection d'une anomalie critique au sol. Substance glissante épanchée de type huileuse.";
-                showToast("Analyse prédictive IA complétée !");
-            }, 1800);
-        }
-
-        // --- TRANSMISSION DU SIGNALEMENT ---
-        function submitDemoRiskReport() {
-            const desc = document.getElementById('risk-desc').value;
-            const loc = document.getElementById('risk-location').value;
-            const level = document.getElementById('risk-level').value;
-            const previewImg = document.getElementById('photo-preview').src;
-
-            const newRisk = {
-                id: Date.now(),
-                company: currentSelectedCompany,
-                employee: candidateProfile.name,
-                description: desc,
-                location: loc,
-                severity: level,
-                photo: previewImg || "https://images.unsplash.com/photo-1532634922-8fe0b757fb13?w=500"
-            };
-
-            localRisksDB.unshift(newRisk);
-            
-            // Notification et mise à jour des interfaces globales
-            document.getElementById('lbl-dir-alert-count').innerText = localRisksDB.length;
-            
-            // Injection dynamique dans le flux d'activité Direction
-            const feed = document.getElementById('direction-activity-feed');
-            const alertItem = document.createElement('div');
-            alertItem.className = "border-l-2 border-red-500 pl-3 py-0.5 animate-bounce";
-            alertItem.innerHTML = `<p class="font-bold text-slate-800">Alerte Terrain - ${level}</p>
-                                   <p class="text-slate-400">Société : <span class="text-slate-600 font-medium">${currentSelectedCompany}</span> • À l'instant</p>`;
-            feed.insertBefore(alertItem, feed.firstChild);
-
-            renderCompanyRisks();
-            showToast("Alerte synchronisée avec le serveur RESTEV !");
-            switchScreen('scr-employee');
-        }
-
-        // --- CONSOLE RH CLIENT : MISE À JOUR DU TABLEAU DES RISQUES ---
-        function renderCompanyRisks() {
-            const container = document.getElementById('manager-risk-box');
-            container.innerHTML = "";
-            
-            const filtered = localRisksDB.filter(r => r.company === currentSelectedCompany);
-            
-            if(filtered.length === 0) {
-                container.innerHTML = "<p class='text-xs text-slate-400 py-4 text-center'>Aucune anomalie signalée sur vos secteurs.</p>";
-                return;
+        // Simulation temps réel simple
+        setInterval(() => {
+            const last = localStorage.getItem('lastAlert');
+            const feed = document.getElementById('live-feed');
+            if(last && feed) {
+                feed.innerHTML = `<div class="p-2 bg-red-100 border border-red-200 rounded">${last}</div>`;
             }
-
-            filtered.forEach(r => {
-                const card = document.createElement('div');
-                card.className = "p-3 bg-slate-50 rounded-xl border flex gap-3 items-center";
-                card.innerHTML = `
-                    <img src="${r.photo}" class="w-12 h-12 object-cover rounded-lg border shadow-sm">
-                    <div class="flex-1 text-[11px]">
-                        <div class="flex justify-between font-bold text-slate-900">
-                            <span>${r.location}</span>
-                            <span class="text-red-600">${r.severity}</span>
-                        </div>
-                        <p class="text-slate-600 mt-0.5 line-clamp-2">${r.description}</p>
-                        <p class="text-[9px] text-slate-400 mt-1">Par : ${r.employee} • ID: #${r.id.toString().slice(-4)}</p>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        // --- LOGIQUE DE SIGNATURES TACTILES ---
-        const canvasProfiles = ['canv-employee', 'canv-tutor'];
-        const canvasCtxs = {};
-
-        window.onload = function() {
-            canvasProfiles.forEach(id => {
-                const canv = document.getElementById(id);
-                if(canv) {
-                    const ctx = canv.getContext('2d');
-                    canvasCtxs[id] = ctx;
-                    ctx.strokeStyle = '#1e293b';
-                    ctx.lineWidth = 2.5;
-                    ctx.lineCap = 'round';
-                    
-                    let drawing = false;
-                    
-                    // Mouse Events
-                    canv.addEventListener('mousedown', () => drawing = true);
-                    canv.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); });
-                    canv.addEventListener('mousemove', (e) => draw(e, canv, ctx, drawing));
-                    
-                    // Touch Events
-                    canv.addEventListener('touchstart', (e) => { drawing = true; e.preventDefault(); });
-                    canv.addEventListener('touchend', () => { drawing = false; ctx.beginPath(); });
-                    canv.addEventListener('touchmove', (e) => drawTouch(e, canv, ctx, drawing));
-                }
-            });
-
-            // Initialisation Graphique Global (ChartJS)
-            const ctxChart = document.getElementById('chart-restev-risks').getContext('2d');
-            new Chart(ctxChart, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Risques Mécaniques', 'Substances Chimiques', 'Chutes & Sols', 'Risques Routiers'],
-                    datasets: [{
-                        data: [35, 20, 30, 15],
-                        backgroundColor: ['#2f6bb2', '#b8257b', '#69b3a5', '#f2a104'],
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } }
-                }
-            });
-        };
-
-        function draw(e, canvas, ctx, drawing) {
-            if (!drawing) return;
-            const rect = canvas.getBoundingClientRect();
-            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-            ctx.stroke();
-        }
-
-        function drawTouch(e, canvas, ctx, drawing) {
-            if (!drawing) return;
-            const rect = canvas.getBoundingClientRect();
-            const touch = e.touches[0];
-            ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
-            ctx.stroke();
-        }
-
-        function clearCanvas(canvasId) {
-            const canv = document.getElementById(canvasId);
-            const ctx = canvasCtxs[canvasId];
-            ctx.clearRect(0, 0, canv.width, canv.height);
-        }
-
-        // --- CLÔTURE & GÉNÉRATION DU RAPPORT PROBANTE ---
-        function finalizeDemoAttestation() {
-            document.getElementById('lbl-view-emp').innerText = candidateProfile.name;
-            document.getElementById('lbl-view-company').innerText = currentSelectedCompany;
-            document.getElementById('lbl-view-status').innerText = candidateProfile.status;
-            document.getElementById('lbl-view-tutor').innerText = document.getElementById('tutor-name').value;
-            
-            // Formatage de la date du jour
-            const today = new Date();
-            document.getElementById('lbl-view-date').innerText = today.toLocaleDateString('fr-FR') + " à " + today.toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
-
-            // Conversion des tracés de signatures en images figées
-            document.getElementById('img-render-emp').src = document.getElementById('canv-employee').toDataURL();
-            document.getElementById('img-render-tutor').src = document.getElementById('canv-tutor').toDataURL();
-
-            switchScreen('scr-attestation');
-        }
+        }, 2000);
     </script>
 </body>
 </html>
