@@ -3,95 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RESTEV 85 | Hub Prévention Santé</title>
+    <title>RESTEV Hub Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
         .screen { display: none; }
-        .active { display: block; animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        canvas { touch-action: none; border-radius: 12px; }
-        .btn-grad { background: linear-gradient(to right, #2f6bb2, #b8257b); }
+        .screen.active { display: block; animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen font-sans text-slate-800">
+<body class="bg-slate-50 min-h-screen">
 
-    <header class="bg-white p-4 shadow-sm border-b sticky top-0 z-50">
+    <header class="bg-white border-b p-4 shadow-sm">
         <div class="max-w-md mx-auto flex justify-between items-center">
-            <h1 class="font-black text-xl text-blue-900">RESTEV <span class="text-magenta-600">85</span></h1>
-            <span class="text-[9px] font-bold uppercase bg-blue-100 text-blue-700 px-2 py-1 rounded">Mode Démo Multi-Entreprises</span>
+            <h1 class="font-black text-slate-800 text-lg italic tracking-tight">RESTEV <span class="text-restev-blue">85</span></h1>
+            <div id="connection-status" class="w-3 h-3 rounded-full bg-emerald-500"></div>
         </div>
     </header>
 
-    <main class="max-w-md mx-auto p-4 pb-12">
-        <section id="scr-home" class="screen active text-center pt-8 space-y-6">
-            <div class="bg-white p-6 rounded-3xl shadow-sm border">
-                <h2 class="text-xl font-black">Bienvenue sur le Hub</h2>
-                <p class="text-xs text-slate-500 mb-6">Choisissez votre accès pour la présentation</p>
-                <div class="space-y-3">
-                    <button onclick="switchScreen('scr-manager')" class="w-full p-4 bg-slate-900 text-white rounded-xl font-bold">Accès Manager (RESTEV/RH)</button>
-                    <button onclick="switchScreen('scr-employee')" class="w-full p-4 bg-restev-blue text-white rounded-xl font-bold">Accès Salarié (Terrain)</button>
-                </div>
-            </div>
-        </section>
-
-        <section id="scr-manager" class="screen space-y-4">
-            <div class="bg-white p-4 rounded-2xl border shadow-sm">
-                <h3 class="font-black text-sm uppercase">Tableau de Bord Entreprises</h3>
-                <div id="live-feed" class="mt-4 space-y-2 h-64 overflow-y-auto bg-slate-50 p-2 rounded-xl text-xs">
-                    <p class="text-slate-400 text-center italic mt-10">En attente de signalement terrain...</p>
-                </div>
-            </div>
-            <button onclick="switchScreen('scr-home')" class="w-full bg-slate-200 py-3 rounded-xl text-xs font-bold">Retour</button>
-        </section>
-
-        <section id="scr-employee" class="screen space-y-4">
-            <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
-                <h2 class="font-black text-lg">Parcours Sécurité</h2>
-                <button onclick="switchScreen('scr-ia')" class="w-full p-4 bg-restev-magenta text-white rounded-xl font-bold">📸 Analyser un danger (IA)</button>
-                <button onclick="startQuiz()" class="w-full p-4 bg-restev-blue text-white rounded-xl font-bold">📝 Valider mes acquis</button>
-            </div>
-        </section>
-
-        <section id="scr-ia" class="screen space-y-4">
-            <input type="file" accept="image/*" onchange="runIA(this)" class="w-full p-4 bg-white rounded-xl border">
-            <div id="ia-result" class="hidden p-4 bg-amber-50 rounded-xl text-xs font-bold text-amber-900"></div>
-            <button onclick="alertManager()" class="hidden w-full p-4 bg-red-600 text-white rounded-xl font-bold" id="btn-alert">Alerter mon Responsable</button>
-        </section>
+    <main id="app" class="max-w-md mx-auto p-4">
+        <div id="view-container"></div>
     </main>
 
     <script>
-        function switchScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-        }
+        // --- 1. CONFIGURATION ---
+        const CONFIG = {
+            supabaseUrl: "https://hrxnksbmugavmqiftckk.supabase.co",
+            supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." // REMPLACE PAR TA VRAIE CLÉ
+        };
 
-        function runIA(input) {
-            document.getElementById('ia-result').classList.remove('hidden');
-            document.getElementById('ia-result').innerText = "Analyse en cours...";
-            setTimeout(() => {
-                document.getElementById('ia-result').innerText = "⚠️ DANGER DÉTECTÉ : Produit inflammable non conforme. Règle : Stockage en armoire ventilée requis.";
-                document.getElementById('btn-alert').classList.remove('hidden');
-            }, 1500);
-        }
+        // --- 2. ÉTAT DE L'APPLICATION ---
+        const AppState = {
+            user: { name: null, role: null, sector: null },
+            risks: [],
+            supabase: supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey)
+        };
 
-        function alertManager() {
-            const alertMsg = "Alerte de : Jean, Secteur Logistique. Danger : Produit chimique mal stocké.";
-            // Simulation d'envoi
-            localStorage.setItem('lastAlert', alertMsg);
-            alert("Alerte envoyée au Manager !");
-            switchScreen('scr-home');
-        }
-
-        // Simulation temps réel simple
-        setInterval(() => {
-            const last = localStorage.getItem('lastAlert');
-            const feed = document.getElementById('live-feed');
-            if(last && feed) {
-                feed.innerHTML = `<div class="p-2 bg-red-100 border border-red-200 rounded">${last}</div>`;
+        // --- 3. COUCHE API (DATA) ---
+        const API = {
+            async fetchRisks() {
+                const { data, error } = await AppState.supabase
+                    .from('risks')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                return error ? [] : data;
+            },
+            async saveRisk(payload) {
+                const { error } = await AppState.supabase.from('risks').insert([payload]);
+                return !error;
             }
-        }, 2000);
+        };
+
+        // --- 4. COUCHE UI (VIEW) ---
+        const UI = {
+            renderScreen(id, content) {
+                document.getElementById('view-container').innerHTML = content;
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.getElementById(id)?.classList.add('active');
+            },
+            
+            // Templates d'écrans
+            renderHome() {
+                return `
+                    <div id="scr-home" class="screen active space-y-4">
+                        <h2 class="text-xl font-bold">Bienvenue au Hub Sécurité</h2>
+                        <button onclick="App.login('manager')" class="w-full bg-slate-900 text-white p-4 rounded-xl">Mode Manager</button>
+                        <button onclick="App.login('employee')" class="w-full bg-restev-blue text-white p-4 rounded-xl">Mode Salarié</button>
+                    </div>
+                `;
+            }
+        };
+
+        // --- 5. CONTRÔLEUR (LOGIQUE) ---
+        const App = {
+            init() {
+                UI.renderScreen('scr-home', UI.renderHome());
+            },
+            
+            async login(role) {
+                AppState.user.role = role;
+                // Logique de transition...
+                console.log("Connecté en tant que :", role);
+                // Charger les données initiales
+                if (role === 'manager') {
+                    const data = await API.fetchRisks();
+                    console.log("Risques chargés :", data);
+                }
+            }
+        };
+
+        // Lancement
+        App.init();
     </script>
 </body>
 </html>
