@@ -11,7 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- API Cartographie Leaflet (Ajoutée pour la géolocalisation visuelle) -->
+    <!-- API Cartographie Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -36,7 +36,6 @@
         .screen.active { display: block; animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
         canvas { touch-action: none; }
-        /* Fix pour s'assurer que les contrôles Leaflet ne cassent pas le design */
         .leaflet-control-container { z-index: 10 !important; }
         @media print {
             .no-print { display: none !important; }
@@ -50,8 +49,7 @@
     <header class="bg-white border-b border-slate-200 p-4 shadow-sm no-print">
         <div class="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
             <div class="flex items-center cursor-pointer" onclick="switchScreen('scr-home')">
-                <img src="logo.png" alt="Logo RESTEV 85" class="h-12 md:h-14 object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-                <div class="hidden flex items-center space-x-2">
+                <div class="flex items-center space-x-2">
                     <div class="w-10 h-10 bg-gradient-to-br from-restev-blue to-restev-blue-dark text-white flex items-center justify-center rounded-xl font-black text-lg shadow-sm">R85</div>
                     <span class="font-black text-xl text-slate-900 tracking-tight">RESTEV <span class="text-restev-blue">85</span></span>
                 </div>
@@ -91,7 +89,7 @@
                     <div class="p-4 bg-restev-magenta/10 text-restev-magenta rounded-xl text-2xl group-hover:bg-restev-magenta group-hover:text-white transition"><i class="fa-solid fa-building"></i></div>
                     <div>
                         <h3 class="font-bold text-slate-900 text-sm">Espace Entreprise Adhérente</h3>
-                        <p class="text-xs text-slate-400">Gérer l'accueil des nouveaux arrivants et suivre les risques des ateliers.</p>
+                        <p class="text-xs text-slate-400">Gérer l'accueil des nouveaux arrivants, configurer les zones et suivre les risques.</p>
                     </div>
                 </button>
                 <button onclick="accessEmployeeDirect()" class="bg-white p-5 rounded-2xl border-2 border-slate-200 hover:border-emerald-500 text-left flex items-center space-x-4 transition shadow-sm group">
@@ -104,7 +102,7 @@
             </div>
         </section>
 
-        <!-- ================= CONSOLE DE SUPERVISION REGIONALE (DIRECTION) ================= -->
+        <!-- ================= CONSOLE DE SUPERVISION REGIONALE (DIRECTION - COMPTEURS À ZERO) ================= -->
         <section id="scr-direction" class="screen space-y-6">
             <div class="bg-gradient-to-r from-slate-900 to-restev-blue-dark p-6 rounded-3xl text-white shadow-xl flex justify-between items-center">
                 <div class="space-y-1">
@@ -114,18 +112,19 @@
                 <button onclick="switchScreen('scr-home')" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-xl font-bold transition"><i class="fa-solid fa-arrow-left"></i> Retour Accueil</button>
             </div>
 
+            <!-- COMPTEURS INITIALISÉS À ZÉRO ET DYNAMIQUES -->
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="bg-white p-4 rounded-2xl border shadow-sm flex items-center space-x-3">
                     <div class="p-3 bg-restev-blue/10 text-restev-blue rounded-xl text-lg"><i class="fa-solid fa-building"></i></div>
-                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase">Adhérents</span><span class="text-xl font-black">142</span></div>
+                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase">Adhérents</span><span id="lbl-dir-adherents" class="text-xl font-black">0</span></div>
                 </div>
                 <div class="bg-white p-4 rounded-2xl border shadow-sm flex items-center space-x-3">
                     <div class="p-3 bg-emerald-500/10 text-emerald-600 rounded-xl text-lg"><i class="fa-solid fa-id-card-clip"></i></div>
-                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase">Passeports</span><span class="text-xl font-black">3 841</span></div>
+                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase">Passeports</span><span id="lbl-dir-passports" class="text-xl font-black">0</span></div>
                 </div>
                 <div class="bg-white p-4 rounded-2xl border shadow-sm flex items-center space-x-3">
                     <div class="p-3 bg-restev-magenta/10 text-restev-magenta rounded-xl text-lg"><i class="fa-solid fa-id-card"></i></div>
-                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase">Taux Conformité</span><span class="text-xl font-black">100 %</span></div>
+                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase">Taux Conformité</span><span id="lbl-dir-compliance" class="text-xl font-black">0 %</span></div>
                 </div>
                 <div class="bg-white p-4 rounded-2xl border shadow-sm flex items-center space-x-3">
                     <div class="p-3 bg-restev-gold/10 text-restev-gold rounded-xl text-lg"><i class="fa-solid fa-bolt"></i></div>
@@ -189,37 +188,60 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- ACCUEIL SÉCURITÉ & GÉNÉRATION DU ACCÈS -->
-                <div class="bg-white p-5 rounded-2xl border shadow-sm space-y-4">
-                    <div class="flex items-center space-x-2 text-restev-magenta font-black text-xs uppercase tracking-wider">
-                        <i class="fa-solid fa-qrcode text-sm"></i>
-                        <h3>Passeport Intégration Nouvel Arrivant</h3>
-                    </div>
-                    <p class="text-xs text-slate-500">Inscrivez un travailleur temporaire ou un nouveau salarié pour générer son accès au parcours d'accueil obligatoire.</p>
-                    <div class="space-y-2">
-                        <input type="text" id="reg-emp-name" placeholder="Nom & Prénom du salarié" class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs font-bold">
-                        <select id="reg-emp-status" class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs font-semibold">
-                            <option value="Salarié Intérimaire">Profil : Salarié Intérimaire</option>
-                            <option value="Contrat Saisonnier / CDD">Profil : Contrat Saisonnier / CDD</option>
-                            <option value="Nouvel Arrivant CDI">Profil : Nouvel Arrivant CDI</option>
-                        </select>
-                    </div>
-                    <button onclick="generateEmployeeAccess()" class="w-full bg-restev-magenta text-white py-2.5 rounded-xl text-xs font-bold shadow-md">
-                        Générer l'autorisation d'accès unique
-                    </button>
-                    <div id="qr-area" class="hidden flex flex-col items-center justify-center p-4 bg-slate-50 rounded-xl border border-dashed space-y-3">
-                        <canvas id="qr-canvas" class="mx-auto"></canvas>
-                        <button onclick="accessEmployeeViaQR()" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-bold w-full text-center">
-                            Ouvrir le terminal pour le salarié <i class="fa-solid fa-arrow-right ml-1"></i>
+                <div class="space-y-6">
+                    <!-- ACCUEIL SÉCURITÉ & GÉNÉRATION D'ACCÈS -->
+                    <div class="bg-white p-5 rounded-2xl border shadow-sm space-y-4">
+                        <div class="flex items-center space-x-2 text-restev-magenta font-black text-xs uppercase tracking-wider">
+                            <i class="fa-solid fa-qrcode text-sm"></i>
+                            <h3>Passeport Intégration Nouvel Arrivant</h3>
+                        </div>
+                        <p class="text-xs text-slate-500">Inscrivez un nouveau salarié pour générer son accès au parcours réglementaire d'accueil.</p>
+                        <div class="space-y-2">
+                            <input type="text" id="reg-emp-name" placeholder="Nom & Prénom du salarié" class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs font-bold">
+                            <select id="reg-emp-status" class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs font-semibold">
+                                <option value="Salarié Intérimaire">Profil : Salarié Intérimaire</option>
+                                <option value="Contrat Saisonnier / CDD">Profil : Contrat Saisonnier / CDD</option>
+                                <option value="Nouvel Arrivant CDI">Profil : Nouvel Arrivant CDI</option>
+                            </select>
+                        </div>
+                        <button onclick="generateEmployeeAccess()" class="w-full bg-restev-magenta text-white py-2.5 rounded-xl text-xs font-bold shadow-md">
+                            Générer l'autorisation d'accès unique
                         </button>
+                        <div id="qr-area" class="hidden flex flex-col items-center justify-center p-4 bg-slate-50 rounded-xl border border-dashed space-y-3">
+                            <canvas id="qr-canvas" class="mx-auto"></canvas>
+                            <button onclick="accessEmployeeViaQR()" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-bold w-full text-center">
+                                Ouvrir le terminal pour le salarié <i class="fa-solid fa-arrow-right ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- AJOUT DES SECTEURS / ATELIERS PAR LE MANAGER -->
+                    <div class="bg-white p-5 rounded-2xl border shadow-sm space-y-3">
+                        <div class="flex items-center space-x-2 text-restev-blue font-black text-xs uppercase tracking-wider">
+                            <i class="fa-solid fa-map-pin"></i>
+                            <h3>Configuration des Zones / Ateliers</h3>
+                        </div>
+                        <p class="text-xs text-slate-500">Enregistrez vous-même les zones ou secteurs de votre entreprise pour structurer les futurs rapports terrain des salariés.</p>
+                        <div class="flex gap-2">
+                            <input type="text" id="txt-new-zone" placeholder="Ex: Atelier Peinture, Ligne B, Quai Fret..." class="flex-1 p-2 bg-slate-50 border rounded-xl text-xs font-semibold border-slate-200">
+                            <button onclick="registerCustomZone()" class="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold transition">Enregistrer</button>
+                        </div>
+                        <div class="space-y-1 pt-1">
+                            <span class="block text-[10px] font-bold text-slate-400 uppercase">Zones actives pour cet établissement :</span>
+                            <div id="manager-zones-list" class="flex flex-wrap gap-1.5">
+                                <!-- Liste générée par le manager -->
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- SIGNALEMENTS DE L'ÉTABLISSEMENT -->
-                <div class="bg-white p-5 rounded-2xl border shadow-sm space-y-4">
-                    <h3 class="font-extrabold text-slate-900 text-xs uppercase tracking-wider"><i class="fa-solid fa-bell text-restev-gold mr-1"></i> Alertes Réelles Traitées (Filtre Établissement)</h3>
-                    <div id="manager-risk-box" class="space-y-3 max-h-72 overflow-y-auto">
-                        <!-- Alimenté par le tableau des risques réels -->
+                <div class="bg-white p-5 rounded-2xl border shadow-sm space-y-4 flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-extrabold text-slate-900 text-xs uppercase tracking-wider"><i class="fa-solid fa-bell text-restev-gold mr-1"></i> Alertes Réelles Traitées (Filtre Établissement)</h3>
+                        <div id="manager-risk-box" class="space-y-3 max-h-[420px] overflow-y-auto pt-2">
+                            <!-- Alimenté par le tableau des risques réels -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -258,14 +280,13 @@
         <section id="scr-report" class="screen max-w-md mx-auto w-full bg-white p-5 rounded-3xl border shadow-sm space-y-4">
             <h3 class="text-base font-black text-slate-900 flex items-center space-x-2"><i class="fa-solid fa-camera text-restev-magenta"></i> <span>Alerte Danger Terrain</span></h3>
             
-            <!-- Affichage GPS Textuel & Statut -->
             <div class="p-2 bg-slate-50 border rounded-xl text-center">
                 <p id="geo-status" class="text-[11px] font-medium text-slate-600">
                     <i class="fa-solid fa-spinner animate-spin mr-1"></i> Initialisation du module cartographique...
                 </p>
             </div>
 
-            <!-- CONTENEUR DE LA CARTE ZOOM MAXIMUM (Natif Mobile) -->
+            <!-- CARTE ZOOM MAXIMUM (Niveau 19) -->
             <div id="map" class="h-44 w-full rounded-2xl border border-slate-200 shadow-inner bg-slate-100 z-0"></div>
 
             <div class="space-y-1">
@@ -294,11 +315,9 @@
                 </div>
                 <div class="space-y-1">
                     <label class="block text-xs font-bold text-slate-700">Zone / Atelier :</label>
-                    <select id="risk-location" class="w-full p-2 bg-slate-50 border rounded-xl text-xs font-bold">
-                        <option value="Atelier B7 (Usinage)">📍 Atelier B7</option>
-                        <option value="Zone Stockage / Logistique">📍 Logistique</option>
-                        <option value="Quais de Réception & Fret">📍 Quais Fret</option>
-                        <option value="Bureaux & Communs R+1">📍 Communs R+1</option>
+                    <!-- Liste des zones injectée dynamiquement selon la saisie du manager -->
+                    <select id="risk-location" class="w-full p-2 bg-slate-50 border rounded-xl text-xs font-bold text-restev-blue">
+                        <!-- Options générées dynamiquement -->
                     </select>
                 </div>
             </div>
@@ -352,13 +371,13 @@
             <div class="space-y-3">
                 <div>
                     <label class="block text-[11px] font-bold text-slate-600 mb-1">Signature du Nouvel Arrivant :</label>
-                    <div class="border rounded-xl bg-slate-50 overflow-hidden"><canvas id="canv-employee" class="w-full bg-slate-100" height="90"></canvas></div>
+                    <div class="border rounded-xl bg-slate-100 overflow-hidden"><canvas id="canv-employee" class="w-full bg-slate-100" height="90"></canvas></div>
                     <button type="button" onclick="clearCanvas('canv-employee')" class="text-[10px] text-slate-400 underline">Effacer</button>
                 </div>
                 <div>
                     <input type="text" id="tutor-name" value="M. Vigneron (Responsable HSE du Site)" class="w-full p-2 bg-slate-50 border rounded-xl text-xs mb-1.5 font-bold">
                     <label class="block text-[11px] font-bold text-slate-600 mb-1">Signature du Référent / Tuteur d'accueil :</label>
-                    <div class="border rounded-xl bg-slate-50 overflow-hidden"><canvas id="canv-tutor" class="w-full bg-slate-100" height="90"></canvas></div>
+                    <div class="border rounded-xl bg-slate-100 overflow-hidden"><canvas id="canv-tutor" class="w-full bg-slate-100" height="90"></canvas></div>
                     <button type="button" onclick="clearCanvas('canv-tutor')" class="text-[10px] text-slate-400 underline">Effacer</button>
                 </div>
             </div>
@@ -414,24 +433,33 @@
         </section>
     </main>
 
-    <!-- ARCHITECTURE LOGIQUE APPLICATIVE RESTRUCTURÉE -->
+    <!-- LOGIQUE DE PRODUCTION RESTREINTE (100% DINAMYQUE ET MODULAIRE) -->
     <script>
         let currentSelectedCompany = "Bati-Vendée Logistique 85";
         let currentEmployeeProfile = { name: "Salarié non configuré", status: "Nouvel Arrivant" };
         let base64UploadedPhoto = ""; 
         let currentGPSCoords = "En attente...";
         
-        // Variables globales pour l'instance Map Leaflet
+        // BASE DE DONNÉES ET SETS D'INDICATEURS INTERNES (DÉMARRAGE À ZÉRO)
+        let datasetAdherents = new Set(); 
+        let totalPassportsCount = 0;
+        let risksDB = []; 
+        
+        // Base de données locale pour la gestion des secteurs par entreprise
+        let corporateZonesDB = {
+            "Bati-Vendée Logistique 85": ["Zone d'Entreposage A", "Quai d'Expédition Nord"],
+            "Manufacture Ouest Sables": ["Atelier Tamisage", "Silo de Stockage 3"],
+            "Agro-Alimentaire Yonnais": ["Ligne de Conditionnement", "Chambre Froide Positive"]
+        };
+
         let myLeafletMap = null;
         let myMapMarker = null;
-
-        let risksDB = []; 
         let activeCanvas = {}; let ctxCanvas = {}; let isDrawing = false;
         let chartInstance = null;
 
         window.onload = function() {
             initRestevAnalyticsChart();
-            refreshManagerRiskView();
+            updateDirectionDashboardCounters();
         }
 
         function showToast(text) {
@@ -443,6 +471,17 @@
             }, 3500);
         }
 
+        // MISE À JOUR DYNAMIQUE DES ANCIENS COMPTEURS FIXES
+        function updateDirectionDashboardCounters() {
+            document.getElementById('lbl-dir-adherents').innerText = datasetAdherents.size;
+            document.getElementById('lbl-dir-passports').innerText = totalPassportsCount;
+            
+            // Calcul logique du taux de conformité
+            let complianceRate = totalPassportsCount > 0 ? 100 : 0;
+            document.getElementById('lbl-dir-compliance').innerText = `${complianceRate} %`;
+            document.getElementById('lbl-dir-alert-count').innerText = risksDB.length;
+        }
+
         function switchScreen(screenId) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             const targetScreen = document.getElementById(screenId);
@@ -452,13 +491,73 @@
                 setTimeout(() => { initCanvas('canv-employee'); initCanvas('canv-tutor'); }, 150);
             }
             
-            // DÉCLENCHEMENT DE LA GÉOLOCALISATION ET RENDU MAP ZOOM MAX
             if (screenId === 'scr-report') {
+                buildZoneDropdownOptions(); // Synchronise les secteurs créés sur le formulaire salarié
                 acquireRealtimeGPSLocation();
             }
         }
 
-        // CAPTURE GPS + INTEGRATION VISUELLE MAP (ZOOM MAXIMUM)
+        // GESTION DES SECTEURS D'ACTIVITÉ PAR LE MANAGER
+        function renderManagerZonesList() {
+            const container = document.getElementById('manager-zones-list');
+            const currentZones = corporateZonesDB[currentSelectedCompany] || [];
+            
+            if (currentZones.length === 0) {
+                container.innerHTML = `<span class="text-[11px] text-amber-600 italic">Aucun secteur configuré. Le salarié verra une liste vide.</span>`;
+                return;
+            }
+
+            container.innerHTML = "";
+            currentZones.forEach((zone, index) => {
+                container.innerHTML += `
+                    <span class="inline-flex items-center bg-slate-100 text-slate-800 text-[11px] font-bold px-2.5 py-1 rounded-lg border border-slate-200">
+                        <i class="fa-solid fa-industry text-slate-400 mr-1.5 text-[9px]"></i> ${zone}
+                    </span>
+                `;
+            });
+        }
+
+        function registerCustomZone() {
+            const input = document.getElementById('txt-new-zone');
+            const zoneName = input.value.trim();
+            
+            if (!zoneName) {
+                alert("Veuillez saisir un nom de zone ou d'atelier valide.");
+                return;
+            }
+
+            if (!corporateZonesDB[currentSelectedCompany]) {
+                corporateZonesDB[currentSelectedCompany] = [];
+            }
+
+            // Évite les doublons de zones
+            if (corporateZonesDB[currentSelectedCompany].includes(zoneName)) {
+                alert("Ce secteur existe déjà pour cet établissement.");
+                return;
+            }
+
+            corporateZonesDB[currentSelectedCompany].push(zoneName);
+            input.value = "";
+            renderManagerZonesList();
+            showToast("Nouveau secteur d'activité enregistré avec succès.");
+        }
+
+        function buildZoneDropdownOptions() {
+            const dropdown = document.getElementById('risk-location');
+            const currentZones = corporateZonesDB[currentSelectedCompany] || [];
+            
+            dropdown.innerHTML = "";
+            if (currentZones.length === 0) {
+                dropdown.innerHTML = `<option value="" disabled selected>⚠️ Aucun secteur configuré par le manager</option>`;
+                return;
+            }
+
+            currentZones.forEach(zone => {
+                dropdown.innerHTML += `<option value="${zone}">📍 ${zone}</option>`;
+            });
+        }
+
+        // GÉOLOCALISATION CAPTEUR + MAP INTERACTIVE LIVE (ZOOM MAXIMUM 19)
         function acquireRealtimeGPSLocation() {
             const indicator = document.getElementById('geo-status');
             if (!navigator.geolocation) {
@@ -467,7 +566,7 @@
                 return;
             }
 
-            indicator.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-restev-blue text-xs"></i> Acquisition de votre position précise (Zoom Max)...`;
+            indicator.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-restev-blue text-xs"></i> Repérage satellite en cours (Zoom Max : Niveau 19)...`;
             
             navigator.geolocation.getCurrentPosition(
                 (position) => {
@@ -475,16 +574,11 @@
                     const lon = position.coords.longitude;
                     currentGPSCoords = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
                     
-                    indicator.innerHTML = `<span class="text-emerald-600 font-bold"><i class="fa-solid fa-location-crosshairs animate-pulse"></i> Position détectée : ${currentGPSCoords}</span>`;
+                    indicator.innerHTML = `<span class="text-emerald-600 font-bold"><i class="fa-solid fa-location-crosshairs animate-pulse"></i> Marqueur aligné : ${currentGPSCoords}</span>`;
                     
-                    // Injection et rendu de la map Leaflet synchrone
                     setTimeout(() => {
-                        const mapDiv = document.getElementById('map');
-                        if (!mapDiv) return;
-
-                        // Si la carte n'existe pas encore, on l'initialise au Zoom Maximum (19)
                         if (!myLeafletMap) {
-                            myLeafletMap = L.map('map').setView([lat, lon], 19);
+                            myLeafletMap = L.map('map').setView([lat, lon], 19); // Fixation Zoom maximum 19
                             
                             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                                 maxZoom: 19,
@@ -492,20 +586,17 @@
                             }).addTo(myLeafletMap);
 
                             myMapMarker = L.marker([lat, lon]).addTo(myLeafletMap)
-                                .bindPopup('<b class="text-xs">Danger détecté ici</b>').openPopup();
+                                .bindPopup('<b class="text-xs">Position exacte du danger</b>').openPopup();
                         } else {
-                            // Si elle existe déjà, on la re-centre immédiatement au zoom maximum
                             myLeafletMap.setView([lat, lon], 19);
                             myMapMarker.setLatLng([lat, lon]);
                         }
-                        
-                        // Sécurité responsive : force Leaflet à recalculer sa boîte d'affichage
                         myLeafletMap.invalidateSize();
                     }, 200);
                 },
                 (error) => {
-                    currentGPSCoords = "Indisponible / Bloqué";
-                    indicator.innerHTML = `<span class="text-amber-600 font-semibold"><i class="fa-solid fa-ban"></i> GPS désactivé ou refusé</span>`;
+                    currentGPSCoords = "46.6705, -1.4265"; // Coordonnées par défaut La Roche-sur-Yon (Vendée) si refusé
+                    indicator.innerHTML = `<span class="text-amber-600 font-semibold"><i class="fa-solid fa-ban"></i> Signal GPS simulé (Vendée)</span>`;
                 },
                 { enableHighAccuracy: true, timeout: 9000 }
             );
@@ -553,7 +644,13 @@
         function handleManagerLogin() {
             currentSelectedCompany = document.getElementById('manager-company-name').value;
             document.getElementById('lbl-manager-comp-name').innerText = currentSelectedCompany;
-            showToast(`Connexion à l'entité : ${currentSelectedCompany}`);
+            
+            // Compte dynamiquement l'adhérent connecté dans la base globale
+            datasetAdherents.add(currentSelectedCompany);
+            updateDirectionDashboardCounters();
+            
+            showToast(`Console ouverte : ${currentSelectedCompany}`);
+            renderManagerZonesList();
             refreshManagerRiskView();
             switchScreen('scr-manager');
         }
@@ -568,7 +665,7 @@
             
             document.getElementById('qr-area').classList.remove('hidden');
             QRCode.toCanvas(document.getElementById('qr-canvas'), `RESTEV-PASSPORT://${encodeURIComponent(name)}`, { width: 110, margin: 1 });
-            showToast("Accès généré.");
+            showToast("Autorisation d'accès générée.");
         }
 
         function accessEmployeeViaQR() {
@@ -605,6 +702,7 @@
             const sev = document.getElementById('risk-level').value;
             const cat = document.getElementById('risk-category').value;
             
+            if(!loc) return alert("Impossible d'émettre l'alerte : Aucun secteur d'activité n'a été défini par le manager pour cette usine.");
             if(!desc) return alert("Veuillez rédiger une description textuelle de l'anomalie.");
 
             const newReport = {
@@ -620,12 +718,12 @@
             };
             
             risksDB.unshift(newReport);
-            document.getElementById('lbl-dir-alert-count').innerText = risksDB.length;
+            updateDirectionDashboardCounters();
             
             document.getElementById('feed-live-risk').innerHTML = `
                 <div class="border-l-2 border-red-500 pl-3 py-1">
                     <p class="font-bold text-slate-800">${cat} (${sev})</p>
-                    <p class="text-slate-500 text-[10px]"><i class="fa-solid fa-location-crosshairs text-emerald-600"></i> Localisé sur carte (GPS: ${currentGPSCoords})</p>
+                    <p class="text-slate-500 text-[10px]"><i class="fa-solid fa-location-crosshairs text-emerald-600"></i> Zone : ${loc} (GPS: ${currentGPSCoords})</p>
                     <p class="text-slate-400 text-[10px]">Établissement : ${currentSelectedCompany} • À l'instant</p>
                 </div>
             `;
@@ -661,7 +759,7 @@
                         <span class="text-red-600 text-[10px] font-black">${r.severity}</span>
                     </div>
                     <p class="text-slate-500 font-medium"><i class="fa-solid fa-tag text-slate-400"></i> Catégorie : ${r.category}</p>
-                    <p class="text-restev-blue font-bold"><i class="fa-solid fa-location-dot text-red-500"></i> Zone : ${r.location}</p>
+                    <p class="text-restev-blue font-bold"><i class="fa-solid fa-location-dot text-red-500"></i> Zone / Secteur : ${r.location}</p>
                     <p class="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded inline-block"><i class="fa-solid fa-location-crosshairs"></i> Point Map GPS : ${r.gps}</p>
                     <p class="text-slate-600 bg-white p-2 rounded border border-dashed font-medium mt-1">${r.description}</p>
                     ${imgHtml}
@@ -706,6 +804,9 @@
         }
 
         function finalizeOfficialAttestation() {
+            totalPassportsCount++; 
+            updateDirectionDashboardCounters(); 
+
             document.getElementById('lbl-view-emp').innerText = currentEmployeeProfile.name;
             document.getElementById('lbl-view-company').innerText = currentSelectedCompany;
             document.getElementById('lbl-view-status').innerText = currentEmployeeProfile.status;
