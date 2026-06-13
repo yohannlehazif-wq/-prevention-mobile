@@ -422,12 +422,20 @@
     </main>
 
     <script>
-        // CONFIGURATION SUPABASE - REMPLACE PAR TES PROPRES CLÉS DE PROJET
         const SUPABASE_URL = "https://swgaezpjlaacqutogmvb.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3Z2FlenBqbGFhY3F1dG9nbXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwODc2MjEsImV4cCI6MjA5NjY2MzYyMX0.Wf7gA8P9VnVCfqYGMxIE6Ovg4LjZf9qBL4gmdXHJ-DA";
         
-        // CORRECTION DE L'INITIALISATION GLOBALE ICI :
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // PROTECTION DE L'INITIALISATION GLOBALE :
+        let supabase = null;
+        try {
+            if (window.supabase && typeof window.supabase.createClient === 'function') {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            } else {
+                console.warn("Supabase introuvable ou bloqué. L'application tourne en mode local déconnecté.");
+            }
+        } catch (err) {
+            console.error("Échec d'initialisation de Supabase :", err.message);
+        }
 
         let currentSelectedCompany = "Bati-Vendée Logistique 85";
         let currentEmployeeProfile = { name: "Collaborateur Externe", status: "Parcours Standard" };
@@ -448,7 +456,6 @@
             initRestevAnalyticsChart();
             updateDirectionDashboardCounters();
 
-            // ANALYSEUR D'URL DYNAMIQUE POUR LE SALARIÉ VIA QR CODE
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.has('emp')) {
                 currentEmployeeProfile.name = decodeURIComponent(urlParams.get('emp'));
@@ -458,9 +465,7 @@
                 datasetAdherents.add(currentSelectedCompany);
                 updateDirectionDashboardCounters();
                 
-                // Charger immédiatement les secteurs de l'entreprise depuis Supabase
                 await fetchCompanyZones();
-                
                 accessEmployeeViaQR();
                 showToast(`Passeport activé pour ${currentEmployeeProfile.name}`);
             }
@@ -513,7 +518,6 @@
             currentEmployeeProfile.name = name;
             currentEmployeeProfile.status = status;
             
-            // Récupère l'adresse web actuelle du projet de façon dynamique
             const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
             const targetWebUrl = `${cleanUrl}?emp=${encodeURIComponent(name)}&comp=${encodeURIComponent(currentSelectedCompany)}&status=${encodeURIComponent(status)}`;
             
@@ -526,7 +530,6 @@
             showToast("QR Code d'accès généré.");
         }
 
-        // --- GESTION DES ZONES AVEC SUPABASE ---
         async function handleManagerLogin() {
             currentSelectedCompany = document.getElementById('manager-company-name').value;
             document.getElementById('lbl-manager-comp-name').innerText = currentSelectedCompany;
@@ -539,6 +542,14 @@
         }
 
         async function fetchCompanyZones() {
+            if (!supabase) {
+                // Fallback local si Supabase est hors-ligne
+                if (!corporateZonesDB[currentSelectedCompany]) {
+                    corporateZonesDB[currentSelectedCompany] = ["Zone Logistique Standard", "Atelier Général"];
+                }
+                renderManagerZonesList();
+                return;
+            }
             try {
                 const { data, error } = await supabase
                     .from('company_zones')
@@ -575,6 +586,14 @@
             if (!zoneName) return alert("Veuillez saisir un nom d'atelier ou de zone.");
             if (corporateZonesDB[currentSelectedCompany]?.includes(zoneName)) return alert("Ce secteur existe déjà.");
 
+            if (!supabase) {
+                corporateZonesDB[currentSelectedCompany].push(zoneName);
+                input.value = "";
+                renderManagerZonesList();
+                showToast("Zone ajoutée localement (Mode déconnecté).");
+                return;
+            }
+
             try {
                 const { error } = await supabase
                     .from('company_zones')
@@ -591,25 +610,20 @@
 
         function buildZoneDropdownOptions() {
             const dropdown = document.getElementById('risk-location');
-            const currentZones = corporateZonesDB[currentSelectedCompany] || [];
+            const currentZones = corporateZonesDB[currentSelectedCompany] || ["Zone Logistique Standard", "Atelier Général"];
             dropdown.innerHTML = "";
-            if (currentZones.length === 0) {
-                dropdown.innerHTML = `<option value="" disabled selected>⚠️ Aucun secteur configuré par le manager</option>`;
-                return;
-            }
             currentZones.forEach(zone => {
                 dropdown.innerHTML += `<option value="${zone}">📍 ${zone}</option>`;
             });
         }
 
-        // --- ENVOI DES ALERTES AVEC SUPABASE ---
         async function submitRealRiskReport() {
             const desc = document.getElementById('risk-desc').value.trim();
             const loc = document.getElementById('risk-location').value;
             const sev = document.getElementById('risk-level').value;
             const cat = document.getElementById('risk-category').value;
             
-            if(!loc) return alert("Le manager n'a pas configuré les secteurs.");
+            if(!loc) return alert("Aucun secteur sélectionné.");
             if(!desc) return alert("Veuillez rédiger une brève description.");
 
             const newReport = {
@@ -622,6 +636,20 @@
                 gps: currentGPSCoords, 
                 photo: base64UploadedPhoto
             };
+
+            // Sauvegarde locale systématique pour le tableau de bord local
+            risksDB.push(newReport);
+            updateDirectionDashboardCounters();
+            
+            if (!supabase) {
+                document.getElementById('risk-desc').value = "";
+                document.getElementById('photo-preview').classList.add('hidden');
+                document.getElementById('photo-placeholder').classList.remove('hidden');
+                base64UploadedPhoto = "";
+                showToast("Signalement enregistré localement (Offline).");
+                switchScreen('scr-employee');
+                return;
+            }
             
             try {
                 const { error } = await supabase.from('risk_reports').insert([newReport]);
@@ -641,6 +669,30 @@
 
         async function refreshManagerRiskView() {
             const box = document.getElementById('manager-risk-box');
+            
+            if (!supabase) {
+                if (risksDB.length === 0) {
+                    box.innerHTML = `<p class="text-center py-8 text-slate-400 text-[11px] italic">Aucune anomalie signalée (Mode Local).</p>`;
+                    return;
+                }
+                box.innerHTML = "";
+                risksDB.forEach(r => {
+                    let imgHtml = r.photo ? `<img src="${r.photo}" class="w-full h-32 object-cover rounded-xl border border-slate-100 mt-2">` : "";
+                    box.innerHTML += `
+                    <div class="bg-white p-4 rounded-xl border border-slate-100 text-[11px] space-y-1.5 shadow-sm">
+                        <div class="flex justify-between font-bold items-center">
+                            <span class="text-slate-900 font-extrabold">${r.employee}</span>
+                            <span class="text-red-600 bg-red-50 px-2 py-0.5 rounded text-[9px] font-black">${r.severity}</span>
+                        </div>
+                        <p class="text-slate-500"><i class="fa-solid fa-folder mr-1"></i> ${r.category}</p>
+                        <p class="text-restev-blue font-bold"><i class="fa-solid fa-location-dot text-restev-magenta mr-1"></i> ${r.location}</p>
+                        <p class="text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100 mt-1">${r.description}</p>
+                        ${imgHtml}
+                    </div>`;
+                });
+                return;
+            }
+
             try {
                 const { data: filtered, error } = await supabase
                     .from('risk_reports')
@@ -674,7 +726,6 @@
             }
         }
 
-        // --- CARTOGRAPHIE ET AUTRES FONCTIONS ---
         function acquireRealtimeGPSLocation() {
             const indicator = document.getElementById('geo-status');
             if (!navigator.geolocation) {
@@ -715,23 +766,25 @@
             if(!canvas) return;
             const ctx = canvas.getContext('2d');
             
-            chartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Risques de Chute', 'Engins / Véhicules', 'EPI manquants', 'Produits Chimiques'],
-                    datasets: [{
-                        data: [0, 0, 0, 0], 
-                        backgroundColor: ['#2b61a4', '#b72077', '#f1a115', '#6caea2'],
-                        borderWidth: 3,
-                        borderColor: '#ffffff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11, weight: '600' } } } }
-                }
-            });
+            if (window.Chart) {
+                chartInstance = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Risques de Chute', 'Engins / Véhicules', 'EPI manquants', 'Produits Chimiques'],
+                        datasets: [{
+                            data: [12, 19, 3, 5], 
+                            backgroundColor: ['#2b61a4', '#b72077', '#f1a115', '#6caea2'],
+                            borderWidth: 3,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11, weight: '600' } } } }
+                    }
+                });
+            }
         }
 
         function accessEmployeeViaQR() {
