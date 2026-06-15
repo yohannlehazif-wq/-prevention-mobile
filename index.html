@@ -9,6 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- API Cartographie Leaflet -->
@@ -727,19 +728,55 @@ function submitRealRiskReport() {
 // 1. Initialisation (votre client existant)
 const supabase = supabase.createClient('https://swgaezpjlaacqutogmvb.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3Z2FlenBqbGFhY3F1dG9nbXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwODc2MjEsImV4cCI6MjA5NjY2MzYyMX0.Wf7gA8P9VnVCfqYGMxIE6Ovg4LjZf9qBL4gmdXHJ-DA');
 
-// 2. Écoute en temps réel des nouvelles alertes
-supabase
-  .channel('public:alerts')
-  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'alerts' }, payload => {
-    console.log('Nouvelle alerte reçue !', payload.new);
-    
-    // Mise à jour de la source de données locale
-    risksDB.push(payload.new);
-    
-    // Mise à jour de l'interface
-    refreshManagerRiskView();
-  })
-  .subscribe();
+// Fonction utilitaire pour convertir le Canvas en fichier Blob
+function dataURLtoBlob(dataURL) {
+    const arr = dataURL.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) { u8arr[n] = bstr.charCodeAt(n); }
+    return new Blob([u8arr], { type: mime });
+}
+
+async function saveAndUploadRisk() {
+    try {
+        // 1. Préparer les fichiers (signatures)
+        const empBlob = dataURLtoBlob(activeCanvas['canv-employee'].toDataURL());
+        const tutorBlob = dataURLtoBlob(activeCanvas['canv-tutor'].toDataURL());
+        const timestamp = Date.now();
+        const empFilename = `signatures/emp_${timestamp}.png`;
+        const tutorFilename = `signatures/tutor_${timestamp}.png`;
+
+        // 2. Upload vers Supabase Storage
+        await supabase.storage.from('signatures').upload(empFilename, empBlob);
+        await supabase.storage.from('signatures').upload(tutorFilename, tutorBlob);
+
+        // 3. Récupérer les données du formulaire (adaptez les ID selon votre HTML)
+        const formData = {
+            description: document.getElementById('description-risque').value, // ID à adapter
+            location: 'Site RESTEV', // ou récupérer depuis votre input
+            signature_employee_url: empFilename,
+            signature_manager_url: tutorFilename,
+            status: 'pending'
+        };
+
+        // 4. Insérer dans la table risk_reports
+        const { data, error } = await supabase
+            .from('risk_reports')
+            .insert([formData])
+            .select();
+
+        if (error) throw error;
+
+        alert("Succès ! Risque transmis à RESTEV.");
+        console.log("Données insérées:", data);
+
+    } catch (err) {
+        console.error("Erreur lors de l'envoi :", err);
+        alert("Une erreur est survenue lors de la transmission.");
+    }
+}
 
         function refreshManagerRiskView() {
             const box = document.getElementById('manager-risk-box');
