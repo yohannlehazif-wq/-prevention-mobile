@@ -628,7 +628,27 @@
                 { enableHighAccuracy: true, timeout: 8000 }
             );
         }
-
+function submitRealRiskReport() {
+    // 1. Récupération des données
+    const category = document.getElementById('risk-category').value;
+    const location = document.getElementById('risk-location').value;
+    const level = document.getElementById('risk-level').value;
+    const desc = document.getElementById('risk-desc').value;
+    
+    // 2. Création de l'objet alerte
+    const newAlert = { category, location, level, desc, date: new Date().toLocaleTimeString() };
+    risksDB.push(newAlert);
+    
+    // 3. Mise à jour de l'affichage (exemple pour le flux direction)
+    const feed = document.getElementById('direction-activity-feed');
+    feed.insertAdjacentHTML('afterbegin', `<div class="border-l-2 border-restev-gold pl-3 py-1.5"><p class="font-bold">${category}</p><p class="text-slate-500">${desc}</p></div>`);
+    
+    // 4. Feedback utilisateur
+    showToast("Alerte transmise avec succès.");
+    
+    // 5. Retour vers l'écran salarié
+    switchScreen('scr-employee');
+}
         function initRestevAnalyticsChart() {
             const canvas = document.getElementById('chart-restev-risks');
             if(!canvas) return;
