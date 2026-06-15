@@ -648,6 +648,29 @@ function submitRealRiskReport() {
     
     // 5. Retour vers l'écran salarié
     switchScreen('scr-employee');
+    async function submitRealRiskReport() {
+    const newAlert = {
+        category: document.getElementById('risk-category').value,
+        location: document.getElementById('risk-location').value,
+        desc: document.getElementById('risk-desc').value,
+        status: 'pending'
+    };
+
+    console.log("Tentative d'envoi de :", newAlert); // Debug
+
+    const { data, error } = await supabase
+        .from('alerts')
+        .insert([newAlert]);
+
+    if (error) {
+        // C'est ici qu'on attrape l'erreur si elle existe
+        console.error("Erreur critique Supabase :", error.message);
+        alert("Erreur d'envoi : " + error.message); 
+    } else {
+        console.log("Succès :", data);
+        showToast("Alerte transmise !");
+        switchScreen('scr-employee');
+    }
 }
         function initRestevAnalyticsChart() {
             const canvas = document.getElementById('chart-restev-risks');
