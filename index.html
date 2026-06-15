@@ -726,46 +726,32 @@ function submitRealRiskReport() {
         }
 
         function submitRealRiskReport() {
-            const desc = document.getElementById('risk-desc').value.trim();
-            const loc = document.getElementById('risk-location').value;
-            const sev = document.getElementById('risk-level').value;
-            const cat = document.getElementById('risk-category').value;
-            
-            if(!loc) return alert("Le manager n'a pas configuré les secteurs.");
-            if(!desc) return alert("Veuillez rédiger une brève description.");
+    // 1. Récupération des données du formulaire
+    const alerte = {
+        category: document.getElementById('risk-category').value,
+        location: document.getElementById('risk-location').value,
+        level: document.getElementById('risk-level').value,
+        desc: document.getElementById('risk-desc').value,
+        time: new Date().toLocaleTimeString()
+    };
 
-            const newReport = {
-                id: Date.now(),
-                company: currentSelectedCompany,
-                employee: currentEmployeeProfile.name,
-                category: cat,
-                description: desc,
-                location: loc,
-                severity: sev,
-                gps: currentGPSCoords, 
-                photo: base64UploadedPhoto
-            };
-            
-            risksDB.unshift(newReport);
-            updateDirectionDashboardCounters();
-            
-            document.getElementById('feed-live-risk').innerHTML = `
-                <div class="border-l-2 border-restev-magenta pl-3 py-1.5 bg-slate-50 rounded-r-lg">
-                    <p class="font-bold text-slate-800 text-[11px]">${cat}</p>
-                    <p class="text-slate-500 text-[10px]">Atelier : ${loc}</p>
-                </div>`;
+    // 2. Mise à jour de la base de données
+    risksDB.push(alerte);
 
-            updateChartStatsDynamically();
-            refreshManagerRiskView();
+    // 3. Mise à jour de l'affichage Manager (scr-manager)
+    const managerBox = document.getElementById('manager-risk-box');
+    const alertHTML = `
+        <div class="border-l-4 border-restev-gold p-3 bg-slate-50 rounded-lg">
+            <p class="font-bold text-xs">${alerte.category}</p>
+            <p class="text-[10px] text-slate-500">${alerte.desc}</p>
+            <p class="text-[9px] font-bold text-restev-gold">${alerte.level}</p>
+        </div>`;
+    managerBox.insertAdjacentHTML('afterbegin', alertHTML);
 
-            document.getElementById('risk-desc').value = "";
-            document.getElementById('photo-preview').classList.add('hidden');
-            document.getElementById('photo-placeholder').classList.remove('hidden');
-            base64UploadedPhoto = "";
-
-            showToast("Signalement géolocalisé envoyé.");
-            switchScreen('scr-employee');
-        }
+    // 4. Feedback et retour
+    showToast("Alerte transmise.");
+    switchScreen('scr-employee');
+}
 
         function refreshManagerRiskView() {
             const box = document.getElementById('manager-risk-box');
