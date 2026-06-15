@@ -725,32 +725,26 @@ function submitRealRiskReport() {
             }
         }
 
-        function submitRealRiskReport() {
-    // 1. Récupération des données du formulaire
-    const alerte = {
+      // Initialisation (à faire une fois au début)
+const supabase = supabase.createClient('https://swgaezpjlaacqutogmvb.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3Z2FlenBqbGFhY3F1dG9nbXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwODc2MjEsImV4cCI6MjA5NjY2MzYyMX0.Wf7gA8P9VnVCfqYGMxIE6Ovg4LjZf9qBL4gmdXHJ-DA');
+
+async function submitRealRiskReport() {
+    const newAlert = {
         category: document.getElementById('risk-category').value,
         location: document.getElementById('risk-location').value,
-        level: document.getElementById('risk-level').value,
         desc: document.getElementById('risk-desc').value,
-        time: new Date().toLocaleTimeString()
+        status: 'pending'
     };
 
-    // 2. Mise à jour de la base de données
-    risksDB.push(alerte);
+    // Envoi vers Supabase
+    const { data, error } = await supabase
+        .from('alerts')
+        .insert([newAlert]);
 
-    // 3. Mise à jour de l'affichage Manager (scr-manager)
-    const managerBox = document.getElementById('manager-risk-box');
-    const alertHTML = `
-        <div class="border-l-4 border-restev-gold p-3 bg-slate-50 rounded-lg">
-            <p class="font-bold text-xs">${alerte.category}</p>
-            <p class="text-[10px] text-slate-500">${alerte.desc}</p>
-            <p class="text-[9px] font-bold text-restev-gold">${alerte.level}</p>
-        </div>`;
-    managerBox.insertAdjacentHTML('afterbegin', alertHTML);
-
-    // 4. Feedback et retour
-    showToast("Alerte transmise.");
-    switchScreen('scr-employee');
+    if (!error) {
+        showToast("Alerte transmise !");
+        switchScreen('scr-employee');
+    }
 }
 
         function refreshManagerRiskView() {
