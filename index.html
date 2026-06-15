@@ -4,34 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RESTEV 85 - Passeport Prévention Numérique</title>
-
-    <!-- Frameworks & Bibliothèques Graphiques Premium -->
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- API Cartographie Leaflet -->
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
+    
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'restev-blue': '#2b61a4',
-                        'restev-blue-dark': '#1e4575',
-                        'restev-magenta': '#b72077',
-                        'restev-magenta-dark': '#8e175c',
-                        'restev-teal': '#6caea2',
-                        'restev-gold': '#f1a115',
-                        'restev-gold-light': '#fef6e7'
-                    },
-                    boxShadow: {
-                        'premium': '0 10px 30px -5px rgba(43, 97, 164, 0.05), 0 4px 12px -2px rgba(0, 0, 0, 0.03)',
-                        'card-hover': '0 20px 40px -5px rgba(43, 97, 164, 0.1), 0 8px 20px -4px rgba(0, 0, 0, 0.05)'
+        // Sécurisation de l'initialisation du design pour éviter un crash si le réseau bloque Tailwind
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            'restev-blue': '#2b61a4',
+                            'restev-blue-dark': '#1e4575',
+                            'restev-magenta': '#b72077',
+                            'restev-magenta-dark': '#8e175c',
+                            'restev-teal': '#6caea2',
+                            'restev-gold': '#f1a115',
+                            'restev-gold-light': '#fef6e7'
+                        },
+                        boxShadow: {
+                            'premium': '0 10px 30px -5px rgba(43, 97, 164, 0.05), 0 4px 12px -2px rgba(0, 0, 0, 0.03)',
+                            'card-hover': '0 20px 40px -5px rgba(43, 97, 164, 0.1), 0 8px 20px -4px rgba(0, 0, 0, 0.05)'
+                        }
                     }
                 }
             }
@@ -52,31 +53,26 @@
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
-
-    <!-- EN-TÊTE CORPORATE -->
     <header class="bg-white border-b border-slate-100 py-3 px-4 shadow-sm no-print sticky top-0 z-40 backdrop-blur-md bg-white/95">
         <div class="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
             <div class="flex items-center cursor-pointer transition hover:opacity-90" onclick="clearUrlParamsAndHome()">
-                <img src="logo.png" alt="Logo RESTEV 85" class="h-12 md:h-14 w-auto object-contain">
+                <div class="font-black text-xl text-restev-blue tracking-tight">RESTEV <span class="text-restev-magenta">85</span></div>
             </div>
             <div class="text-center sm:text-right flex items-center gap-2">
-                <span class="bg-restev-gold-light text-restev-gold border border-restev-gold/20 font-extrabold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
-                    Plan Santé au Travail 2026-2030
+                <span id="js-status" class="bg-slate-100 text-slate-500 border border-slate-200 font-extrabold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                    Chargement JS... ⏳
                 </span>
             </div>
         </div>
     </header>
 
-    <!-- NOTIFICATION TOAST -->
     <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 text-white text-xs font-semibold py-3.5 px-5 rounded-2xl shadow-premium z-50 transition-all transform translate-y-20 opacity-0 flex items-center space-x-2.5 border border-slate-800 no-print">
-        <div class="w-2 h-2 bg-restev-gold rounded-full animate-pulse"></div>
+        <div id="toast-indicator" class="w-2 h-2 bg-restev-gold rounded-full animate-pulse"></div>
         <span id="toast-text">Notification</span>
     </div>
 
-    <!-- CONTENU PRINCIPAL -->
     <main class="max-w-5xl mx-auto p-4 md:p-6 flex-1 w-full flex flex-col justify-center">
-        
-        <!-- ================= PORTAIL D'ACCÈS PRO ================= -->
+
         <section id="scr-home" class="screen active max-w-xl mx-auto w-full space-y-8 py-4">
             <div class="text-center space-y-2">
                 <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">Passeport Prévention & Risques</h1>
@@ -110,7 +106,6 @@
             </div>
         </section>
 
-        <!-- ================= CONSOLE DE SUPERVISION REGIONALE (DIRECTION) ================= -->
         <section id="scr-direction" class="screen space-y-6">
             <div class="bg-gradient-to-br from-slate-900 via-restev-blue-dark to-slate-950 p-6 rounded-3xl text-white shadow-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative overflow-hidden">
                 <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-restev-gold/10 rounded-full blur-3xl"></div>
@@ -123,7 +118,6 @@
                 </div>
                 <button onclick="switchScreen('scr-home')" class="text-xs bg-white/10 hover:bg-white/20 px-3.5 py-2 rounded-xl font-bold transition no-print border border-white/10"><i class="fa-solid fa-arrow-left mr-1"></i> Portail</button>
             </div>
-
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-premium flex items-center space-x-3.5 relative overflow-hidden">
                     <div class="p-3 bg-restev-blue/10 text-restev-blue rounded-xl text-lg"><i class="fa-solid fa-building"></i></div>
@@ -142,7 +136,6 @@
                     <div><span class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Alertes Actives</span><span id="lbl-dir-alert-count" class="text-2xl font-extrabold text-slate-900">0</span></div>
                 </div>
             </div>
-
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-premium lg:col-span-2 space-y-4">
                     <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-chart-pie text-restev-blue"></i> Typologie des Risques Remontés</h3>
@@ -161,7 +154,6 @@
             </div>
         </section>
 
-        <!-- ================= AUTHENTIFICATION ENTREPRISE ================= -->
         <section id="scr-auth" class="screen max-w-md mx-auto w-full space-y-4">
             <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-premium space-y-5">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -188,7 +180,6 @@
             </div>
         </section>
 
-        <!-- ================= TABLEAU DE BORD MANAGER ENTREPRISE ================= -->
         <section id="scr-manager" class="screen space-y-6">
             <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-premium flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div class="flex items-center space-x-2.5">
@@ -197,10 +188,8 @@
                 </div>
                 <button onclick="clearUrlParamsAndHome()" class="text-xs bg-slate-50 hover:bg-slate-100 font-bold px-3.5 py-2 text-slate-600 rounded-xl transition"><i class="fa-solid fa-right-from-bracket mr-1"></i> Déconnexion</button>
             </div>
-
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-6">
-                    <!-- ACCUEIL NOUVEL ARRIVANT -->
                     <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-premium space-y-4">
                         <div class="flex items-center space-x-2 text-restev-magenta font-extrabold text-xs uppercase tracking-wider">
                             <i class="fa-solid fa-qrcode text-sm"></i>
@@ -226,8 +215,6 @@
                             </button>
                         </div>
                     </div>
-
-                    <!-- CONFIGURATION DES SECTEURS -->
                     <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-premium space-y-3">
                         <div class="flex items-center space-x-2 text-restev-blue font-extrabold text-xs uppercase tracking-wider">
                             <i class="fa-solid fa-map-location-dot"></i>
@@ -244,8 +231,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- ALERTES TERRAIN -->
                 <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-premium flex flex-col justify-between">
                     <div>
                         <h3 class="font-extrabold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-bell text-restev-gold"></i> Alertes Terrain Traitées</h3>
@@ -255,7 +240,6 @@
             </div>
         </section>
 
-        <!-- ================= INTERFACE MOBILE SALARIÉ ================= -->
         <section id="scr-employee" class="screen max-w-md mx-auto w-full space-y-4">
             <div class="bg-gradient-to-br from-slate-900 via-restev-blue-dark to-slate-950 text-white p-6 rounded-3xl shadow-lg space-y-2 relative overflow-hidden">
                 <div class="absolute -right-6 -top-6 w-24 h-24 bg-restev-magenta/10 rounded-full blur-2xl"></div>
@@ -285,7 +269,6 @@
             <button onclick="clearUrlParamsAndHome()" class="w-full text-center text-xs text-slate-400 hover:text-slate-600 font-semibold py-2 transition"><i class="fa-solid fa-arrow-left mr-1"></i> Quitter l'espace sécurisé</button>
         </section>
 
-        <!-- ================= SIGNALEMENT DE RISQUE ================= -->
         <section id="scr-report" class="screen max-w-md mx-auto w-full bg-white p-5 rounded-3xl border border-slate-100 shadow-premium space-y-4">
             <h3 class="text-base font-extrabold text-slate-900 flex items-center space-x-2"><i class="fa-solid fa-circle-dot text-restev-magenta animate-pulse"></i> <span>Alerte Danger Terrain</span></h3>
             
@@ -294,9 +277,8 @@
                     <i class="fa-solid fa-spinner animate-spin text-restev-blue mr-1"></i> Repérage satellite (Zoom Max : Niveau 19)...
                 </p>
             </div>
-
             <div id="map" class="h-44 w-full rounded-2xl border border-slate-200 shadow-inner bg-slate-50 z-0"></div>
-
+            
             <div class="space-y-1">
                 <label class="block text-xs font-bold text-slate-700">Preuve d'illustration (Caméra / Fichier) :</label>
                 <div class="flex flex-col items-center justify-center w-full border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50 p-3 relative min-h-[110px] group overflow-hidden hover:bg-slate-100/50 transition">
@@ -310,7 +292,7 @@
                     <img id="photo-preview" class="w-full h-32 object-cover rounded-xl hidden border relative z-20" alt="Preuve image">
                 </div>
             </div>
-
+            
             <div class="grid grid-cols-2 gap-3">
                 <div class="space-y-1">
                     <label class="block text-xs font-bold text-slate-700">Type de risque :</label>
@@ -326,7 +308,7 @@
                     <select id="risk-location" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-restev-blue focus:outline-none"></select>
                 </div>
             </div>
-            
+
             <div class="space-y-1">
                 <label class="block text-xs font-bold text-slate-700">Indice de Gravité :</label>
                 <select id="risk-level" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-red-600 focus:outline-none">
@@ -334,19 +316,18 @@
                     <option value="Modéré 🟠">Alerte Standard (Sous 24h)</option>
                 </select>
             </div>
-            
+
             <div class="space-y-1">
                 <label class="block text-xs font-bold text-slate-700">Description des faits :</label>
                 <textarea id="risk-desc" rows="2" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none" placeholder="Description claire du danger constaté..."></textarea>
             </div>
-            
+
             <div class="grid grid-cols-2 gap-3 pt-1">
                 <button type="button" onclick="switchScreen('scr-employee')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 py-2.5 rounded-xl text-xs font-bold transition">Retour</button>
                 <button type="button" onclick="submitRealRiskReport()" class="bg-restev-magenta text-white py-2.5 rounded-xl text-xs font-bold shadow-md hover:opacity-95 transition">Transmettre l'Alerte</button>
             </div>
         </section>
 
-        <!-- ================= CHARTE & EVALUATION SÉCURITÉ ================= -->
         <section id="scr-onboarding-1" class="screen max-w-md mx-auto w-full bg-white p-5 rounded-3xl border border-slate-100 shadow-premium space-y-4">
             <h3 class="text-base font-extrabold text-slate-900">Charte Interne de Prévention</h3>
             <div class="space-y-2.5 text-xs text-slate-600 leading-relaxed">
@@ -370,7 +351,6 @@
             </div>
         </section>
 
-        <!-- ================= EMARGEMENT ELECTRONIQUE ================= -->
         <section id="scr-signature" class="screen max-w-md mx-auto w-full bg-white p-5 rounded-3xl border border-slate-100 shadow-premium space-y-4">
             <h3 class="text-base font-extrabold text-slate-900 text-center">Émargement Électronique du Livret</h3>
             <div class="space-y-4">
@@ -392,14 +372,12 @@
             </div>
         </section>
 
-        <!-- ================= PROCES-VERBAL IMPRIMABLE (ATTESTATION) ================= -->
         <section id="scr-attestation" class="screen max-w-lg mx-auto w-full bg-white p-6 rounded-3xl shadow-premium border-2 border-restev-teal space-y-6">
             <div class="text-center space-y-1.5 no-print">
                 <div class="w-12 h-12 bg-restev-teal/10 text-restev-teal rounded-full flex items-center justify-center text-xl mx-auto"><i class="fa-solid fa-file-shield"></i></div>
                 <h3 class="text-base font-extrabold text-slate-900">Procès-Verbal d'Accueil SST</h3>
                 <p class="text-xs text-slate-400">Document probant généré conformément au Code du Travail français.</p>
             </div>
-
             <div class="border-2 border-slate-900 p-5 rounded-xl space-y-4 text-xs bg-white print-view" id="print-area">
                 <div class="flex justify-between items-center border-b border-slate-200 pb-2">
                     <span class="font-mono text-[9px] text-slate-400">ID : RESTEV-85-PASSPORT</span>
@@ -437,595 +415,439 @@
             </div>
         </section>
     </main>
-<script>
-    // Configuration de base Supabase
-    const SUPABASE_URL = "https://swgaezpjlaacqutogmvb.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3Z2FlenBqbGFhY3F1dG9nbXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwODc2MjEsImV4cCI6MjA5NjY2MzYyMX0.Wf7gA8P9VnVCfqYGMxIE6Ovg4LjZf9qBL4gmdXHJ-DA";
-    
-    // Protection et initialisation globale de Supabase
-    let supabase = null;
-    try {
-        if (window.supabase && typeof window.supabase.createClient === 'function') {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        } else {
-            console.warn("Supabase introuvable ou bloqué. L'application tourne en mode local déconnecté.");
+
+    <script>
+        // 1. CAPTURE GLOBALE DES ERREURS INVISIBLES
+        window.addEventListener('error', function(event) {
+            const toast = document.getElementById('toast');
+            const toastText = document.getElementById('toast-text');
+            const indicator = document.getElementById('toast-indicator');
+            if (toast && toastText) {
+                toastText.innerText = "Erreur JS détectée : " + event.message;
+                if (indicator) { indicator.classList.remove('bg-restev-gold'); indicator.classList.add('bg-red-500'); }
+                toast.className = "fixed bottom-6 right-6 bg-slate-900 text-white text-xs font-semibold py-3.5 px-5 rounded-2xl shadow-premium z-50 transition-all transform translate-y-0 opacity-100 flex items-center space-x-2.5 border border-red-500 no-print";
+            }
+            console.error("Erreur critique :", event.error);
+        });
+
+        // 2. CONFIGURATION DE BASE
+        const SUPABASE_URL = "https://swgaezpjlaacqutogmvb.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3Z2FlenBqbGFhY3F1dG9nbXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwODc2MjEsImV4cCI6MjA5NjY2MzYyMX0.Wf7gA8P9VnVCfqYGMxIE6Ovg4LjZf9qBL4gmdXHJ-DA";
+        
+        let supabase = null;
+        try {
+            if (window.supabase && typeof window.supabase.createClient === 'function') {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            }
+        } catch (err) {
+            console.error("Échec d'initialisation Supabase");
         }
-    } catch (err) {
-        console.error("Échec d'initialisation de Supabase :", err.message);
-    }
 
-    // États de l'application
-    let currentSelectedCompany = "Bati-Vendée Logistique 85";
-    let currentEmployeeProfile = { name: "Collaborateur Externe", status: "Parcours Standard" };
-    let base64UploadedPhoto = ""; 
-    let currentGPSCoords = "En attente...";
-    
-    let datasetAdherents = new Set(); 
-    let totalPassportsCount = 0;
-    let risksDB = []; 
-    let corporateZonesDB = {};
+        // 3. VARIABLES D'ÉTAT
+        let currentSelectedCompany = "Bati-Vendée Logistique 85";
+        let currentEmployeeProfile = { name: "Collaborateur Externe", status: "Parcours Standard" };
+        let base64UploadedPhoto = "";
+        let currentGPSCoords = "En attente...";
+        let datasetAdherents = new Set();
+        let totalPassportsCount = 0;
+        let risksDB = [];
+        let corporateZonesDB = {};
 
-    // Instances tierces (Cartographie, Graphiques, Canvas)
-    let myLeafletMap = null;
-    let myMapMarker = null;
-    let activeCanvas = {}; 
-    let ctxCanvas = {}; 
-    let chartInstance = null;
+        // 4. INSTANCES TIERCES
+        let myLeafletMap = null;
+        let myMapMarker = null;
+        let activeCanvas = {};
+        let ctxCanvas = {};
+        let chartInstance = null;
 
-    // Cycle de vie : Initialisation au chargement du DOM (plus rapide que window.onload)
-    document.addEventListener('DOMContentLoaded', async () => {
-        initRestevAnalyticsChart();
-        updateDirectionDashboardCounters();
+        // 5. INITIALISATION GARANTIE (REMPLACE WINDOW.ONLOAD)
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Signalement visuel que le JS tourne bien
+            const statusBadge = document.getElementById('js-status');
+            if (statusBadge) {
+                statusBadge.className = "bg-green-50 text-green-600 border border-green-200 font-extrabold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider shadow-sm";
+                statusBadge.innerHTML = "Système Actif ⚡";
+            }
 
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('emp')) {
-            currentEmployeeProfile.name = decodeURIComponent(urlParams.get('emp'));
-            currentEmployeeProfile.status = decodeURIComponent(urlParams.get('status') || 'Nouvel Arrivant');
-            currentSelectedCompany = decodeURIComponent(urlParams.get('comp') || 'Bati-Vendée Logistique 85');
-            
-            datasetAdherents.add(currentSelectedCompany);
+            initRestevAnalyticsChart();
             updateDirectionDashboardCounters();
             
-            await fetchCompanyZones();
-            accessEmployeeViaQR();
-            showToast(`Passeport activé pour ${currentEmployeeProfile.name}`);
-        }
-    });
-
-    // Notifications Toast UI
-    function showToast(text) {
-        const toast = document.getElementById('toast');
-        const toastText = document.getElementById('toast-text');
-        if (!toast || !toastText) return;
-
-        toastText.innerText = text;
-        toast.className = "fixed bottom-6 right-6 bg-slate-900 text-white text-xs font-semibold py-3.5 px-5 rounded-2xl shadow-premium z-50 transition-all transform translate-y-0 opacity-100 flex items-center space-x-2.5 border border-slate-800";
-        
-        setTimeout(() => {
-            toast.className = "fixed bottom-6 right-6 bg-slate-900 text-white text-xs font-semibold py-3.5 px-5 rounded-2xl shadow-premium z-50 transition-all transform translate-y-20 opacity-0 flex items-center space-x-2.5 border border-slate-800";
-        }, 3500);
-    }
-
-    // Mise à jour des compteurs statistiques
-    function updateDirectionDashboardCounters() {
-        const lblAdherents = document.getElementById('lbl-dir-adherents');
-        const lblPassports = document.getElementById('lbl-dir-passports');
-        const lblCompliance = document.getElementById('lbl-dir-compliance');
-        const lblAlerts = document.getElementById('lbl-dir-alert-count');
-
-        if (lblAdherents) lblAdherents.innerText = datasetAdherents.size;
-        if (lblPassports) lblPassports.innerText = totalPassportsCount;
-        if (lblCompliance) {
-            let complianceRate = totalPassportsCount > 0 ? 100 : 0;
-            lblCompliance.innerText = `${complianceRate} %`;
-        }
-        if (lblAlerts) lblAlerts.innerText = risksDB.length;
-    }
-
-    // Gestion de la navigation inter-écrans
-    function switchScreen(screenId) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        const targetScreen = document.getElementById(screenId);
-        if (targetScreen) targetScreen.classList.add('active');
-        
-        if (screenId === 'scr-signature') {
-            // Petit délai pour laisser le conteneur parent s'afficher et calculer sa largeur réelle
-            setTimeout(() => { 
-                initCanvas('canv-employee'); 
-                initCanvas('canv-tutor'); 
-            }, 150);
-        }
-        if (screenId === 'scr-report') {
-            buildZoneDropdownOptions(); 
-            acquireRealtimeGPSLocation();
-        }
-    }
-
-    // Réinitialisation de l'URL et retour à l'accueil
-    function clearUrlParamsAndHome() {
-        if (window.location.search) {
-            let cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-            window.history.replaceState({}, document.title, cleanUrl);
-        }
-        switchScreen('scr-home');
-    }
-
-    // Génération du QR Code d'accueil
-    function generateEmployeeAccess() {
-        const nameInput = document.getElementById('reg-emp-name');
-        const statusInput = document.getElementById('reg-emp-status');
-        if (!nameInput || !statusInput) return;
-
-        const name = nameInput.value.trim();
-        const status = statusInput.value;
-        if (!name) return alert("Veuillez renseigner le nom de l'intervenant.");
-        
-        currentEmployeeProfile.name = name;
-        currentEmployeeProfile.status = status;
-        
-        const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-        const targetWebUrl = `${cleanUrl}?emp=${encodeURIComponent(name)}&comp=${encodeURIComponent(currentSelectedCompany)}&status=${encodeURIComponent(status)}`;
-        
-        const qrArea = document.getElementById('qr-area');
-        const qrCanvas = document.getElementById('qr-canvas');
-        
-        if (qrArea) qrArea.classList.remove('hidden');
-        if (qrCanvas && window.QRCode) {
-            QRCode.toCanvas(qrCanvas, targetWebUrl, { 
-                width: 140, 
-                margin: 1,
-                color: { dark: '#1e4575', light: '#ffffff' }
-            });
-            showToast("QR Code d'accès généré.");
-        }
-    }
-
-    // Connexion espace responsable / entreprise d'accueil
-    async function handleManagerLogin() {
-        const managerCompInput = document.getElementById('manager-company-name');
-        if (!managerCompInput) return;
-
-        currentSelectedCompany = managerCompInput.value;
-        
-        const lblManagerComp = document.getElementById('lbl-manager-comp-name');
-        if (lblManagerComp) lblManagerComp.innerText = currentSelectedCompany;
-        
-        datasetAdherents.add(currentSelectedCompany);
-        updateDirectionDashboardCounters();
-        
-        await fetchCompanyZones();
-        await refreshManagerRiskView();
-        switchScreen('scr-manager');
-    }
-
-    // Récupération des ateliers/zones de l'entreprise
-    async function fetchCompanyZones() {
-        if (!supabase) {
-            if (!corporateZonesDB[currentSelectedCompany]) {
-                corporateZonesDB[currentSelectedCompany] = ["Zone Logistique Standard", "Atelier Général"];
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('emp')) {
+                currentEmployeeProfile.name = decodeURIComponent(urlParams.get('emp'));
+                currentEmployeeProfile.status = decodeURIComponent(urlParams.get('status') || 'Nouvel Arrivant');
+                currentSelectedCompany = decodeURIComponent(urlParams.get('comp') || 'Bati-Vendée Logistique 85');
+                datasetAdherents.add(currentSelectedCompany);
+                updateDirectionDashboardCounters();
+                await fetchCompanyZones();
+                accessEmployeeViaQR();
+                showToast(`Passeport activé pour ${currentEmployeeProfile.name}`);
             }
-            renderManagerZonesList();
-            return;
-        }
-        try {
-            const { data, error } = await supabase
-                .from('company_zones')
-                .select('zone_name')
-                .eq('company_name', currentSelectedCompany);
-
-            if (error) throw error;
-            corporateZonesDB[currentSelectedCompany] = data.map(item => item.zone_name);
-            renderManagerZonesList();
-        } catch (err) {
-            console.error("Erreur de chargement des secteurs :", err.message);
-        }
-    }
-
-    // Affichage des zones sur le panel Manager (Optimisé sans reflows répétitifs)
-    function renderManagerZonesList() {
-        const container = document.getElementById('manager-zones-list');
-        if (!container) return;
-
-        const currentZones = corporateZonesDB[currentSelectedCompany] || [];
-        if (currentZones.length === 0) {
-            container.innerHTML = `<span class="text-[11px] text-amber-600 italic">Aucun secteur configuré.</span>`;
-            return;
-        }
-        
-        let htmlBuffer = "";
-        currentZones.forEach((zone) => {
-            htmlBuffer += `
-                <span class="inline-flex items-center bg-slate-100 text-slate-700 text-[11px] font-bold px-3 py-1.5 rounded-xl border border-slate-200/60 shadow-sm">
-                    <i class="fa-solid fa-industry text-slate-400 mr-2 text-[9px]"></i> ${zone}
-                </span>`;
         });
-        container.innerHTML = htmlBuffer;
-    }
 
-    // Ajout d'une nouvelle zone de travail
-    async function registerCustomZone() {
-        const input = document.getElementById('txt-new-zone');
-        if (!input) return;
+        // ================= FONCTIONS DE BASE =================
 
-        const zoneName = input.value.trim();
-        if (!zoneName) return alert("Veuillez saisir un nom d'atelier ou de zone.");
-        
-        if (!corporateZonesDB[currentSelectedCompany]) {
-            corporateZonesDB[currentSelectedCompany] = [];
-        }
-        if (corporateZonesDB[currentSelectedCompany].includes(zoneName)) {
-            return alert("Ce secteur existe déjà.");
+        function showToast(text) {
+            const toast = document.getElementById('toast');
+            const toastText = document.getElementById('toast-text');
+            if (!toast || !toastText) return;
+            toastText.innerText = text;
+            toast.className = "fixed bottom-6 right-6 bg-slate-900 text-white text-xs font-semibold py-3.5 px-5 rounded-2xl shadow-premium z-50 transition-all transform translate-y-0 opacity-100 flex items-center space-x-2.5 border border-slate-800 no-print";
+            setTimeout(() => {
+                toast.className = "fixed bottom-6 right-6 bg-slate-900 text-white text-xs font-semibold py-3.5 px-5 rounded-2xl shadow-premium z-50 transition-all transform translate-y-20 opacity-0 flex items-center space-x-2.5 border border-slate-800 no-print";
+            }, 3500);
         }
 
-        if (!supabase) {
-            corporateZonesDB[currentSelectedCompany].push(zoneName);
-            input.value = "";
-            renderManagerZonesList();
-            showToast("Zone ajoutée localement (Mode déconnecté).");
-            return;
+        function updateDirectionDashboardCounters() {
+            const lblAdherents = document.getElementById('lbl-dir-adherents');
+            const lblPassports = document.getElementById('lbl-dir-passports');
+            const lblCompliance = document.getElementById('lbl-dir-compliance');
+            const lblAlerts = document.getElementById('lbl-dir-alert-count');
+            
+            if (lblAdherents) lblAdherents.innerText = datasetAdherents.size;
+            if (lblPassports) lblPassports.innerText = totalPassportsCount;
+            if (lblCompliance) lblCompliance.innerText = totalPassportsCount > 0 ? "100 %" : "0 %";
+            if (lblAlerts) lblAlerts.innerText = risksDB.length;
         }
 
-        try {
-            const { error } = await supabase
-                .from('company_zones')
-                .insert([{ company_name: currentSelectedCompany, zone_name: zoneName }]);
+        // LE CŒUR DE LA NAVIGATION
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            const targetScreen = document.getElementById(screenId);
+            if (targetScreen) targetScreen.classList.add('active');
 
-            if (error) throw error;
-            input.value = "";
-            await fetchCompanyZones();
-            showToast("Zone ajoutée au catalogue d'usine.");
-        } catch (err) {
-            alert("Impossible d'enregistrer la zone : " + err.message);
-        }
-    }
-
-    // Construction dynamique du sélecteur de zone pour le signalement de risques
-    function buildZoneDropdownOptions() {
-        const dropdown = document.getElementById('risk-location');
-        if (!dropdown) return;
-
-        const currentZones = corporateZonesDB[currentSelectedCompany] || ["Zone Logistique Standard", "Atelier Général"];
-        let htmlBuffer = "";
-        currentZones.forEach(zone => {
-            htmlBuffer += `<option value="${zone}">📍 ${zone}</option>`;
-        });
-        dropdown.innerHTML = htmlBuffer;
-    }
-
-    // Soumission du rapport de risque terrain
-    async function submitRealRiskReport() {
-        const descInput = document.getElementById('risk-desc');
-        const locInput = document.getElementById('risk-location');
-        const sevInput = document.getElementById('risk-level');
-        const catInput = document.getElementById('risk-category');
-
-        if (!descInput || !locInput || !sevInput || !catInput) return;
-
-        const desc = descInput.value.trim();
-        const loc = locInput.value;
-        const sev = sevInput.value;
-        const cat = catInput.value;
-        
-        if (!loc) return alert("Aucun secteur sélectionné.");
-        if (!desc) return alert("Veuillez rédiger une brève description.");
-
-        const newReport = {
-            company: currentSelectedCompany,
-            employee: currentEmployeeProfile.name,
-            category: cat,
-            description: desc,
-            location: loc,
-            severity: sev,
-            gps: currentGPSCoords, 
-            photo: base64UploadedPhoto
-        };
-
-        // Sauvegarde locale systématique (Fiabilité Offline)
-        risksDB.push(newReport);
-        updateDirectionDashboardCounters();
-        
-        // Fonction de nettoyage de l'interface
-        const clearForm = () => {
-            descInput.value = "";
-            const preview = document.getElementById('photo-preview');
-            const placeholder = document.getElementById('photo-placeholder');
-            if (preview) preview.classList.add('hidden');
-            if (placeholder) placeholder.classList.remove('hidden');
-            base64UploadedPhoto = "";
-        };
-
-        if (!supabase) {
-            clearForm();
-            showToast("Signalement enregistré localement (Offline).");
-            switchScreen('scr-employee');
-            return;
-        }
-        
-        try {
-            const { error } = await supabase.from('risk_reports').insert([newReport]);
-            if (error) throw error;
-
-            clearForm();
-            showToast("Signalement géolocalisé envoyé.");
-            switchScreen('scr-employee');
-        } catch (err) {
-            alert("Erreur lors de l'envoi du signalement : " + err.message);
-        }
-    }
-
-    // Rafraîchissement du flux des anomalies (Optimisé anti-reflows)
-    async function refreshManagerRiskView() {
-        const box = document.getElementById('manager-risk-box');
-        if (!box) return;
-        
-        // Fonction utilitaire de génération de templates HTML
-        const generateCardsHtml = (reportsArray) => {
-            let buffer = "";
-            reportsArray.forEach(r => {
-                let imgHtml = r.photo ? `<img src="${r.photo}" class="w-full h-32 object-cover rounded-xl border border-slate-100 mt-2" alt="Preuve visuelle">` : "";
-                buffer += `
-                <div class="bg-white p-4 rounded-xl border border-slate-100 text-[11px] space-y-1.5 shadow-sm">
-                    <div class="flex justify-between font-bold items-center">
-                        <span class="text-slate-900 font-extrabold">${r.employee}</span>
-                        <span class="text-red-600 bg-red-50 px-2 py-0.5 rounded text-[9px] font-black">${r.severity}</span>
-                    </div>
-                    <p class="text-slate-500"><i class="fa-solid fa-folder mr-1"></i> ${r.category}</p>
-                    <p class="text-restev-blue font-bold"><i class="fa-solid fa-location-dot text-restev-magenta mr-1"></i> ${r.location}</p>
-                    <p class="text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100 mt-1">${r.description}</p>
-                    ${imgHtml}
-                </div>`;
-            });
-            return buffer;
-        };
-
-        if (!supabase) {
-            if (risksDB.length === 0) {
-                box.innerHTML = `<p class="text-center py-8 text-slate-400 text-[11px] italic">Aucune anomalie signalée (Mode Local).</p>`;
-                return;
-            }
-            box.innerHTML = generateCardsHtml(risksDB);
-            return;
-        }
-
-        try {
-            const { data: filtered, error } = await supabase
-                .from('risk_reports')
-                .select('*')
-                .eq('company', currentSelectedCompany)
-                .order('created_at', { ascending: false });
-
-            if (error) throw error;
-
-            if (!filtered || filtered.length === 0) {
-                box.innerHTML = `<p class="text-center py-8 text-slate-400 text-[11px] italic">Aucune anomalie signalée.</p>`;
-                return;
-            }
-            box.innerHTML = generateCardsHtml(filtered);
-        } catch (err) {
-            console.error("Erreur lors du chargement des alertes :", err.message);
-        }
-    }
-
-    // Gestion du capteur de géolocalisation et rendu cartographique Leaflet
-    function acquireRealtimeGPSLocation() {
-        const indicator = document.getElementById('geo-status');
-        if (!indicator) return;
-
-        if (!navigator.geolocation) {
-            currentGPSCoords = "Non supporté";
-            indicator.innerHTML = `<span class="text-red-500 font-bold"><i class="fa-solid fa-triangle-exclamation"></i> Capteur absent</span>`;
-            return;
-        }
-        
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const lat = position.coords.latitude;
-                const lon = position.coords.longitude;
-                currentGPSCoords = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
-                indicator.innerHTML = `<span class="text-emerald-600 font-bold"><i class="fa-solid fa-crosshairs animate-pulse"></i> Marqueur aligné : ${currentGPSCoords}</span>`;
-                
-                // Petit timeout pour s'assurer que la div carto '#map' est injectée et visible au DOM
+            if (screenId === 'scr-signature') {
                 setTimeout(() => {
-                    if (!window.L) return; // Sécurité si Leaflet n'est pas chargé
-                    if (!myLeafletMap) {
-                        myLeafletMap = L.map('map', { zoomControl: false }).setView([lat, lon], 19);
-                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(myLeafletMap);
-                        myMapMarker = L.marker([lat, lon]).addTo(myLeafletMap);
-                    } else {
-                        myLeafletMap.setView([lat, lon], 19);
-                        myMapMarker.setLatLng([lat, lon]);
-                    }
-                    myLeafletMap.invalidateSize();
-                }, 250);
-            },
-            () => {
-                // Fallback par défaut de sécurité (Coordonnées La Roche-sur-Yon / Vendée)
-                currentGPSCoords = "46.6705, -1.4265";
-                indicator.innerHTML = `<span class="text-restev-gold font-semibold"><i class="fa-solid fa-triangle-exclamation"></i> Localisation Vendée activée</span>`;
-            },
-            { enableHighAccuracy: true, timeout: 8000 }
-        );
-    }
-
-    // Initialisation du graphique analytique Chart.js (Doughnut)
-    function initRestevAnalyticsChart() {
-        const canvas = document.getElementById('chart-restev-risks');
-        if (!canvas || !window.Chart) return;
-        const ctx = canvas.getContext('2d');
-        
-        if (chartInstance) {
-            chartInstance.destroy(); // Évite les superpositions de graphiques en cas de re-rendu
+                    initCanvas('canv-employee');
+                    initCanvas('canv-tutor');
+                }, 150);
+            }
+            if (screenId === 'scr-report') {
+                buildZoneDropdownOptions();
+                acquireRealtimeGPSLocation();
+            }
         }
 
-        chartInstance = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Risques de Chute', 'Engins / Véhicules', 'EPI manquants', 'Produits Chimiques'],
-                datasets: [{
-                    data: [12, 19, 3, 5], 
-                    backgroundColor: ['#2b61a4', '#b72077', '#f1a115', '#6caea2'],
-                    borderWidth: 3,
-                    borderColor: '#ffffff'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { 
-                    legend: { 
-                        position: 'bottom', 
-                        labels: { boxWidth: 10, font: { size: 11, weight: '600' } } 
-                    } 
-                }
+        function clearUrlParamsAndHome() {
+            if (window.location.search) {
+                let cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+                window.history.replaceState({}, document.title, cleanUrl);
             }
-        });
-    }
+            switchScreen('scr-home');
+        }
 
-    // Routages d'accès profil employé
-    function accessEmployeeViaQR() {
-        const welcome = document.getElementById('lbl-emp-welcome');
-        const comp = document.getElementById('lbl-emp-company');
-        if (welcome) welcome.innerText = `Bonjour ${currentEmployeeProfile.name}`;
-        if (comp) comp.innerText = `${currentSelectedCompany} • ${currentEmployeeProfile.status}`;
-        switchScreen('scr-employee');
-    }
+        function generateEmployeeAccess() {
+            const nameInput = document.getElementById('reg-emp-name');
+            const statusInput = document.getElementById('reg-emp-status');
+            if (!nameInput || !statusInput) return;
+            
+            const name = nameInput.value.trim();
+            const status = statusInput.value;
+            if (!name) return alert("Veuillez renseigner le nom.");
 
-    function accessEmployeeDirect() {
-        currentEmployeeProfile.name = "Collaborateur Externe";
-        currentEmployeeProfile.status = "Parcours Standard";
-        
-        const welcome = document.getElementById('lbl-emp-welcome');
-        const comp = document.getElementById('lbl-emp-company');
-        if (welcome) welcome.innerText = `Bonjour ${currentEmployeeProfile.name}`;
-        if (comp) comp.innerText = `Établissement d'accueil : ${currentSelectedCompany}`;
-        switchScreen('scr-employee');
-    }
+            currentEmployeeProfile.name = name;
+            currentEmployeeProfile.status = status;
+            const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            const targetWebUrl = `${cleanUrl}?emp=${encodeURIComponent(name)}&comp=${encodeURIComponent(currentSelectedCompany)}&status=${encodeURIComponent(status)}`;
 
-    // Traitement de la photo d'anomalie prise sur le terrain
-    function processRealPhoto(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                base64UploadedPhoto = e.target.result;
+            const qrArea = document.getElementById('qr-area');
+            const qrCanvas = document.getElementById('qr-canvas');
+            if (qrArea) qrArea.classList.remove('hidden');
+            
+            if (qrCanvas && window.QRCode) {
+                QRCode.toCanvas(qrCanvas, targetWebUrl, { width: 140, margin: 1, color: { dark: '#1e4575', light: '#ffffff' } });
+                showToast("QR Code d'accès généré.");
+            }
+        }
+
+        async function handleManagerLogin() {
+            const managerCompInput = document.getElementById('manager-company-name');
+            if (!managerCompInput) return;
+            
+            currentSelectedCompany = managerCompInput.value;
+            const lblManagerComp = document.getElementById('lbl-manager-comp-name');
+            if (lblManagerComp) lblManagerComp.innerText = currentSelectedCompany;
+
+            datasetAdherents.add(currentSelectedCompany);
+            updateDirectionDashboardCounters();
+            await fetchCompanyZones();
+            await refreshManagerRiskView();
+            switchScreen('scr-manager');
+        }
+
+        async function fetchCompanyZones() {
+            if (!supabase) {
+                if (!corporateZonesDB[currentSelectedCompany]) {
+                    corporateZonesDB[currentSelectedCompany] = ["Zone Logistique Standard", "Atelier Général"];
+                }
+                renderManagerZonesList();
+                return;
+            }
+            try {
+                const { data, error } = await supabase.from('company_zones').select('zone_name').eq('company_name', currentSelectedCompany);
+                if (error) throw error;
+                corporateZonesDB[currentSelectedCompany] = data.map(item => item.zone_name);
+                renderManagerZonesList();
+            } catch (err) {
+                console.error("Erreur de chargement des secteurs :", err.message);
+            }
+        }
+
+        function renderManagerZonesList() {
+            const container = document.getElementById('manager-zones-list');
+            if (!container) return;
+            const currentZones = corporateZonesDB[currentSelectedCompany] || [];
+            if (currentZones.length === 0) {
+                container.innerHTML = `<span class="text-[11px] text-amber-600 italic">Aucun secteur configuré.</span>`;
+                return;
+            }
+            let htmlBuffer = "";
+            currentZones.forEach((zone) => {
+                htmlBuffer += `<span class="inline-flex items-center bg-slate-100 text-slate-700 text-[11px] font-bold px-3 py-1.5 rounded-xl border border-slate-200/60 shadow-sm"><i class="fa-solid fa-industry text-slate-400 mr-2 text-[9px]"></i> ${zone}</span>`;
+            });
+            container.innerHTML = htmlBuffer;
+        }
+
+        async function registerCustomZone() {
+            const input = document.getElementById('txt-new-zone');
+            if (!input) return;
+            const zoneName = input.value.trim();
+            if (!zoneName) return alert("Veuillez saisir un nom d'atelier ou de zone.");
+
+            if (!corporateZonesDB[currentSelectedCompany]) corporateZonesDB[currentSelectedCompany] = [];
+            if (corporateZonesDB[currentSelectedCompany].includes(zoneName)) return alert("Ce secteur existe déjà.");
+
+            if (!supabase) {
+                corporateZonesDB[currentSelectedCompany].push(zoneName);
+                input.value = "";
+                renderManagerZonesList();
+                showToast("Zone ajoutée localement (Mode déconnecté).");
+                return;
+            }
+            try {
+                const { error } = await supabase.from('company_zones').insert([{ company_name: currentSelectedCompany, zone_name: zoneName }]);
+                if (error) throw error;
+                input.value = "";
+                await fetchCompanyZones();
+                showToast("Zone ajoutée au catalogue d'usine.");
+            } catch (err) {
+                alert("Impossible d'enregistrer la zone : " + err.message);
+            }
+        }
+
+        function buildZoneDropdownOptions() {
+            const dropdown = document.getElementById('risk-location');
+            if (!dropdown) return;
+            const currentZones = corporateZonesDB[currentSelectedCompany] || ["Zone Logistique Standard", "Atelier Général"];
+            let htmlBuffer = "";
+            currentZones.forEach(zone => { htmlBuffer += `<option value="${zone}">📍 ${zone}</option>`; });
+            dropdown.innerHTML = htmlBuffer;
+        }
+
+        async function submitRealRiskReport() {
+            const descInput = document.getElementById('risk-desc');
+            const locInput = document.getElementById('risk-location');
+            const sevInput = document.getElementById('risk-level');
+            const catInput = document.getElementById('risk-category');
+            
+            if (!descInput || !locInput || !sevInput || !catInput) return;
+            
+            const desc = descInput.value.trim();
+            const loc = locInput.value;
+            const sev = sevInput.value;
+            const cat = catInput.value;
+
+            if (!loc) return alert("Aucun secteur sélectionné.");
+            if (!desc) return alert("Veuillez rédiger une brève description.");
+            
+            const newReport = { company: currentSelectedCompany, employee: currentEmployeeProfile.name, category: cat, description: desc, location: loc, severity: sev, gps: currentGPSCoords, photo: base64UploadedPhoto };
+            risksDB.push(newReport);
+            updateDirectionDashboardCounters();
+
+            const clearForm = () => {
+                descInput.value = "";
                 const preview = document.getElementById('photo-preview');
                 const placeholder = document.getElementById('photo-placeholder');
-                
-                if (preview) {
-                    preview.src = base64UploadedPhoto;
-                    preview.classList.remove('hidden');
-                }
-                if (placeholder) placeholder.classList.add('hidden');
+                if (preview) preview.classList.add('hidden');
+                if (placeholder) placeholder.classList.remove('hidden');
+                base64UploadedPhoto = "";
             };
-            reader.readAsDataURL(input.files[0]);
+
+            if (!supabase) {
+                clearForm();
+                showToast("Signalement enregistré localement (Offline).");
+                switchScreen('scr-employee');
+                return;
+            }
+            try {
+                const { error } = await supabase.from('risk_reports').insert([newReport]);
+                if (error) throw error;
+                clearForm();
+                showToast("Signalement géolocalisé envoyé.");
+                switchScreen('scr-employee');
+            } catch (err) {
+                alert("Erreur lors de l'envoi du signalement : " + err.message);
+            }
         }
-    }
 
-    // Initialisation isolée et sécurisée des zones de signature Canvas
-    function initCanvas(id) {
-        const canvas = document.getElementById(id); 
-        if (!canvas) return;
-        
-        canvas.width = canvas.parentElement.clientWidth || 300;
-        canvas.height = 90;
-        const ctx = canvas.getContext('2d'); 
-        ctx.lineWidth = 2.5; 
-        ctx.lineCap = 'round'; 
-        ctx.strokeStyle = '#0f172a';
-        
-        activeCanvas[id] = canvas; 
-        ctxCanvas[id] = ctx;
+        async function refreshManagerRiskView() {
+            const box = document.getElementById('manager-risk-box');
+            if (!box) return;
 
-        // Éviter le partage global de l'état du dessin (Résout le bug de cross-signature)
-        let canvasIsDrawing = false;
-
-        const getMousePos = (e) => {
-            let r = canvas.getBoundingClientRect();
-            return { 
-                x: (e.touches ? e.touches[0].clientX : e.clientX) - r.left, 
-                y: (e.touches ? e.touches[0].clientY : e.clientY) - r.top 
+            const generateCardsHtml = (reportsArray) => {
+                let buffer = "";
+                reportsArray.forEach(r => {
+                    let imgHtml = r.photo ? `<img src="${r.photo}" class="w-full h-32 object-cover rounded-xl border border-slate-100 mt-2">` : "";
+                    buffer += `<div class="bg-white p-4 rounded-xl border border-slate-100 text-[11px] space-y-1.5 shadow-sm"><div class="flex justify-between font-bold items-center"><span class="text-slate-900 font-extrabold">${r.employee}</span><span class="text-red-600 bg-red-50 px-2 py-0.5 rounded text-[9px] font-black">${r.severity}</span></div><p class="text-slate-500"><i class="fa-solid fa-folder mr-1"></i> ${r.category}</p><p class="text-restev-blue font-bold"><i class="fa-solid fa-location-dot text-restev-magenta mr-1"></i> ${r.location}</p><p class="text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100 mt-1">${r.description}</p>${imgHtml}</div>`;
+                });
+                return buffer;
             };
-        };
 
-        const start = (e) => { 
-            e.preventDefault(); 
-            canvasIsDrawing = true; 
-            let p = getMousePos(e); 
-            ctx.beginPath(); 
-            ctx.moveTo(p.x, p.y); 
-        };
-
-        const move = (e) => { 
-            if (!canvasIsDrawing) return; 
-            e.preventDefault(); 
-            let p = getMousePos(e); 
-            ctx.lineTo(p.x, p.y); 
-            ctx.stroke(); 
-        };
-
-        const stop = () => { canvasIsDrawing = false; };
-
-        // Suppression des anciens écouteurs pour éviter les fuites de mémoire à l'initialisation répétée
-        canvas.removeEventListener('mousedown', start);
-        canvas.removeEventListener('mousemove', move);
-        canvas.removeEventListener('touchstart', start);
-        canvas.removeEventListener('touchmove', move);
-
-        // Liaison des événements
-        canvas.addEventListener('mousedown', start); 
-        canvas.addEventListener('mousemove', move); 
-        window.addEventListener('mouseup', stop);
-        
-        canvas.addEventListener('touchstart', start, { passive: false }); 
-        canvas.addEventListener('touchmove', move, { passive: false }); 
-        window.addEventListener('touchend', stop);
-    }
-
-    // Nettoyage d'une zone de dessin
-    function clearCanvas(id) { 
-        if (ctxCanvas[id] && activeCanvas[id]) {
-            ctxCanvas[id].clearRect(0, 0, activeCanvas[id].width, activeCanvas[id].height); 
+            if (!supabase) {
+                box.innerHTML = risksDB.length === 0 ? `<p class="text-center py-8 text-slate-400 text-[11px] italic">Aucune anomalie signalée (Mode Local).</p>` : generateCardsHtml(risksDB);
+                return;
+            }
+            try {
+                const { data: filtered, error } = await supabase.from('risk_reports').select('*').eq('company', currentSelectedCompany).order('created_at', { ascending: false });
+                if (error) throw error;
+                box.innerHTML = (!filtered || filtered.length === 0) ? `<p class="text-center py-8 text-slate-400 text-[11px] italic">Aucune anomalie signalée.</p>` : generateCardsHtml(filtered);
+            } catch (err) {
+                console.error("Erreur alertes :", err.message);
+            }
         }
-    }
 
-    // Finalisation et archivage visuel de l'attestation de sécurité
-    function finalizeOfficialAttestation() {
-        totalPassportsCount++; 
-        updateDirectionDashboardCounters(); 
-        
-        const tutorInput = document.getElementById('tutor-name');
-        const tutorName = tutorInput ? tutorInput.value : "Non renseigné";
-
-        // Assignation des textes
-        const updates = {
-            'lbl-view-emp': currentEmployeeProfile.name,
-            'lbl-view-company': currentSelectedCompany,
-            'lbl-view-status': currentEmployeeProfile.status,
-            'lbl-view-tutor': tutorName
-        };
-
-        Object.entries(updates).forEach(([id, val]) => {
-            const el = document.getElementById(id);
-            if (el) el.innerText = val;
-        });
-
-        // Gestion de l'affichage de l'horodatage officiel (Instanciation Date unique)
-        const lblDate = document.getElementById('lbl-view-date');
-        if (lblDate) {
-            const now = new Date();
-            const formatDate = now.toLocaleDateString('fr-FR');
-            const formatTime = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-            lblDate.innerText = `${formatDate} à ${formatTime}`;
+        function acquireRealtimeGPSLocation() {
+            const indicator = document.getElementById('geo-status');
+            if (!indicator) return;
+            if (!navigator.geolocation) {
+                currentGPSCoords = "Non supporté";
+                indicator.innerHTML = `<span class="text-red-500 font-bold"><i class="fa-solid fa-triangle-exclamation"></i> Capteur absent</span>`;
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    currentGPSCoords = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+                    indicator.innerHTML = `<span class="text-emerald-600 font-bold"><i class="fa-solid fa-crosshairs animate-pulse"></i> Marqueur aligné : ${currentGPSCoords}</span>`;
+                    setTimeout(() => {
+                        if (!window.L) return;
+                        if (!myLeafletMap) {
+                            myLeafletMap = L.map('map', { zoomControl: false }).setView([lat, lon], 19);
+                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(myLeafletMap);
+                            myMapMarker = L.marker([lat, lon]).addTo(myLeafletMap);
+                        } else {
+                            myLeafletMap.setView([lat, lon], 19);
+                            myMapMarker.setLatLng([lat, lon]);
+                        }
+                        myLeafletMap.invalidateSize();
+                    }, 250);
+                },
+                () => {
+                    currentGPSCoords = "46.6705, -1.4265";
+                    indicator.innerHTML = `<span class="text-restev-gold font-semibold"><i class="fa-solid fa-triangle-exclamation"></i> Localisation Vendée activée</span>`;
+                },
+                { enableHighAccuracy: true, timeout: 8000 }
+            );
         }
-        
-        // Rendu des images de signatures
-        const imgEmp = document.getElementById('img-render-emp');
-        const imgTutor = document.getElementById('img-render-tutor');
 
-        if (imgEmp && activeCanvas['canv-employee']) imgEmp.src = activeCanvas['canv-employee'].toDataURL();
-        if (imgTutor && activeCanvas['canv-tutor']) imgTutor.src = activeCanvas['canv-tutor'].toDataURL();
-        
-        switchScreen('scr-attestation');
-    }
-</script>
+        function initRestevAnalyticsChart() {
+            const canvas = document.getElementById('chart-restev-risks');
+            if (!canvas || !window.Chart) return;
+            const ctx = canvas.getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Risques de Chute', 'Engins / Véhicules', 'EPI manquants', 'Produits Chimiques'],
+                    datasets: [{ data: [12, 19, 3, 5], backgroundColor: ['#2b61a4', '#b72077', '#f1a115', '#6caea2'], borderWidth: 3, borderColor: '#ffffff' }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11, weight: '600' } } } } }
+            });
+        }
+
+        function accessEmployeeViaQR() {
+            const welcome = document.getElementById('lbl-emp-welcome');
+            const comp = document.getElementById('lbl-emp-company');
+            if (welcome) welcome.innerText = `Bonjour ${currentEmployeeProfile.name}`;
+            if (comp) comp.innerText = `${currentSelectedCompany} • ${currentEmployeeProfile.status}`;
+            switchScreen('scr-employee');
+        }
+
+        function accessEmployeeDirect() {
+            currentEmployeeProfile.name = "Collaborateur Externe";
+            currentEmployeeProfile.status = "Parcours Standard";
+            const welcome = document.getElementById('lbl-emp-welcome');
+            const comp = document.getElementById('lbl-emp-company');
+            if (welcome) welcome.innerText = `Bonjour ${currentEmployeeProfile.name}`;
+            if (comp) comp.innerText = `Établissement d'accueil : ${currentSelectedCompany}`;
+            switchScreen('scr-employee');
+        }
+
+        function processRealPhoto(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    base64UploadedPhoto = e.target.result;
+                    const preview = document.getElementById('photo-preview');
+                    const placeholder = document.getElementById('photo-placeholder');
+                    if (preview) { preview.src = base64UploadedPhoto; preview.classList.remove('hidden'); }
+                    if (placeholder) placeholder.classList.add('hidden');
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function initCanvas(id) {
+            const canvas = document.getElementById(id);
+            if (!canvas) return;
+            canvas.width = canvas.parentElement.clientWidth || 300;
+            canvas.height = 90;
+            const ctx = canvas.getContext('2d');
+            ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.strokeStyle = '#0f172a';
+            activeCanvas[id] = canvas; ctxCanvas[id] = ctx;
+            let canvasIsDrawing = false;
+            
+            const getMousePos = (e) => {
+                let r = canvas.getBoundingClientRect();
+                return { x: (e.touches ? e.touches[0].clientX : e.clientX) - r.left, y: (e.touches ? e.touches[0].clientY : e.clientY) - r.top };
+            };
+            const start = (e) => { e.preventDefault(); canvasIsDrawing = true; let p = getMousePos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); };
+            const move = (e) => { if (!canvasIsDrawing) return; e.preventDefault(); let p = getMousePos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
+            const stop = () => { canvasIsDrawing = false; };
+            
+            canvas.removeEventListener('mousedown', start); canvas.removeEventListener('mousemove', move);
+            canvas.removeEventListener('touchstart', start); canvas.removeEventListener('touchmove', move);
+            
+            canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); window.addEventListener('mouseup', stop);
+            canvas.addEventListener('touchstart', start, { passive: false }); canvas.addEventListener('touchmove', move, { passive: false }); window.addEventListener('touchend', stop);
+        }
+
+        function clearCanvas(id) {
+            if (ctxCanvas[id] && activeCanvas[id]) ctxCanvas[id].clearRect(0, 0, activeCanvas[id].width, activeCanvas[id].height);
+        }
+
+        function finalizeOfficialAttestation() {
+            totalPassportsCount++;
+            updateDirectionDashboardCounters();
+            const tutorInput = document.getElementById('tutor-name');
+            const tutorName = tutorInput ? tutorInput.value : "Non renseigné";
+            
+            const updates = { 'lbl-view-emp': currentEmployeeProfile.name, 'lbl-view-company': currentSelectedCompany, 'lbl-view-status': currentEmployeeProfile.status, 'lbl-view-tutor': tutorName };
+            Object.entries(updates).forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.innerText = val; });
+            
+            const lblDate = document.getElementById('lbl-view-date');
+            if (lblDate) {
+                const now = new Date();
+                lblDate.innerText = `${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+            }
+            
+            const imgEmp = document.getElementById('img-render-emp');
+            const imgTutor = document.getElementById('img-render-tutor');
+            if (imgEmp && activeCanvas['canv-employee']) imgEmp.src = activeCanvas['canv-employee'].toDataURL();
+            if (imgTutor && activeCanvas['canv-tutor']) imgTutor.src = activeCanvas['canv-tutor'].toDataURL();
+            switchScreen('scr-attestation');
+        }
+    </script>
 </body>
 </html>
