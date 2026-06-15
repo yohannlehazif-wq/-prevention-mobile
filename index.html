@@ -1,434 +1,625 @@
-Le problème vient du fait que la fonction `submitToManagerQueue()` de ton fichier source exécute une transition directe sans insérer correctement la ligne dans Supabase (ou sans rafraîchir en temps réel la vue du Manager), et elle oublie de basculer sur l'écran de succès destiné au salarié (`scr-employee-success`).
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RESTEV 85 - Expert Prévention</title>
 
-Voici le code JavaScript complet, corrigé, optimisé et sécurisé pour l'intégration avec **Supabase**. Il gère parfaitement la double attente : l'enregistrement en base `public.onboarding`, l'affichage immédiat sur le tableau de bord du Manager (avec un système de rafraîchissement automatique), et la redirection du salarié vers son écran de validation.
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#3065a8">
+    <link rel="icon" type="image/png" href="logo_restev_carre.png">
 
-### Les corrections majeures apportées :
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RESTEV 85">
+    <link rel="apple-touch-icon" href="logo_restev_carre.png">
 
-1. 
-**Routage du salarié corrigé :** Dès que le salarié clique sur "Transmettre le dossier", les données partent sur Supabase et l'application le bascule sur l'écran `scr-employee-success`.
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-2. 
-**Synchronisation en Temps Réel Côté Manager :** Ajout d'une fonction `loadPendingOnboardings()` qui interroge la table Supabase pour récupérer les tests en attente de validation et remplit dynamiquement la liste du Manager.
-
-
-3. **Optimisation globale :** Nettoyage de la gestion des signatures Canvas et sécurisation des requêtes asynchrones (`async/await`) avec gestion des erreurs (`try/catch`).
-
----
-
-### Remplace la section `<script>` en bas de ton fichier par ce bloc optimisé :
-
-```javascript
-    // ==========================================
-    // CONFIGURATION & ETAT GLOBAL
-    // ==========================================
-    // Remplace par tes clés de projet Supabase si ce n'est pas déjà fait
-    const SUPABASE_URL = "https://votre-projet.supabase.co";
-    const SUPABASE_KEY = "votre-cle-anonyme";
-    const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
-
-    let currentUserRole = 'employee';
-    let currentPhotoFile = null;
-    let employeeSignatureData = null;
-    let tutorSignatureData = null;
-    let activeReviewItem = null; // Stocke l'onboarding sélectionné par le manager
-
-    // Réponses correctes au QCM
-    const CORRECT_ANSWERS = { q1: "B", q2: "A", q3: "A", q4: "B" };
-
-    // Initialisation au chargement de la page
-    window.addEventListener('DOMContentLoaded', () => {
-        initCanvas('canv-employee', (data) => { employeeSignatureData = data; });
-        initCanvas('canv-tutor', (data) => { tutorSignatureData = data; });
-        initCanvas('canv-tutor-rev', () => {});
-        
-        // Démarrage par défaut sur le portail d'authentification
-        switchScreen('scr-auth');
-    });
-
-    // ==========================================
-    // NAVIGATION ET ROLES
-    // ==========================================
-    function switchScreen(screenId) {
-        // Masquer toutes les sections
-        document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
-        
-        // Afficher l'écran demandé
-        const targetScreen = document.getElementById(screenId);
-        if (targetScreen) {
-            targetScreen.classList.remove('hidden');
-        }
-
-        // Logique spécifique lors de l'accès au tableau de bord
-        if (screenId === 'scr-dashboard') {
-            if (currentUserRole === 'manager') {
-                loadPendingOnboardings(); // Rafraîchir les alertes automatiquement
-            }
-        }
+    <style>
+    :root { 
+        --r-blue: #3065a8; 
+        --r-blue-dark: #1e4475;
+        --r-teal: #75bba8; 
+        --r-purple: #ae227d; 
+        --r-yellow: #e6a00f; 
+        --r-light: #f4f7fa; 
+        --shadow-sm: 0 2px 8px rgba(48, 101, 168, 0.05);
+        --shadow-md: 0 8px 24px rgba(48, 101, 168, 0.08);
+        --shadow-lg: 0 16px 32px rgba(30, 68, 117, 0.12);
+        --radius-sm: 10px;
+        --radius-md: 16px;
+        --radius-lg: 24px;
     }
 
-    function setRole(role) {
-        currentUserRole = role;
-        const badge = document.getElementById('role-badge');
-        const mglPanel = document.getElementById('manager-only-panel');
-        const qrShortcut = document.getElementById('manager-qr-shortcut');
-
-        if (role === 'manager') {
-            badge.className = "cursor-pointer bg-restev-magenta text-white text-[10px] font-bold px-3 py-1.5 rounded-xl border border-restev-magenta-dark uppercase tracking-wide transition-all";
-            badge.innerText = "Profil : Manager";
-            if (mglPanel) mglPanel.classList.remove('hidden');
-            if (qrShortcut) qrShortcut.classList.remove('hidden');
-            
-            // Personnalisation textes dashboard
-            document.getElementById('dash-title').innerText = "Espace Responsable Site";
-            document.getElementById('dash-subtitle').innerText = "Pilote de Prévention Vendée & Suivi des Accueils";
-            
-            loadPendingOnboardings();
-        } else {
-            badge.className = "cursor-pointer bg-restev-blue text-white text-[10px] font-bold px-3 py-1.5 rounded-xl border border-restev-blue-dark uppercase tracking-wide transition-all";
-            badge.innerText = "Profil : Salarié";
-            if (mglPanel) mglPanel.classList.add('hidden');
-            if (qrShortcut) qrShortcut.classList.add('hidden');
-
-            document.getElementById('dash-title').innerText = "Mon Livret Sécurité PWA";
-            document.getElementById('dash-subtitle').innerText = "Complétez vos obligations réglementaires de sécurité";
-        }
-        switchScreen('scr-dashboard');
+    body { 
+        background-color: var(--r-light); 
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+        margin-bottom: 110px; 
+        overflow-x: hidden; 
+        color: #334155;
+        -webkit-font-smoothing: antialiased;
+        -webkit-user-select: none; /* Protection contre la selection accidentelle sur le terrain */
+        user-select: none;
     }
 
-    // ==========================================
-    // LOGIQUE METIER : ONBOARDING & QCM
-    // ==========================================
-    function validateFirstStep() {
-        const empName = document.getElementById('reg-emp-name').value.trim();
-        const company = document.getElementById('reg-company').value.trim();
-
-        if (!empName || !company) {
-            alert("⚠️ Veuillez renseigner votre Nom, Prénom ainsi que votre Entreprise.");
-            return;
-        }
-
-        // Vérifier si le QCM est entièrement coché
-        if (!getRadioValue('q1') || !getRadioValue('q2') || !getRadioValue('q3') || !getRadioValue('q4')) {
-            alert("⚠️ Veuillez répondre à l'ensemble des questions du QCM de prévention.");
-            return;
-        }
-
-        switchScreen('scr-onboarding-2');
+    .nav-bottom, .btn-enter-premium, .card-custom {
+        user-select: none;
+        -webkit-user-select: none;
     }
 
-    // TRANSMISSION DU SALARIE VERS SUPABASE
-    async function submitToManagerQueue() {
-        if (!employeeSignatureData) {
-            alert("⚠️ La signature sur l'écran est obligatoire pour certifier votre parcours.");
-            return;
-        }
-
-        const btnSubmit = document.getElementById('btn-employee-submit');
-        btnSubmit.disabled = true;
-        btnSubmit.innerText = "Télétransmission en cours...";
-
-        // Calcul des réponses et du score de prévention
-        const answers = {
-            q1: getRadioValue('q1'),
-            q2: getRadioValue('q2'),
-            q3: getRadioValue('q3'),
-            q4: getRadioValue('q4')
-        };
-
-        let score = 0;
-        for (const key in CORRECT_ANSWERS) {
-            if (answers[key] === CORRECT_ANSWERS[key]) score++;
-        }
-
-        const payload = {
-            worker_name: document.getElementById('reg-emp-name').value.trim(),
-            public_status: document.getElementById('reg-emp-status').value,
-            company_name: document.getElementById('reg-company').value.trim(),
-            module_1_checked: document.getElementById('chk-module-1').checked,
-            module_2_checked: document.getElementById('chk-module-2').checked,
-            qcm_answers: answers,
-            qcm_score: score,
-            employee_signature: employeeSignatureData,
-            status: "pending", // Reste en attente de visa manager
-            created_at: new Date().toISOString()
-        };
-
-        try {
-            if (supabase) {
-                const { error } = await supabase.from('onboarding').insert([payload]);
-                if (error) throw error;
-            } else {
-                // Secours LocalStorage si hors-ligne / non configuré
-                let localData = JSON.parse(localStorage.getItem('local_onboardings') || '[]');
-                payload.id = 'LOCAL-' + Date.now();
-                localData.push(payload);
-                localStorage.setItem('local_onboardings', JSON.stringify(localData));
-            }
-
-            // CORRECTION: Redirection immédiate vers l'écran de succès du salarié
-            switchScreen('scr-employee-success');
-            
-        } catch (err) {
-            console.error("Erreur Supabase Onboarding:", err);
-            alert("Une erreur est survenue lors de l'envoi de vos données. Vérifiez votre connexion.");
-        } finally {
-            btnSubmit.disabled = false;
-            btnSubmit.innerText = "Transmettre le dossier";
-        }
+    #splash { 
+        position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; 
+        background: radial-gradient(circle at center, #254d80 0%, #112237 100%);
+        transition: all 0.6s cubic-bezier(0.77, 0, 0.175, 1); overflow: hidden;
     }
 
-    // CHARGEMENT DES ALERTES ET PARCOURS CÔTE MANAGER
-    async function loadPendingOnboardings() {
-        const listContainer = document.getElementById('pending-onboardings-list');
-        const countBadge = document.getElementById('pending-count');
-        
-        if (!listContainer) return;
-        listContainer.innerHTML = '<p class="text-xs text-slate-400 py-2 text-center animate-pulse">Recherche des nouveaux livrets...</p>';
-
-        let pendingItems = [];
-
-        try {
-            if (supabase) {
-                const { data, error } = await supabase
-                    .from('onboarding')
-                    .select('*')
-                    .eq('status', 'pending')
-                    .order('created_at', { ascending: false });
-                
-                if (error) throw error;
-                pendingItems = data || [];
-            } else {
-                const localData = JSON.parse(localStorage.getItem('local_onboardings') || '[]');
-                pendingItems = localData.filter(item => item.status === 'pending');
-            }
-
-            // Mise à jour du compteur d'alertes
-            countBadge.innerText = `${pendingItems.length} À VISER`;
-            
-            if (pendingItems.length === 0) {
-                listContainer.innerHTML = `
-                    <div class="text-center py-4 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                        <i class="fa-solid fa-circle-check text-emerald-500 text-lg mb-1"></i>
-                        <p class="text-[11px] font-medium text-slate-500">Aucun parcours en attente de visa réglementaire.</p>
-                    </div>`;
-                return;
-            }
-
-            listContainer.innerHTML = '';
-            pendingItems.forEach(item => {
-                const dateClean = new Date(item.created_at).toLocaleDateString('fr-FR', {hour: '2-digit', minute:'2-digit'});
-                const div = document.createElement('div');
-                div.className = "p-3 bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl transition cursor-pointer flex justify-between items-center group";
-                div.onclick = () => openManagerReview(item);
-                
-                div.innerHTML = `
-                    <div class="space-y-0.5">
-                        <p class="text-xs font-bold text-slate-800 group-hover:text-restev-blue transition-colors">${item.worker_name}</p>
-                        <p class="text-[10px] text-slate-500 font-medium">${item.company_name} • <span class="text-restev-magenta">${item.public_status}</span></p>
-                        <p class="text-[9px] text-slate-400 font-mono">${dateClean}</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-black px-2 py-0.5 rounded-md ${item.qcm_score >= 3 ? 'bg-emerald-100 text-emerald-700':'bg-amber-100 text-amber-700'}">
-                            Score : ${item.qcm_score}/4
-                        </span>
-                        <i class="fa-solid fa-chevron-right text-slate-300 group-hover:transform group-hover:translate-x-0.5 transition-all text-xs"></i>
-                    </div>
-                `;
-                listContainer.appendChild(div);
-            });
-
-        } catch (err) {
-            console.error("Erreur de récupération des alertes manager:", err);
-            listContainer.innerHTML = '<p class="text-xs text-red-500 text-center py-2">⚠️ Impossible de charger les données synchronisées.</p>';
-        }
+    #splash::before {
+        content: ''; position: absolute; inset: 0;
+        background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), 
+                          linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+        background-size: 20px 20px; background-position: center;
+        mask-image: radial-gradient(circle, black 40%, transparent 80%);
+        -webkit-mask-image: radial-gradient(circle, black 40%, transparent 80%);
     }
 
-    // OUVERTURE DE LA VUE DE VERIFICATION PAR LE MANAGER
-    function openManagerReview(item) {
-        activeReviewItem = item;
-        
-        // Hydratation des informations du salarié
-        document.getElementById('rev-emp-name-text').innerText = item.worker_name;
-        document.getElementById('rev-status').innerText = item.public_status;
-        document.getElementById('rev-company').innerText = item.company_name;
-        
-        // Affichage de la signature initiale du salarié
-        const imgSign = document.getElementById('img-rev-emp-sign');
-        if(imgSign) imgSign.src = item.employee_signature;
+    .logo-wrapper {
+        position: relative; display: inline-block; transform: scale(0) rotate(-15deg);
+        animation: logoPopIn 1s cubic-bezier(0.34, 1.7, 0.64, 1) 0.2s forwards; margin-bottom: 25px;
+    }
 
-        // Note et détails du QCM
-        const scoreBadge = document.getElementById('rev-qcm-score-badge');
-        scoreBadge.innerText = `Score : ${item.qcm_score} / 4`;
-        if (item.qcm_score === 4) {
-            scoreBadge.className = "font-black px-3 py-1 rounded-full text-xs bg-emerald-100 text-emerald-700";
-        } else {
-            scoreBadge.className = "font-black px-3 py-1 rounded-full text-xs bg-amber-100 text-amber-700";
-        }
+    .splash-logo {
+        width: 120px; height: 120px; border-radius: var(--radius-md); background: white; padding: 12px;
+        position: relative; z-index: 2; box-shadow: 0 0 30px rgba(48, 101, 168, 0.4);
+    }
 
-        // Détails des réponses fausses/justes
-        const detailsDiv = document.getElementById('rev-qcm-details');
-        detailsDiv.innerHTML = '';
-        for (let i = 1; i <= 4; i++) {
-            const userAns = item.qcm_answers['q' + i];
-            const isCorrect = userAns === CORRECT_ANSWERS['q' + i];
-            detailsDiv.innerHTML += `
-                <div class="flex items-center justify-between p-1.5 border-b border-slate-50">
-                    <span>Question n°${i}</span>
-                    <span class="font-bold ${isCorrect ? 'text-emerald-600':'text-red-500'}">
-                        ${isCorrect ? '✓ Correct' : `✗ Erreur (Réponse ${userAns})`}
-                    </span>
+    .logo-pulse-ring {
+        position: absolute; inset: -5px; border: 2px solid var(--r-teal); border-radius: 20px;
+        z-index: 1; opacity: 0; animation: ringPulse 2.5s ease-out infinite 1.2s;
+    }
+
+    .scan-line {
+        position: absolute; left: 0; right: 0; top: 0; height: 4px;
+        background: linear-gradient(90deg, transparent, var(--r-yellow), transparent);
+        box-shadow: 0 0 12px var(--r-yellow); z-index: 3; opacity: 0.8;
+        animation: laserScan 3s ease-in-out infinite 1.5s; pointer-events: none;
+    }
+
+    .app-title-reveal {
+        font-size: 2.2rem; font-weight: 900; letter-spacing: 4px;
+        background: linear-gradient(45deg, #ffffff, #93c5fd);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        opacity: 0; transform: translateY(15px); animation: textSlideUp 0.6s ease-out 0.8s forwards;
+    }
+
+    .splash-subtitle-animated {
+        font-size: 0.85rem; font-weight: 600; letter-spacing: 3px; text-transform: uppercase;
+        color: var(--r-teal); opacity: 0; transform: translateY(10px);
+        animation: textSlideUp 0.6s ease-out 1s forwards; margin-top: 5px;
+    }
+
+    .ecg-container-premium { width: 180px; margin: 20px auto; opacity: 0; animation: fadeInECG 0.8s ease-out 1.2s forwards; }
+
+    .ecg-line-premium {
+        fill: none; stroke: #ef4444; stroke-width: 3; stroke-linecap: round;
+        stroke-linejoin: round; stroke-dasharray: 400; stroke-dashoffset: 400;
+        animation: heartbeatStream 2.5s linear infinite;
+    }
+
+    .btn-enter-premium {
+        position: relative; background: white; color: var(--r-blue-dark); border: none;
+        padding: 14px 40px; border-radius: 50px; font-weight: 800; font-size: 0.95rem;
+        letter-spacing: 1.5px; overflow: hidden; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        opacity: 0; transform: scale(0.9);
+        animation: btnReveal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 1.4s forwards, breathing 3s ease-in-out infinite 2s;
+        transition: all 0.2s ease;
+    }
+    .btn-enter-premium span { position: relative; z-index: 2; }
+    .btn-enter-premium::before {
+        content: ''; position: absolute; inset: 0;
+        background: linear-gradient(90deg, transparent, rgba(117, 187, 168, 0.3), transparent);
+        transform: translateX(-100%); transition: transform 0.5s; z-index: 1;
+    }
+    .btn-enter-premium:active { transform: scale(0.95) !important; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); }
+
+    @keyframes logoPopIn { 0% { transform: scale(0) rotate(-25deg); filter: blur(5px); } 70% { transform: scale(1.15) rotate(5deg); filter: blur(0); } 100% { transform: scale(1) rotate(0deg); } }
+    @keyframes ringPulse { 0% { transform: scale(0.95); opacity: 0.8; } 50% { opacity: 0.4; } 100% { transform: scale(1.3); opacity: 0; } }
+    @keyframes laserScan { 0%, 100% { top: 0%; opacity: 0; } 10%, 90% { opacity: 1; } 50% { top: 100%; opacity: 1; } }
+    @keyframes textSlideUp { to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeInECG { to { opacity: 0.7; } }
+    @keyframes heartbeatStream { 0% { stroke-dashoffset: 400; } 60% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -400; } }
+    @keyframes btnReveal { to { opacity: 1; transform: scale(1); } }
+    @keyframes breathing { 0%, 100% { transform: scale(1); box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 12px 35px rgba(117, 187, 168, 0.4); } }
+
+    /* HEADER FIXE + INDICATEUR RÉSEAU */
+    .app-header { 
+        background: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;
+        border-bottom: 3px solid var(--r-yellow); position: sticky; top: 0; z-index: 1000; box-shadow: var(--shadow-sm);
+    }
+    .network-badge {
+        font-size: 0.7rem; font-weight: 800; padding: 6px 12px; border-radius: 50px;
+        transition: all 0.3s ease; cursor: pointer; border: 1px solid transparent;
+    }
+    .network-online { background-color: #dcfce7; color: #166534; border-color: #bbf7d0; }
+    .network-offline { background-color: #fef3c7; color: #92400e; border-color: #fde68a; }
+    .pulse-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
+    .pulse-dot.online { background-color: #22c55e; animation: pulseGreen 2s infinite; }
+    .pulse-dot.offline { background-color: #f59e0b; }
+    @keyframes pulseGreen { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
+
+    .info-banner { background: #e0f2fe; color: #0369a1; padding: 6px 0; overflow: hidden; white-space: nowrap; font-weight: 600; font-size: 0.75rem; border-bottom: 1px solid #bae6fd; }
+    .ticker { display: inline-block; animation: ticker 45s linear infinite; }
+    .ticker span { padding-right: 60px; }
+    @keyframes ticker { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
+
+    .nav-bottom { 
+        position: fixed; bottom: 20px; left: 15px; right: 15px; 
+        background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        display: flex; justify-content: space-around; padding: 10px 5px; 
+        border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); z-index: 1000; border: 1px solid rgba(255, 255, 255, 0.6);
+    }
+    .nav-item-bottom { 
+        border: none; background: none; color: #64748b; font-size: 0.62rem; font-weight: 700; 
+        display: flex; flex-direction: column; align-items: center; flex: 1; 
+        text-decoration: none; outline: none; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: var(--radius-md); padding: 6px 0;
+    }
+    .nav-item-bottom:active { transform: scale(0.9); background: rgba(48, 101, 168, 0.05); }
+    .nav-item-bottom.active { color: var(--r-blue); }
+    .nav-item-bottom i { font-size: 1.35rem; margin-bottom: 4px; transition: transform 0.2s ease; }
+    .nav-item-bottom.active i { transform: translateY(-2px); }
+
+    .app-page { display: none; padding: 22px 16px; animation: fadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
+    .active-page { display: block !important; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+    .card-custom { 
+        background: white; border-radius: var(--radius-md); padding: 20px; margin-bottom: 16px; border: none;
+        border-left: 5px solid var(--r-blue); box-shadow: var(--shadow-md); transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .card-custom:active { transform: translateY(1px); box-shadow: var(--shadow-sm); }
+    .grid-btn .card-custom { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; border-top: 1px solid rgba(255,255,255,0.4); border-right: 1px solid rgba(0,0,0,0.02); border-bottom: 3px solid rgba(0,0,0,0.05); }
+    .grid-btn:active { transform: scale(0.96); }
+
+    /* Custom Toggle Pills for Roles */
+    .role-toggle .nav-link { color: #64748b; background-color: transparent; border-radius: var(--radius-md); }
+    .role-toggle .nav-link.active { background-color: var(--r-blue); color: white; box-shadow: var(--shadow-sm); }
+
+    .form-select, .form-control { border: 1.5px solid #cbd5e1; border-radius: var(--radius-sm); padding: 10px 14px; font-size: 0.92rem; color: #1e293b; background-color: #f8fafc; transition: all 0.2s ease; }
+    .form-select:focus, .form-control:focus { border-color: var(--r-blue); background-color: #fff; box-shadow: 0 0 0 3px rgba(48, 101, 168, 0.15); }
+    .btn-primary { background-color: var(--r-blue); border: none; }
+    .btn-primary:active, .btn-primary:hover { background-color: var(--r-blue-dark) !important; }
+    </style>
+</head>
+<body>
+
+<div id="splash">
+    <div class="splash-content text-center text-white">
+        <div class="logo-wrapper">
+            <div class="scan-line"></div>
+            <img src="logo_restev_carre.png" alt="Logo" class="splash-logo" onerror="this.src='https://placehold.co/140x140/ffffff/3065a8?text=RESTEV'">
+            <div class="logo-pulse-ring"></div>
+        </div>
+        <h2 class="app-title-reveal">RESTEV 85</h2>
+        <p class="splash-subtitle-animated">Expert Prévention des Risques</p>
+        <div class="ecg-container-premium">
+            <svg viewBox="0 0 200 40">
+                <path class="ecg-line-premium" d="M0,20 L40,20 L48,5 L56,35 L64,20 L110,20 L118,5 L126,35 L134,20 L200,20" />
+            </svg>
+        </div>
+        <button class="btn-enter-premium mt-4" onclick="Splash()">
+            <span>ENTRER</span>
+        </button>
+    </div>
+</div>
+
+<header class="app-header">
+    <div class="d-flex align-items-center">
+        <i class="fa-solid fa-shield-halved fa-lg me-2" style="color: var(--r-blue);"></i>
+        <div>
+            <h6 class="mb-0 fw-bold text-dark lh-1">RESTEV 85</h6>
+            <small class="text-muted" style="font-size: 0.65rem;">Expert Prévention</small>
+        </div>
+    </div>
+    <div id="networkStatusBtn" class="network-badge network-online" onclick="toggleNetwork()">
+        <span class="pulse-dot online" id="networkDot"></span>
+        <span id="networkText">En ligne</span>
+    </div>
+</header>
+
+<div class="info-banner">
+    <div class="ticker">
+        <span>
+            📝 Mise à jour du DUERP : Votre centre RESTEV vous accompagne dans l'évaluation de vos risques.
+              |  
+            💰 Aides CARSAT : Des subventions disponibles pour vos équipements de protection (TPE/PME).
+              |  
+            🔍 Risque Chimique : Consultez les fiches toxicologiques INRS directement via l'app.
+              |  
+            🏗️ BTP : Profitez des conseils experts de l'OPPBTP pour vos chantiers en Vendée.
+        </span>
+    </div>
+</div>
+
+<div id="page-home" class="app-page active-page">
+    
+    <div id="sync-alert" class="alert alert-warning d-none align-items-center py-2 px-3 mb-3 border-warning shadow-sm" style="border-radius: var(--radius-sm); font-size: 0.8rem;">
+        <i class="fa-solid fa-cloud-arrow-up fa-lg me-2 text-warning"></i>
+        <div>
+            <strong>Mode Hors-ligne actif.</strong><br>
+            <span id="sync-count">0</span> rapport(s) en attente de synchronisation locale.
+        </div>
+    </div>
+
+    <ul class="nav nav-pills nav-fill mb-4 bg-white shadow-sm p-1 role-toggle" style="border-radius: var(--radius-md);">
+        <li class="nav-item">
+            <button class="nav-link active fw-bold py-2" id="tab-tech" onclick="switchRole('tech')">
+                <i class="fa-solid fa-hard-hat me-1"></i> Terrain (Tech)
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link fw-bold py-2" id="tab-emp" onclick="switchRole('emp')">
+                <i class="fa-solid fa-chart-line me-1"></i> Pilotage (Emp)
+            </button>
+        </li>
+    </ul>
+
+    <div id="view-tech">
+        <div class="card-custom text-white border-0 mb-3" style="background: linear-gradient(135deg, var(--r-blue), #1e40af);">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="fw-bold mb-1">Espace Intervention</h5>
+                    <p class="small opacity-75 mb-0">Sélectionnez un outil rapide</p>
                 </div>
-            `;
-        }
+                <button class="btn btn-light btn-sm text-primary fw-bold shadow" onclick="nav('page-signalement')">
+                    <i class="fa-solid fa-bolt me-1"></i> Flash Risque
+                </button>
+            </div>
+        </div>
 
-        switchScreen('scr-manager-review');
+        <div class="row g-2">
+            <div class="col-6 grid-btn" onclick="nav('page-scan')">
+                <div class="card-custom text-center py-3 mb-0" style="background-color: #e3f2fd; border-left-color: #90caf9;"><i class="fa-solid fa-barcode fa-2x mb-2" style="color: #1e88e5;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #1e40af;">SCANNER RAPIDE</small></div>
+            </div>
+            <div class="col-6 grid-btn" onclick="nav('page-quiz')">
+                <div class="card-custom text-center py-3 mb-0" style="background-color: #ffebee; border-left-color: #ef9a9a;"><i class="fa-solid fa-clipboard-question fa-2x mb-2" style="color: #e53935;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #b71c1c;">AUTO-DIAG</small></div>
+            </div>
+            <div class="col-6 grid-btn" onclick="nav('page-gants')">
+                <div class="card-custom text-center py-3 mb-0" style="background-color: #e0f2fe; border-left-color: #3b82f6;"><i class="fa-solid fa-hand-dots fa-2x mb-2" style="color: #2563eb;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #1d4ed8;">SÉLECTEUR GANTS</small></div>
+            </div>
+            <div class="col-6 grid-btn" onclick="nav('page-masques')">
+                <div class="card-custom text-center py-3 mb-0" style="background-color: #fef2f2; border-left-color: #ef4444;"><i class="fa-solid fa-head-side-mask fa-2x mb-2" style="color: #dc2626;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #991b1b;">MASQUES & FILTRES</small></div>
+            </div>
+            <div class="col-6 grid-btn" onclick="nav('page-storage')">
+                <div class="card-custom text-center py-3 mb-0" style="background-color: #fff3e0; border-left-color: #ffb74d;"><i class="fa-solid fa-warehouse fa-2x mb-2" style="color: #f57c00;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #e65100;">COMPATIBILITÉ STOCK</small></div>
+            </div>
+            <div class="col-6 grid-btn" onclick="nav('page-fds-guide')">
+                <div class="card-custom text-center py-3 mb-0" style="background-color: #eceff1; border-left-color: #cfd8dc;"><i class="fa-solid fa-file-shield fa-2x mb-2" style="color: #546e7a;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #263238;">GUIDE FDS</small></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-emp" class="d-none">
+        <div class="row g-2 mb-3">
+            <div class="col-6">
+                <div class="card-custom mb-0 p-3" style="border-left-color: #22c55e;">
+                    <div class="d-flex justify-content-between text-muted mb-1"><span class="small fw-bold text-uppercase">Conformité</span><i class="fa-solid fa-percent text-success"></i></div>
+                    <h3 class="fw-black text-success mb-0">92%</h3>
+                    <small class="text-muted" style="font-size:0.65rem;">Audit Global</small>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card-custom mb-0 p-3" style="border-left-color: #ef4444;">
+                    <div class="d-flex justify-content-between text-muted mb-1"><span class="small fw-bold text-uppercase">Alertes EPI</span><i class="fa-solid fa-clock text-danger"></i></div>
+                    <h3 class="fw-black text-danger mb-0">3</h3>
+                    <small class="text-muted" style="font-size:0.65rem;">Renouvellements échus</small>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card-custom mb-0 p-3" style="border-left-color: #f59e0b;">
+                    <div class="d-flex justify-content-between text-muted mb-1"><span class="small fw-bold text-uppercase">Risques Actifs</span><i class="fa-solid fa-triangle-exclamation text-warning"></i></div>
+                    <h3 class="fw-black text-warning mb-0">14</h3>
+                    <small class="text-muted" style="font-size:0.65rem;">Actions correctives</small>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card-custom mb-0 p-3" style="border-left-color: var(--r-blue);">
+                    <div class="d-flex justify-content-between text-muted mb-1"><span class="small fw-bold text-uppercase">FDS Validées</span><i class="fa-solid fa-flask text-primary"></i></div>
+                    <h3 class="fw-black text-primary mb-0">48</h3>
+                    <small class="text-muted" style="font-size:0.65rem;">Produits référencés</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-custom p-3" style="border-left-color: #64748b;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-dark mb-0 small text-uppercase">Actions Prioritaires</h6>
+                <span class="badge bg-light text-dark border">À jour</span>
+            </div>
+            <div class="d-flex align-items-start mb-3 border-bottom pb-2">
+                <div class="bg-danger rounded-circle mt-1 me-2" style="width:10px; height:10px; flex-shrink:0;"></div>
+                <div>
+                    <div class="small fw-bold text-dark">Masques respiratoires ABEK1 expirés</div>
+                    <div class="text-muted" style="font-size:0.65rem;">Zone : Atelier Logistique</div>
+                </div>
+            </div>
+            <div class="d-flex align-items-start">
+                <div class="bg-warning rounded-circle mt-1 me-2" style="width:10px; height:10px; flex-shrink:0;"></div>
+                <div>
+                    <div class="small fw-bold text-dark">Mise à jour FDS - Solvant Dégraissant</div>
+                    <div class="text-muted" style="font-size:0.65rem;">Action : Intégrer nouvelle fiche</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="page-signalement" class="app-page">
+    <div class="d-flex align-items-center mb-3">
+        <button class="btn btn-sm btn-light me-3 border shadow-sm" onclick="nav('page-home')"><i class="fa-solid fa-arrow-left"></i></button>
+        <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-bolt me-2"></i>Signalement Rapide</h5>
+    </div>
+
+    <form onsubmit="submitSignalement(event)">
+        <div class="card-custom mb-3 p-3">
+            <label class="small fw-bold text-muted text-uppercase mb-2">Niveau de Danger Observé</label>
+            <div class="d-flex gap-2 mb-3 text-center">
+                <label class="flex-fill p-2 border rounded shadow-sm bg-light text-success fw-bold" style="cursor:pointer;" onclick="selectDanger(this)">
+                    <input type="radio" name="dangerLevel" class="d-none" value="faible" checked>
+                    <i class="fa-solid fa-circle-check mb-1"></i><br><small>Faible</small>
+                </label>
+                <label class="flex-fill p-2 border rounded shadow-sm bg-light text-warning fw-bold" style="cursor:pointer;" onclick="selectDanger(this)">
+                    <input type="radio" name="dangerLevel" class="d-none" value="moyen">
+                    <i class="fa-solid fa-triangle-exclamation mb-1"></i><br><small>Moyen</small>
+                </label>
+                <label class="flex-fill p-2 border rounded shadow-sm bg-light text-danger fw-bold" style="cursor:pointer;" onclick="selectDanger(this)">
+                    <input type="radio" name="dangerLevel" class="d-none" value="critique">
+                    <i class="fa-solid fa-skull-crossbones mb-1"></i><br><small>Critique</small>
+                </label>
+            </div>
+
+            <label class="small fw-bold text-muted text-uppercase mb-2">Catégorie</label>
+            <select class="form-select mb-3 fw-bold text-dark">
+                <option>Risque Chimique (FDS manquante/périmée)</option>
+                <option>EPI Défectueux ou Manquant</option>
+                <option>Poste non ergonomique</option>
+                <option>Autre anomalie</option>
+            </select>
+
+            <label class="small fw-bold text-muted text-uppercase mb-2">Mémo Terrain</label>
+            <textarea class="form-control mb-3" rows="2" placeholder="Ex: Ventilation en panne..."></textarea>
+
+            <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow"><i class="fa-solid fa-paper-plane me-2"></i>Enregistrer l'évaluation</button>
+        </div>
+    </form>
+</div>
+
+<div id="page-scan" class="app-page">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div class="d-flex align-items-center">
+            <button class="btn btn-sm btn-light me-3 border shadow-sm" onclick="nav('page-home')"><i class="fa-solid fa-arrow-left"></i></button>
+            <h5 class="fw-bold mb-0" style="color: #1e88e5;"><i class="fa-solid fa-barcode me-2"></i>Scanner</h5>
+        </div>
+    </div>
+
+    <div class="card-custom bg-dark text-white text-center p-4 mb-3 position-relative overflow-hidden" style="border-left-color: #1e88e5; height: 300px;">
+        <div class="border border-2 border-primary rounded-3 w-75 mx-auto h-75 d-flex align-items-center justify-content-center position-relative" style="border-style: dashed !important;">
+            <div class="scan-line" style="background: linear-gradient(90deg, transparent, #2196f3, transparent); box-shadow: 0 0 10px #2196f3; height:2px;"></div>
+            <p class="small text-muted mb-0">Caméra simulée pour la démo</p>
+        </div>
+    </div>
+
+    <button class="btn btn-primary w-100 fw-bold py-3 shadow mb-2" onclick="simulateScan()">
+        <i class="fa-solid fa-expand me-2"></i>Simuler Détection (Vibreur)
+    </button>
+    <p class="text-center small text-muted">Testez le retour haptique (vibration) natif du mobile.</p>
+</div>
+
+<div id="page-gants" class="app-page">
+    <div class="d-flex align-items-center mb-3">
+        <button class="btn btn-sm btn-light me-3 border shadow-sm" onclick="nav('page-home')"><i class="fa-solid fa-arrow-left"></i></button>
+        <h5 class="fw-bold mb-0"><i class="fa-solid fa-hand-dots me-2" style="color:#3b82f6"></i>Gants Chimiques</h5>
+    </div>
+    <div class="card-custom mb-4" style="border-left: 4px solid #3b82f6;">
+        <p class="small text-muted mb-3">Choisissez le type de produit à manipuler pour trouver le bon matériau.</p>
+        <div class="mb-3">
+            <select id="epi-chemical" class="form-select fw-bold">
+                <option value="solv">🧪 Solvants hydrocarbonés</option>
+                <option value="acet">💅 Solvants polaires (Acétone)</option>
+                <option value="acid">💥 Acides forts</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<div id="page-masques" class="app-page">
+    <div class="d-flex align-items-center mb-3">
+        <button class="btn btn-sm btn-light me-3 border shadow-sm" onclick="nav('page-home')"><i class="fa-solid fa-arrow-left"></i></button>
+        <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-head-side-mask me-2 text-danger"></i>Protection Respiratoire</h5>
+    </div>
+    <div class="card-custom mb-3" style="border-left: 5px solid #dc3545;">
+        <label class="form-label small fw-bold text-uppercase text-muted mb-1">Nature du contaminant</label>
+        <select id="epi-mask-pollutant" class="form-select fw-bold">
+            <option>Gaz & Vapeurs Organiques ➔ [Type A]</option>
+            <option>Poussières fines ➔ [Type P3]</option>
+        </select>
+    </div>
+</div>
+
+<div id="page-storage" class="app-page">
+    <div class="d-flex align-items-center mb-3">
+        <button class="btn btn-sm btn-light me-3 border shadow-sm" onclick="nav('page-home')"><i class="fa-solid fa-arrow-left"></i></button>
+        <h5 class="fw-bold mb-0"><i class="fa-solid fa-warehouse me-2" style="color:#f57c00"></i>Compatibilité Stockages</h5>
+    </div>
+    <div class="card-custom mb-4" style="border-left: 4px solid #f57c00;">
+        <h6 class="fw-bold text-warning mb-2"><i class="fa-solid fa-layer-group me-2"></i>Matrice des Risques Croisés</h6>
+        <p class="small text-muted mb-3">Sélectionnez deux pictogrammes GHS/SGH pour vérifier s'ils peuvent être placés sur le même bac de rétention.</p>
+        <div class="mb-3">
+            <label class="small fw-bold text-secondary text-uppercase mb-1">Produit A</label>
+            <select class="form-select mb-2 fw-bold">
+                <option>🔥 Inflammable (GHS02)</option>
+                <option>💥 Explosif (GHS01)</option>
+                <option>☠️ Toxique (GHS06)</option>
+            </select>
+            <label class="small fw-bold text-secondary text-uppercase mb-1">Produit B</label>
+            <select class="form-select fw-bold">
+                <option>🔥 Inflammable (GHS02)</option>
+                <option>🧪 Corrosif (GHS05)</option>
+                <option>🔥⭕ Comburant (GHS03)</option>
+            </select>
+        </div>
+        <button class="btn btn-warning text-dark w-100 fw-bold py-2 shadow-sm">Vérifier la compatibilité</button>
+    </div>
+</div>
+
+<nav class="nav-bottom">
+    <button class="nav-item-bottom active" id="nav-home" onclick="nav('page-home', this)">
+        <i class="fa-solid fa-house"></i>
+        <span>Accueil</span>
+    </button>
+    <button class="nav-item-bottom" id="nav-scan" onclick="nav('page-scan', this)">
+        <i class="fa-solid fa-barcode"></i>
+        <span>Scan</span>
+    </button>
+    <button class="nav-item-bottom" id="nav-list" onclick="nav('page-signalement', this)">
+        <i class="fa-solid fa-bolt"></i>
+        <span>Action</span>
+    </button>
+</nav>
+
+<script>
+    // 1. Splash Screen Logic
+    function Splash() {
+        const splash = document.getElementById('splash');
+        splash.style.opacity = '0';
+        setTimeout(() => { splash.style.display = 'none'; }, 600);
     }
 
-    // CLÔTURE ET CO-SIGNATURE DU MANAGER
-    async function finalizeReviewSubmission() {
-        const tutorName = document.getElementById('reg-tutor-name-rev').value.trim();
-        const canvasTutor = document.getElementById('canv-tutor-rev');
-        const tutorSignData = canvasTutor.toDataURL();
+    // Auto-hide splash after 3.5s if not clicked
+    setTimeout(() => {
+        if(document.getElementById('splash').style.display !== 'none') { Splash(); }
+    }, 3500);
 
-        if (!tutorName) {
-            alert("⚠️ Saisissez le nom du tuteur ou de l'encadrant pour signer le registre.");
-            return;
+    // 2. Navigation System
+    function nav(pageId, navItem = null) {
+        // Hide all pages
+        document.querySelectorAll('.app-page').forEach(page => page.classList.remove('active-page'));
+        // Show target
+        document.getElementById(pageId).classList.add('active-page');
+        
+        // Update bottom nav UI
+        if(navItem) {
+            document.querySelectorAll('.nav-item-bottom').forEach(item => item.classList.remove('active'));
+            navItem.classList.add('active');
+        } else {
+            // Reset to home icon if subpage
+            document.querySelectorAll('.nav-item-bottom').forEach(item => item.classList.remove('active'));
+            document.getElementById('nav-home').classList.add('active');
         }
+        window.scrollTo(0,0);
+    }
 
-        try {
-            if (supabase && activeReviewItem.id) {
-                const { error } = await supabase
-                    .from('onboarding')
-                    .update({ 
-                        status: 'validated',
-                        tutor_name: tutorName,
-                        tutor_signature: tutorSignData,
-                        validated_at: new Date().toISOString()
-                    })
-                    .eq('id', activeReviewItem.id);
+    // 3. Switch Role (Technician vs Employer)
+    function switchRole(role) {
+        const viewTech = document.getElementById('view-tech');
+        const viewEmp = document.getElementById('view-emp');
+        const tabTech = document.getElementById('tab-tech');
+        const tabEmp = document.getElementById('tab-emp');
 
-                if (error) throw error;
-            } else {
-                // Traitement LocalStorage
-                let localData = JSON.parse(localStorage.getItem('local_onboardings') || '[]');
-                localData = localData.map(item => {
-                    if (item.id === activeReviewItem.id || (item.worker_name === activeReviewItem.worker_name && item.created_at === activeReviewItem.created_at)) {
-                        return { 
-                            ...item, 
-                            status: 'validated', 
-                            tutor_name: tutorName, 
-                            tutor_signature: tutorSignData,
-                            validated_at: new Date().toISOString()
-                        };
-                    }
-                    return item;
-                });
-                localStorage.setItem('local_onboardings', JSON.stringify(localData));
-            }
+        if(role === 'tech') {
+            viewTech.classList.remove('d-none');
+            viewEmp.classList.add('d-none');
+            tabTech.classList.add('active');
+            tabEmp.classList.remove('active');
+        } else {
+            viewTech.classList.add('d-none');
+            viewEmp.classList.remove('d-none');
+            tabTech.classList.remove('active');
+            tabEmp.classList.add('active');
+        }
+    }
 
-            // Génération de l'attestation finale imprimable
-            document.getElementById('attestation-id').innerText = `RE-85-${Math.floor(100000 + Math.random() * 900000)}`;
-            document.getElementById('lbl-view-company').innerText = activeReviewItem.company_name;
-            document.getElementById('lbl-view-date').innerText = new Date().toLocaleString('fr-FR');
-            document.getElementById('lbl-view-emp').innerText = activeReviewItem.worker_name;
-            document.getElementById('lbl-view-status').innerText = activeReviewItem.public_status;
-            document.getElementById('lbl-view-tutor').innerText = tutorName;
-            document.getElementById('lbl-view-qcm-score').innerText = `${activeReviewItem.qcm_score} / 4`;
+    // 4. Offline Simulator
+    let isOnline = true;
+    let syncCount = 0;
+
+    function toggleNetwork() {
+        isOnline = !isOnline;
+        const btn = document.getElementById('networkStatusBtn');
+        const dot = document.getElementById('networkDot');
+        const text = document.getElementById('networkText');
+        const alertBox = document.getElementById('sync-alert');
+
+        if(isOnline) {
+            btn.className = "network-badge network-online";
+            dot.className = "pulse-dot online";
+            text.innerText = "En ligne";
             
-            document.getElementById('img-render-emp').src = activeReviewItem.employee_signature;
-            document.getElementById('img-render-tutor').src = tutorSignData;
-
-            switchScreen('scr-attestation');
-
-        } catch (err) {
-            console.error("Erreur lors de la validation finale:", err);
-            alert("Impossible de valider et de sauvegarder la signature du manager.");
+            if(syncCount > 0) {
+                alert(`🌐 Réseau rétabli ! ${syncCount} rapport(s) synchronisé(s) vers Supabase.`);
+                syncCount = 0;
+                document.getElementById('sync-count').innerText = syncCount;
+            }
+            alertBox.classList.add('d-none');
+            alertBox.classList.remove('d-flex');
+        } else {
+            btn.className = "network-badge network-offline";
+            dot.className = "pulse-dot offline";
+            text.innerText = "Hors-ligne";
+            
+            alertBox.classList.remove('d-none');
+            alertBox.classList.add('d-flex');
         }
     }
 
-    // ==========================================
-    // UTILITAIRES ET CANVAS DE SIGNATURE
-    // ==========================================
-    function initCanvas(canvasId, onSaveCallback) {
-        const canvas = document.getElementById(canvasId);
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        
-        // Ajustement précis de la résolution du canvas
-        canvas.width = canvas.parentElement.clientWidth;
-        canvas.height = 128;
+    // 5. Submit Rapid Risk (Offline support)
+    function submitSignalement(e) {
+        e.preventDefault();
+        if(navigator.vibrate) navigator.vibrate(50); // Feedback Haptique
 
-        ctx.strokeStyle = '#224d80';
-        ctx.lineWidth = 3;
-        ctx.lineCap = 'round';
-
-        let drawing = false;
-
-        function getPos(e) {
-            const rect = canvas.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            return { x: clientX - rect.left, y: clientY - rect.top };
+        if(!isOnline) {
+            syncCount++;
+            document.getElementById('sync-count').innerText = syncCount;
+            alert("Rapport enregistré localement (Hors-ligne). Il sera envoyé au retour du réseau.");
+        } else {
+            alert("Rapport envoyé et synchronisé avec succès !");
         }
-
-        function start(e) { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); }
-        function move(e) { if(!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }
-        function stop() { if(drawing) { drawing = false; if(onSaveCallback) onSaveCallback(canvas.toDataURL()); } }
-
-        canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); window.addEventListener('mouseup', stop);
-        canvas.addEventListener('touchstart', start, {passive: false}); canvas.addEventListener('touchmove', move, {passive: false}); canvas.addEventListener('touchend', stop);
-    }
-
-    function clearSign(canvasId) {
-        const canvas = document.getElementById(canvasId);
-        if(!canvas) return;
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        if(canvasId === 'canv-employee') employeeSignatureData = null;
-        if(canvasId === 'canv-tutor' || canvasId === 'canv-tutor-rev') tutorSignatureData = null;
-    }
-
-    function getRadioValue(name) {
-        const checked = document.querySelector(`input[name="${name}"]:checked`);
-        return checked ? checked.value : null;
-    }
-
-    function generateEmployeeQR() {
-        const canvas = document.getElementById('qr-canvas');
-        QRCode.toCanvas(canvas, window.location.href, { width: 180, margin: 1 }, function (error) {
-            if (error) console.error(error);
-            switchScreen('scr-qr-display');
+        e.target.reset();
+        // Reset custom radio UI
+        document.querySelectorAll('input[name="dangerLevel"]').forEach(input => {
+            input.parentElement.classList.remove('border-primary', 'bg-white');
+            input.parentElement.classList.add('border', 'bg-light');
         });
+        document.querySelector('input[value="faible"]').parentElement.classList.add('border-primary', 'bg-white');
     }
 
-    function resetAllForms() {
-        document.getElementById('reg-emp-name').value = ""; 
-        document.getElementById('reg-company').value = "";
-        document.getElementById('reg-tutor-name-rev').value = "";
-        
-        const chk1 = document.getElementById('chk-module-1'); if(chk1) chk1.checked = true;
-        const chk2 = document.getElementById('chk-module-2'); if(chk2) chk2.checked = true;
-        
-        document.querySelectorAll('input[type="radio"]').forEach(el => el.checked = false);
-        clearSign('canv-employee');
-        clearSign('canv-tutor-rev');
-        
-        setRole(currentUserRole);
+    // Style custom pour les radios danger
+    function selectDanger(element) {
+        const allLabels = element.parentElement.querySelectorAll('label');
+        allLabels.forEach(lbl => {
+            lbl.classList.remove('border-primary', 'bg-white', 'border-2');
+            lbl.classList.add('border', 'bg-light');
+        });
+        element.classList.remove('border', 'bg-light');
+        element.classList.add('border-primary', 'bg-white', 'border-2');
     }
 
-    function exportToPasseportPrevention() {
-        const struct = { 
-            schema: "PST-2026", 
-            uid: document.getElementById('attestation-id').innerText, 
-            worker: document.getElementById('lbl-view-emp').innerText, 
-            score: document.getElementById('lbl-view-qcm-score').innerText 
-        };
-        const blob = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(struct, null, 2));
-        const a = document.createElement('a'); 
-        a.setAttribute("href", blob); 
-        a.setAttribute("download", `attestation-${struct.worker.replace(/\s+/g, '_')}.json`);
-        a.click();
+    // 6. Simulateur Scanner Haptique
+    function simulateScan() {
+        if(navigator.vibrate) {
+            // Vibre 2 fois rapidement (Pattern Haptique)
+            navigator.vibrate([100, 50, 100]); 
+        }
+        alert("Scan validé ! Produit : Acétone Pure. FDS : Conforme.");
     }
+</script>
 
-```
+</body>
+</html>
