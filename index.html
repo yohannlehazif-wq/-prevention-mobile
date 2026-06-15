@@ -724,28 +724,22 @@ function submitRealRiskReport() {
                 reader.readAsDataURL(input.files[0]);
             }
         }
-
-      // Initialisation (à faire une fois au début)
+// 1. Initialisation (votre client existant)
 const supabase = supabase.createClient('https://swgaezpjlaacqutogmvb.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3Z2FlenBqbGFhY3F1dG9nbXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwODc2MjEsImV4cCI6MjA5NjY2MzYyMX0.Wf7gA8P9VnVCfqYGMxIE6Ovg4LjZf9qBL4gmdXHJ-DA');
 
-async function submitRealRiskReport() {
-    const newAlert = {
-        category: document.getElementById('risk-category').value,
-        location: document.getElementById('risk-location').value,
-        desc: document.getElementById('risk-desc').value,
-        status: 'pending'
-    };
-
-    // Envoi vers Supabase
-    const { data, error } = await supabase
-        .from('alerts')
-        .insert([newAlert]);
-
-    if (!error) {
-        showToast("Alerte transmise !");
-        switchScreen('scr-employee');
-    }
-}
+// 2. Écoute en temps réel des nouvelles alertes
+supabase
+  .channel('public:alerts')
+  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'alerts' }, payload => {
+    console.log('Nouvelle alerte reçue !', payload.new);
+    
+    // Mise à jour de la source de données locale
+    risksDB.push(payload.new);
+    
+    // Mise à jour de l'interface
+    refreshManagerRiskView();
+  })
+  .subscribe();
 
         function refreshManagerRiskView() {
             const box = document.getElementById('manager-risk-box');
