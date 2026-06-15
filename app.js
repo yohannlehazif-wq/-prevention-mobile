@@ -1,16 +1,3 @@
-// 1. CAPTURE GLOBALE DES ERREURS INVISIBLES
-window.addEventListener('error', function(event) {
-    const toast = document.getElementById('toast');
-    const toastText = document.getElementById('toast-text');
-    const indicator = document.getElementById('toast-indicator');
-    if (toast && toastText) {
-        toastText.innerText = "Erreur JS détectée : " + event.message;
-        if (indicator) { indicator.classList.remove('bg-restev-gold'); indicator.classList.add('bg-red-500'); }
-        toast.className = "fixed bottom-6 right-6 bg-slate-900 text-white text-xs font-semibold py-3.5 px-5 rounded-2xl shadow-premium z-50 transition-all transform translate-y-0 opacity-100 flex items-center space-x-2.5 border border-red-500 no-print";
-    }
-    console.error("Erreur critique :", event.error);
-});
-
 // 2. CONFIGURATION DE BASE SUPABASE
 const SUPABASE_URL = "https://swgaezpjlaacqutogmvb.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3Z2FlenBqbGFhY3F1dG9nbXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwODc2MjEsImV4cCI6MjA5NjY2MzYyMX0.Wf7gA8P9VnVCfqYGMxIE6Ovg4LjZf9qBL4gmdXHJ-DA";
