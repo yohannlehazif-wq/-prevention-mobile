@@ -3,623 +3,687 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RESTEV 85 - Expert Prévention</title>
+    <title>RESTEV Innovation Hub - Version Direction Générale</title>
+    
+    <!-- Frameworks & Bibliothèques Graphiques Premium -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#3065a8">
-    <link rel="icon" type="image/png" href="logo_restev_carre.png">
-
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="RESTEV 85">
-    <link rel="apple-touch-icon" href="logo_restev_carre.png">
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'restev-blue': '#2f6bb2',
+                        'restev-blue-dark': '#224d80',
+                        'restev-magenta': '#b8257b',
+                        'restev-magenta-dark': '#911d61',
+                        'restev-teal': '#69b3a5',
+                        'restev-gold': '#f2a104'
+                    }
+                }
+            }
+        }
+    </script>
 
     <style>
-    :root { 
-        --r-blue: #3065a8; 
-        --r-blue-dark: #1e4475;
-        --r-teal: #75bba8; 
-        --r-purple: #ae227d; 
-        --r-yellow: #e6a00f; 
-        --r-light: #f4f7fa; 
-        --shadow-sm: 0 2px 8px rgba(48, 101, 168, 0.05);
-        --shadow-md: 0 8px 24px rgba(48, 101, 168, 0.08);
-        --shadow-lg: 0 16px 32px rgba(30, 68, 117, 0.12);
-        --radius-sm: 10px;
-        --radius-md: 16px;
-        --radius-lg: 24px;
-    }
-
-    body { 
-        background-color: var(--r-light); 
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-        margin-bottom: 110px; 
-        overflow-x: hidden; 
-        color: #334155;
-        -webkit-font-smoothing: antialiased;
-        -webkit-user-select: none; /* Protection contre la selection accidentelle sur le terrain */
-        user-select: none;
-    }
-
-    .nav-bottom, .btn-enter-premium, .card-custom {
-        user-select: none;
-        -webkit-user-select: none;
-    }
-
-    #splash { 
-        position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; 
-        background: radial-gradient(circle at center, #254d80 0%, #112237 100%);
-        transition: all 0.6s cubic-bezier(0.77, 0, 0.175, 1); overflow: hidden;
-    }
-
-    #splash::before {
-        content: ''; position: absolute; inset: 0;
-        background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), 
-                          linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-        background-size: 20px 20px; background-position: center;
-        mask-image: radial-gradient(circle, black 40%, transparent 80%);
-        -webkit-mask-image: radial-gradient(circle, black 40%, transparent 80%);
-    }
-
-    .logo-wrapper {
-        position: relative; display: inline-block; transform: scale(0) rotate(-15deg);
-        animation: logoPopIn 1s cubic-bezier(0.34, 1.7, 0.64, 1) 0.2s forwards; margin-bottom: 25px;
-    }
-
-    .splash-logo {
-        width: 120px; height: 120px; border-radius: var(--radius-md); background: white; padding: 12px;
-        position: relative; z-index: 2; box-shadow: 0 0 30px rgba(48, 101, 168, 0.4);
-    }
-
-    .logo-pulse-ring {
-        position: absolute; inset: -5px; border: 2px solid var(--r-teal); border-radius: 20px;
-        z-index: 1; opacity: 0; animation: ringPulse 2.5s ease-out infinite 1.2s;
-    }
-
-    .scan-line {
-        position: absolute; left: 0; right: 0; top: 0; height: 4px;
-        background: linear-gradient(90deg, transparent, var(--r-yellow), transparent);
-        box-shadow: 0 0 12px var(--r-yellow); z-index: 3; opacity: 0.8;
-        animation: laserScan 3s ease-in-out infinite 1.5s; pointer-events: none;
-    }
-
-    .app-title-reveal {
-        font-size: 2.2rem; font-weight: 900; letter-spacing: 4px;
-        background: linear-gradient(45deg, #ffffff, #93c5fd);
-        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        opacity: 0; transform: translateY(15px); animation: textSlideUp 0.6s ease-out 0.8s forwards;
-    }
-
-    .splash-subtitle-animated {
-        font-size: 0.85rem; font-weight: 600; letter-spacing: 3px; text-transform: uppercase;
-        color: var(--r-teal); opacity: 0; transform: translateY(10px);
-        animation: textSlideUp 0.6s ease-out 1s forwards; margin-top: 5px;
-    }
-
-    .ecg-container-premium { width: 180px; margin: 20px auto; opacity: 0; animation: fadeInECG 0.8s ease-out 1.2s forwards; }
-
-    .ecg-line-premium {
-        fill: none; stroke: #ef4444; stroke-width: 3; stroke-linecap: round;
-        stroke-linejoin: round; stroke-dasharray: 400; stroke-dashoffset: 400;
-        animation: heartbeatStream 2.5s linear infinite;
-    }
-
-    .btn-enter-premium {
-        position: relative; background: white; color: var(--r-blue-dark); border: none;
-        padding: 14px 40px; border-radius: 50px; font-weight: 800; font-size: 0.95rem;
-        letter-spacing: 1.5px; overflow: hidden; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-        opacity: 0; transform: scale(0.9);
-        animation: btnReveal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 1.4s forwards, breathing 3s ease-in-out infinite 2s;
-        transition: all 0.2s ease;
-    }
-    .btn-enter-premium span { position: relative; z-index: 2; }
-    .btn-enter-premium::before {
-        content: ''; position: absolute; inset: 0;
-        background: linear-gradient(90deg, transparent, rgba(117, 187, 168, 0.3), transparent);
-        transform: translateX(-100%); transition: transform 0.5s; z-index: 1;
-    }
-    .btn-enter-premium:active { transform: scale(0.95) !important; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); }
-
-    @keyframes logoPopIn { 0% { transform: scale(0) rotate(-25deg); filter: blur(5px); } 70% { transform: scale(1.15) rotate(5deg); filter: blur(0); } 100% { transform: scale(1) rotate(0deg); } }
-    @keyframes ringPulse { 0% { transform: scale(0.95); opacity: 0.8; } 50% { opacity: 0.4; } 100% { transform: scale(1.3); opacity: 0; } }
-    @keyframes laserScan { 0%, 100% { top: 0%; opacity: 0; } 10%, 90% { opacity: 1; } 50% { top: 100%; opacity: 1; } }
-    @keyframes textSlideUp { to { opacity: 1; transform: translateY(0); } }
-    @keyframes fadeInECG { to { opacity: 0.7; } }
-    @keyframes heartbeatStream { 0% { stroke-dashoffset: 400; } 60% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -400; } }
-    @keyframes btnReveal { to { opacity: 1; transform: scale(1); } }
-    @keyframes breathing { 0%, 100% { transform: scale(1); box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3); } 50% { transform: scale(1.03); box-shadow: 0 12px 35px rgba(117, 187, 168, 0.4); } }
-
-    /* HEADER FIXE + INDICATEUR RÉSEAU */
-    .app-header { 
-        background: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;
-        border-bottom: 3px solid var(--r-yellow); position: sticky; top: 0; z-index: 1000; box-shadow: var(--shadow-sm);
-    }
-    .network-badge {
-        font-size: 0.7rem; font-weight: 800; padding: 6px 12px; border-radius: 50px;
-        transition: all 0.3s ease; cursor: pointer; border: 1px solid transparent;
-    }
-    .network-online { background-color: #dcfce7; color: #166534; border-color: #bbf7d0; }
-    .network-offline { background-color: #fef3c7; color: #92400e; border-color: #fde68a; }
-    .pulse-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
-    .pulse-dot.online { background-color: #22c55e; animation: pulseGreen 2s infinite; }
-    .pulse-dot.offline { background-color: #f59e0b; }
-    @keyframes pulseGreen { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
-
-    .info-banner { background: #e0f2fe; color: #0369a1; padding: 6px 0; overflow: hidden; white-space: nowrap; font-weight: 600; font-size: 0.75rem; border-bottom: 1px solid #bae6fd; }
-    .ticker { display: inline-block; animation: ticker 45s linear infinite; }
-    .ticker span { padding-right: 60px; }
-    @keyframes ticker { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
-
-    .nav-bottom { 
-        position: fixed; bottom: 20px; left: 15px; right: 15px; 
-        background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-        display: flex; justify-content: space-around; padding: 10px 5px; 
-        border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); z-index: 1000; border: 1px solid rgba(255, 255, 255, 0.6);
-    }
-    .nav-item-bottom { 
-        border: none; background: none; color: #64748b; font-size: 0.62rem; font-weight: 700; 
-        display: flex; flex-direction: column; align-items: center; flex: 1; 
-        text-decoration: none; outline: none; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        border-radius: var(--radius-md); padding: 6px 0;
-    }
-    .nav-item-bottom:active { transform: scale(0.9); background: rgba(48, 101, 168, 0.05); }
-    .nav-item-bottom.active { color: var(--r-blue); }
-    .nav-item-bottom i { font-size: 1.35rem; margin-bottom: 4px; transition: transform 0.2s ease; }
-    .nav-item-bottom.active i { transform: translateY(-2px); }
-
-    .app-page { display: none; padding: 22px 16px; animation: fadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
-    .active-page { display: block !important; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-
-    .card-custom { 
-        background: white; border-radius: var(--radius-md); padding: 20px; margin-bottom: 16px; border: none;
-        border-left: 5px solid var(--r-blue); box-shadow: var(--shadow-md); transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .card-custom:active { transform: translateY(1px); box-shadow: var(--shadow-sm); }
-    .grid-btn .card-custom { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; border-top: 1px solid rgba(255,255,255,0.4); border-right: 1px solid rgba(0,0,0,0.02); border-bottom: 3px solid rgba(0,0,0,0.05); }
-    .grid-btn:active { transform: scale(0.96); }
-
-    /* Custom Toggle Pills for Roles */
-    .role-toggle .nav-link { color: #64748b; background-color: transparent; border-radius: var(--radius-md); }
-    .role-toggle .nav-link.active { background-color: var(--r-blue); color: white; box-shadow: var(--shadow-sm); }
-
-    .form-select, .form-control { border: 1.5px solid #cbd5e1; border-radius: var(--radius-sm); padding: 10px 14px; font-size: 0.92rem; color: #1e293b; background-color: #f8fafc; transition: all 0.2s ease; }
-    .form-select:focus, .form-control:focus { border-color: var(--r-blue); background-color: #fff; box-shadow: 0 0 0 3px rgba(48, 101, 168, 0.15); }
-    .btn-primary { background-color: var(--r-blue); border: none; }
-    .btn-primary:active, .btn-primary:hover { background-color: var(--r-blue-dark) !important; }
+        .screen { display: none; }
+        .screen.active { display: block; animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        canvas { touch-action: none; }
+        .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); }
+        @media print {
+            .no-print { display: none !important; }
+            .print-view { display: block !important; background: white; color: black; }
+        }
     </style>
 </head>
-<body>
+<body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen">
 
-<div id="splash">
-    <div class="splash-content text-center text-white">
-        <div class="logo-wrapper">
-            <div class="scan-line"></div>
-            <img src="logo_restev_carre.png" alt="Logo" class="splash-logo" onerror="this.src='https://placehold.co/140x140/ffffff/3065a8?text=RESTEV'">
-            <div class="logo-pulse-ring"></div>
+    <!-- BARRE DE SIMULATION ET CONTRÔLE DE PRÉSENTATION (Pour le présentateur) -->
+    <div class="bg-slate-900 text-white p-2 text-xs font-semibold flex justify-between items-center px-4 sticky top-0 z-50 no-print shadow-md">
+        <div class="flex items-center space-x-2">
+            <span class="inline-flex w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span class="text-slate-300 font-mono text-[11px]">TÉLÉCOMMANDE DE DÉMO LIVE :</span>
         </div>
-        <h2 class="app-title-reveal">RESTEV 85</h2>
-        <p class="splash-subtitle-animated">Expert Prévention des Risques</p>
-        <div class="ecg-container-premium">
-            <svg viewBox="0 0 200 40">
-                <path class="ecg-line-premium" d="M0,20 L40,20 L48,5 L56,35 L64,20 L110,20 L118,5 L126,35 L134,20 L200,20" />
-            </svg>
-        </div>
-        <button class="btn-enter-premium mt-4" onclick="Splash()">
-            <span>ENTRER</span>
-        </button>
-    </div>
-</div>
-
-<header class="app-header">
-    <div class="d-flex align-items-center">
-        <i class="fa-solid fa-shield-halved fa-lg me-2" style="color: var(--r-blue);"></i>
-        <div>
-            <h6 class="mb-0 fw-bold text-dark lh-1">RESTEV 85</h6>
-            <small class="text-muted" style="font-size: 0.65rem;">Expert Prévention</small>
-        </div>
-    </div>
-    <div id="networkStatusBtn" class="network-badge network-online" onclick="toggleNetwork()">
-        <span class="pulse-dot online" id="networkDot"></span>
-        <span id="networkText">En ligne</span>
-    </div>
-</header>
-
-<div class="info-banner">
-    <div class="ticker">
-        <span>
-            📝 Mise à jour du DUERP : Votre centre RESTEV vous accompagne dans l'évaluation de vos risques.
-              |  
-            💰 Aides CARSAT : Des subventions disponibles pour vos équipements de protection (TPE/PME).
-              |  
-            🔍 Risque Chimique : Consultez les fiches toxicologiques INRS directement via l'app.
-              |  
-            🏗️ BTP : Profitez des conseils experts de l'OPPBTP pour vos chantiers en Vendée.
-        </span>
-    </div>
-</div>
-
-<div id="page-home" class="app-page active-page">
-    
-    <div id="sync-alert" class="alert alert-warning d-none align-items-center py-2 px-3 mb-3 border-warning shadow-sm" style="border-radius: var(--radius-sm); font-size: 0.8rem;">
-        <i class="fa-solid fa-cloud-arrow-up fa-lg me-2 text-warning"></i>
-        <div>
-            <strong>Mode Hors-ligne actif.</strong><br>
-            <span id="sync-count">0</span> rapport(s) en attente de synchronisation locale.
+        <div class="flex space-x-2">
+            <button onclick="switchScreen('scr-direction')" class="bg-restev-blue px-3 py-1 rounded font-bold hover:bg-opacity-80 transition">1. Vue Direction (RESTEV)</button>
+            <button onclick="switchScreen('scr-auth')" class="bg-restev-magenta px-3 py-1 rounded font-bold hover:bg-opacity-80 transition">2. Vue Entreprise Client</button>
+            <button onclick="simulateDirectEmployeeAccess()" class="bg-emerald-600 px-3 py-1 rounded font-bold hover:bg-opacity-80 transition">3. Vue Salarié Terrain</button>
         </div>
     </div>
 
-    <ul class="nav nav-pills nav-fill mb-4 bg-white shadow-sm p-1 role-toggle" style="border-radius: var(--radius-md);">
-        <li class="nav-item">
-            <button class="nav-link active fw-bold py-2" id="tab-tech" onclick="switchRole('tech')">
-                <i class="fa-solid fa-hard-hat me-1"></i> Terrain (Tech)
-            </button>
-        </li>
-        <li class="nav-item">
-            <button class="nav-link fw-bold py-2" id="tab-emp" onclick="switchRole('emp')">
-                <i class="fa-solid fa-chart-line me-1"></i> Pilotage (Emp)
-            </button>
-        </li>
-    </ul>
+    <!-- EN-TÊTE CORPORATE AVEC INTÉGRATION DU LOGO -->
+    <header class="bg-white border-b border-slate-200 p-4 shadow-sm relative transition-all">
+        <div class="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <img src="logo.png" alt="Logo RESTEV 85" class="h-14 md:h-16 object-contain" onerror="this.style.display='none'; this.after('🏢 RESTEV 85')">
+            
+            <div class="text-right sm:text-right text-center">
+                <span class="bg-gradient-to-r from-restev-blue to-restev-magenta text-white font-black text-[10px] px-3 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                    Passeport Prévention Numérique (PST 2026-2030)
+                </span>
+                <p class="text-xs text-slate-400 mt-1 font-medium font-mono">Pilote RLS Multi-Sociétés v4.0</p>
+            </div>
+        </div>
+    </header>
 
-    <div id="view-tech">
-        <div class="card-custom text-white border-0 mb-3" style="background: linear-gradient(135deg, var(--r-blue), #1e40af);">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h5 class="fw-bold mb-1">Espace Intervention</h5>
-                    <p class="small opacity-75 mb-0">Sélectionnez un outil rapide</p>
+    <!-- NOTIFICATION TOAST FLOTTANTE POUR RENDRE L'APP VIVANTE -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-slate-900 text-white text-xs py-3 px-4 rounded-xl shadow-2xl z-50 transition-all transform translate-y-20 opacity-0 flex items-center space-x-2 border border-slate-700">
+        <i class="fa-solid fa-circle-info text-restev-teal text-base"></i>
+        <span id="toast-text">Notification démo</span>
+    </div>
+
+    <main class="max-w-5xl mx-auto p-4 md:p-6">
+
+        <!-- ================= EC-0 : TABLEAU DE BORD EXÉCUTIF ================= -->
+        <section id="scr-direction" class="screen active space-y-6">
+            <div class="bg-gradient-to-r from-slate-900 to-restev-blue-dark p-6 rounded-3xl text-white shadow-xl relative overflow-hidden">
+                <div class="absolute -right-10 -bottom-10 opacity-10 text-[180px] font-black"><i class="fa-solid fa-chart-line"></i></div>
+                <div class="relative z-10 space-y-2">
+                    <span class="bg-restev-gold text-slate-950 font-black text-[10px] px-2.5 py-0.5 rounded uppercase tracking-wider">Console de Supervision Régionale</span>
+                    <h2 class="text-2xl md:text-3xl font-black tracking-tight">Vue d'Ensemble Haute Direction</h2>
+                    <p class="text-slate-300 text-xs max-w-xl">Indicateurs clés de performance et de conformité réglementaire des entreprises adhérentes au RESTEV sur le département de la Vendée.</p>
                 </div>
-                <button class="btn btn-light btn-sm text-primary fw-bold shadow" onclick="nav('page-signalement')">
-                    <i class="fa-solid fa-bolt me-1"></i> Flash Risque
+            </div>
+
+            <!-- COMPTEURS DYNAMIQUES -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
+                    <div class="p-3 bg-restev-blue/10 text-restev-blue rounded-xl text-xl"><i class="fa-solid fa-building"></i></div>
+                    <div>
+                        <span class="block text-[11px] font-bold text-slate-400 uppercase">Sociétés Affiliées</span>
+                        <span class="text-2xl font-black text-slate-900">142</span>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
+                    <div class="p-3 bg-emerald-500/10 text-emerald-600 rounded-xl text-xl"><i class="fa-solid fa-id-card-clip"></i></div>
+                    <div>
+                        <span class="block text-[11px] font-bold text-slate-400 uppercase">Passeports Émis</span>
+                        <span class="text-2xl font-black text-slate-900">3 841</span>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
+                    <div class="p-3 bg-restev-magenta/10 text-restev-magenta rounded-xl text-xl"><i class="fa-solid fa-shield-virus"></i></div>
+                    <div>
+                        <span class="block text-[11px] font-bold text-slate-400 uppercase">Risques Endigués</span>
+                        <span class="text-2xl font-black text-slate-900">92,4 %</span>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
+                    <div class="p-3 bg-restev-gold/10 text-restev-gold rounded-xl text-xl"><i class="fa-solid fa-bolt"></i></div>
+                    <div>
+                        <span class="block text-[11px] font-bold text-slate-400 uppercase">Alertes en cours</span>
+                        <span id="lbl-dir-alert-count" class="text-2xl font-black text-slate-900">1</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PARTIE GRAPHIQUE AVANCÉE -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-5 rounded-2xl border shadow-sm lg:col-span-2 space-y-4">
+                    <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                        <i class="fa-solid fa-chart-pie text-restev-blue"></i> <span>Répartition Départementale des Risques Signalés</span>
+                    </h3>
+                    <div class="h-64 flex items-center justify-center">
+                        <canvas id="chart-restev-risks"></canvas>
+                    </div>
+                </div>
+
+                <!-- LIVE FEED DES DERNIÈRES ACTIONS CLIENTS -->
+                <div class="bg-white p-5 rounded-2xl border shadow-sm space-y-4 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center space-x-2 mb-3">
+                            <i class="fa-solid fa-wave-square text-restev-magenta animate-pulse"></i> <span>Flux d'Activité en Direct</span>
+                        </h3>
+                        <div id="direction-activity-feed" class="space-y-3 max-h-60 overflow-y-auto text-[11px]">
+                            <div class="border-l-2 border-emerald-500 pl-3 py-0.5">
+                                <p class="font-bold text-slate-800">Validation Accueil Sécurité</p>
+                                <p class="text-slate-400">Entreprise : <span class="text-slate-600 font-medium">Bati-Vendée Logistique 85</span> • Il y a 2 min</p>
+                            </div>
+                            <div class="border-l-2 border-amber-500 pl-3 py-0.5" id="feed-live-risk">
+                                <p class="font-bold text-slate-800">Signalement Anomalie - <span class="text-red-600">Danger Critique</span></p>
+                                <p class="text-slate-400">Zone : <span class="text-slate-600 font-medium">Atelier B7</span> • Cliché photo transmis</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="switchScreen('scr-auth')" class="w-full bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs shadow hover:bg-slate-800 transition text-center block">
+                        Tester le portail d'un Adhérent <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= EC-1 : PORTAIL SÉCURISÉ ENTREPRISE ADHÉRENTE ================= -->
+        <section id="scr-auth" class="screen max-w-md mx-auto space-y-6">
+            <div class="text-center space-y-2">
+                <h2 class="text-xl font-black text-slate-900">Espace Entreprise Clé en main</h2>
+                <p class="text-xs text-slate-500">Chaque société possède son espace personnalisé auto-géré.</p>
+            </div>
+            
+            <div class="bg-white p-5 rounded-3xl border shadow-sm space-y-4">
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black uppercase text-slate-400">Sélectionner un Adhérent de démonstration :</label>
+                    <select id="manager-company-name" class="w-full p-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:border-restev-blue outline-none transition">
+                        <option value="Bati-Vendée Logistique 85">🏢 Bati-Vendée Logistique 85</option>
+                        <option value="Manufacture Ouest Sables">🏢 Manufacture Ouest Sables</option>
+                        <option value="Agro-Alimentaire Yonnais">🏢 Agro-Alimentaire Yonnais</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black uppercase text-slate-400">Identifiant de connexion</label>
+                    <input type="text" class="w-full p-2.5 bg-slate-100 border rounded-xl text-xs" value="prev-qse@vendee.fr" readonly>
+                </div>
+                <button onclick="handleDemoAuth()" class="w-full bg-gradient-to-r from-restev-blue to-restev-blue-dark text-white py-3 rounded-xl text-xs font-bold shadow-md hover:opacity-90 transition">
+                    Ouvrir la Console RH de l'Entreprise
                 </button>
             </div>
-        </div>
+        </section>
 
-        <div class="row g-2">
-            <div class="col-6 grid-btn" onclick="nav('page-scan')">
-                <div class="card-custom text-center py-3 mb-0" style="background-color: #e3f2fd; border-left-color: #90caf9;"><i class="fa-solid fa-barcode fa-2x mb-2" style="color: #1e88e5;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #1e40af;">SCANNER RAPIDE</small></div>
+        <!-- ================= EC-2 : DASHBOARD DU MANAGER CLIENT ================= -->
+        <section id="scr-manager" class="screen max-w-4xl mx-auto space-y-6">
+            <div class="bg-white p-4 rounded-2xl border shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
+                    <h2 class="text-sm font-black text-slate-900">Session RH Active : <span id="lbl-manager-comp-name" class="text-restev-blue"></span></h2>
+                </div>
+                <button onclick="switchScreen('scr-auth')" class="text-xs bg-slate-100 font-bold px-3 py-1.5 text-slate-600 rounded-lg hover:bg-slate-200"><i class="fa-solid fa-right-from-bracket"></i> Quitter l'espace</button>
             </div>
-            <div class="col-6 grid-btn" onclick="nav('page-quiz')">
-                <div class="card-custom text-center py-3 mb-0" style="background-color: #ffebee; border-left-color: #ef9a9a;"><i class="fa-solid fa-clipboard-question fa-2x mb-2" style="color: #e53935;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #b71c1c;">AUTO-DIAG</small></div>
-            </div>
-            <div class="col-6 grid-btn" onclick="nav('page-gants')">
-                <div class="card-custom text-center py-3 mb-0" style="background-color: #e0f2fe; border-left-color: #3b82f6;"><i class="fa-solid fa-hand-dots fa-2x mb-2" style="color: #2563eb;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #1d4ed8;">SÉLECTEUR GANTS</small></div>
-            </div>
-            <div class="col-6 grid-btn" onclick="nav('page-masques')">
-                <div class="card-custom text-center py-3 mb-0" style="background-color: #fef2f2; border-left-color: #ef4444;"><i class="fa-solid fa-head-side-mask fa-2x mb-2" style="color: #dc2626;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #991b1b;">MASQUES & FILTRES</small></div>
-            </div>
-            <div class="col-6 grid-btn" onclick="nav('page-storage')">
-                <div class="card-custom text-center py-3 mb-0" style="background-color: #fff3e0; border-left-color: #ffb74d;"><i class="fa-solid fa-warehouse fa-2x mb-2" style="color: #f57c00;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #e65100;">COMPATIBILITÉ STOCK</small></div>
-            </div>
-            <div class="col-6 grid-btn" onclick="nav('page-fds-guide')">
-                <div class="card-custom text-center py-3 mb-0" style="background-color: #eceff1; border-left-color: #cfd8dc;"><i class="fa-solid fa-file-shield fa-2x mb-2" style="color: #546e7a;"></i><br><small class="fw-bold" style="font-size:0.75rem; color: #263238;">GUIDE FDS</small></div>
-            </div>
-        </div>
-    </div>
 
-    <div id="view-emp" class="d-none">
-        <div class="row g-2 mb-3">
-            <div class="col-6">
-                <div class="card-custom mb-0 p-3" style="border-left-color: #22c55e;">
-                    <div class="d-flex justify-content-between text-muted mb-1"><span class="small fw-bold text-uppercase">Conformité</span><i class="fa-solid fa-percent text-success"></i></div>
-                    <h3 class="fw-black text-success mb-0">92%</h3>
-                    <small class="text-muted" style="font-size:0.65rem;">Audit Global</small>
-                </div>
-            </div>
-            <div class="col-6">
-                <div class="card-custom mb-0 p-3" style="border-left-color: #ef4444;">
-                    <div class="d-flex justify-content-between text-muted mb-1"><span class="small fw-bold text-uppercase">Alertes EPI</span><i class="fa-solid fa-clock text-danger"></i></div>
-                    <h3 class="fw-black text-danger mb-0">3</h3>
-                    <small class="text-muted" style="font-size:0.65rem;">Renouvellements échus</small>
-                </div>
-            </div>
-            <div class="col-6">
-                <div class="card-custom mb-0 p-3" style="border-left-color: #f59e0b;">
-                    <div class="d-flex justify-content-between text-muted mb-1"><span class="small fw-bold text-uppercase">Risques Actifs</span><i class="fa-solid fa-triangle-exclamation text-warning"></i></div>
-                    <h3 class="fw-black text-warning mb-0">14</h3>
-                    <small class="text-muted" style="font-size:0.65rem;">Actions correctives</small>
-                </div>
-            </div>
-            <div class="col-6">
-                <div class="card-custom mb-0 p-3" style="border-left-color: var(--r-blue);">
-                    <div class="d-flex justify-content-between text-muted mb-1"><span class="small fw-bold text-uppercase">FDS Validées</span><i class="fa-solid fa-flask text-primary"></i></div>
-                    <h3 class="fw-black text-primary mb-0">48</h3>
-                    <small class="text-muted" style="font-size:0.65rem;">Produits référencés</small>
-                </div>
-            </div>
-        </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- BLOC GÉNÉRATEUR QR CODE D'ACCUEIL -->
+                <div class="bg-white p-5 rounded-2xl border shadow-sm space-y-4">
+                    <div class="flex items-center space-x-2 text-restev-magenta font-black text-xs uppercase tracking-wider">
+                        <i class="fa-solid fa-qrcode text-base"></i>
+                        <h3>Générer un Passeport Intégration Salarié</h3>
+                    </div>
+                    <p class="text-xs text-slate-500">Préparez l'arrivée d'un nouvel intérimaire ou CDD pour lui imposer son parcours de formation obligatoire.</p>
+                    
+                    <div class="space-y-2">
+                        <input type="text" id="reg-emp-name" value="Maxime Renault" placeholder="Nom & Prénom du salarié" class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs font-bold">
+                        <select id="reg-emp-status" class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs font-semibold">
+                            <option value="Intérimaire (Profil Vulnérable)">Statut : Intérimaire (Profil Vulnérable)</option>
+                            <option value="Contrat CDD Saisonnier">Statut : Contrat CDD Saisonnier</option>
+                            <option value="Nouvel Arrivant CDI">Statut : Nouvel Arrivant CDI</option>
+                        </select>
+                    </div>
 
-        <div class="card-custom p-3" style="border-left-color: #64748b;">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="fw-bold text-dark mb-0 small text-uppercase">Actions Prioritaires</h6>
-                <span class="badge bg-light text-dark border">À jour</span>
+                    <button onclick="generateDemoQRCode()" class="w-full bg-restev-magenta text-white py-2.5 rounded-xl text-xs font-bold shadow-md hover:bg-opacity-90 transition">
+                        Générer l'accès Smartphone unique
+                    </button>
+
+                    <div id="qr-area" class="hidden flex flex-col items-center justify-center p-4 bg-slate-50 rounded-xl border border-dashed border-slate-200 space-y-3">
+                        <canvas id="qr-canvas"></canvas>
+                        <button onclick="simulateQRScan()" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-black uppercase flex items-center space-x-2 shadow-lg hover:bg-emerald-700 transition w-full justify-center">
+                            <i class="fa-solid fa-mobile-screen animate-bounce"></i> <span>Simuler le Scan du Salarié</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ALERTES SUR LE SITE CLIENT -->
+                <div class="bg-white p-5 rounded-2xl border shadow-sm space-y-4">
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <h3 class="font-extrabold text-slate-900 text-xs uppercase tracking-wider flex items-center space-x-2">
+                            <i class="fa-solid fa-bell text-restev-gold"></i>
+                            <span>Flux d'Anomalies de vos Ateliers</span>
+                        </h3>
+                        <span class="text-[9px] bg-red-100 font-bold px-2 py-0.5 rounded text-red-700">Sécurité RLS Active</span>
+                    </div>
+                    
+                    <div id="manager-risk-box" class="space-y-3 max-h-72 overflow-y-auto">
+                        <!-- Alimenté en temps réel par JS -->
+                    </div>
+                </div>
             </div>
-            <div class="d-flex align-items-start mb-3 border-bottom pb-2">
-                <div class="bg-danger rounded-circle mt-1 me-2" style="width:10px; height:10px; flex-shrink:0;"></div>
+        </section>
+
+        <!-- ================= EC-3 : PARCOURS DU SALARIÉ EN MOBILITE BYOD ================= -->
+        <section id="scr-employee" class="screen max-w-md mx-auto space-y-4">
+            <div class="bg-gradient-to-br from-slate-900 to-restev-blue text-white p-5 rounded-3xl shadow-lg space-y-2 relative overflow-hidden">
+                <span class="bg-restev-gold text-slate-950 text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest">Parcours d'Accueil Obligatoire</span>
+                <h2 class="text-xl font-black" id="lbl-emp-welcome">Bonjour !</h2>
+                <p class="text-xs text-slate-200" id="lbl-emp-company">Chargement...</p>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl border shadow-sm space-y-3">
+                <h3 class="text-xs font-black uppercase text-slate-400">Vos actions prioritaires :</h3>
+                
+                <button onclick="switchScreen('scr-onboarding-1')" class="w-full bg-slate-50 p-3.5 border rounded-xl text-left flex items-center space-x-3 hover:bg-slate-100/50 transition">
+                    <div class="w-9 h-9 bg-restev-blue/10 text-restev-blue rounded-full flex items-center justify-center text-base"><i class="fa-solid fa-book-open-reader"></i></div>
+                    <div class="flex-1">
+                        <p class="text-xs font-bold text-slate-800">1. Prendre connaissance des risques</p>
+                        <p class="text-[10px] text-slate-400">Évaluation obligatoire avant prise de poste.</p>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-300 text-xs"></i>
+                </button>
+
+                <button onclick="switchScreen('scr-report')" class="w-full bg-slate-50 p-3.5 border rounded-xl text-left flex items-center space-x-3 hover:bg-slate-100/50 transition">
+                    <div class="w-9 h-9 bg-restev-magenta/10 text-restev-magenta rounded-full flex items-center justify-center text-base"><i class="fa-solid fa-camera"></i></div>
+                    <div class="flex-1">
+                        <p class="text-xs font-bold text-slate-800">2. Signaler un Danger Immédiat</p>
+                        <p class="text-[10px] text-slate-400">Remontée photo avec Analyse Assistée.</p>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-300 text-xs"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- ================= EC-4 : MODULE SIGNALEMENT DE RISQUE AVEC SIMULATION IA ================= -->
+        <section id="scr-report" class="screen max-w-md mx-auto bg-white p-5 rounded-3xl border shadow-sm space-y-4">
+            <h3 class="text-base font-black text-slate-900 flex items-center space-x-2"><i class="fa-solid fa-camera text-restev-magenta"></i> <span>Alerte Danger Terrain</span></h3>
+            
+            <div class="space-y-1">
+                <label class="block text-xs font-bold text-slate-700">Prendre un cliché terrain :</label>
+                <div class="flex flex-col items-center justify-center w-full border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 p-4 relative cursor-pointer min-h-[140px] group overflow-hidden">
+                    <input type="file" id="risk-file" accept="image/*" capture="environment" onchange="triggerAIScanSimulation(this)" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
+                    
+                    <!-- SCAN LOADER SIMULÉ -->
+                    <div id="ai-loader" class="hidden absolute inset-0 bg-slate-900/90 z-30 flex flex-col items-center justify-center text-white space-y-2">
+                        <i class="fa-solid fa-circle-notch fa-spin text-2xl text-restev-teal"></i>
+                        <span class="text-[10px] font-mono tracking-widest text-restev-teal font-bold uppercase animate-pulse">RESTEV Vision AI Engine...</span>
+                        <span class="text-[9px] text-slate-400">Détection d'anomalies de sol active</span>
+                    </div>
+
+                    <div id="photo-placeholder" class="text-center space-y-1">
+                        <div class="w-10 h-10 bg-white shadow rounded-full flex items-center justify-center text-slate-500 mx-auto group-hover:scale-110 transition">
+                            <i class="fa-solid fa-camera text-base text-restev-blue"></i>
+                        </div>
+                        <span class="block text-xs font-bold text-slate-700">Ouvrir l'appareil photo</span>
+                        <span class="block text-[10px] text-slate-400">Cliquez pour simuler le déclenchement</span>
+                    </div>
+                    <img id="photo-preview" class="w-full h-36 object-cover rounded-xl hidden border relative z-20" alt="Preuve image">
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <label class="block text-xs font-bold text-slate-700">Localisation métier simplifiée :</label>
+                <select id="risk-location" class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs font-bold text-slate-700">
+                    <option value="Atelier B7 (Usinage)">📍 Atelier B7 (Usinage)</option>
+                    <option value="Zone de Stockage / Réserve Générale">📍 Zone de Stockage / Réserve Générale</option>
+                    <option value="Parking Salariés & Zone de Fret">📍 Parking Salariés & Zone de Fret</option>
+                    <option value="Quais d'Expédition / Réception">📍 Quais d'Expédition / Réception</option>
+                    <option value="Bureaux Administratifs R+1">📍 Bureaux Administratifs R+1</option>
+                </select>
+            </div>
+
+            <div class="space-y-1">
+                <label class="block text-xs font-bold text-slate-700">Gravité constatée :</label>
+                <select id="risk-level" class="w-full p-2.5 bg-slate-50 border rounded-xl text-xs font-bold text-red-600">
+                    <option value="Critique 🔴">Danger Critique (Intervention Immédiate)</option>
+                    <option value="Modéré 🟠">Alerte Modérée (Traitement sous 24h)</option>
+                </select>
+            </div>
+
+            <div class="space-y-1">
+                <label class="block text-xs font-bold text-slate-700">Description textuelle :</label>
+                <textarea id="risk-desc" rows="2" class="w-full p-2 bg-slate-50 border rounded-xl text-xs font-medium">Fuite massive de liquide glissant constaté à la sortie de la ligne de découpe principale.</textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <button type="button" onclick="switchScreen('scr-employee')" class="bg-slate-100 text-slate-600 py-2 rounded-xl text-xs font-bold">Annuler</button>
+                <button type="button" onclick="submitDemoRiskReport()" class="bg-restev-magenta text-white py-2 rounded-xl text-xs font-bold shadow-md">Transmettre l'alerte</button>
+            </div>
+        </section>
+
+        <!-- ================= EC-5 : QUIZ ET RÈGLES DE SÉCURITÉ ================= -->
+        <section id="scr-onboarding-1" class="screen max-w-md mx-auto bg-white p-5 rounded-3xl border shadow-sm space-y-4">
+            <span class="text-[10px] font-black text-restev-blue uppercase tracking-widest block">Étape de Contrôle Obligatoire</span>
+            <h3 class="text-base font-black text-slate-900">Charte de Prévention des Risques</h3>
+            
+            <div class="space-y-2 text-xs text-slate-600">
+                <div class="p-3 bg-slate-50 rounded-xl border-l-4 border-restev-blue">
+                    <p class="font-bold text-slate-900">Règle 1 : Équipements obligatoires</p>
+                    <p>Le port de vos chaussures de sécurité et du gilet haute-visibilité est obligatoire dès l'accès au site.</p>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-xl border-l-4 border-restev-magenta">
+                    <p class="font-bold text-slate-900">Règle 2 : Signalement immédiat</p>
+                    <p>Tout incident, presqu'accident ou anomalie doit être remonté par l'application en moins de 15 minutes.</p>
+                </div>
+            </div>
+
+            <div class="border-t pt-3 space-y-2">
+                <label class="block text-xs font-bold text-slate-700">QCM : À quel moment devez-vous porter vos EPI ?</label>
+                <label class="flex items-center space-x-2 bg-slate-50 p-2.5 rounded-xl text-xs cursor-pointer"><input type="radio" checked name="q1" class="text-restev-blue"> <span class="font-medium">Dès la prise de poste de manière continue</span></label>
+                <label class="flex items-center space-x-2 bg-slate-50 p-2.5 rounded-xl text-xs cursor-pointer"><input type="radio" name="q1" class="text-restev-blue"> <span class="font-medium">Uniquement lors des opérations à haut risque</span></label>
+            </div>
+
+            <button onclick="switchScreen('scr-signature')" class="w-full bg-restev-blue text-white py-2.5 rounded-xl text-xs font-bold shadow">
+                Valider et passer à l'émargement
+            </button>
+        </section>
+
+        <!-- ================= EC-6 : ÉMARGEMENT ET SIGNATURES TACTILES ================= -->
+        <section id="scr-signature" class="screen max-w-md mx-auto bg-white p-5 rounded-3xl border shadow-sm space-y-4">
+            <h3 class="text-base font-black text-slate-900 text-center">Clôture des engagements Sécurité</h3>
+            
+            <div class="space-y-3">
                 <div>
-                    <div class="small fw-bold text-dark">Masques respiratoires ABEK1 expirés</div>
-                    <div class="text-muted" style="font-size:0.65rem;">Zone : Atelier Logistique</div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Signature Numérique du Salarié :</label>
+                    <div class="border rounded-xl bg-slate-50 overflow-hidden"><canvas id="canv-employee" class="w-full bg-slate-100" height="90"></canvas></div>
+                    <button type="button" onclick="clearCanvas('canv-employee')" class="text-[10px] text-slate-400 underline">Effacer le tracé</button>
                 </div>
-            </div>
-            <div class="d-flex align-items-start">
-                <div class="bg-warning rounded-circle mt-1 me-2" style="width:10px; height:10px; flex-shrink:0;"></div>
                 <div>
-                    <div class="small fw-bold text-dark">Mise à jour FDS - Solvant Dégraissant</div>
-                    <div class="text-muted" style="font-size:0.65rem;">Action : Intégrer nouvelle fiche</div>
+                    <input type="text" id="tutor-name" value="M. Vigneron (Tuteur Référent)" class="w-full p-2 bg-slate-50 border rounded-xl text-xs mb-1.5 font-bold">
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Signature du Tuteur / Responsable de site :</label>
+                    <div class="border rounded-xl bg-slate-50 overflow-hidden"><canvas id="canv-tutor" class="w-full bg-slate-100" height="90"></canvas></div>
+                    <button type="button" onclick="clearCanvas('canv-tutor')" class="text-[10px] text-slate-400 underline">Effacer le tracé</button>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
 
-<div id="page-signalement" class="app-page">
-    <div class="d-flex align-items-center mb-3">
-        <button class="btn btn-sm btn-light me-3 border shadow-sm" onclick="nav('page-home')"><i class="fa-solid fa-arrow-left"></i></button>
-        <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-bolt me-2"></i>Signalement Rapide</h5>
-    </div>
+            <button type="button" onclick="finalizeDemoAttestation()" class="w-full bg-emerald-600 text-white py-2.5 rounded-xl text-xs font-bold shadow-md hover:bg-emerald-700 transition">
+                Générer l'Attestation Officielle Probante
+            </button>
+        </section>
 
-    <form onsubmit="submitSignalement(event)">
-        <div class="card-custom mb-3 p-3">
-            <label class="small fw-bold text-muted text-uppercase mb-2">Niveau de Danger Observé</label>
-            <div class="d-flex gap-2 mb-3 text-center">
-                <label class="flex-fill p-2 border rounded shadow-sm bg-light text-success fw-bold" style="cursor:pointer;" onclick="selectDanger(this)">
-                    <input type="radio" name="dangerLevel" class="d-none" value="faible" checked>
-                    <i class="fa-solid fa-circle-check mb-1"></i><br><small>Faible</small>
-                </label>
-                <label class="flex-fill p-2 border rounded shadow-sm bg-light text-warning fw-bold" style="cursor:pointer;" onclick="selectDanger(this)">
-                    <input type="radio" name="dangerLevel" class="d-none" value="moyen">
-                    <i class="fa-solid fa-triangle-exclamation mb-1"></i><br><small>Moyen</small>
-                </label>
-                <label class="flex-fill p-2 border rounded shadow-sm bg-light text-danger fw-bold" style="cursor:pointer;" onclick="selectDanger(this)">
-                    <input type="radio" name="dangerLevel" class="d-none" value="critique">
-                    <i class="fa-solid fa-skull-crossbones mb-1"></i><br><small>Critique</small>
-                </label>
+        <!-- ================= EC-7 : PROCES-VERBAL JURIDIQUE PRÊT POUR L'IMPRESSION ================= -->
+        <section id="scr-attestation" class="screen max-w-lg mx-auto bg-white p-6 rounded-3xl shadow-xl border-2 border-emerald-500 space-y-6">
+            <div class="text-center space-y-1 no-print">
+                <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-xl mx-auto"><i class="fa-solid fa-file-signature"></i></div>
+                <h3 class="text-base font-black text-slate-900">Procès-Verbal de Validation Sécurité</h3>
+                <p class="text-xs text-slate-500">Document généré en totale conformité avec l'Article L4141-2.</p>
             </div>
 
-            <label class="small fw-bold text-muted text-uppercase mb-2">Catégorie</label>
-            <select class="form-select mb-3 fw-bold text-dark">
-                <option>Risque Chimique (FDS manquante/périmée)</option>
-                <option>EPI Défectueux ou Manquant</option>
-                <option>Poste non ergonomique</option>
-                <option>Autre anomalie</option>
-            </select>
+            <!-- LE DOCUMENT PREUVE -->
+            <div class="border-2 border-slate-900 p-4 rounded-xl space-y-4 text-xs bg-white print-view" id="print-area">
+                <div class="flex justify-between items-center border-b pb-2">
+                    <span class="font-mono text-[9px] text-slate-400">ID Preuve : RE-85-PASSPORT-2026</span>
+                    <span class="bg-slate-900 text-white font-mono font-bold px-2 py-0.5 rounded text-[9px]">CONFORME RGPD</span>
+                </div>
+                
+                <h4 class="text-center font-black uppercase text-slate-900 text-xs tracking-wide">Attestation d'Accueil Sécurité Renforcée</h4>
+                
+                <div class="grid grid-cols-2 gap-2 text-[11px] pt-1">
+                    <p><strong>Bénéficiaire :</strong> <span id="lbl-view-emp">Maxime Renault</span></p>
+                    <p><strong>Structure d'accueil :</strong> <span id="lbl-view-company">Bati-Vendée Logistique 85</span></p>
+                    <p><strong>Statut légal :</strong> <span id="lbl-view-status" class="text-restev-blue font-bold">Intérimaire</span></p>
+                    <p><strong>Tuteur agréé :</strong> <span id="lbl-view-tutor">M. Vigneron</span></p>
+                    <p class="col-span-2"><strong>Date de Certification :</strong> <span id="lbl-view-date" class="font-mono text-slate-600">12/06/2026</span></p>
+                </div>
 
-            <label class="small fw-bold text-muted text-uppercase mb-2">Mémo Terrain</label>
-            <textarea class="form-control mb-3" rows="2" placeholder="Ex: Ventilation en panne..."></textarea>
+                <div class="bg-emerald-50 p-2.5 rounded-lg text-[10px] text-emerald-800 font-medium border border-emerald-200">
+                    <i class="fa-solid fa-circle-check"></i> Le candidat a répondu avec succès à l'ensemble des questions d'assimilation des risques inhérents à son poste de travail.
+                </div>
 
-            <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow"><i class="fa-solid fa-paper-plane me-2"></i>Enregistrer l'évaluation</button>
-        </div>
-    </form>
-</div>
+                <div class="grid grid-cols-2 gap-4 pt-3 border-t">
+                    <div class="text-center">
+                        <span class="block text-[10px] font-bold text-slate-500 mb-1">Visa Salarié :</span>
+                        <img id="img-render-emp" class="h-12 mx-auto object-contain bg-slate-50 border rounded p-1" alt="Visa Salarié">
+                    </div>
+                    <div class="text-center">
+                        <span class="block text-[10px] font-bold text-slate-500 mb-1">Visa Représentant :</span>
+                        <img id="img-render-tutor" class="h-12 mx-auto object-contain bg-slate-50 border rounded p-1" alt="Visa Tuteur">
+                    </div>
+                </div>
+            </div>
 
-<div id="page-scan" class="app-page">
-    <div class="d-flex align-items-center justify-content-between mb-3">
-        <div class="d-flex align-items-center">
-            <button class="btn btn-sm btn-light me-3 border shadow-sm" onclick="nav('page-home')"><i class="fa-solid fa-arrow-left"></i></button>
-            <h5 class="fw-bold mb-0" style="color: #1e88e5;"><i class="fa-solid fa-barcode me-2"></i>Scanner</h5>
-        </div>
-    </div>
+            <div class="grid grid-cols-1 gap-2 no-print">
+                <button onclick="window.print()" class="w-full bg-slate-900 text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 shadow hover:bg-slate-800 transition">
+                    <i class="fa-solid fa-print"></i> <span>Lancer l'Impression / Export PDF</span>
+                </button>
+                <button onclick="switchScreen('scr-direction')" class="w-full bg-slate-100 text-slate-600 py-2.5 rounded-xl text-xs font-bold border text-center">
+                    Retourner au Tableau de Bord RESTEV
+                </button>
+            </div>
+        </section>
 
-    <div class="card-custom bg-dark text-white text-center p-4 mb-3 position-relative overflow-hidden" style="border-left-color: #1e88e5; height: 300px;">
-        <div class="border border-2 border-primary rounded-3 w-75 mx-auto h-75 d-flex align-items-center justify-content-center position-relative" style="border-style: dashed !important;">
-            <div class="scan-line" style="background: linear-gradient(90deg, transparent, #2196f3, transparent); box-shadow: 0 0 10px #2196f3; height:2px;"></div>
-            <p class="small text-muted mb-0">Caméra simulée pour la démo</p>
-        </div>
-    </div>
+    </main>
 
-    <button class="btn btn-primary w-100 fw-bold py-3 shadow mb-2" onclick="simulateScan()">
-        <i class="fa-solid fa-expand me-2"></i>Simuler Détection (Vibreur)
-    </button>
-    <p class="text-center small text-muted">Testez le retour haptique (vibration) natif du mobile.</p>
-</div>
-
-<div id="page-gants" class="app-page">
-    <div class="d-flex align-items-center mb-3">
-        <button class="btn btn-sm btn-light me-3 border shadow-sm" onclick="nav('page-home')"><i class="fa-solid fa-arrow-left"></i></button>
-        <h5 class="fw-bold mb-0"><i class="fa-solid fa-hand-dots me-2" style="color:#3b82f6"></i>Gants Chimiques</h5>
-    </div>
-    <div class="card-custom mb-4" style="border-left: 4px solid #3b82f6;">
-        <p class="small text-muted mb-3">Choisissez le type de produit à manipuler pour trouver le bon matériau.</p>
-        <div class="mb-3">
-            <select id="epi-chemical" class="form-select fw-bold">
-                <option value="solv">🧪 Solvants hydrocarbonés</option>
-                <option value="acet">💅 Solvants polaires (Acétone)</option>
-                <option value="acid">💥 Acides forts</option>
-            </select>
-        </div>
-    </div>
-</div>
-
-<div id="page-masques" class="app-page">
-    <div class="d-flex align-items-center mb-3">
-        <button class="btn btn-sm btn-light me-3 border shadow-sm" onclick="nav('page-home')"><i class="fa-solid fa-arrow-left"></i></button>
-        <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-head-side-mask me-2 text-danger"></i>Protection Respiratoire</h5>
-    </div>
-    <div class="card-custom mb-3" style="border-left: 5px solid #dc3545;">
-        <label class="form-label small fw-bold text-uppercase text-muted mb-1">Nature du contaminant</label>
-        <select id="epi-mask-pollutant" class="form-select fw-bold">
-            <option>Gaz & Vapeurs Organiques ➔ [Type A]</option>
-            <option>Poussières fines ➔ [Type P3]</option>
-        </select>
-    </div>
-</div>
-
-<div id="page-storage" class="app-page">
-    <div class="d-flex align-items-center mb-3">
-        <button class="btn btn-sm btn-light me-3 border shadow-sm" onclick="nav('page-home')"><i class="fa-solid fa-arrow-left"></i></button>
-        <h5 class="fw-bold mb-0"><i class="fa-solid fa-warehouse me-2" style="color:#f57c00"></i>Compatibilité Stockages</h5>
-    </div>
-    <div class="card-custom mb-4" style="border-left: 4px solid #f57c00;">
-        <h6 class="fw-bold text-warning mb-2"><i class="fa-solid fa-layer-group me-2"></i>Matrice des Risques Croisés</h6>
-        <p class="small text-muted mb-3">Sélectionnez deux pictogrammes GHS/SGH pour vérifier s'ils peuvent être placés sur le même bac de rétention.</p>
-        <div class="mb-3">
-            <label class="small fw-bold text-secondary text-uppercase mb-1">Produit A</label>
-            <select class="form-select mb-2 fw-bold">
-                <option>🔥 Inflammable (GHS02)</option>
-                <option>💥 Explosif (GHS01)</option>
-                <option>☠️ Toxique (GHS06)</option>
-            </select>
-            <label class="small fw-bold text-secondary text-uppercase mb-1">Produit B</label>
-            <select class="form-select fw-bold">
-                <option>🔥 Inflammable (GHS02)</option>
-                <option>🧪 Corrosif (GHS05)</option>
-                <option>🔥⭕ Comburant (GHS03)</option>
-            </select>
-        </div>
-        <button class="btn btn-warning text-dark w-100 fw-bold py-2 shadow-sm">Vérifier la compatibilité</button>
-    </div>
-</div>
-
-<nav class="nav-bottom">
-    <button class="nav-item-bottom active" id="nav-home" onclick="nav('page-home', this)">
-        <i class="fa-solid fa-house"></i>
-        <span>Accueil</span>
-    </button>
-    <button class="nav-item-bottom" id="nav-scan" onclick="nav('page-scan', this)">
-        <i class="fa-solid fa-barcode"></i>
-        <span>Scan</span>
-    </button>
-    <button class="nav-item-bottom" id="nav-list" onclick="nav('page-signalement', this)">
-        <i class="fa-solid fa-bolt"></i>
-        <span>Action</span>
-    </button>
-</nav>
-
-<script>
-    // 1. Splash Screen Logic
-    function Splash() {
-        const splash = document.getElementById('splash');
-        splash.style.opacity = '0';
-        setTimeout(() => { splash.style.display = 'none'; }, 600);
-    }
-
-    // Auto-hide splash after 3.5s if not clicked
-    setTimeout(() => {
-        if(document.getElementById('splash').style.display !== 'none') { Splash(); }
-    }, 3500);
-
-    // 2. Navigation System
-    function nav(pageId, navItem = null) {
-        // Hide all pages
-        document.querySelectorAll('.app-page').forEach(page => page.classList.remove('active-page'));
-        // Show target
-        document.getElementById(pageId).classList.add('active-page');
+    <!-- ================= ARCHITECTURE DE CALCUL DE LA DEMO (EN-MÉMOIRE) ================= -->
+    <script>
+        let currentSelectedCompany = "Bati-Vendée Logistique 85";
+        let candidateProfile = { name: "Maxime Renault", status: "Intérimaire (Profil Vulnérable)" };
         
-        // Update bottom nav UI
-        if(navItem) {
-            document.querySelectorAll('.nav-item-bottom').forEach(item => item.classList.remove('active'));
-            navItem.classList.add('active');
-        } else {
-            // Reset to home icon if subpage
-            document.querySelectorAll('.nav-item-bottom').forEach(item => item.classList.remove('active'));
-            document.getElementById('nav-home').classList.add('active');
-        }
-        window.scrollTo(0,0);
-    }
-
-    // 3. Switch Role (Technician vs Employer)
-    function switchRole(role) {
-        const viewTech = document.getElementById('view-tech');
-        const viewEmp = document.getElementById('view-emp');
-        const tabTech = document.getElementById('tab-tech');
-        const tabEmp = document.getElementById('tab-emp');
-
-        if(role === 'tech') {
-            viewTech.classList.remove('d-none');
-            viewEmp.classList.add('d-none');
-            tabTech.classList.add('active');
-            tabEmp.classList.remove('active');
-        } else {
-            viewTech.classList.add('d-none');
-            viewEmp.classList.remove('d-none');
-            tabTech.classList.remove('active');
-            tabEmp.classList.add('active');
-        }
-    }
-
-    // 4. Offline Simulator
-    let isOnline = true;
-    let syncCount = 0;
-
-    function toggleNetwork() {
-        isOnline = !isOnline;
-        const btn = document.getElementById('networkStatusBtn');
-        const dot = document.getElementById('networkDot');
-        const text = document.getElementById('networkText');
-        const alertBox = document.getElementById('sync-alert');
-
-        if(isOnline) {
-            btn.className = "network-badge network-online";
-            dot.className = "pulse-dot online";
-            text.innerText = "En ligne";
-            
-            if(syncCount > 0) {
-                alert(`🌐 Réseau rétabli ! ${syncCount} rapport(s) synchronisé(s) vers Supabase.`);
-                syncCount = 0;
-                document.getElementById('sync-count').innerText = syncCount;
+        let localRisksDB = [
+            { 
+                id: 101, 
+                company: "Bati-Vendée Logistique 85", 
+                employee: "Lucas M.", 
+                description: "Obstruction majeure des voies d'évacuation par des palettes de fret non filmées.", 
+                location: "Zone de Stockage / Réserve Générale", 
+                severity: "Critique 🔴", 
+                photo: "https://images.unsplash.com/photo-1586528116300-48520ef355ec?w=500" 
             }
-            alertBox.classList.add('d-none');
-            alertBox.classList.remove('d-flex');
-        } else {
-            btn.className = "network-badge network-offline";
-            dot.className = "pulse-dot offline";
-            text.innerText = "Hors-ligne";
+        ];
+
+        // --- CONTRÔLE DES ÉCRANS ---
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(scr => scr.classList.remove('active'));
+            const target = document.getElementById(screenId);
+            if (target) {
+                target.classList.add('active');
+                window.scrollTo(0, 0);
+            }
+            showToast("Navigation : " + screenId.replace('scr-', '').toUpperCase());
+        }
+
+        function showToast(text) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-text').innerText = text;
+            toast.className = "fixed bottom-4 right-4 bg-slate-900 text-white text-xs py-3 px-4 rounded-xl shadow-2xl z-50 transition-all transform translate-y-0 opacity-100 flex items-center space-x-2 border border-slate-700";
+            setTimeout(() => {
+                toast.className = "fixed bottom-4 right-4 bg-slate-900 text-white text-xs py-3 px-4 rounded-xl shadow-2xl z-50 transition-all transform translate-y-20 opacity-0 flex items-center space-x-2 border border-slate-700";
+            }, 2500);
+        }
+
+        // --- AUTHENTIFICATION SIMULÉE ADHÉRENT ---
+        function handleDemoAuth() {
+            currentSelectedCompany = document.getElementById('manager-company-name').value;
+            document.getElementById('lbl-manager-comp-name').innerText = currentSelectedCompany;
+            renderCompanyRisks();
+            switchScreen('scr-manager');
+        }
+
+        function simulateDirectEmployeeAccess() {
+            document.getElementById('lbl-emp-welcome').innerText = "Bonjour " + candidateProfile.name + " !";
+            document.getElementById('lbl-emp-company').innerText = "Parcours rattaché à : " + currentSelectedCompany;
+            switchScreen('scr-employee');
+        }
+
+        // --- GÉNÉRATION & SCAN QR CODE ---
+        function generateDemoQRCode() {
+            const nameInput = document.getElementById('reg-emp-name').value;
+            const statusSelect = document.getElementById('reg-emp-status').value;
+            if(!nameInput) return showToast("Veuillez entrer un nom !");
             
-            alertBox.classList.remove('d-none');
-            alertBox.classList.add('d-flex');
+            candidateProfile.name = nameInput;
+            candidateProfile.status = statusSelect;
+            
+            const qrCanvas = document.getElementById('qr-canvas');
+            const mockPayload = JSON.stringify({ name: candidateProfile.name, company: currentSelectedCompany });
+            
+            QRCode.toCanvas(qrCanvas, mockPayload, { width: 160, margin: 1 }, function (error) {
+                if (error) console.error(error);
+                document.getElementById('qr-area').classList.remove('hidden');
+                showToast("Passeport QR généré avec succès !");
+            });
         }
-    }
 
-    // 5. Submit Rapid Risk (Offline support)
-    function submitSignalement(e) {
-        e.preventDefault();
-        if(navigator.vibrate) navigator.vibrate(50); // Feedback Haptique
-
-        if(!isOnline) {
-            syncCount++;
-            document.getElementById('sync-count').innerText = syncCount;
-            alert("Rapport enregistré localement (Hors-ligne). Il sera envoyé au retour du réseau.");
-        } else {
-            alert("Rapport envoyé et synchronisé avec succès !");
+        function simulateQRScan() {
+            showToast("Scan smartphone détecté ! Synchro BYOD réussie.");
+            setTimeout(() => {
+                simulateDirectEmployeeAccess();
+            }, 800);
         }
-        e.target.reset();
-        // Reset custom radio UI
-        document.querySelectorAll('input[name="dangerLevel"]').forEach(input => {
-            input.parentElement.classList.remove('border-primary', 'bg-white');
-            input.parentElement.classList.add('border', 'bg-light');
-        });
-        document.querySelector('input[value="faible"]').parentElement.classList.add('border-primary', 'bg-white');
-    }
 
-    // Style custom pour les radios danger
-    function selectDanger(element) {
-        const allLabels = element.parentElement.querySelectorAll('label');
-        allLabels.forEach(lbl => {
-            lbl.classList.remove('border-primary', 'bg-white', 'border-2');
-            lbl.classList.add('border', 'bg-light');
-        });
-        element.classList.remove('border', 'bg-light');
-        element.classList.add('border-primary', 'bg-white', 'border-2');
-    }
-
-    // 6. Simulateur Scanner Haptique
-    function simulateScan() {
-        if(navigator.vibrate) {
-            // Vibre 2 fois rapidement (Pattern Haptique)
-            navigator.vibrate([100, 50, 100]); 
+        // --- MODULE APPAREIL PHOTO & INTELLIGENCE ARTIFICIELLE ---
+        function triggerAIScanSimulation(input) {
+            const loader = document.getElementById('ai-loader');
+            const placeholder = document.getElementById('photo-placeholder');
+            const preview = document.getElementById('photo-preview');
+            
+            loader.classList.remove('hidden');
+            
+            setTimeout(() => {
+                loader.classList.add('hidden');
+                placeholder.classList.add('hidden');
+                preview.classList.remove('hidden');
+                
+                // Image par défaut si aucun fichier réel n'est fourni durant le test
+                if (input.files && input.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) { preview.src = e.target.result; }
+                    reader.readAsDataURL(input.files[0]);
+                } else {
+                    preview.src = "https://images.unsplash.com/photo-1532634922-8fe0b757fb13?w=500";
+                }
+                
+                document.getElementById('risk-desc').value = "[Vision AI] Détection d'une anomalie critique au sol. Substance glissante épanchée de type huileuse.";
+                showToast("Analyse prédictive IA complétée !");
+            }, 1800);
         }
-        alert("Scan validé ! Produit : Acétone Pure. FDS : Conforme.");
-    }
-</script>
 
+        // --- TRANSMISSION DU SIGNALEMENT ---
+        function submitDemoRiskReport() {
+            const desc = document.getElementById('risk-desc').value;
+            const loc = document.getElementById('risk-location').value;
+            const level = document.getElementById('risk-level').value;
+            const previewImg = document.getElementById('photo-preview').src;
+
+            const newRisk = {
+                id: Date.now(),
+                company: currentSelectedCompany,
+                employee: candidateProfile.name,
+                description: desc,
+                location: loc,
+                severity: level,
+                photo: previewImg || "https://images.unsplash.com/photo-1532634922-8fe0b757fb13?w=500"
+            };
+
+            localRisksDB.unshift(newRisk);
+            
+            // Notification et mise à jour des interfaces globales
+            document.getElementById('lbl-dir-alert-count').innerText = localRisksDB.length;
+            
+            // Injection dynamique dans le flux d'activité Direction
+            const feed = document.getElementById('direction-activity-feed');
+            const alertItem = document.createElement('div');
+            alertItem.className = "border-l-2 border-red-500 pl-3 py-0.5 animate-bounce";
+            alertItem.innerHTML = `<p class="font-bold text-slate-800">Alerte Terrain - ${level}</p>
+                                   <p class="text-slate-400">Société : <span class="text-slate-600 font-medium">${currentSelectedCompany}</span> • À l'instant</p>`;
+            feed.insertBefore(alertItem, feed.firstChild);
+
+            renderCompanyRisks();
+            showToast("Alerte synchronisée avec le serveur RESTEV !");
+            switchScreen('scr-employee');
+        }
+
+        // --- CONSOLE RH CLIENT : MISE À JOUR DU TABLEAU DES RISQUES ---
+        function renderCompanyRisks() {
+            const container = document.getElementById('manager-risk-box');
+            container.innerHTML = "";
+            
+            const filtered = localRisksDB.filter(r => r.company === currentSelectedCompany);
+            
+            if(filtered.length === 0) {
+                container.innerHTML = "<p class='text-xs text-slate-400 py-4 text-center'>Aucune anomalie signalée sur vos secteurs.</p>";
+                return;
+            }
+
+            filtered.forEach(r => {
+                const card = document.createElement('div');
+                card.className = "p-3 bg-slate-50 rounded-xl border flex gap-3 items-center";
+                card.innerHTML = `
+                    <img src="${r.photo}" class="w-12 h-12 object-cover rounded-lg border shadow-sm">
+                    <div class="flex-1 text-[11px]">
+                        <div class="flex justify-between font-bold text-slate-900">
+                            <span>${r.location}</span>
+                            <span class="text-red-600">${r.severity}</span>
+                        </div>
+                        <p class="text-slate-600 mt-0.5 line-clamp-2">${r.description}</p>
+                        <p class="text-[9px] text-slate-400 mt-1">Par : ${r.employee} • ID: #${r.id.toString().slice(-4)}</p>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // --- LOGIQUE DE SIGNATURES TACTILES ---
+        const canvasProfiles = ['canv-employee', 'canv-tutor'];
+        const canvasCtxs = {};
+
+        window.onload = function() {
+            canvasProfiles.forEach(id => {
+                const canv = document.getElementById(id);
+                if(canv) {
+                    const ctx = canv.getContext('2d');
+                    canvasCtxs[id] = ctx;
+                    ctx.strokeStyle = '#1e293b';
+                    ctx.lineWidth = 2.5;
+                    ctx.lineCap = 'round';
+                    
+                    let drawing = false;
+                    
+                    // Mouse Events
+                    canv.addEventListener('mousedown', () => drawing = true);
+                    canv.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); });
+                    canv.addEventListener('mousemove', (e) => draw(e, canv, ctx, drawing));
+                    
+                    // Touch Events
+                    canv.addEventListener('touchstart', (e) => { drawing = true; e.preventDefault(); });
+                    canv.addEventListener('touchend', () => { drawing = false; ctx.beginPath(); });
+                    canv.addEventListener('touchmove', (e) => drawTouch(e, canv, ctx, drawing));
+                }
+            });
+
+            // Initialisation Graphique Global (ChartJS)
+            const ctxChart = document.getElementById('chart-restev-risks').getContext('2d');
+            new Chart(ctxChart, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Risques Mécaniques', 'Substances Chimiques', 'Chutes & Sols', 'Risques Routiers'],
+                    datasets: [{
+                        data: [35, 20, 30, 15],
+                        backgroundColor: ['#2f6bb2', '#b8257b', '#69b3a5', '#f2a104'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } }
+                }
+            });
+        };
+
+        function draw(e, canvas, ctx, drawing) {
+            if (!drawing) return;
+            const rect = canvas.getBoundingClientRect();
+            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            ctx.stroke();
+        }
+
+        function drawTouch(e, canvas, ctx, drawing) {
+            if (!drawing) return;
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
+            ctx.stroke();
+        }
+
+        function clearCanvas(canvasId) {
+            const canv = document.getElementById(canvasId);
+            const ctx = canvasCtxs[canvasId];
+            ctx.clearRect(0, 0, canv.width, canv.height);
+        }
+
+        // --- CLÔTURE & GÉNÉRATION DU RAPPORT PROBANTE ---
+        function finalizeDemoAttestation() {
+            document.getElementById('lbl-view-emp').innerText = candidateProfile.name;
+            document.getElementById('lbl-view-company').innerText = currentSelectedCompany;
+            document.getElementById('lbl-view-status').innerText = candidateProfile.status;
+            document.getElementById('lbl-view-tutor').innerText = document.getElementById('tutor-name').value;
+            
+            // Formatage de la date du jour
+            const today = new Date();
+            document.getElementById('lbl-view-date').innerText = today.toLocaleDateString('fr-FR') + " à " + today.toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
+
+            // Conversion des tracés de signatures en images figées
+            document.getElementById('img-render-emp').src = document.getElementById('canv-employee').toDataURL();
+            document.getElementById('img-render-tutor').src = document.getElementById('canv-tutor').toDataURL();
+
+            switchScreen('scr-attestation');
+        }
+    </script>
 </body>
 </html>
