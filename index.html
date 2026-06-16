@@ -515,26 +515,39 @@
         let isDrawing = false;
         let chartInstance = null;
 
-        // --- 2. GESTION DES REQUÊTES QUERY STRINGS (RÉVOLUTION DU QR CODE) ---
         window.onload = async function() {
-            initRestevAnalyticsChart();
-            
-            // ANALYSE DE L'URL : Si un salarié arrive depuis un scan de QR Code
-            const params = new URLSearchParams(window.location.search);
-            if (params.get('mode') === 'employee') {
-                appState.currentSelectedCompany = params.get('comp') || "Bati-Vendée Logistique 85";
-                appState.currentEmployeeProfile = {
-                    name: params.get('name') || "Nouvel Arrivant",
-                    status: params.get('status') || "Parcours Standard"
-                };
-                setupEmployeeWelcome(appState.currentEmployeeProfile.name, `${appState.currentSelectedCompany} • ${appState.currentEmployeeProfile.status}`);
-                switchScreen('scr-employee');
-                showToast("⚡ Connexion QR Code établie de manière sécurisée");
-            } else {
-                // Mode Standard : On tente de charger les dernières alertes depuis le Cloud
-                await pullLatestRisksFromCloud();
-            }
+    initRestevAnalyticsChart();
+    
+    // ANALYSE DE L'URL : Si un salarié arrive depuis un scan de QR Code
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') === 'employee') {
+        appState.currentSelectedCompany = params.get('comp') || "Bati-Vendée Logistique 85";
+        appState.currentEmployeeProfile = {
+            name: params.get('name') || "Nouvel Arrivant",
+            status: params.get('status') || "Parcours Standard"
         };
+        setupEmployeeWelcome(appState.currentEmployeeProfile.name, `${appState.currentSelectedCompany} • ${appState.currentEmployeeProfile.status}`);
+        switchScreen('scr-employee');
+        showToast("⚡ Connexion QR Code établie de manière sécurisée");
+    } else {
+        // Premier chargement des données
+        await pullLatestRisksFromCloud();
+    }
+
+    // ROUE DE SECOURS TEMPS RÉEL : Interrogation automatique du Cloud toutes les 5 secondes
+    setInterval(async () => {
+        // On ne rafraîchit que si l'un des deux tableaux de bord (Direction ou Manager) est ouvert
+        const isDirActive = document.getElementById('scr-direction').classList.contains('active');
+        const isManagerActive = document.getElementById('scr-manager').classList.contains('active');
+        
+        if (isDirActive || isManagerActive) {
+            await pullLatestRisksFromCloud();
+            if (isManagerActive) {
+                refreshManagerRiskView();
+            }
+        }
+    }, 5000); // 5000 millisecondes = 5 secondes
+};
 
         // --- 3. SYNCHRONISATION CLOUD SUPABASE (SANS LIBRAIRIE EXTERNE) ---
         async function pushRiskToCloud(payload) {
