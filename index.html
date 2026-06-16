@@ -49,6 +49,9 @@
             .no-print { display: none !important; }
             .print-view { display: block !important; background: white; color: black; border: none !important; box-shadow: none !important; }
         }
+        /* Cache tous les éléments interdits aux salariés quand le mode QR Code est actif */
+body.employee-lockdown .no-employee { display: none !important; }
+body.employee-lockdown header { pointer-events: none; cursor: default; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
@@ -484,83 +487,49 @@
         // --- CHANGER TES CLÉS UNIQUES ICI ---
         const SUPABASE_URL = "https://bcuzmjcbhriyzmmiodsi.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdXptamNiaHJpeXptbWlvZHNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODU5NjIsImV4cCI6MjA5NzE2MTk2Mn0.lbYUBi-JEJCoUIdAAAVS35sdy6o0EHHGoqVs3cL1ApQ";
-function handleDirectionAccess() {
-    // Fenêtre d'alerte native demandant le pass d'inspection
-    const accessCode = prompt("🔒 Accès Sécurisé - Direction RESTEV 85 :\nVeuillez entrer votre code d'agent de prévention :");
-    
-    // Tu peux changer "8500" par le code de ton choix
-    if (accessCode === "8500") {
-        showToast("🔓 Accès Superviseur accordé");
-        switchScreen('scr-direction');
-    } else if (accessCode !== null) {
-        alert("❌ Code incorrect. Ce tableau de bord est strictement réservé à la direction du centre RESTEV.");
-    }
-}
-        // Configuration des entêtes HTTP natifs pour interagir avec l'API Supabase
-        const getSupabaseHeaders = () => ({
-            "apikey": SUPABASE_ANON_KEY,
-            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-            "Content-Type": "application/json",
-            "Prefer": "return=representation"
-        });
+// ... Tes clés Supabase et la fonction handleDirectionAccess() sont juste au-dessus ...
 
-        // État mémoire de secours
-        const appState = {
-            currentSelectedCompany: "Bati-Vendée Logistique 85",
-            currentEmployeeProfile: { name: "Collaborateur Externe", status: "Parcours Standard" },
-            base64UploadedPhoto: "",
-            currentGPSCoords: "46.6705, -1.4265",
-            datasetAdherents: new Set(["Bati-Vendée Logistique 85", "Manufacture Ouest Sables", "Agro-Alimentaire Yonnais"]),
-            totalPassportsCount: 12,
-            risksDB: [],
-            corporateZonesDB: {
-                "Bati-Vendée Logistique 85": ["Zone d'Entreposage A", "Quai d'Expédition Nord", "Atelier Logistique"],
-                "Manufacture Ouest Sables": ["Atelier Tamisage", "Silo de Stockage 3"],
-                "Agro-Alimentaire Yonnais": ["Ligne de Conditionnement", "Chambre Froide Positive"]
-            }
-        };
-
-        let myLeafletMap = null;
-        let myMapMarker = null;
-        let activeCanvas = {}; 
-        let ctxCanvas = {}; 
-        let isDrawing = false;
-        let chartInstance = null;
-
-        window.onload = async function() {
-    initRestevAnalyticsChart();
-    
-    // ANALYSE DE L'URL : Si un salarié arrive depuis un scan de QR Code
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('mode') === 'employee') {
-        appState.currentSelectedCompany = params.get('comp') || "Bati-Vendée Logistique 85";
-        appState.currentEmployeeProfile = {
-            name: params.get('name') || "Nouvel Arrivant",
-            status: params.get('status') || "Parcours Standard"
-        };
-        setupEmployeeWelcome(appState.currentEmployeeProfile.name, `${appState.currentSelectedCompany} • ${appState.currentEmployeeProfile.status}`);
-        switchScreen('scr-employee');
-        showToast("⚡ Connexion QR Code établie de manière sécurisée");
-    } else {
-        // Premier chargement des données
-        await pullLatestRisksFromCloud();
-    }
-
-    // ROUE DE SECOURS TEMPS RÉEL : Interrogation automatique du Cloud toutes les 5 secondes
-    setInterval(async () => {
-        // On ne rafraîchit que si l'un des deux tableaux de bord (Direction ou Manager) est ouvert
-        const isDirActive = document.getElementById('scr-direction').classList.contains('active');
-        const isManagerActive = document.getElementById('scr-manager').classList.contains('active');
+        // --- 2. GESTION DES REQUÊTES QUERY STRINGS (RÉVOLUTION DU QR CODE) ---
         
-        if (isDirActive || isManagerActive) {
-            await pullLatestRisksFromCloud();
-            if (isManagerActive) {
-                refreshManagerRiskView();
+        // ========================================================
+        //  REMPLACE TOUT CE BLOC (DEPUIS ICI JUSQU'À LA FERMETURE };) :
+        // ========================================================
+        window.onload = async function() {
+            initRestevAnalyticsChart();
+            
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('mode') === 'employee') {
+                appState.currentSelectedCompany = params.get('comp') || "Bati-Vendée Logistique 85";
+                appState.currentEmployeeProfile = {
+                    name: params.get('name') || "Nouvel Arrivant",
+                    status: params.get('status') || "Parcours Standard"
+                };
+                
+                // ACTIVATION DU VERROUILLAGE STRICT
+                document.body.classList.add('employee-lockdown');
+                
+                setupEmployeeWelcome(appState.currentEmployeeProfile.name, `${appState.currentSelectedCompany} • ${appState.currentEmployeeProfile.status}`);
+                switchScreen('scr-employee');
+                showToast("⚡ Session Salarié isolée et sécurisée");
+            } else {
+                await pullLatestRisksFromCloud();
             }
-        }
-    }, 5000); // 5000 millisecondes = 5 secondes
-};
 
+            // Polling de mise à jour pour les managers et la direction
+            setInterval(async () => {
+                const isDirActive = document.getElementById('scr-direction').classList.contains('active');
+                const isManagerActive = document.getElementById('scr-manager').classList.contains('active');
+                if (isDirActive || isManagerActive) {
+                    await pullLatestRisksFromCloud();
+                    if (isManagerActive) refreshManagerRiskView();
+                }
+            }, 5000);
+        };
+        // ========================================================
+
+        // La suite de ton code reste inchangée :
+        async function pushRiskToCloud(payload) {
+            // ...
         // --- 3. SYNCHRONISATION CLOUD SUPABASE (SANS LIBRAIRIE EXTERNE) ---
         async function pushRiskToCloud(payload) {
             try {
