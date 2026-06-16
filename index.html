@@ -484,7 +484,18 @@
         // --- CHANGER TES CLÉS UNIQUES ICI ---
         const SUPABASE_URL = "https://bcuzmjcbhriyzmmiodsi.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdXptamNiaHJpeXptbWlvZHNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODU5NjIsImV4cCI6MjA5NzE2MTk2Mn0.lbYUBi-JEJCoUIdAAAVS35sdy6o0EHHGoqVs3cL1ApQ";
-
+function handleDirectionAccess() {
+    // Fenêtre d'alerte native demandant le pass d'inspection
+    const accessCode = prompt("🔒 Accès Sécurisé - Direction RESTEV 85 :\nVeuillez entrer votre code d'agent de prévention :");
+    
+    // Tu peux changer "8500" par le code de ton choix
+    if (accessCode === "8500") {
+        showToast("🔓 Accès Superviseur accordé");
+        switchScreen('scr-direction');
+    } else if (accessCode !== null) {
+        alert("❌ Code incorrect. Ce tableau de bord est strictement réservé à la direction du centre RESTEV.");
+    }
+}
         // Configuration des entêtes HTTP natifs pour interagir avec l'API Supabase
         const getSupabaseHeaders = () => ({
             "apikey": SUPABASE_ANON_KEY,
