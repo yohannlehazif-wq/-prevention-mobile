@@ -2,851 +2,103 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RESTEV 85 - Passeport Prévention Connecté</title>
-    
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'restev-blue': '#3b82f6', // Plus dynamique
-                        'restev-blue-dark': '#1d4ed8',
-                        'restev-magenta': '#ec4899', // Plus joyeux/vibrant
-                        'restev-magenta-dark': '#db2777',
-                        'restev-teal': '#14b8a6', // Plus lumineux
-                        'restev-gold': '#f59e0b', // Plus chaleureux
-                        'restev-gold-light': '#fffbeb'
-                    },
-                    boxShadow: {
-                        'premium': '0 10px 30px -5px rgba(59, 130, 246, 0.1), 0 4px 12px -2px rgba(0, 0, 0, 0.03)',
-                        'card-hover': '0 20px 40px -5px rgba(59, 130, 246, 0.15), 0 8px 20px -4px rgba(0, 0, 0, 0.05)'
-                    }
-                }
-            }
-        }
-    </script>
-    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #fcfcfd; } /* Légèrement plus clair */
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #fcfcfd; }
         .screen { display: none; }
-        .screen.active { display: block; animation: smoothSlide 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .screen.active { display: block; animation: smoothSlide 0.4s ease-out; }
         @keyframes smoothSlide { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        canvas { touch-action: none; }
-        @media print {
-            body { background: white; }
-            .no-print { display: none !important; }
-            .print-view { display: block !important; background: white; color: black; border: none !important; box-shadow: none !important; }
-        }
-        body.employee-lockdown .no-employee { display: none !important; }
-        body.employee-lockdown header { pointer-events: none; cursor: default; }
+        canvas { touch-action: none; border: 1px solid #e2e8f0; background: #f8fafc; }
     </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
-    <header class="bg-white/90 backdrop-blur-md border-b border-slate-100 py-3 px-4 shadow-sm no-print sticky top-0 z-40">
-        <div class="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
-            <div class="flex items-center cursor-pointer transition hover:opacity-90" onclick="switchScreen('scr-home')">
-                <!-- Intégration du logo -->
-                <img src="logo.png" alt="RESTEV 85" class="h-10 w-auto">
-            </div>
-            <div class="flex items-center gap-2">
-                <span id="cloud-sync-badge" class="bg-emerald-50 text-emerald-600 border border-emerald-200/60 font-extrabold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider shadow-sm transition-all">
-                    <i class="fa-solid fa-rotate mr-1 animate-spin"></i> Cloud Connecté
-                </span>
-            </div>
+
+    <header class="bg-white/90 backdrop-blur-md border-b border-slate-100 py-3 px-4 sticky top-0 z-40">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <h1 class="font-bold text-lg text-restev-blue">RESTEV 85</h1>
+            <span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full uppercase font-bold">Cloud Connecté</span>
         </div>
     </header>
-    
-    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 text-white text-xs font-semibold py-3.5 px-5 rounded-2xl shadow-premium z-50 transition-all duration-300 transform translate-y-20 opacity-0 flex items-center space-x-2.5 border border-slate-800 no-print">
-        <div class="w-2 h-2 bg-restev-gold rounded-full animate-pulse"></div>
-        <span id="toast-text">Notification</span>
-    </div>
 
     <main class="max-w-5xl mx-auto p-4 md:p-6 flex-1 w-full flex flex-col justify-center">
-        <!-- Reste de ton code inchangé ... -->
-        <section id="scr-home" class="screen active max-w-xl mx-auto w-full space-y-6 py-2">
-            <!-- (Ton contenu existant reste ici) -->
-            <div class="text-center space-y-2">
-                <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">Passeport Prévention & Risques</h1>
-                <p class="text-sm text-slate-500 max-w-sm mx-auto">Veuillez sélectionner votre espace de connexion réglementaire.</p>
+        
+        <section id="scr-home" class="screen active">
+            <div class="text-center space-y-4">
+                <h2 class="text-2xl font-extrabold text-slate-900">Passeport Prévention</h2>
+                <div class="grid gap-4">
+                    <button onclick="switchScreen('scr-auth')" class="bg-blue-600 text-white p-4 rounded-2xl">Espace Entreprise</button>
+                    <button onclick="switchScreen('scr-employee')" class="bg-pink-500 text-white p-4 rounded-2xl">Interface Salarié</button>
+                </div>
             </div>
-            
+        </section>
+
+        <section id="scr-auth" class="screen">
+            <button onclick="switchScreen('scr-home')" class="mb-4 text-xs font-bold text-slate-500">← Retour</button>
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                <h2 class="text-sm font-bold mb-4">Identification</h2>
+                <button onclick="switchScreen('scr-manager')" class="w-full bg-blue-600 text-white py-3 rounded-xl">Se connecter</button>
+            </div>
+        </section>
+
+        <section id="scr-manager" class="screen">
+            <div class="bg-white p-6 rounded-3xl shadow-sm space-y-4">
+                <h2 class="font-bold text-lg">Console Manager</h2>
+                <div class="p-4 bg-slate-50 rounded-xl">
+                    <label class="block text-xs font-bold mb-2">Générer QR Salarié</label>
+                    <button onclick="switchScreen('scr-employee')" class="w-full bg-slate-900 text-white py-3 rounded-xl">Générer</button>
+                </div>
+                <button onclick="switchScreen('scr-home')" class="text-xs text-red-500">Déconnexion</button>
+            </div>
+        </section>
+
+        <section id="scr-employee" class="screen">
+            <h2 class="text-lg font-bold mb-4">Espace Salarié</h2>
+            <button onclick="switchScreen('scr-signature')" class="w-full bg-teal-600 text-white py-3 rounded-xl">Accès Signature</button>
+        </section>
+
+        <section id="scr-signature" class="screen">
             <div class="space-y-4">
-                <button onclick="switchScreen('scr-about')" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-3xl text-left flex items-center justify-between transition-all shadow-premium hover:shadow-card-hover group">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center text-lg"><i class="fa-solid fa-book-open"></i></div>
-                        <div>
-                            <h3 class="font-bold text-sm">Découvrir la démarche RESTEV 85</h3>
-                            <p class="text-[11px] text-blue-100">Comprendre l'application, les enjeux réglementaires et les objectifs.</p>
-                        </div>
-                    </div>
-                    <i class="fa-solid fa-chevron-right text-white/50 group-hover:translate-x-1 transition-transform"></i>
-                </button>
-                <div class="bg-amber-50/80 border border-amber-200 p-4 rounded-3xl space-y-2">
-                    <span class="text-[10px] font-extrabold text-amber-800 uppercase tracking-wider block"><i class="fa-solid fa-building-shield mr-1"></i> Organisme de Santé</span>
-                    <button onclick="handleDirectionAccess()" class="w-full bg-white p-4 rounded-2xl border border-slate-200 hover:border-restev-gold text-left flex items-center space-x-4 transition-all shadow-sm hover:shadow-md group relative overflow-hidden">
-                        <div class="p-3 bg-amber-100 text-amber-600 rounded-2xl text-lg group-hover:bg-amber-500 group-hover:text-white transition-all"><i class="fa-solid fa-chart-line"></i></div>
-                        <div>
-                            <h3 class="font-bold text-slate-900 text-xs flex items-center gap-1.5">Centre de Prévention RESTEV 85 <span class="bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black">PRO</span></h3>
-                            <p class="text-[11px] text-slate-400 mt-0.5">Statistiques départementales, cartographie DUERP inter-entreprises.</p>
-                        </div>
-                    </button>
-                </div>
-                <div class="bg-white border border-slate-100 p-4 rounded-3xl space-y-3 shadow-sm">
-                    <span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block"><i class="fa-solid fa-industry mr-1"></i> Parcours Entreprises Adhérentes</span>
-                    <div class="grid grid-cols-1 gap-2">
-                        <button onclick="switchScreen('scr-auth')" class="bg-slate-50 p-4 rounded-2xl border border-slate-100 hover:border-blue-400 text-left flex items-center space-x-4 transition-all shadow-sm hover:shadow-md group">
-                            <div class="p-3 bg-blue-100 text-blue-600 rounded-2xl text-lg group-hover:bg-blue-600 group-hover:text-white transition-all"><i class="fa-solid fa-user-tie"></i></div>
-                            <div>
-                                <h3 class="font-bold text-slate-900 text-xs">1. Espace Établissement & Management</h3>
-                                <p class="text-[11px] text-slate-400 mt-0.5">Sélection de l'usine, personnalisation du métier et QR Codes.</p>
-                            </div>
-                        </button>
-                        <button onclick="accessEmployeeDirect()" class="bg-slate-50 p-4 rounded-2xl border border-slate-100 hover:border-pink-400 text-left flex items-center space-x-4 transition-all shadow-sm hover:shadow-md group">
-                            <div class="p-3 bg-pink-100 text-pink-600 rounded-2xl text-lg group-hover:bg-pink-600 group-hover:text-white transition-all"><i class="fa-solid fa-user-shield"></i></div>
-                            <div>
-                                <h3 class="font-bold text-slate-900 text-xs">2. Interface d'Émargement Salarié</h3>
-                                <p class="text-[11px] text-slate-400 mt-0.5">Accès direct au livret d'accueil et remontée terrain des anomalies.</p>
-                            </div>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </section>
-        <section id="scr-direction" class="screen space-y-6">
-            <div class="bg-gradient-to-br from-slate-900 via-restev-blue-dark to-slate-950 p-5 rounded-3xl text-white shadow-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div class="space-y-1">
-                    <span class="bg-restev-gold text-slate-950 font-black text-[9px] px-2 py-0.5 rounded uppercase tracking-wider">Console d'Audit RESTEV</span>
-                    <h2 class="text-xl md:text-2xl font-extrabold tracking-tight">Statistiques de Prévention</h2>
-                </div>
-                <button onclick="switchScreen('scr-home')" class="text-xs bg-white/10 hover:bg-white/20 px-3.5 py-2 rounded-xl font-bold transition border border-white/10">
-                    <i class="fa-solid fa-arrow-left mr-1"></i> Quitter la Console
-                </button>
-            </div>
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-premium flex items-center space-x-3.5">
-                    <div class="p-3 bg-restev-blue/10 text-restev-blue rounded-xl text-lg"><i class="fa-solid fa-building"></i></div>
-                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase">Établissements</span><span id="lbl-dir-adherents" class="text-xl font-extrabold text-slate-900">0</span></div>
-                </div>
-                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-premium flex items-center space-x-3.5">
-                    <div class="p-3 bg-restev-teal/10 text-restev-teal rounded-xl text-lg"><i class="fa-solid fa-id-card-clip"></i></div>
-                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase">Passeports Actifs</span><span id="lbl-dir-passports" class="text-xl font-extrabold text-slate-900">0</span></div>
-                </div>
-                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-premium flex items-center space-x-3.5">
-                    <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl text-lg"><i class="fa-solid fa-shield-halved"></i></div>
-                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase">Conformité SST</span><span class="text-xl font-extrabold text-emerald-600">100%</span></div>
-                </div>
-                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-premium flex items-center space-x-3.5">
-                    <div class="p-3 bg-red-50 text-red-600 rounded-xl text-lg"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase">Alertes Cloud</span><span id="lbl-dir-alert-count" class="text-xl font-extrabold text-red-600">0</span></div>
-                </div>
-            </div>
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-premium lg:col-span-2 space-y-4">
-                    <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-chart-pie text-restev-blue"></i> Analyse Globale des Risques Remontés</h3>
-                    <div class="h-60 relative"><canvas id="chart-restev-risks"></canvas></div>
-                </div>
-                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-premium flex flex-col justify-between">
-                    <div>
-                        <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider mb-3 flex items-center gap-1.5"><i class="fa-solid fa-bolt text-restev-magenta"></i> Flux d'activité</h3>
-                        <div id="direction-activity-feed" class="space-y-3 text-[11px] max-h-60 overflow-y-auto pr-1"></div>
-                    </div>
-                </div>
+                <h2 class="font-bold">Signature</h2>
+                <canvas id="canv-employee" width="300" height="100"></canvas>
+                <button onclick="clearCanvas('canv-employee')" class="text-xs underline text-slate-500">Effacer</button>
+                <button onclick="alert('Attestation générée!')" class="w-full bg-emerald-600 text-white py-3 rounded-xl">Valider</button>
+                <button onclick="switchScreen('scr-employee')" class="w-full bg-slate-100 py-3 rounded-xl">Retour</button>
             </div>
         </section>
 
-        <section id="scr-auth" class="screen max-w-md mx-auto w-full space-y-4">
-            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-premium space-y-5">
-                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                    <div>
-                        <span class="text-[9px] font-bold uppercase text-slate-400 tracking-wider block">Étape 1 sur 2</span>
-                        <h2 class="text-sm font-extrabold text-slate-900">Identification de l'Établissement</h2>
-                    </div>
-                    <button onclick="switchScreen('scr-home')" class="text-xs bg-slate-50 hover:bg-slate-100 text-slate-500 px-3 py-1.5 rounded-xl font-bold transition"><i class="fa-solid fa-arrow-left"></i></button>
-                </div>
-                <div class="space-y-4">
-                    <div class="space-y-1.5">
-                        <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Sélectionner votre Entreprise</label>
-                        <select id="manager-company-name" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-restev-blue focus:outline-none">
-                            <option value="Bati-Vendée Logistique 85">🏢 Bati-Vendée Logistique 85</option>
-                            <option value="Manufacture Ouest Sables">🏢 Manufacture Ouest Sables</option>
-                            <option value="Agro-Alimentaire Yonnais">🏢 Agro-Alimentaire Yonnais</option>
-                            <option value="EHPAD Les Mimosas">🏥 EHPAD Les Mimosas</option>
-                            <option value="Garage Central">🛠️ Garage Central</option>
-                        </select>
-                    </div>
-                    <button onclick="handleManagerLogin()" class="w-full bg-gradient-to-r from-restev-blue to-restev-blue-dark text-white py-3 rounded-xl text-xs font-bold shadow-md hover:opacity-95 transition">Valider et Ouvrir la Console Manager</button>
-                </div>
-            </div>
-        </section>
-
-        <section id="scr-manager" class="screen space-y-6">
-            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-premium flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div class="flex items-center space-x-2.5">
-                    <div class="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></div>
-                    <h2 class="text-xs font-extrabold text-slate-900">Console Manager Adhérent : <span id="lbl-manager-comp-name" class="text-restev-blue"></span></h2>
-                </div>
-                <button onclick="switchScreen('scr-home')" class="text-xs bg-slate-50 hover:bg-slate-100 font-bold px-3.5 py-2 text-slate-600 rounded-xl transition">
-                    <i class="fa-solid fa-right-from-bracket mr-1"></i> Déconnexion Usine
-                </button>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="space-y-6">
-                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-premium space-y-4 border-t-4 border-t-restev-gold">
-                        <div class="flex items-center space-x-2 text-restev-blue font-extrabold text-xs uppercase tracking-wider">
-                            <i class="fa-solid fa-sliders text-sm text-restev-gold"></i>
-                            <h3>1. Profil & Personnalisation de l'Activité</h3>
-                        </div>
-                        <p class="text-xs text-slate-500 leading-relaxed">Adaptez instantanément l'application aux contraintes de votre métier. Les formulaires salariés se mettront à jour automatiquement.</p>
-                        
-                        <div class="space-y-1.5">
-                            <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Famille de métiers / Secteur :</label>
-                            <select id="manager-activity-select" onchange="updateCompanyActivityProfile()" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-restev-gold">
-                            </select>
-                        </div>
-                        <div class="p-3 bg-restev-gold/5 rounded-xl border border-restev-gold/20 text-[11px] text-slate-600 space-y-1">
-                            <span class="font-bold text-slate-900 block">Risques prioritaires injectés :</span>
-                            <p id="manager-activity-preview" class="italic">Chargement des paramètres...</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-premium space-y-4">
-                        <div class="flex items-center space-x-2 text-restev-magenta font-extrabold text-xs uppercase tracking-wider">
-                            <i class="fa-solid fa-qrcode text-sm"></i>
-                            <h3>2. Créer un Accueil SST Salarié</h3>
-                        </div>
-                        <div class="space-y-2">
-                            <input type="text" id="reg-emp-name" placeholder="Nom & Prénom du salarié" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:border-restev-magenta">
-                            <select id="reg-emp-status" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none">
-                                <option value="Salarié Intérimaire">Statut : Salarié Intérimaire</option>
-                                <option value="Contrat Saisonnier / CDD">Statut : Contrat Saisonnier / CDD</option>
-                                <option value="Nouvel Arrivant CDI">Statut : Nouvel Arrivant CDI</option>
-                            </select>
-                        </div>
-                        <button onclick="generateEmployeeAccess()" class="w-full bg-gradient-to-r from-restev-magenta to-restev-magenta-dark text-white py-3 rounded-xl text-xs font-bold shadow-md hover:opacity-95 transition">
-                            <i class="fa-solid fa-bolt mr-2"></i> Générer le QR Code Salarié
-                        </button>
-                        
-                        <div id="qr-area" class="hidden flex flex-col items-center justify-center p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 space-y-3">
-                            <canvas id="qr-canvas" class="mx-auto bg-white p-1 rounded-lg shadow-sm"></canvas>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-premium space-y-3">
-                        <div class="flex items-center space-x-2 text-restev-blue font-extrabold text-xs uppercase tracking-wider">
-                            <i class="fa-solid fa-map-location-dot"></i>
-                            <h3>3. Cartographie des Ateliers</h3>
-                        </div>
-                        <div class="flex gap-2">
-                            <input type="text" id="txt-new-zone" placeholder="Ex: Ligne 4, Réserve..." class="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-restev-blue">
-                            <button onclick="registerCustomZone()" class="bg-slate-950 hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow">Ajouter</button>
-                        </div>
-                        <div class="space-y-1.5 pt-2">
-                            <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Ateliers enregistrés :</span>
-                            <div id="manager-zones-list" class="flex flex-wrap gap-2"></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-premium flex flex-col justify-between">
-                    <div>
-                        <h3 class="font-extrabold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-bell text-red-500"></i> Signalements Dangers en cours</h3>
-                        <div id="manager-risk-box" class="space-y-3 max-h-[580px] overflow-y-auto pt-3 pr-1"></div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="scr-employee" class="screen max-w-md mx-auto w-full space-y-4">
-            <div class="bg-gradient-to-br from-slate-900 via-restev-blue-dark to-slate-950 text-white p-6 rounded-3xl shadow-lg space-y-2 relative overflow-hidden">
-                <span class="bg-restev-gold text-slate-950 text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider">Session Salarié Verrouillée</span>
-                <h2 class="text-lg font-extrabold tracking-tight" id="lbl-emp-welcome">Bonjour</h2>
-                <p class="text-xs text-slate-300" id="lbl-emp-company">Chargement des données...</p>
-            </div>
-            
-            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-premium space-y-3">
-                <button onclick="switchScreen('scr-onboarding-1')" class="w-full bg-slate-50/70 p-4 border border-slate-100 rounded-xl text-left flex items-center space-x-3 hover:bg-slate-100 transition group">
-                    <div class="w-9 h-9 bg-restev-blue/10 text-restev-blue rounded-xl flex items-center justify-center text-base group-hover:bg-restev-blue group-hover:text-white transition-all"><i class="fa-solid fa-book-open-reader"></i></div>
-                    <div class="flex-1">
-                        <p class="text-xs font-bold text-slate-800">1. Accueil Réglementaire & QCM</p>
-                        <p class="text-[10px] text-slate-400 mt-0.5">Validation de vos connaissances HSE.</p>
-                    </div>
-                    <i class="fa-solid fa-chevron-right text-slate-300 text-xs"></i>
-                </button>
-                
-                <button onclick="switchScreen('scr-report')" class="w-full bg-slate-50/70 p-4 border border-slate-100 rounded-xl text-left flex items-center space-x-3 hover:bg-slate-100 transition group">
-                    <div class="w-9 h-9 bg-restev-magenta/10 text-restev-magenta rounded-xl flex items-center justify-center text-base group-hover:bg-restev-magenta group-hover:text-white transition-all"><i class="fa-solid fa-camera"></i></div>
-                    <div class="flex-1">
-                        <p class="text-xs font-bold text-slate-800">2. Signaler une Situation Dangereuse</p>
-                        <p class="text-[10px] text-slate-400 mt-0.5">Remontée immédiate d'une anomalie.</p>
-                    </div>
-                    <i class="fa-solid fa-chevron-right text-slate-300 text-xs"></i>
-                </button>
-            </div>
-            <button onclick="switchScreen('scr-home')" class="no-employee w-full text-center text-xs text-slate-400 hover:text-slate-600 font-semibold py-2 transition"><i class="fa-solid fa-arrow-left mr-1"></i> Quitter</button>
-        </section>
-
-        <section id="scr-report" class="screen max-w-md mx-auto w-full bg-white p-5 rounded-3xl border border-slate-100 shadow-premium space-y-4">
-            <h3 class="text-base font-extrabold text-slate-900 flex items-center space-x-2">
-                <i class="fa-solid fa-triangle-exclamation text-restev-magenta animate-pulse"></i> <span>Signalement Incident / Danger</span>
-            </h3>
-            <div class="p-2 bg-slate-50 border border-slate-100 rounded-xl text-center">
-                <p id="geo-status" class="text-[11px] font-semibold text-slate-600">Recherche du point GPS...</p>
-            </div>
-            <div id="map" class="h-44 w-full rounded-2xl border border-slate-200 shadow-inner bg-slate-50 z-0"></div>
-            <div class="space-y-1">
-                <label class="block text-xs font-bold text-slate-700">Preuve terrain (Photo) :</label>
-                <div class="flex flex-col items-center justify-center w-full border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50 p-3 relative min-h-[110px] hover:bg-slate-100/50 transition">
-                    <input type="file" accept="image/*" capture="environment" onchange="processRealPhoto(this)" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
-                    <div id="photo-placeholder" class="text-center space-y-1.5">
-                        <div class="w-9 h-9 bg-white shadow-sm rounded-xl flex items-center justify-center text-slate-500 mx-auto border border-slate-100"><i class="fa-solid fa-camera text-sm text-restev-blue"></i></div>
-                        <span class="block text-[11px] font-bold text-slate-600">Prendre une photo</span>
-                    </div>
-                    <img id="photo-preview" class="w-full h-32 object-cover rounded-xl hidden border relative z-20">
-                </div>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-                <div class="space-y-1">
-                    <label class="block text-xs font-bold text-slate-700">Type de Risque :</label>
-                    <select id="risk-category" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none"></select>
-                </div>
-                <div class="space-y-1">
-                    <label class="block text-xs font-bold text-slate-700">Atelier / Secteur :</label>
-                    <select id="risk-location" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-restev-blue focus:outline-none"></select>
-                </div>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-                <div class="space-y-1">
-                    <label class="block text-xs font-bold text-slate-700">Gravité perçue :</label>
-                    <select id="risk-level" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-red-600 focus:outline-none">
-                        <option value="Critique 🔴">Immédiat (Danger)</option>
-                        <option value="Modéré 🟠">Sous 24 Heures</option>
-                    </select>
-                </div>
-                <div class="space-y-1">
-                    <label class="block text-xs font-bold text-slate-700">Priorité DUERP :</label>
-                    <select id="risk-duerp" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none">
-                        <option value="Fréquent / Majeur">Fréquent / Majeur</option>
-                        <option value="Rare / Mineur">Rare / Mineur</option>
-                    </select>
-                </div>
-            </div>
-            <div class="space-y-1">
-                <label class="block text-xs font-bold text-slate-700">Description :</label>
-                <textarea id="risk-desc" rows="2" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none" placeholder="Détails..."></textarea>
-            </div>
-            <div class="grid grid-cols-2 gap-3 pt-1">
-                <button type="button" onclick="switchScreen('scr-employee')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 py-2.5 rounded-xl text-xs font-bold transition">Retour</button>
-                <button type="button" onclick="submitRealRiskReport()" class="bg-restev-magenta text-white py-2.5 rounded-xl text-xs font-bold shadow-md hover:opacity-95 transition">Transmettre</button>
-            </div>
-        </section>
-
-        <section id="scr-onboarding-1" class="screen max-w-md mx-auto w-full bg-white p-5 rounded-3xl border border-slate-100 shadow-premium space-y-4">
-            <h3 class="text-base font-extrabold text-slate-900">Charte Interne de Prévention</h3>
-            <div id="employee-rules-container" class="space-y-2.5 text-xs text-slate-600 leading-relaxed"></div>
-            
-            <div class="border-t border-slate-100 pt-4 space-y-2.5">
-                <label class="block text-xs font-bold text-slate-700">Vérification de compréhension :</label>
-                <label class="flex items-center space-x-3 bg-slate-50 p-3 rounded-xl text-xs cursor-pointer hover:bg-slate-100/70 transition">
-                    <input type="radio" name="q1" value="ok" checked class="text-restev-blue"> 
-                    <span class="font-semibold text-slate-800">Je m'engage à respecter scrupuleusement ces consignes.</span>
-                </label>
-            </div>
-            <div class="grid grid-cols-2 gap-3 border-t border-slate-100 pt-4">
-                <button onclick="switchScreen('scr-employee')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 py-2.5 rounded-xl text-xs font-bold transition">Retour</button>
-                <button onclick="switchScreen('scr-signature')" class="bg-restev-blue text-white py-2.5 rounded-xl text-xs font-bold shadow transition hover:opacity-95">Valider</button>
-            </div>
-        </section>
-
-        <section id="scr-signature" class="screen max-w-md mx-auto w-full bg-white p-5 rounded-3xl border border-slate-100 shadow-premium space-y-4">
-            <h3 class="text-base font-extrabold text-slate-900 text-center">Émargement Électronique</h3>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1 tracking-wider">Signature du Salarié :</label>
-                    <div class="border border-slate-200 rounded-xl bg-slate-50 overflow-hidden">
-                        <canvas id="canv-employee" class="w-full bg-slate-50" height="90"></canvas>
-                    </div>
-                    <button type="button" onclick="clearCanvas('canv-employee')" class="text-[10px] text-slate-400 font-semibold underline mt-1">Effacer</button>
-                </div>
-                <div>
-                    <input type="text" id="tutor-name" value="M. Vigneron (Référent HSE)" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs mb-1.5 font-bold focus:outline-none">
-                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1 tracking-wider">Signature du Responsable :</label>
-                    <div class="border border-slate-200 rounded-xl bg-slate-50 overflow-hidden">
-                        <canvas id="canv-tutor" class="w-full bg-slate-50" height="90"></canvas>
-                    </div>
-                    <button type="button" onclick="clearCanvas('canv-tutor')" class="text-[10px] text-slate-400 font-semibold underline mt-1">Effacer</button>
-                </div>
-            </div>
-            <div class="grid grid-cols-2 gap-3 border-t border-slate-100 pt-4">
-                <button type="button" onclick="switchScreen('scr-onboarding-1')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 py-2.5 rounded-xl text-xs font-bold transition">Retour</button>
-                <button type="button" onclick="finalizeOfficialAttestation()" class="bg-restev-teal text-white py-2.5 rounded-xl text-xs font-bold shadow-md hover:opacity-95 transition">Générer l'Attestation</button>
-            </div>
-        </section>
-
-        <section id="scr-attestation" class="screen max-w-lg mx-auto w-full bg-white p-6 rounded-3xl shadow-premium border-2 border-restev-teal space-y-6">
-            <div class="border-2 border-slate-900 p-5 rounded-xl space-y-4 text-xs bg-white print-view" id="print-area">
-                <h4 class="text-center font-extrabold uppercase text-slate-900 text-xs tracking-wider">Attestation Individuelle de Formation Générale à la Sécurité</h4>
-                <div class="grid grid-cols-2 gap-3 text-[11px] pt-1">
-                    <p><strong>Salarié :</strong> <span id="lbl-view-emp">...</span></p>
-                    <p><strong>Établissement :</strong> <span id="lbl-view-company">...</span></p>
-                    <p><strong>Statut :</strong> <span id="lbl-view-status" class="text-restev-blue font-bold">...</span></p>
-                    <p><strong>Formateur :</strong> <span id="lbl-view-tutor">...</span></p>
-                </div>
-                <div class="grid grid-cols-2 gap-4 pt-3 border-t border-slate-100">
-                    <div class="text-center">
-                        <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Visa Travailleur :</span>
-                        <img id="img-render-emp" class="h-12 mx-auto object-contain bg-slate-50 border rounded p-1">
-                    </div>
-                    <div class="text-center">
-                        <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Visa Responsable :</span>
-                        <img id="img-render-tutor" class="h-12 mx-auto object-contain bg-slate-50 border rounded p-1">
-                    </div>
-                </div>
-            </div>
-            <div class="grid grid-cols-1 gap-2 no-print">
-                <button onclick="window.print()" class="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 shadow transition">
-                    <i class="fa-solid fa-print"></i> <span>Imprimer</span>
-                </button>
-                <button onclick="switchScreen('scr-home')" class="no-employee w-full bg-slate-50 text-slate-500 py-2.5 rounded-xl text-xs font-bold border text-center transition hover:bg-slate-100">Retourner au Portail</button>
-            </div>
-        </section>
     </main>
 
     <script>
-        const SUPABASE_URL = "https://bcuzmjcbhriyzmmiodsi.supabase.co"; 
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdXptamNiaHJpeXptbWlvZHNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODU5NjIsImV4cCI6MjA5NzE2MTk2Mn0.lbYUBi-JEJCoUIdAAAVS35sdy6o0EHHGoqVs3cL1ApQ";
-
-        const METIER_PRESETS = {
-            "Général (Bureau & Administratif)": {
-                icon: "💻",
-                categories: ["Risque lié à l'écran (Fatigue visuelle)", "Troubles Musculosquelettiques (TMS) / Posture", "Risque Électrique", "Chute de plain-pied / Câbles", "Risques Psychosociaux (RPS)"],
-                rules: [
-                    { title: "Règle 1 : Posture au poste de travail", desc: "Ajustez la hauteur de votre siège et de votre écran. Faites des pauses visuelles régulières.", color: "border-restev-blue" },
-                    { title: "Règle 2 : Déplacements internes", desc: "Maintenez les zones de circulation dégagées de tout câble ou matériel.", color: "border-restev-teal" }
-                ]
-            },
-            "Bâtiment & Travaux Publics (BTP)": {
-                icon: "🏗️",
-                categories: ["Chute de Hauteur", "Heurt par Engin de Chantier", "Non-port du Casque / EPI", "Chute d'Objets / Échafaudage", "Bruit / Poussières"],
-                rules: [
-                    { title: "Règle 1 : Protection Crânienne & Antichute", desc: "Casque attaché et harnais obligatoire sur zones surélevées sans protection collective.", color: "border-amber-500" },
-                    { title: "Règle 2 : Balisage & Coactivité", desc: "Interdiction absolue de circuler sous les charges suspendues.", color: "border-red-500" }
-                ]
-            },
-            "Logistique & Transport": {
-                icon: "📦",
-                categories: ["Chute de Quai", "Coactivité Piétons / Chariots", "Défaut d'arrimage", "Manutention Manuelle", "Stress / Délais"],
-                rules: [
-                    { title: "Règle 1 : Haute Visibilité", desc: "Gilet classe 2 et chaussures de sécurité obligatoires sur les quais et zones de stockage.", color: "border-restev-blue" },
-                    { title: "Règle 2 : Priorité Piétons", desc: "Circulation des chariots limitée à 8 km/h. Priorité systématique aux piétons.", color: "border-restev-gold" }
-                ]
-            },
-            "Agro-Alimentaire": {
-                icon: "🍏",
-                categories: ["Glissade / Sol Humide", "Coupure / Outils tranchants", "Risque Thermique (Chambre froide)", "Hygiène / Contamination", "Mouvement répétitif"],
-                rules: [
-                    { title: "Règle 1 : Tenue d'Hygiène & Sécurité", desc: "Charlotte, blouse et chaussures antidérapantes obligatoires en zone de production.", color: "border-restev-teal" },
-                    { title: "Règle 2 : Sol propre", desc: "Tout déversement accidentel doit être immédiatement nettoyé et la zone signalée.", color: "border-sky-500" }
-                ]
-            },
-            "Santé, Soins & Services à la Personne": {
-                icon: "🏥",
-                categories: ["Accident d'Exposition au Sang (AES)", "Manutention de Patients (Lombaires)", "Risque Infectieux / Biologique", "Agression / Incivilité", "Produits chimiques (Désinfection)"],
-                rules: [
-                    { title: "Règle 1 : Prévention Biologique", desc: "Port des gants obligatoire lors des soins. Respect strict des protocoles de tri des DASRI.", color: "border-restev-magenta" },
-                    { title: "Règle 2 : Manutention", desc: "Utilisation prioritaire des lève-personnes et draps de glisse pour mobiliser les patients.", color: "border-restev-blue" }
-                ]
-            },
-            "Métallurgie & Industrie Lourde": {
-                icon: "⚙️",
-                categories: ["Brûlure / Projections", "Bruit excessif", "Manutention mécanique", "Inhalation Fumées / Gaz", "Machine en mouvement / Happement"],
-                rules: [
-                    { title: "Règle 1 : EPI Spécifiques", desc: "Bouchons d'oreilles, lunettes de protection et vêtements ignifugés exigés dans l'atelier.", color: "border-orange-600" },
-                    { title: "Règle 2 : Consignation", desc: "Aucune intervention sur machine sans procédure de consignation électrique et mécanique.", color: "border-red-600" }
-                ]
-            },
-            "Espaces Verts & Paysagisme": {
-                icon: "🌳",
-                categories: ["Coupure / Tronçonneuse", "Risque Chimique (Phytosanitaire)", "Risques Météorologiques (Chaleur/Froid)", "Bruit et Vibrations", "Risque Biologique (Tiques/Plantes)"],
-                rules: [
-                    { title: "Règle 1 : Équipement anti-coupure", desc: "Pantalons anti-coupure et visières obligatoires lors de l'utilisation de débroussailleuses et tronçonneuses.", color: "border-emerald-600" },
-                    { title: "Règle 2 : Protection chimique", desc: "Masque, combinaison et gants nitrile obligatoires pour la préparation des traitements phytosanitaires.", color: "border-purple-600" }
-                ]
-            },
-            "Nettoyage & Propreté": {
-                icon: "🧹",
-                categories: ["Risque Chimique (Mélange de produits)", "Glissade sur sol mouillé", "Manutention et postures (Aspirateur/Monobrosse)", "Risque électrique (Prises défectueuses)"],
-                rules: [
-                    { title: "Règle 1 : Interdiction de mélange", desc: "Ne jamais mélanger d'eau de Javel avec un produit détartrant ou acide (risque de gaz toxique).", color: "border-restev-magenta" },
-                    { title: "Règle 2 : Signalisation", desc: "Mise en place systématique du panneau 'Sol Glissant' lors du lavage des sols.", color: "border-amber-500" }
-                ]
-            },
-            "Hôtellerie & Restauration": {
-                icon: "🍳",
-                categories: ["Brûlure / Huile bouillante", "Coupure / Couteaux", "Chute de plain-pied (Cuisine)", "Port de charges (Plateaux, fûts)", "Stress au moment du coup de feu"],
-                rules: [
-                    { title: "Règle 1 : EPI Cuisine", desc: "Chaussures de sécurité antidérapantes strictement obligatoires en cuisine et en plonge.", color: "border-slate-800" },
-                    { title: "Règle 2 : Outils tranchants", desc: "Ne jamais laisser tremper un couteau au fond d'un bac de plonge opaque.", color: "border-red-500" }
-                ]
-            },
-            "Garage & Maintenance Automobile": {
-                icon: "🛠️",
-                categories: ["Écrasement / Levage et Ponts", "Risque Chimique (Huiles de vidange, Batterie)", "Risque Électrique (Véhicules Électriques/Hybrides)", "Troubles Musculosquelettiques", "Bruit"],
-                rules: [
-                    { title: "Règle 1 : Sécurité levage", desc: "Vérifier le verrouillage mécanique du pont élévateur avant de passer sous le véhicule.", color: "border-restev-blue" },
-                    { title: "Règle 2 : Habilitation électrique", desc: "Seules les personnes habilitées (BCL/B0L) sont autorisées à intervenir sur les véhicules hybrides/électriques.", color: "border-amber-600" }
-                ]
-            }
-        };
-
-        let appState = {
-            currentSelectedCompany: "Bati-Vendée Logistique 85",
-            currentActivity: "Général (Bureau & Administratif)",
-            currentEmployeeProfile: { name: "", status: "Parcours Standard" },
-            risksDB: [],
-            datasetAdherents: new Set(["Bati-Vendée Logistique 85", "Manufacture Ouest Sables", "Agro-Alimentaire Yonnais", "EHPAD Les Mimosas", "Garage Central"]),
-            totalPassportsCount: 0,
-            corporateZonesDB: {
-                "Bati-Vendée Logistique 85": ["Atelier Quai Nord", "Zone de Stockage B"],
-                "EHPAD Les Mimosas": ["Aile Est", "Cuisine Centrale", "Buanderie"],
-                "Garage Central": ["Zone Pont 1", "Cabine Peinture"]
-            },
-            currentGPSCoords: "46.6705, -1.4265",
-            base64UploadedPhoto: ""
-        };  }<!-- (Le reste de ton code suit ici...) -->
-    </main>
-
-    <!-- Script et logique inchangés... -->
-    <script>
-       
-
-        const EMPLOYEE_SECURE_SCREENS = ['scr-employee', 'scr-report', 'scr-onboarding-1', 'scr-signature', 'scr-attestation'];
-        let myLeafletMap = null; let myMapMarker = null; let chartInstance = null; let isDrawing = false; let activeCanvas = {}; let ctxCanvas = {};
-
-        // --- GÉNÉRATION DYNAMIQUE DU MENU DÉROULANT DES MÉTIERS ---
-        function buildActivityDropdown() {
-            const selectElement = document.getElementById('manager-activity-select');
-            if (!selectElement) return;
-            selectElement.innerHTML = '';
-            for (const metierName in METIER_PRESETS) {
-                const metierData = METIER_PRESETS[metierName];
-                const option = document.createElement('option');
-                option.value = metierName;
-                option.innerText = `${metierData.icon} ${metierName}`;
-                selectElement.appendChild(option);
-            }
-            selectElement.value = appState.currentActivity;
-        }
-
-        // --- GESTION DU PROFIL MÉTIER ---
-        function updateCompanyActivityProfile() {
-            appState.currentActivity = document.getElementById('manager-activity-select').value;
-            const preset = METIER_PRESETS[appState.currentActivity];
-            document.getElementById('manager-activity-preview').innerText = preset.categories.join(' • ');
-            buildRiskCategoryDropdown();
-            buildEmployeeRulesLayout();
-            showToast(`💼 Profil mis à jour : ${appState.currentActivity}`);
-        }
-
-        function buildRiskCategoryDropdown() {
-            const dropdown = document.getElementById('risk-category');
-            if (!dropdown) return;
-            const categories = METIER_PRESETS[appState.currentActivity].categories;
-            dropdown.innerHTML = categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
-        }
-
-        function buildEmployeeRulesLayout() {
-            const container = document.getElementById('employee-rules-container');
-            if (!container) return;
-            const rules = METIER_PRESETS[appState.currentActivity].rules;
-            container.innerHTML = rules.map(r => `
-                <div class="p-3 bg-slate-50 rounded-xl border-l-4 ${r.color}">
-                    <p class="font-bold text-slate-900">${r.title}</p>
-                    <p class="text-slate-500 mt-0.5">${r.desc}</p>
-                </div>
-            `).join('');
-        }
-
-        // --- SYNCHRONISATION CLOUD ---
-        async function pullLatestRisksFromCloud() {
-            const badge = document.getElementById('cloud-sync-badge');
-            try {
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/risks?order=id.desc&limit=10`, {
-                    method: 'GET',
-                    headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data && JSON.stringify(appState.risksDB) !== JSON.stringify(data)) {
-                        appState.risksDB = data;
-                        updateChartStatsDynamically(); updateDirectionDashboardCounters();
-                        renderActivityFeedInDashboard(); refreshManagerRiskView();
-                    }
-                    if (badge) badge.innerHTML = `<i class="fa-solid fa-cloud mr-1"></i> Synchrone`;
-                }
-            } catch (e) {
-                if (badge) badge.innerHTML = `<i class="fa-solid fa-wifi mr-1 text-amber-600"></i> Mode Local`;
-            }
-        }
-
-        function renderActivityFeedInDashboard() {
-            const feed = document.getElementById('direction-activity-feed');
-            if (!feed) return;
-            feed.innerHTML = appState.risksDB.map(r => `
-                <div class="border-l-2 border-restev-magenta pl-3 py-1.5 bg-slate-50 rounded-r-lg">
-                    <p class="font-bold text-slate-800 text-[10px]">${r.category}</p>
-                    <p class="text-slate-500 text-[9px]"><i class="fa-solid fa-industry text-slate-400"></i> ${r.location}</p>
-                    <p class="text-slate-400 text-[8px] font-semibold">${r.company}</p>
-                </div>
-            `).join('');
-        }
-
-        function refreshManagerRiskView() {
-            const box = document.getElementById('manager-risk-box');
-            if (!box) return;
-            const filtered = appState.risksDB.filter(r => r.company === appState.currentSelectedCompany);
-            if (filtered.length === 0) {
-                box.innerHTML = `<p class="text-center py-6 text-slate-400 text-xs italic">Aucune alerte dans vos ateliers.</p>`; return;
-            }
-            box.innerHTML = filtered.map(r => `
-                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1">
-                    <div class="flex justify-between"><span class="font-extrabold text-slate-900">${r.employee}</span><span class="text-red-700 bg-red-50 px-2 rounded text-[9px] font-black">${r.severity || '🔴'}</span></div>
-                    <p class="text-slate-600"><span class="text-slate-400">Type :</span> ${r.category}</p>
-                    <p class="text-restev-blue font-bold"><i class="fa-solid fa-location-dot"></i> Atelier : ${r.location}</p>
-                    <p class="text-slate-600 bg-white p-2 rounded border border-slate-100 mt-1">${r.description}</p>
-                    ${r.photo ? `<img src="${r.photo}" class="w-full h-24 object-cover rounded-lg border mt-1.5">` : ''}
-                </div>
-            `).join('');
-        }
-
-        // --- NAVIGATION ---
+        // Gestion de la navigation
         function switchScreen(screenId) {
-            if (document.body.classList.contains('employee-lockdown') && !EMPLOYEE_SECURE_SCREENS.includes(screenId)) {
-                showToast("🔒 Accès bloqué."); return; 
-            }
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            const targetScreen = document.getElementById(screenId);
-            if (targetScreen) targetScreen.classList.add('active');
-            
-            if (screenId === 'scr-signature') { setTimeout(() => { initCanvas('canv-employee'); initCanvas('canv-tutor'); }, 150); }
-            if (screenId === 'scr-report') { buildZoneDropdownOptions(); acquireRealtimeGPSLocation(); }
-            if (screenId === 'scr-direction') { pullLatestRisksFromCloud(); }
+            document.getElementById(screenId).classList.add('active');
         }
 
-        function handleDirectionAccess() {
-            const accessCode = prompt("🔒 Code RESTEV :");
-            if (accessCode === "8500") { showToast("🔓 Accès validé."); switchScreen('scr-direction'); }
-        }
+        // Logique simplifiée pour le Canvas
+        const canvases = ['canv-employee'];
+        canvases.forEach(id => {
+            const canvas = document.getElementById(id);
+            const ctx = canvas.getContext('2d');
+            let isDrawing = false;
 
-        function handleManagerLogin() {
-            appState.currentSelectedCompany = document.getElementById('manager-company-name').value;
-            document.getElementById('lbl-manager-comp-name').innerText = appState.currentSelectedCompany;
-            switchScreen('scr-manager');
-            updateCompanyActivityProfile(); renderManagerZonesList(); refreshManagerRiskView();
-        }
-
-        // --- INITIALISATION ---
-        window.onload = async function() {
-            buildActivityDropdown(); 
-            
-            initRestevAnalyticsChart();
-            buildRiskCategoryDropdown();
-            buildEmployeeRulesLayout();
-            
-            const params = new URLSearchParams(window.location.search);
-            if (params.get('mode') === 'employee') {
-                appState.currentSelectedCompany = params.get('comp') || "Bati-Vendée Logistique 85";
-                appState.currentActivity = params.get('activity') || "Général (Bureau & Administratif)";
-                appState.currentEmployeeProfile = { name: params.get('name') || "Nouvel Arrivant", status: params.get('status') || "Parcours Standard" };
-                document.body.classList.add('employee-lockdown');
-                buildRiskCategoryDropdown(); buildEmployeeRulesLayout();
-                document.getElementById('lbl-emp-welcome').innerText = `Bonjour ${appState.currentEmployeeProfile.name}`;
-                document.getElementById('lbl-emp-company').innerText = `${appState.currentSelectedCompany}`;
-                switchScreen('scr-employee');
-            } else {
-                await pullLatestRisksFromCloud();
-            }
-            setInterval(pullLatestRisksFromCloud, 5000);
-        };
-
-        // --- ACTIONS UTILES ---
-        function generateEmployeeAccess() {
-            const name = document.getElementById('reg-emp-name').value.trim();
-            const status = document.getElementById('reg-emp-status').value;
-            if (!name) return alert("Veuillez indiquer l'identité du travailleur.");
-            appState.currentEmployeeProfile = { name, status };
-            const baseUrl = window.location.href.split('?')[0];
-            const url = `${baseUrl}?mode=employee&name=${encodeURIComponent(name)}&comp=${encodeURIComponent(appState.currentSelectedCompany)}&status=${encodeURIComponent(status)}&activity=${encodeURIComponent(appState.currentActivity)}`;
-            document.getElementById('qr-area').classList.remove('hidden');
-            QRCode.toCanvas(document.getElementById('qr-canvas'), url, { width: 140, margin: 1, color: { dark: '#b72077', light: '#ffffff' } });
-            showToast("QR Code généré !");
-        }
-
-        function accessEmployeeDirect() {
-            buildRiskCategoryDropdown(); buildEmployeeRulesLayout();
-            document.getElementById('lbl-emp-welcome').innerText = `Bonjour Manager`;
-            document.getElementById('lbl-emp-company').innerText = `Simulation Usine`;
-            switchScreen('scr-employee');
-        }
-
-        async function submitRealRiskReport() {
-            const desc = document.getElementById('risk-desc').value.trim();
-            const loc = document.getElementById('risk-location').value;
-            const sev = document.getElementById('risk-level').value;
-            const cat = document.getElementById('risk-category').value;
-            if (!desc) return alert("Détails requis.");
-            const payload = { company: appState.currentSelectedCompany, employee: appState.currentEmployeeProfile.name, category: cat, description: desc, location: loc, severity: sev, gps: appState.currentGPSCoords, photo: appState.base64UploadedPhoto || null };
-            showToast("🔄 Envoi...");
-            try { await fetch(`${SUPABASE_URL}/rest/v1/risks`, { method: 'POST', headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify(payload) }); } catch(e) {}
-            appState.risksDB.unshift({ id: Date.now(), ...payload });
-            updateChartStatsDynamically(); updateDirectionDashboardCounters(); refreshManagerRiskView();
-            showToast("✅ Alerte enregistrée !");
-            document.getElementById('risk-desc').value = ""; document.getElementById('photo-preview').classList.add('hidden'); document.getElementById('photo-placeholder').classList.remove('hidden'); appState.base64UploadedPhoto = "";
-            switchScreen('scr-employee');
-        }
-
-        function acquireRealtimeGPSLocation() {
-            if (!navigator.geolocation) return updateMap(46.6705, -1.4265);
-            navigator.geolocation.getCurrentPosition(
-                (p) => { appState.currentGPSCoords = `${p.coords.latitude.toFixed(6)}, ${p.coords.longitude.toFixed(6)}`; updateMap(p.coords.latitude, p.coords.longitude); },
-                () => { updateMap(46.6705, -1.4265); }
-            );
-        }
-
-        function updateMap(lat, lon) {
-            if (!myLeafletMap) {
-                myLeafletMap = L.map('map', { zoomControl: false }).setView([lat, lon], 17);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(myLeafletMap);
-                myMapMarker = L.marker([lat, lon]).addTo(myLeafletMap);
-            } else { myLeafletMap.setView([lat, lon], 17); myMapMarker.setLatLng([lat, lon]); }
-            setTimeout(() => { myLeafletMap.invalidateSize(); }, 300);
-        }
-
-       /**
- * Traite la photo uploadée et met à jour l'interface.
- * @param {HTMLInputElement} input - L'élément input file.
- */
-async function processRealPhoto(input) {
-    const file = input.files?.[0];
-    
-    // Vérification de l'existence du fichier
-    if (!file) return;
-
-    // Validation : Est-ce bien une image ?
-    if (!file.type.startsWith('image/')) {
-        console.error("Le fichier sélectionné n'est pas une image.");
-        alert("Veuillez sélectionner une image valide (JPG, PNG, etc.).");
-        return;
-    }
-
-    try {
-        // Lecture du fichier via une Promise
-        const base64 = await readFileAsDataURL(file);
-        
-        // Mise à jour de l'état
-        appState.base64UploadedPhoto = base64;
-
-        // Mise à jour de l'interface
-        const preview = document.getElementById('photo-preview');
-        const placeholder = document.getElementById('photo-placeholder');
-        
-        if (preview && placeholder) {
-            preview.src = base64;
-            preview.classList.remove('hidden');
-            placeholder.classList.add('hidden');
-        }
-    } catch (error) {
-        console.error("Erreur lors de la lecture du fichier :", error);
-    }
-}
-
-/**
- * Fonction utilitaire pour convertir un fichier en Base64 via une Promise.
- */
-function readFileAsDataURL(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = () => reject(new Error("Échec de la lecture du fichier"));
-        reader.readAsDataURL(file);
-    });
-}
-
-        function renderManagerZonesList() {
-            const container = document.getElementById('manager-zones-list');
-            const currentZones = appState.corporateZonesDB[appState.currentSelectedCompany] || [];
-            container.innerHTML = currentZones.map(zone => `<span class="bg-slate-100 text-[11px] font-bold px-3 py-1.5 rounded-xl border"><i class="fa-solid fa-industry text-slate-400 mr-2"></i> ${zone}</span>`).join('');
-        }
-
-        function registerCustomZone() {
-            const input = document.getElementById('txt-new-zone'); const zoneName = input.value.trim(); if (!zoneName) return;
-            if (!appState.corporateZonesDB[appState.currentSelectedCompany]) appState.corporateZonesDB[appState.currentSelectedCompany] = [];
-            appState.corporateZonesDB[appState.currentSelectedCompany].push(zoneName); input.value = ""; renderManagerZonesList(); showToast("Atelier ajouté.");
-        }
-
-        function buildZoneDropdownOptions() {
-            const dropdown = document.getElementById('risk-location'); const currentZones = appState.corporateZonesDB[appState.currentSelectedCompany] || ["Zone Standard"];
-            dropdown.innerHTML = currentZones.map(zone => `<option value="${zone}">📍 ${zone}</option>`).join('');
-        }
-
-        function updateDirectionDashboardCounters() {
-            document.getElementById('lbl-dir-adherents').innerText = appState.datasetAdherents.size;
-            document.getElementById('lbl-dir-passports').innerText = appState.totalPassportsCount;
-            document.getElementById('lbl-dir-alert-count').innerText = appState.risksDB.length;
-        }
-
-        function initRestevAnalyticsChart() {
-            const ctx = document.getElementById('chart-restev-risks').getContext('2d');
-            chartInstance = new Chart(ctx, { type: 'doughnut', data: { labels: ['Bureau / Santé', 'BTP / Espaces Verts', 'Logistique / Garage', 'Agro / Restauration', 'Métallurgie'], datasets: [{ data: [0, 0, 0, 0, 0], backgroundColor: ['#2b61a4', '#b72077', '#f1a115', '#6caea2', '#e11d48'], borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } });
-        }
-
-        function updateChartStatsDynamically() {
-            if (!chartInstance) return; const counts = [0, 0, 0, 0, 0];
-            appState.risksDB.forEach(r => {
-                if (r.category.includes('RPS') || r.category.includes('Biologique')) counts[0]++;
-                else if (r.category.includes('Hauteur') || r.category.includes('Chantier') || r.category.includes('Météorologiques')) counts[1]++;
-                else if (r.category.includes('Quai') || r.category.includes('Levage')) counts[2]++;
-                else if (r.category.includes('Coupure') || r.category.includes('Huile')) counts[3]++;
-                else counts[4]++;
+            canvas.addEventListener('mousedown', () => isDrawing = true);
+            canvas.addEventListener('mousemove', (e) => {
+                if (!isDrawing) return;
+                ctx.fillRect(e.offsetX, e.offsetY, 2, 2);
             });
-            chartInstance.data.datasets[0].data = counts; chartInstance.update();
+            canvas.addEventListener('mouseup', () => isDrawing = false);
+        });
+
+        function clearCanvas(id) {
+            const canvas = document.getElementById(id);
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
-
-        function initCanvas(id) {
-            const canvas = document.getElementById(id); if (!canvas) return; canvas.width = canvas.parentElement.clientWidth || 320; canvas.height = 90;
-            const ctx = canvas.getContext('2d'); ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.strokeStyle = '#0f172a'; activeCanvas[id] = canvas; ctxCanvas[id] = ctx;
-            const getPos = (e) => { const r = canvas.getBoundingClientRect(); return { x: (e.touches ? e.touches[0].clientX : e.clientX) - r.left, y: (e.touches ? e.touches[0].clientY : e.clientY) - r.top }; };
-            const drawStart = (e) => { e.preventDefault(); isDrawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); };
-            const drawMove = (e) => { if (!isDrawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
-            canvas.addEventListener('mousedown', drawStart); canvas.addEventListener('mousemove', drawMove); window.addEventListener('mouseup', () => isDrawing = false);
-            canvas.addEventListener('touchstart', drawStart, {passive:false}); canvas.addEventListener('touchmove', drawMove, {passive:false}); window.addEventListener('touchend', () => isDrawing = false);
-        }
-
-        function clearCanvas(id) { if(ctxCanvas[id]) ctxCanvas[id].clearRect(0,0,activeCanvas[id].width,activeCanvas[id].height); }
-
-        function showToast(text) {
-            const toast = document.getElementById('toast'); document.getElementById('toast-text').innerText = text;
-            toast.classList.remove('translate-y-20', 'opacity-0'); toast.classList.add('translate-y-0', 'opacity-100');
-            setTimeout(() => { toast.classList.remove('translate-y-0', 'opacity-100'); toast.classList.add('translate-y-20', 'opacity-0'); }, 3000);
-        }
-
-        function finalizeOfficialAttestation() {
-            appState.totalPassportsCount++; updateDirectionDashboardCounters();
-            document.getElementById('lbl-view-emp').innerText = appState.currentEmployeeProfile.name; document.getElementById('lbl-view-company').innerText = appState.currentSelectedCompany;
-            document.getElementById('lbl-view-status').innerText = appState.currentEmployeeProfile.status; document.getElementById('lbl-view-tutor').innerText = document.getElementById('tutor-name').value;
-            document.getElementById('img-render-emp').src = activeCanvas['canv-employee'].toDataURL(); document.getElementById('img-render-tutor').src = activeCanvas['canv-tutor'].toDataURL();
-            switchScreen('scr-attestation');
-    }
     </script>
 </body>
 </html>
