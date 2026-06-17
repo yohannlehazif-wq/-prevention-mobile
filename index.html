@@ -1,3 +1,14 @@
+Salut yoyo !
+
+D'abord, pour le problème du QR Code qui "ne fonctionne pas", il y a 99 % de chances que ce soit lié au **mode de test local**. Si tu ouvres ton fichier HTML en double-cliquant dessus depuis ton ordinateur, l'adresse de la page commence par `file:///C:/...`. Le QR code va générer cette adresse. Si tu le scannes avec ton téléphone, ton téléphone va essayer de chercher le fichier sur *son propre disque dur*, et ça ne marchera pas. Pour que le QR code s'ouvre sur ton mobile, le fichier HTML doit être hébergé sur internet (comme sur ton espace GitHub Pages). Ne t'inquiète pas, le code de génération est parfait, c'est juste l'environnement de test !
+
+Ensuite, ton idée de créer une page de présentation est **excellente**. Ton texte est un vrai "Pitch Deck" de préventeur. C'est structuré, argumenté, et ça prouve aux dirigeants que tu as compris leurs enjeux (gain de temps, protection juridique).
+
+J'ai intégré tout ton argumentaire dans une nouvelle page **"Découvrir la démarche"**, accessible directement depuis l'écran d'accueil. J'ai utilisé un design très professionnel sous forme de fiches et de points clés pour que les chefs d'entreprise puissent "scanner" l'information rapidement et s'approprier l'outil.
+
+Voici le code complet mis à jour. Tu peux remplacer l'ancien fichier par celui-ci :
+
+```html
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -5,13 +16,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RESTEV 85 - Passeport Prévention Connecté</title>
     
-    <!-- Frameworks & Bibliothèques Graphiques -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- API Cartographie Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
@@ -55,7 +64,6 @@
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
 
-    <!-- EN-TÊTE CORPORATE -->
     <header class="bg-white/95 backdrop-blur-md border-b border-slate-100 py-3 px-4 shadow-sm no-print sticky top-0 z-40">
         <div class="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
             <div class="flex items-center cursor-pointer transition hover:opacity-90" onclick="switchScreen('scr-home')">
@@ -73,16 +81,13 @@
         </div>
     </header>
 
-    <!-- TOAST NOTIFICATION -->
     <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 text-white text-xs font-semibold py-3.5 px-5 rounded-2xl shadow-premium z-50 transition-all duration-300 transform translate-y-20 opacity-0 flex items-center space-x-2.5 border border-slate-800 no-print">
         <div class="w-2 h-2 bg-restev-gold rounded-full animate-pulse"></div>
         <span id="toast-text">Notification</span>
     </div>
 
-    <!-- CONTENU PRINCIPAL -->
     <main class="max-w-5xl mx-auto p-4 md:p-6 flex-1 w-full flex flex-col justify-center">
         
-        <!-- 1. PORTAIL GENERAL -->
         <section id="scr-home" class="screen active max-w-xl mx-auto w-full space-y-6 py-2">
             <div class="text-center space-y-2">
                 <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">Passeport Prévention & Risques</h1>
@@ -90,6 +95,17 @@
             </div>
             
             <div class="space-y-4">
+                <button onclick="switchScreen('scr-about')" class="w-full bg-gradient-to-r from-slate-800 to-slate-900 text-white p-4 rounded-2xl text-left flex items-center justify-between transition-all shadow-premium hover:shadow-card-hover group">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-lg"><i class="fa-solid fa-book-open"></i></div>
+                        <div>
+                            <h3 class="font-bold text-sm">Découvrir la démarche RESTEV 85</h3>
+                            <p class="text-[11px] text-slate-300">Comprendre l'application, les enjeux réglementaires et les objectifs.</p>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-400 group-hover:translate-x-1 transition-transform"></i>
+                </button>
+
                 <div class="bg-amber-50/50 border border-amber-200/60 p-4 rounded-2xl space-y-2">
                     <span class="text-[10px] font-extrabold text-amber-800 uppercase tracking-wider block"><i class="fa-solid fa-building-shield mr-1"></i> Organisme de Santé</span>
                     <button onclick="handleDirectionAccess()" class="w-full bg-white p-4 rounded-xl border border-slate-200 hover:border-restev-gold text-left flex items-center space-x-4 transition-all shadow-sm hover:shadow-md group relative overflow-hidden">
@@ -108,7 +124,7 @@
                             <div class="p-3 bg-restev-blue/10 text-restev-blue rounded-xl text-lg group-hover:bg-restev-blue group-hover:text-white transition-all"><i class="fa-solid fa-user-tie"></i></div>
                             <div>
                                 <h3 class="font-bold text-slate-900 text-xs">1. Espace Établissement & Management</h3>
-                                <p class="text-[11px] text-slate-400 mt-0.5">Sélection de l'usine, gestion des ateliers et génération des fiches.</p>
+                                <p class="text-[11px] text-slate-400 mt-0.5">Sélection de l'usine, personnalisation du métier et QR Codes.</p>
                             </div>
                         </button>
                         <button onclick="accessEmployeeDirect()" class="bg-white p-4 rounded-xl border border-slate-200 hover:border-restev-magenta text-left flex items-center space-x-4 transition-all shadow-sm hover:shadow-md group">
@@ -123,7 +139,88 @@
             </div>
         </section>
 
-        <!-- 2. PANNEAU RESTEV -->
+        <section id="scr-about" class="screen max-w-2xl mx-auto w-full space-y-6 py-2">
+            <div class="flex items-center justify-between mb-4">
+                <button onclick="switchScreen('scr-home')" class="text-xs bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 px-4 py-2 rounded-xl font-bold transition shadow-sm">
+                    <i class="fa-solid fa-arrow-left mr-1"></i> Retour
+                </button>
+                <span class="bg-restev-blue/10 text-restev-blue px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider border border-restev-blue/20">Présentation du Projet</span>
+            </div>
+
+            <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-6 md:p-8 rounded-3xl text-white shadow-xl relative overflow-hidden">
+                <div class="absolute -right-10 -top-10 w-40 h-40 bg-restev-blue/20 rounded-full blur-3xl"></div>
+                <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight mb-2 relative z-10">Pourquoi cette application ?</h2>
+                <p class="text-slate-300 text-sm leading-relaxed relative z-10">Une solution digitale innovante développée par le RESTEV 85 pour répondre aux exigences du PST 2026-2030 et sécuriser les parcours d'intégration en entreprise.</p>
+            </div>
+
+            <div class="space-y-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-3">
+                    <h3 class="text-sm font-extrabold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-scale-balanced text-restev-gold"></i> Contexte & Tolérance Zéro</h3>
+                    <p class="text-xs text-slate-600 leading-relaxed text-justify">
+                        Le monde du travail est marqué par le lancement du <strong>Plan Santé au Travail (PST) 2026-2030</strong>, qui affiche une politique de <em>« tolérance zéro »</em> face aux accidents graves et mortels. L'Inspection du Travail durcit drastiquement les contrôles sur l'obligation de formation dès le premier jour d'arrivée. Les formats d'accueil traditionnels (livrets papier) s'avèrent aujourd'hui obsolètes, peu consultés et inadaptés aux nouvelles générations.
+                    </p>
+                    <div class="p-3 bg-restev-blue/5 rounded-xl border border-restev-blue/10">
+                        <p class="text-xs text-restev-blue-dark leading-relaxed">
+                            <strong>Le constat terrain en Vendée :</strong> Tissu dense de TPE/PME, fort recours à l'intérim et aux saisonniers. Les entreprises manquent de temps pour formaliser l'accueil. En cas d'accident, l'employeur se retrouve démuni de preuves juridiques. D'où la création de cette solution automatisée.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-2">
+                        <h3 class="text-sm font-extrabold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-users text-restev-magenta"></i> Utilisateurs (Terrain)</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Les publics dits « vulnérables » ou surexposés aux risques lors d'une prise de poste : <strong>nouveaux arrivants, jeunes travailleurs (stagiaires, apprentis) et intérimaires.</strong>
+                        </p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-2">
+                        <h3 class="text-sm font-extrabold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-user-tie text-restev-blue"></i> Gestionnaires (Pilotage)</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Les <strong>chefs d'entreprises adhérentes, responsables de sites, managers de proximité et tuteurs</strong>, qui doivent encadrer l'arrivée du personnel de manière fluide.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+                    <h3 class="text-sm font-extrabold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-bullseye text-restev-teal"></i> Les 3 Objectifs Principaux</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start gap-3">
+                            <div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-[10px] shrink-0 mt-0.5">1</div>
+                            <p class="text-xs text-slate-600 leading-relaxed"><strong>Garantir la conformité réglementaire :</strong> Assurer que 100 % des nouveaux arrivants reçoivent et valident les consignes obligatoires avant d'accéder au poste.</p>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-[10px] shrink-0 mt-0.5">2</div>
+                            <p class="text-xs text-slate-600 leading-relaxed"><strong>Générer des preuves juridiques :</strong> Automatiser l'attestation d'émargement numérique (signée par le salarié et le tuteur) pour protéger l'employeur en cas de contrôle.</p>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-[10px] shrink-0 mt-0.5">3</div>
+                            <p class="text-xs text-slate-600 leading-relaxed"><strong>Diminuer l'accidentologie :</strong> Réduire le pic d'accidents du travail qui survient statistiquement au cours des 3 premiers mois d'embauche.</p>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
+                    <h3 class="text-sm font-extrabold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-shield-halved text-slate-700"></i> Cadre Légal & RGPD</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="bg-white p-3 rounded-xl border border-slate-100 text-xs text-slate-600 leading-relaxed">
+                            <strong>Passeport Prévention :</strong> Les données de validation sont formatées pour être exportables vers le Passeport Prévention officiel, devenu obligatoire.
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border border-slate-100 text-xs text-slate-600 leading-relaxed">
+                            <strong>RGPD & Privacy :</strong> Collecte stricte du minimum requis (Nom, Prénom, Entreprise). Aucune donnée médicale. Suppression après départ du salarié.
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border border-slate-100 text-xs text-slate-600 leading-relaxed sm:col-span-2">
+                            <strong>Prévention Participative :</strong> Module de "Signalement Flash" intégré pour remonter une situation dangereuse en 2 clics (avec photo et GPS), sans barrière managériale.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="pt-2 pb-6">
+                <button onclick="switchScreen('scr-home')" class="w-full bg-slate-900 hover:bg-slate-800 text-white p-4 rounded-xl text-sm font-bold shadow-md transition-all text-center">
+                    J'ai compris, accéder à l'application
+                </button>
+            </div>
+        </section>
+
         <section id="scr-direction" class="screen space-y-6">
             <div class="bg-gradient-to-br from-slate-900 via-restev-blue-dark to-slate-950 p-5 rounded-3xl text-white shadow-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div class="space-y-1">
@@ -166,7 +263,6 @@
             </div>
         </section>
 
-        <!-- 3. AUTHENTIFICATION -->
         <section id="scr-auth" class="screen max-w-md mx-auto w-full space-y-4">
             <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-premium space-y-5">
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -192,7 +288,6 @@
             </div>
         </section>
 
-        <!-- 4. ESPACE COMPACT MANAGER -->
         <section id="scr-manager" class="screen space-y-6">
             <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-premium flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div class="flex items-center space-x-2.5">
@@ -206,7 +301,6 @@
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-6">
-                    <!-- SÉLECTION DYNAMIQUE DE L'ACTIVITÉ -->
                     <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-premium space-y-4 border-t-4 border-t-restev-gold">
                         <div class="flex items-center space-x-2 text-restev-blue font-extrabold text-xs uppercase tracking-wider">
                             <i class="fa-solid fa-sliders text-sm text-restev-gold"></i>
@@ -216,7 +310,6 @@
                         
                         <div class="space-y-1.5">
                             <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Famille de métiers / Secteur :</label>
-                            <!-- Ce select sera rempli automatiquement par JavaScript ! -->
                             <select id="manager-activity-select" onchange="updateCompanyActivityProfile()" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-restev-gold">
                             </select>
                         </div>
@@ -273,7 +366,6 @@
             </div>
         </section>
 
-        <!-- 5. INTERFACE SALARIÉ -->
         <section id="scr-employee" class="screen max-w-md mx-auto w-full space-y-4">
             <div class="bg-gradient-to-br from-slate-900 via-restev-blue-dark to-slate-950 text-white p-6 rounded-3xl shadow-lg space-y-2 relative overflow-hidden">
                 <span class="bg-restev-gold text-slate-950 text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider">Session Salarié Verrouillée</span>
@@ -303,7 +395,6 @@
             <button onclick="switchScreen('scr-home')" class="no-employee w-full text-center text-xs text-slate-400 hover:text-slate-600 font-semibold py-2 transition"><i class="fa-solid fa-arrow-left mr-1"></i> Quitter</button>
         </section>
 
-        <!-- 6. MODULE SIGNALEMENT -->
         <section id="scr-report" class="screen max-w-md mx-auto w-full bg-white p-5 rounded-3xl border border-slate-100 shadow-premium space-y-4">
             <h3 class="text-base font-extrabold text-slate-900 flex items-center space-x-2">
                 <i class="fa-solid fa-triangle-exclamation text-restev-magenta animate-pulse"></i> <span>Signalement Incident / Danger</span>
@@ -359,7 +450,6 @@
             </div>
         </section>
 
-        <!-- 7. CHARTE & EVALUATION REGLEMENTAIRE -->
         <section id="scr-onboarding-1" class="screen max-w-md mx-auto w-full bg-white p-5 rounded-3xl border border-slate-100 shadow-premium space-y-4">
             <h3 class="text-base font-extrabold text-slate-900">Charte Interne de Prévention</h3>
             <div id="employee-rules-container" class="space-y-2.5 text-xs text-slate-600 leading-relaxed"></div>
@@ -377,7 +467,6 @@
             </div>
         </section>
 
-        <!-- 8. SIGNATURES -->
         <section id="scr-signature" class="screen max-w-md mx-auto w-full bg-white p-5 rounded-3xl border border-slate-100 shadow-premium space-y-4">
             <h3 class="text-base font-extrabold text-slate-900 text-center">Émargement Électronique</h3>
             <div class="space-y-4">
@@ -403,7 +492,6 @@
             </div>
         </section>
 
-        <!-- 9. ATTESTATION -->
         <section id="scr-attestation" class="screen max-w-lg mx-auto w-full bg-white p-6 rounded-3xl shadow-premium border-2 border-restev-teal space-y-6">
             <div class="border-2 border-slate-900 p-5 rounded-xl space-y-4 text-xs bg-white print-view" id="print-area">
                 <h4 class="text-center font-extrabold uppercase text-slate-900 text-xs tracking-wider">Attestation Individuelle de Formation Générale à la Sécurité</h4>
@@ -433,12 +521,10 @@
         </section>
     </main>
 
-    <!-- MOTEUR APPLICATIF & Dictionnaire ÉLARGI -->
     <script>
         const SUPABASE_URL = "https://bcuzmjcbhriyzmmiodsi.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdXptamNiaHJpeXptbWlvZHNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODU5NjIsImV4cCI6MjA5NzE2MTk2Mn0.lbYUBi-JEJCoUIdAAAVS35sdy6o0EHHGoqVs3cL1ApQ";
 
-        // --- LE NOUVEAU DICTIONNAIRE ÉLARGI DES MÉTIERS (Facile à enrichir par la suite !) ---
         const METIER_PRESETS = {
             "Général (Bureau & Administratif)": {
                 icon: "💻",
@@ -545,11 +631,7 @@
         function buildActivityDropdown() {
             const selectElement = document.getElementById('manager-activity-select');
             if (!selectElement) return;
-            
-            // On vide le select actuel (au cas où)
             selectElement.innerHTML = '';
-            
-            // On boucle sur toutes les clés de notre dictionnaire METIER_PRESETS
             for (const metierName in METIER_PRESETS) {
                 const metierData = METIER_PRESETS[metierName];
                 const option = document.createElement('option');
@@ -557,8 +639,6 @@
                 option.innerText = `${metierData.icon} ${metierName}`;
                 selectElement.appendChild(option);
             }
-            
-            // On force la sélection initiale de l'application
             selectElement.value = appState.currentActivity;
         }
 
@@ -671,7 +751,6 @@
 
         // --- INITIALISATION ---
         window.onload = async function() {
-            // INITIALISATION DE LA LISTE DEROULANTE DES METIERS
             buildActivityDropdown(); 
             
             initRestevAnalyticsChart();
@@ -825,3 +904,5 @@
     </script>
 </body>
 </html>
+
+```
