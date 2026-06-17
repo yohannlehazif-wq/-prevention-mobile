@@ -2,102 +2,108 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RESTEV 85 - Passeport Prévention Connecté</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'restev-blue': '#3b82f6',
+                        'restev-blue-dark': '#1d4ed8',
+                        'restev-magenta': '#ec4899',
+                        'restev-magenta-dark': '#db2777',
+                        'restev-teal': '#14b8a6',
+                        'restev-gold': '#f59e0b',
+                        'restev-gold-light': '#fffbeb'
+                    },
+                    boxShadow: {
+                        'premium': '0 10px 30px -5px rgba(59, 130, 246, 0.1), 0 4px 12px -2px rgba(0, 0, 0, 0.03)',
+                        'card-hover': '0 20px 40px -5px rgba(59, 130, 246, 0.15), 0 8px 20px -4px rgba(0, 0, 0, 0.05)'
+                    }
+                }
+            }
+        }
+    </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #fcfcfd; }
         .screen { display: none; }
-        .screen.active { display: block; animation: smoothSlide 0.4s ease-out; }
+        .screen.active { display: block; animation: smoothSlide 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes smoothSlide { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        canvas { touch-action: none; border: 1px solid #e2e8f0; background: #f8fafc; }
+        canvas { touch-action: none; }
+        @media print {
+            body { background: white; }
+            .no-print { display: none !important; }
+            .print-view { display: block !important; background: white; color: black; border: none !important; box-shadow: none !important; }
+        }
     </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
-
-    <header class="bg-white/90 backdrop-blur-md border-b border-slate-100 py-3 px-4 sticky top-0 z-40">
-        <div class="max-w-5xl mx-auto flex justify-between items-center">
-            <h1 class="font-bold text-lg text-restev-blue">RESTEV 85</h1>
-            <span class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full uppercase font-bold">Cloud Connecté</span>
-        </div>
-    </header>
-
-    <main class="max-w-5xl mx-auto p-4 md:p-6 flex-1 w-full flex flex-col justify-center">
-        
-        <section id="scr-home" class="screen active">
-            <div class="text-center space-y-4">
-                <h2 class="text-2xl font-extrabold text-slate-900">Passeport Prévention</h2>
-                <div class="grid gap-4">
-                    <button onclick="switchScreen('scr-auth')" class="bg-blue-600 text-white p-4 rounded-2xl">Espace Entreprise</button>
-                    <button onclick="switchScreen('scr-employee')" class="bg-pink-500 text-white p-4 rounded-2xl">Interface Salarié</button>
-                </div>
-            </div>
-        </section>
-
-        <section id="scr-auth" class="screen">
-            <button onclick="switchScreen('scr-home')" class="mb-4 text-xs font-bold text-slate-500">← Retour</button>
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                <h2 class="text-sm font-bold mb-4">Identification</h2>
-                <button onclick="switchScreen('scr-manager')" class="w-full bg-blue-600 text-white py-3 rounded-xl">Se connecter</button>
-            </div>
-        </section>
-
-        <section id="scr-manager" class="screen">
-            <div class="bg-white p-6 rounded-3xl shadow-sm space-y-4">
-                <h2 class="font-bold text-lg">Console Manager</h2>
-                <div class="p-4 bg-slate-50 rounded-xl">
-                    <label class="block text-xs font-bold mb-2">Générer QR Salarié</label>
-                    <button onclick="switchScreen('scr-employee')" class="w-full bg-slate-900 text-white py-3 rounded-xl">Générer</button>
-                </div>
-                <button onclick="switchScreen('scr-home')" class="text-xs text-red-500">Déconnexion</button>
-            </div>
-        </section>
-
-        <section id="scr-employee" class="screen">
-            <h2 class="text-lg font-bold mb-4">Espace Salarié</h2>
-            <button onclick="switchScreen('scr-signature')" class="w-full bg-teal-600 text-white py-3 rounded-xl">Accès Signature</button>
-        </section>
-
-        <section id="scr-signature" class="screen">
-            <div class="space-y-4">
-                <h2 class="font-bold">Signature</h2>
-                <canvas id="canv-employee" width="300" height="100"></canvas>
-                <button onclick="clearCanvas('canv-employee')" class="text-xs underline text-slate-500">Effacer</button>
-                <button onclick="alert('Attestation générée!')" class="w-full bg-emerald-600 text-white py-3 rounded-xl">Valider</button>
-                <button onclick="switchScreen('scr-employee')" class="w-full bg-slate-100 py-3 rounded-xl">Retour</button>
-            </div>
-        </section>
-
-    </main>
-
     <script>
-        // Gestion de la navigation
+        // Logique Supabase (votre clé est incluse dans le fichier récupéré)
+        const SUPABASE_URL = "https://bcuzmjcbhriyzmmiodsi.supabase.co";
+        // Note : Gardez votre clé anonyme privée si vous déployez ce site en ligne.
+        
+        // Fonctions de navigation
         function switchScreen(screenId) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(screenId).classList.add('active');
         }
 
-        // Logique simplifiée pour le Canvas
-        const canvases = ['canv-employee'];
-        canvases.forEach(id => {
+        // Initialisation des canvases pour signature
+        function initCanvas(id) {
             const canvas = document.getElementById(id);
             const ctx = canvas.getContext('2d');
             let isDrawing = false;
-
-            canvas.addEventListener('mousedown', () => isDrawing = true);
-            canvas.addEventListener('mousemove', (e) => {
+            
+            function drawStart(e) { isDrawing = true; }
+            function drawMove(e) {
                 if (!isDrawing) return;
-                ctx.fillRect(e.offsetX, e.offsetY, 2, 2);
-            });
-            canvas.addEventListener('mouseup', () => isDrawing = false);
-        });
+                const rect = canvas.getBoundingClientRect();
+                const x = (e.clientX || e.touches[0].clientX) - rect.left;
+                const y = (e.clientY || e.touches[0].clientY) - rect.top;
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            }
+            
+            canvas.addEventListener('mousedown', drawStart);
+            canvas.addEventListener('mousemove', drawMove);
+            canvas.addEventListener('mouseup', () => { isDrawing = false; ctx.beginPath(); });
+            
+            // Touch events
+            canvas.addEventListener('touchstart', drawStart);
+            canvas.addEventListener('touchmove', drawMove, {passive:false});
+            canvas.addEventListener('touchend', () => { isDrawing = false; ctx.beginPath(); });
+        }
+
+        // Initialisation au chargement
+        window.onload = () => {
+            initCanvas('canv-employee');
+            initCanvas('canv-tutor');
+        };
 
         function clearCanvas(id) {
             const canvas = document.getElementById(id);
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function finalizeOfficialAttestation() {
+            // Logique de génération de l'attestation finale
+            const empName = document.getElementById('reg-emp-name').value;
+            document.getElementById('lbl-view-emp').innerText = empName;
+            document.getElementById('img-render-emp').src = document.getElementById('canv-employee').toDataURL();
+            document.getElementById('img-render-tutor').src = document.getElementById('canv-tutor').toDataURL();
+            switchScreen('scr-attestation');
         }
     </script>
 </body>
