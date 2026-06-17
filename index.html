@@ -732,15 +732,55 @@
             setTimeout(() => { myLeafletMap.invalidateSize(); }, 300);
         }
 
-        function processRealPhoto(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    appState.base64UploadedPhoto = e.target.result;
-                    const preview = document.getElementById('photo-preview'); preview.src = e.target.result; preview.classList.remove('hidden'); document.getElementById('photo-placeholder').classList.add('hidden');
-                }; reader.readAsDataURL(input.files[0]);
-            }
+       /**
+ * Traite la photo uploadée et met à jour l'interface.
+ * @param {HTMLInputElement} input - L'élément input file.
+ */
+async function processRealPhoto(input) {
+    const file = input.files?.[0];
+    
+    // Vérification de l'existence du fichier
+    if (!file) return;
+
+    // Validation : Est-ce bien une image ?
+    if (!file.type.startsWith('image/')) {
+        console.error("Le fichier sélectionné n'est pas une image.");
+        alert("Veuillez sélectionner une image valide (JPG, PNG, etc.).");
+        return;
+    }
+
+    try {
+        // Lecture du fichier via une Promise
+        const base64 = await readFileAsDataURL(file);
+        
+        // Mise à jour de l'état
+        appState.base64UploadedPhoto = base64;
+
+        // Mise à jour de l'interface
+        const preview = document.getElementById('photo-preview');
+        const placeholder = document.getElementById('photo-placeholder');
+        
+        if (preview && placeholder) {
+            preview.src = base64;
+            preview.classList.remove('hidden');
+            placeholder.classList.add('hidden');
         }
+    } catch (error) {
+        console.error("Erreur lors de la lecture du fichier :", error);
+    }
+}
+
+/**
+ * Fonction utilitaire pour convertir un fichier en Base64 via une Promise.
+ */
+function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error("Échec de la lecture du fichier"));
+        reader.readAsDataURL(file);
+    });
+}
 
         function renderManagerZonesList() {
             const container = document.getElementById('manager-zones-list');
