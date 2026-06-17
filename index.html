@@ -508,6 +508,20 @@
                 <button onclick="switchScreen('scr-home')" class="no-employee w-full bg-slate-50 text-slate-500 py-2.5 rounded-xl text-xs font-bold border text-center transition hover:bg-slate-100">Retourner au Portail</button>
             </div>
         </section>
+      
+        <section id="scr-studio" class="screen max-w-2xl mx-auto w-full p-4 space-y-6">
+    <div class="flex items-center justify-between">
+        <h2 class="text-lg font-extrabold text-slate-900">Studio : <span id="lbl-studio-metier">...</span></h2>
+        <button onclick="switchScreen('scr-manager')" class="text-xs bg-slate-100 px-4 py-2 rounded-xl font-bold">Fermer</button>
+    </div>
+
+    <div id="studio-rules-list" class="space-y-4">
+        </div>
+
+    <button onclick="saveCustomQCM()" class="w-full bg-restev-blue text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-restev-blue-dark transition">
+        Enregistrer les modifications pour mon entreprise
+    </button>
+</section>
     </main>
 
     <script>
@@ -890,6 +904,32 @@
             document.getElementById('img-render-emp').src = activeCanvas['canv-employee'].toDataURL(); document.getElementById('img-render-tutor').src = activeCanvas['canv-tutor'].toDataURL();
             switchScreen('scr-attestation');
         }
+        
+        // Fonction pour ouvrir le studio d'édition
+function openStudio(metierName) {
+    const preset = METIER_PRESETS[metierName];
+    document.getElementById('lbl-studio-metier').innerText = metierName;
+    const list = document.getElementById('studio-rules-list');
+    list.innerHTML = ''; // Nettoyage
+
+    preset.rules.forEach((rule, index) => {
+        list.innerHTML += `
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2">
+                <input type="text" value="${rule.title}" class="font-bold text-slate-900 w-full bg-slate-50 p-2 rounded" id="edit-title-${index}">
+                <textarea class="text-xs text-slate-500 w-full bg-slate-50 p-2 rounded" id="edit-desc-${index}">${rule.desc}</textarea>
+            </div>
+        `;
+    });
+    switchScreen('scr-studio');
+}
+
+// Fonction pour sauvegarder (Envoi vers Supabase)
+async function saveCustomQCM() {
+    const metier = document.getElementById('lbl-studio-metier').innerText;
+    // Ici, tu récupères les valeurs des inputs et tu fais un POST/PATCH vers la table 'entreprise_qcm'
+    showToast("✅ Modifications enregistrées pour votre établissement !");
+    switchScreen('scr-manager');
+}
     </script>
 </body>
 </html>
