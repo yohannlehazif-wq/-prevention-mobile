@@ -36,36 +36,74 @@
     </script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .screen { display: none; }
-        .screen.active { display: block; animation: smoothSlide 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes smoothSlide { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        canvas { touch-action: none; }
-        @media print {
-            body { background: white; }
-            .no-print { display: none !important; }
-            .print-view { display: block !important; background: white; color: black; border: none !important; box-shadow: none !important; }
-        }
-        body.employee-lockdown .no-employee { display: none !important; }
-        body.employee-lockdown header { pointer-events: none; cursor: default; }
-    </style>
+    :root {
+        /* Palette de couleurs RESTEV */
+        --restev-menthe: #2ec4b6;      /* Vert menthe dynamique */
+        --restev-blue: #0f4c81;        /* Bleu institutionnel */
+        --restev-purple: #6f42c1;      /* Pourpre pour les catégories */
+        --restev-rose: #e83e8c;        /* Rose / Fuchsia d'alerte ou thématique */
+        --restev-green: #28a745;       /* Vert sécurité */
+        --restev-gold: #ffc107;        /* Jaune doré / Prévention vigilance */
+    }
+
+    /* Utilitaires de background personnalisés */
+    .bg-restev-menthe { background-color: var(--restev-menthe); }
+    .bg-restev-blue { background-color: var(--restev-blue); }
+    .bg-restev-purple { background-color: var(--restev-purple); }
+    .bg-restev-rose { background-color: var(--restev-rose); }
+    .bg-restev-green { background-color: var(--restev-green); }
+    .bg-restev-gold { background-color: var(--restev-gold); }
+
+    /* Utilitaires de texte */
+    .text-restev-blue { color: var(--restev-blue); }
+    .text-restev-menthe { color: var(--restev-menthe); }
+</style>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
 
    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 px-4 py-3">
-    <div class="max-w-7xl mx-auto flex items-center justify-between">
-        <div class="flex items-center gap-3">
-            <img src="logo.png" alt="RESTEV 85 Logo" class="h-12 w-auto object-contain">
-            <span class="sr-only">RESTEV 85 - Passeport Prévention Connecté</span>
-        </div>
-        
-        <div class="flex items-center gap-2">
-            <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-medium">
-                Passeport Connecté
-            </span>
-        </div>
+   <!-- Exemple de tableau de bord PWA aux couleurs du RESTEV -->
+<div class="p-4 max-w-7xl mx-auto space-y-6">
+    
+    <!-- En-tête principal de l'App (Bleu RESTEV) -->
+    <div class="bg-restev-blue text-white p-6 rounded-2xl shadow-sm">
+        <h1 class="text-xl font-bold">Mon Passeport Prévention</h1>
+        <p class="text-xs text-slate-200 mt-1">Réseau Santé au Travail de Vendée</p>
     </div>
+
+    <!-- Grille de catégories / Modules (Menthe, Pourpre, Rose, Jaune Doré) -->
+    <div class="grid grid-cols-2 gap-4">
+        
+        <!-- Carte Vert Menthe -->
+        <div class="bg-white border-l-4 border-[var(--restev-menthe)] p-4 rounded-xl shadow-xs">
+            <span class="w-8 h-8 rounded-full bg-restev-menthe/10 text-restev-menthe flex items-center justify-center font-bold text-sm mb-2">✓</span>
+            <h3 class="font-semibold text-sm text-slate-800">Suivi Médical</h3>
+            <p class="text-xs text-slate-500 mt-1">À jour</p>
+        </div>
+
+        <!-- Carte Pourpre -->
+        <div class="bg-white border-l-4 border-[var(--restev-purple)] p-4 rounded-xl shadow-xs">
+            <span class="w-8 h-8 rounded-full bg-restev-purple/10 text-[var(--restev-purple)] flex items-center justify-center font-bold text-sm mb-2">⚙</span>
+            <h3 class="font-semibold text-sm text-slate-800">Formations</h3>
+            <p class="text-xs text-slate-500 mt-1">3 certifiées</p>
+        </div>
+
+        <!-- Carte Rose -->
+        <div class="bg-white border-l-4 border-[var(--restev-rose)] p-4 rounded-xl shadow-xs">
+            <span class="w-8 h-8 rounded-full bg-restev-rose/10 text-[var(--restev-rose)] flex items-center justify-center font-bold text-sm mb-2">⚠</span>
+            <h3 class="font-semibold text-sm text-slate-800">Risques Pro</h3>
+            <p class="text-xs text-slate-500 mt-1">Évaluation</p>
+        </div>
+
+        <!-- Carte Jaune Doré -->
+        <div class="bg-white border-l-4 border-[var(--restev-gold)] p-4 rounded-xl shadow-xs">
+            <span class="w-8 h-8 rounded-full bg-restev-gold/10 text-[var(--restev-gold)] flex items-center justify-center font-bold text-sm mb-2">★</span>
+            <h3 class="font-semibold text-sm text-slate-800">Vigilance</h3>
+            <p class="text-xs text-slate-500 mt-1">Ateliers Radon/AT</p>
+        </div>
+
+    </div>
+</div>
 </header>
 
     <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 text-white text-xs font-semibold py-3.5 px-5 rounded-2xl shadow-premium z-50 transition-all duration-300 transform translate-y-20 opacity-0 flex items-center space-x-2.5 border border-slate-800 no-print">
