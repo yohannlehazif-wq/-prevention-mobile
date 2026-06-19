@@ -36,42 +36,37 @@
     </script>
     
     <style>
-    :root {
-        /* Palette de couleurs RESTEV */
-        --restev-menthe: #2ec4b6;      /* Vert menthe dynamique */
-        --restev-blue: #0f4c81;        /* Bleu institutionnel */
-        --restev-purple: #6f42c1;      /* Pourpre pour les catégories */
-        --restev-rose: #e83e8c;        /* Rose / Fuchsia d'alerte ou thématique */
-        --restev-green: #28a745;       /* Vert sécurité */
-        --restev-gold: #ffc107;        /* Jaune doré / Prévention vigilance */
-    }
-    /* Utilitaires de background personnalisés */
-    .bg-restev-menthe { background-color: var(--restev-menthe); }
-    .bg-restev-blue { background-color: var(--restev-blue); }
-    .bg-restev-purple { background-color: var(--restev-purple); }
-    .bg-restev-rose { background-color: var(--restev-rose); }
-    .bg-restev-green { background-color: var(--restev-green); }
-    .bg-restev-gold { background-color: var(--restev-gold); }
-    /* Utilitaires de texte */
-    .text-restev-blue { color: var(--restev-blue); }
-    .text-restev-menthe { color: var(--restev-menthe); }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .screen { display: none; }
+        .screen.active { display: block; animation: smoothSlide 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes smoothSlide { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        canvas { touch-action: none; }
+        @media print {
+            body { background: white; }
+            .no-print { display: none !important; }
+            .print-view { display: block !important; background: white; color: black; border: none !important; box-shadow: none !important; }
+        }
+        body.employee-lockdown .no-employee { display: none !important; }
+        body.employee-lockdown header { pointer-events: none; cursor: default; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
-    
-    <!-- Header corrigé : Compact et fixe -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 px-4 py-3 shadow-sm flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-            <div class="w-8 h-8 bg-restev-blue text-white rounded-lg flex items-center justify-center font-bold">
-                <i class="fa-solid fa-shield-halved"></i>
+
+    <header class="bg-white/95 backdrop-blur-md border-b border-slate-100 py-3 px-4 shadow-sm no-print sticky top-0 z-40">
+        <div class="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center cursor-pointer transition hover:opacity-90" onclick="switchScreen('scr-home')">
+                <div class="flex items-center space-x-2">
+                    <div class="w-3 h-8 bg-restev-blue rounded-full"></div>
+                    <div class="w-3 h-8 bg-restev-magenta rounded-full transform translate-y-1"></div>
+                    <span class="text-xl font-extrabold text-slate-900 tracking-tight ml-2">RESTEV <span class="text-restev-blue">85</span></span>
+                </div>
             </div>
-            <div>
-                <h1 class="text-sm font-bold text-slate-900 leading-tight">RESTEV 85</h1>
-                <p class="text-[10px] text-slate-500 uppercase tracking-wider">Passeport Prévention</p>
+            <div class="flex items-center gap-2">
+                <span id="cloud-sync-badge" class="bg-emerald-50 text-emerald-600 border border-emerald-200/60 font-extrabold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider shadow-sm transition-all">
+                    <i class="fa-solid fa-rotate mr-1 animate-spin"></i> Cloud Connecté
+                </span>
             </div>
-        </div>
-        <div id="cloud-sync-badge" class="text-[10px] bg-slate-100 text-slate-600 px-2 py-1 rounded-full border border-slate-200 flex items-center">
-            <i class="fa-solid fa-wifi mr-1"></i> Mode Local
         </div>
     </header>
 
@@ -83,41 +78,9 @@
     <main class="max-w-5xl mx-auto p-4 md:p-6 flex-1 w-full flex flex-col justify-center">
         
         <section id="scr-home" class="screen active max-w-xl mx-auto w-full space-y-6 py-2">
-            
-            <!-- Tableau de bord PWA déplacé ici pour ne pas bloquer l'écran -->
-            <div class="space-y-4 mb-6">
-                <div class="bg-restev-blue text-white p-6 rounded-2xl shadow-sm bg-gradient-to-r from-restev-blue to-restev-blue-dark">
-                    <h1 class="text-xl font-bold">Mon Passeport Prévention</h1>
-                    <p class="text-xs text-slate-200 mt-1">Réseau Santé au Travail de Vendée</p>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-white border-l-4 border-teal-500 p-4 rounded-xl shadow-sm">
-                        <span class="w-8 h-8 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center font-bold text-sm mb-2"><i class="fa-solid fa-check"></i></span>
-                        <h3 class="font-semibold text-sm text-slate-800">Suivi Médical</h3>
-                        <p class="text-xs text-slate-500 mt-1">À jour</p>
-                    </div>
-                    <div class="bg-white border-l-4 border-purple-500 p-4 rounded-xl shadow-sm">
-                        <span class="w-8 h-8 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-sm mb-2"><i class="fa-solid fa-gear"></i></span>
-                        <h3 class="font-semibold text-sm text-slate-800">Formations</h3>
-                        <p class="text-xs text-slate-500 mt-1">3 certifiées</p>
-                    </div>
-                    <div class="bg-white border-l-4 border-pink-500 p-4 rounded-xl shadow-sm">
-                        <span class="w-8 h-8 rounded-full bg-pink-50 text-pink-600 flex items-center justify-center font-bold text-sm mb-2"><i class="fa-solid fa-triangle-exclamation"></i></span>
-                        <h3 class="font-semibold text-sm text-slate-800">Risques Pro</h3>
-                        <p class="text-xs text-slate-500 mt-1">Évaluation</p>
-                    </div>
-                    <div class="bg-white border-l-4 border-amber-400 p-4 rounded-xl shadow-sm">
-                        <span class="w-8 h-8 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center font-bold text-sm mb-2"><i class="fa-solid fa-star"></i></span>
-                        <h3 class="font-semibold text-sm text-slate-800">Vigilance</h3>
-                        <p class="text-xs text-slate-500 mt-1">Ateliers Radon/AT</p>
-                    </div>
-                </div>
-            </div>
-
             <div class="text-center space-y-2">
-                <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">Espaces de Connexion</h2>
-                <p class="text-sm text-slate-500 max-w-sm mx-auto">Veuillez sélectionner votre profil réglementaire.</p>
+                <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">Passeport Prévention & Risques</h1>
+                <p class="text-sm text-slate-500 max-w-sm mx-auto">Veuillez sélectionner votre espace de connexion réglementaire.</p>
             </div>
             
             <div class="space-y-4">
@@ -126,7 +89,7 @@
                         <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-lg"><i class="fa-solid fa-book-open"></i></div>
                         <div>
                             <h3 class="font-bold text-sm">Découvrir la démarche RESTEV 85</h3>
-                            <p class="text-[11px] text-slate-300">Comprendre l'application et les objectifs.</p>
+                            <p class="text-[11px] text-slate-300">Comprendre l'application, les enjeux réglementaires et les objectifs.</p>
                         </div>
                     </div>
                     <i class="fa-solid fa-chevron-right text-slate-400 group-hover:translate-x-1 transition-transform"></i>
@@ -138,7 +101,7 @@
                         <div class="p-3 bg-restev-gold/10 text-restev-gold rounded-xl text-lg group-hover:bg-restev-gold group-hover:text-white transition-all"><i class="fa-solid fa-chart-line"></i></div>
                         <div>
                             <h3 class="font-bold text-slate-900 text-xs flex items-center gap-1.5">Centre de Prévention RESTEV 85 <span class="bg-restev-gold text-slate-950 text-[9px] px-1.5 py-0.5 rounded font-black">PRO</span></h3>
-                            <p class="text-[11px] text-slate-400 mt-0.5">Statistiques départementales, cartographie DUERP.</p>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Statistiques départementales, cartographie DUERP inter-entreprises.</p>
                         </div>
                     </button>
                 </div>
@@ -150,14 +113,14 @@
                             <div class="p-3 bg-restev-blue/10 text-restev-blue rounded-xl text-lg group-hover:bg-restev-blue group-hover:text-white transition-all"><i class="fa-solid fa-user-tie"></i></div>
                             <div>
                                 <h3 class="font-bold text-slate-900 text-xs">1. Espace Établissement & Management</h3>
-                                <p class="text-[11px] text-slate-400 mt-0.5">Sélection de l'usine et génération QR Codes.</p>
+                                <p class="text-[11px] text-slate-400 mt-0.5">Sélection de l'usine, personnalisation du métier et QR Codes.</p>
                             </div>
                         </button>
                         <button onclick="accessEmployeeDirect()" class="bg-white p-4 rounded-xl border border-slate-200 hover:border-restev-magenta text-left flex items-center space-x-4 transition-all shadow-sm hover:shadow-md group">
                             <div class="p-3 bg-restev-magenta/10 text-restev-magenta rounded-xl text-lg group-hover:bg-restev-magenta group-hover:text-white transition-all"><i class="fa-solid fa-user-shield"></i></div>
                             <div>
                                 <h3 class="font-bold text-slate-900 text-xs">2. Interface d'Émargement Salarié</h3>
-                                <p class="text-[11px] text-slate-400 mt-0.5">Accès direct au livret d'accueil.</p>
+                                <p class="text-[11px] text-slate-400 mt-0.5">Accès direct au livret d'accueil et remontée terrain des anomalies.</p>
                             </div>
                         </button>
                     </div>
@@ -165,7 +128,6 @@
             </div>
         </section>
 
-        <!-- Les autres sections (scr-about, scr-direction, scr-auth) restent identiques à votre code initial -->
         <section id="scr-about" class="screen max-w-2xl mx-auto w-full space-y-6 py-2">
             <div class="flex items-center justify-between mb-4">
                 <button onclick="switchScreen('scr-home')" class="text-xs bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 px-4 py-2 rounded-xl font-bold transition shadow-sm">
@@ -173,16 +135,120 @@
                 </button>
                 <span class="bg-restev-blue/10 text-restev-blue px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider border border-restev-blue/20">Présentation du Projet</span>
             </div>
+
             <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-6 md:p-8 rounded-3xl text-white shadow-xl relative overflow-hidden">
                 <div class="absolute -right-10 -top-10 w-40 h-40 bg-restev-blue/20 rounded-full blur-3xl"></div>
                 <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight mb-2 relative z-10">Pourquoi cette application ?</h2>
                 <p class="text-slate-300 text-sm leading-relaxed relative z-10">Une solution digitale innovante développée par le RESTEV 85 pour répondre aux exigences du PST 2026-2030 et sécuriser les parcours d'intégration en entreprise.</p>
             </div>
-            <!-- Contenu about -->
+
+            <div class="space-y-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-3">
+                    <h3 class="text-sm font-extrabold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-scale-balanced text-restev-gold"></i> Contexte & Tolérance Zéro</h3>
+                    <p class="text-xs text-slate-600 leading-relaxed text-justify">
+                        Le monde du travail est marqué par le lancement du <strong>Plan Santé au Travail (PST) 2026-2030</strong>, qui affiche une politique de <em>« tolérance zéro »</em> face aux accidents graves et mortels. L'Inspection du Travail durcit drastiquement les contrôles sur l'obligation de formation dès le premier jour d'arrivée. Les formats d'accueil traditionnels (livrets papier) s'avèrent aujourd'hui obsolètes, peu consultés et inadaptés aux nouvelles générations.
+                    </p>
+                    <div class="p-3 bg-restev-blue/5 rounded-xl border border-restev-blue/10">
+                        <p class="text-xs text-restev-blue-dark leading-relaxed">
+                            <strong>Le constat terrain en Vendée :</strong> Tissu dense de TPE/PME, fort recours à l'intérim et aux saisonniers. Les entreprises manquent de temps pour formaliser l'accueil. En cas d'accident, l'employeur se retrouve démuni de preuves juridiques. D'où la création de cette solution automatisée.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-2">
+                        <h3 class="text-sm font-extrabold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-users text-restev-magenta"></i> Utilisateurs (Terrain)</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Les publics dits « vulnérables » ou surexposés aux risques lors d'une prise de poste : <strong>nouveaux arrivants, jeunes travailleurs (stagiaires, apprentis) et intérimaires.</strong>
+                        </p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-2">
+                        <h3 class="text-sm font-extrabold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-user-tie text-restev-blue"></i> Gestionnaires (Pilotage)</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Les <strong>chefs d'entreprises adhérentes, responsables de sites, managers de proximité et tuteurs</strong>, qui doivent encadrer l'arrivée du personnel de manière fluide.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+                    <h3 class="text-sm font-extrabold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-bullseye text-restev-teal"></i> Les 3 Objectifs Principaux</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start gap-3">
+                            <div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-[10px] shrink-0 mt-0.5">1</div>
+                            <p class="text-xs text-slate-600 leading-relaxed"><strong>Garantir la conformité réglementaire :</strong> Assurer que 100 % des nouveaux arrivants reçoivent et valident les consignes obligatoires avant d'accéder au poste.</p>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-[10px] shrink-0 mt-0.5">2</div>
+                            <p class="text-xs text-slate-600 leading-relaxed"><strong>Générer des preuves juridiques :</strong> Automatiser l'attestation d'émargement numérique (signée par le salarié et le tuteur) pour protéger l'employeur en cas de contrôle.</p>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-[10px] shrink-0 mt-0.5">3</div>
+                            <p class="text-xs text-slate-600 leading-relaxed"><strong>Diminuer l'accidentologie :</strong> Réduire le pic d'accidents du travail qui survient statistiquement au cours des 3 premiers mois d'embauche.</p>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
+                    <h3 class="text-sm font-extrabold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-shield-halved text-slate-700"></i> Cadre Légal & RGPD</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="bg-white p-3 rounded-xl border border-slate-100 text-xs text-slate-600 leading-relaxed">
+                            <strong>Passeport Prévention :</strong> Les données de validation sont formatées pour être exportables vers le Passeport Prévention officiel, devenu obligatoire.
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border border-slate-100 text-xs text-slate-600 leading-relaxed">
+                            <strong>RGPD & Privacy :</strong> Collecte stricte du minimum requis (Nom, Prénom, Entreprise). Aucune donnée médicale. Suppression après départ du salarié.
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border border-slate-100 text-xs text-slate-600 leading-relaxed sm:col-span-2">
+                            <strong>Prévention Participative :</strong> Module de "Signalement Flash" intégré pour remonter une situation dangereuse en 2 clics (avec photo et GPS), sans barrière managériale.
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="pt-2 pb-6">
                 <button onclick="switchScreen('scr-home')" class="w-full bg-slate-900 hover:bg-slate-800 text-white p-4 rounded-xl text-sm font-bold shadow-md transition-all text-center">
                     J'ai compris, accéder à l'application
                 </button>
+            </div>
+        </section>
+
+        <section id="scr-direction" class="screen space-y-6">
+            <div class="bg-gradient-to-br from-slate-900 via-restev-blue-dark to-slate-950 p-5 rounded-3xl text-white shadow-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div class="space-y-1">
+                    <span class="bg-restev-gold text-slate-950 font-black text-[9px] px-2 py-0.5 rounded uppercase tracking-wider">Console d'Audit RESTEV</span>
+                    <h2 class="text-xl md:text-2xl font-extrabold tracking-tight">Statistiques de Prévention</h2>
+                </div>
+                <button onclick="switchScreen('scr-home')" class="text-xs bg-white/10 hover:bg-white/20 px-3.5 py-2 rounded-xl font-bold transition border border-white/10">
+                    <i class="fa-solid fa-arrow-left mr-1"></i> Quitter la Console
+                </button>
+            </div>
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-premium flex items-center space-x-3.5">
+                    <div class="p-3 bg-restev-blue/10 text-restev-blue rounded-xl text-lg"><i class="fa-solid fa-building"></i></div>
+                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase">Établissements</span><span id="lbl-dir-adherents" class="text-xl font-extrabold text-slate-900">0</span></div>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-premium flex items-center space-x-3.5">
+                    <div class="p-3 bg-restev-teal/10 text-restev-teal rounded-xl text-lg"><i class="fa-solid fa-id-card-clip"></i></div>
+                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase">Passeports Actifs</span><span id="lbl-dir-passports" class="text-xl font-extrabold text-slate-900">0</span></div>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-premium flex items-center space-x-3.5">
+                    <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl text-lg"><i class="fa-solid fa-shield-halved"></i></div>
+                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase">Conformité SST</span><span class="text-xl font-extrabold text-emerald-600">100%</span></div>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-premium flex items-center space-x-3.5">
+                    <div class="p-3 bg-red-50 text-red-600 rounded-xl text-lg"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase">Alertes Cloud</span><span id="lbl-dir-alert-count" class="text-xl font-extrabold text-red-600">0</span></div>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-premium lg:col-span-2 space-y-4">
+                    <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-chart-pie text-restev-blue"></i> Analyse Globale des Risques Remontés</h3>
+                    <div class="h-60 relative"><canvas id="chart-restev-risks"></canvas></div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-premium flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-xs font-extrabold text-slate-900 uppercase tracking-wider mb-3 flex items-center gap-1.5"><i class="fa-solid fa-bolt text-restev-magenta"></i> Flux d'activité</h3>
+                        <div id="direction-activity-feed" class="space-y-3 text-[11px] max-h-60 overflow-y-auto pr-1"></div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -206,20 +272,19 @@
                             <option value="Garage Central">🛠️ Garage Central</option>
                         </select>
                     </div>
-                    <button onclick="handleManagerLogin()" class="w-full bg-gradient-to-r from-restev-blue to-restev-blue-dark text-white py-3 rounded-xl text-xs font-bold shadow-md hover:opacity-95 transition">Valider et Ouvrir la Console</button>
+                    <button onclick="handleManagerLogin()" class="w-full bg-gradient-to-r from-restev-blue to-restev-blue-dark text-white py-3 rounded-xl text-xs font-bold shadow-md hover:opacity-95 transition">Valider et Ouvrir la Console Manager</button>
                 </div>
             </div>
         </section>
 
-        <!-- Correction de la section Manager -->
         <section id="scr-manager" class="screen space-y-6">
             <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-premium flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div class="flex items-center space-x-2.5">
                     <div class="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></div>
-                    <h2 class="text-xs font-extrabold text-slate-900">Console Manager : <span id="lbl-manager-comp-name" class="text-restev-blue"></span></h2>
+                    <h2 class="text-xs font-extrabold text-slate-900">Console Manager Adhérent : <span id="lbl-manager-comp-name" class="text-restev-blue"></span></h2>
                 </div>
                 <button onclick="switchScreen('scr-home')" class="text-xs bg-slate-50 hover:bg-slate-100 font-bold px-3.5 py-2 text-slate-600 rounded-xl transition">
-                    <i class="fa-solid fa-right-from-bracket mr-1"></i> Déconnexion
+                    <i class="fa-solid fa-right-from-bracket mr-1"></i> Déconnexion Usine
                 </button>
             </div>
             
@@ -241,18 +306,25 @@
                             <span class="font-bold text-slate-900 block">Risques prioritaires injectés :</span>
                             <p id="manager-activity-preview" class="italic">Chargement des paramètres...</p>
                         </div>
-
-                        <!-- Intégration propre du bouton Studio QCM -->
-                        <div class="pt-4 mt-4 border-t border-slate-100">
-                            <h3 class="font-bold text-xs text-slate-700 mb-2">Actions sur ce métier :</h3>
-                            <button onclick="openStudio(document.getElementById('manager-activity-select').value)" 
-                                    class="w-full flex items-center justify-center gap-2 bg-slate-800 text-white py-2.5 rounded-xl text-xs font-bold hover:bg-slate-700 transition">
-                                <span><i class="fa-solid fa-gear"></i> Personnaliser le QCM</span>
-                            </button>
-                        </div>
                     </div>
+<!-- À l'intérieur de ta section scr-manager -->
 
-                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-premium space-y-4">
+<div class="mt-6 p-4 border-t border-slate-200">
+  <h3 class="font-bold text-sm text-slate-700">Actions sur ce métier :</h3>
+ <!-- Voici le bouton qui fait le lien -->
+ <button onclick="openStudio('BTP')" class="mt-2 w-full flex items-center justify-center gap-2 bg-slate-800 text-white py-3 rounded-xl font-bold">
+ <span>⚙️ Personnaliser le QCM</span>
+ </button>
+</div> 
+<div class="mt-6 p-4 border-t border-slate-200">
+        <h3 class="font-bold text-sm text-slate-700">Actions sur ce métier :</h3>
+        <button onclick="openStudio(document.getElementById('manager-activity-select').value)" class="mt-2 w-full flex items-center justify-center gap-2 bg-slate-800 text-white py-3 rounded-xl font-bold">
+            <span>⚙️ Personnaliser le QCM</span>
+        </button>
+    </div>
+</div>
+
+                  <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-premium space-y-4">
                         <div class="flex items-center space-x-2 text-restev-magenta font-extrabold text-xs uppercase tracking-wider">
                             <i class="fa-solid fa-qrcode text-sm"></i>
                             <h3>2. Créer un Accueil SST Salarié</h3>
@@ -273,6 +345,21 @@
                             <canvas id="qr-canvas" class="mx-auto bg-white p-1 rounded-lg shadow-sm"></canvas>
                         </div>
                     </div>
+                    
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-premium space-y-3">
+                        <div class="flex items-center space-x-2 text-restev-blue font-extrabold text-xs uppercase tracking-wider">
+                            <i class="fa-solid fa-map-location-dot"></i>
+                            <h3>3. Cartographie des Ateliers</h3>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="text" id="txt-new-zone" placeholder="Ex: Ligne 4, Réserve..." class="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-restev-blue">
+                            <button onclick="registerCustomZone()" class="bg-slate-950 hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow">Ajouter</button>
+                        </div>
+                        <div class="space-y-1.5 pt-2">
+                            <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Ateliers enregistrés :</span>
+                            <div id="manager-zones-list" class="flex flex-wrap gap-2"></div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-premium flex flex-col justify-between">
@@ -284,26 +371,13 @@
             </div>
         </section>
 
-        <!-- Studio d'édition QCM -->
-        <section id="scr-studio" class="screen max-w-2xl mx-auto w-full p-4 space-y-6">
-            <div class="flex items-center justify-between">
-                <h2 class="text-lg font-extrabold text-slate-900">Studio : <span id="lbl-studio-metier">...</span></h2>
-                <button onclick="switchScreen('scr-manager')" class="text-xs bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-xl font-bold transition">Retour</button>
-            </div>
-            <div id="studio-rules-list" class="space-y-4">
-            </div>
-            <button onclick="saveCustomQCM()" class="w-full bg-restev-blue text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-restev-blue-dark transition">
-                Enregistrer les modifications pour mon entreprise
-            </button>
-        </section>
-
-        <!-- Reste du code Salarié, Signalement et JavaScript tel qu'à l'origine -->
         <section id="scr-employee" class="screen max-w-md mx-auto w-full space-y-4">
             <div class="bg-gradient-to-br from-slate-900 via-restev-blue-dark to-slate-950 text-white p-6 rounded-3xl shadow-lg space-y-2 relative overflow-hidden">
                 <span class="bg-restev-gold text-slate-950 text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider">Session Salarié Verrouillée</span>
                 <h2 class="text-lg font-extrabold tracking-tight" id="lbl-emp-welcome">Bonjour</h2>
                 <p class="text-xs text-slate-300" id="lbl-emp-company">Chargement des données...</p>
             </div>
+            
             <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-premium space-y-3">
                 <button onclick="switchScreen('scr-onboarding-1')" class="w-full bg-slate-50/70 p-4 border border-slate-100 rounded-xl text-left flex items-center space-x-3 hover:bg-slate-100 transition group">
                     <div class="w-9 h-9 bg-restev-blue/10 text-restev-blue rounded-xl flex items-center justify-center text-base group-hover:bg-restev-blue group-hover:text-white transition-all"><i class="fa-solid fa-book-open-reader"></i></div>
@@ -313,10 +387,157 @@
                     </div>
                     <i class="fa-solid fa-chevron-right text-slate-300 text-xs"></i>
                 </button>
+                
+                <button onclick="switchScreen('scr-report')" class="w-full bg-slate-50/70 p-4 border border-slate-100 rounded-xl text-left flex items-center space-x-3 hover:bg-slate-100 transition group">
+                    <div class="w-9 h-9 bg-restev-magenta/10 text-restev-magenta rounded-xl flex items-center justify-center text-base group-hover:bg-restev-magenta group-hover:text-white transition-all"><i class="fa-solid fa-camera"></i></div>
+                    <div class="flex-1">
+                        <p class="text-xs font-bold text-slate-800">2. Signaler une Situation Dangereuse</p>
+                        <p class="text-[10px] text-slate-400 mt-0.5">Remontée immédiate d'une anomalie.</p>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-300 text-xs"></i>
+                </button>
             </div>
             <button onclick="switchScreen('scr-home')" class="no-employee w-full text-center text-xs text-slate-400 hover:text-slate-600 font-semibold py-2 transition"><i class="fa-solid fa-arrow-left mr-1"></i> Quitter</button>
         </section>
 
+        <section id="scr-report" class="screen max-w-md mx-auto w-full bg-white p-5 rounded-3xl border border-slate-100 shadow-premium space-y-4">
+            <h3 class="text-base font-extrabold text-slate-900 flex items-center space-x-2">
+                <i class="fa-solid fa-triangle-exclamation text-restev-magenta animate-pulse"></i> <span>Signalement Incident / Danger</span>
+            </h3>
+            <div class="p-2 bg-slate-50 border border-slate-100 rounded-xl text-center">
+                <p id="geo-status" class="text-[11px] font-semibold text-slate-600">Recherche du point GPS...</p>
+            </div>
+            <div id="map" class="h-44 w-full rounded-2xl border border-slate-200 shadow-inner bg-slate-50 z-0"></div>
+            <div class="space-y-1">
+                <label class="block text-xs font-bold text-slate-700">Preuve terrain (Photo) :</label>
+                <div class="flex flex-col items-center justify-center w-full border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50 p-3 relative min-h-[110px] hover:bg-slate-100/50 transition">
+                    <input type="file" accept="image/*" capture="environment" onchange="processRealPhoto(this)" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
+                    <div id="photo-placeholder" class="text-center space-y-1.5">
+                        <div class="w-9 h-9 bg-white shadow-sm rounded-xl flex items-center justify-center text-slate-500 mx-auto border border-slate-100"><i class="fa-solid fa-camera text-sm text-restev-blue"></i></div>
+                        <span class="block text-[11px] font-bold text-slate-600">Prendre une photo</span>
+                    </div>
+                    <img id="photo-preview" class="w-full h-32 object-cover rounded-xl hidden border relative z-20">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="space-y-1">
+                    <label class="block text-xs font-bold text-slate-700">Type de Risque :</label>
+                    <select id="risk-category" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none"></select>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-bold text-slate-700">Atelier / Secteur :</label>
+                    <select id="risk-location" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-restev-blue focus:outline-none"></select>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="space-y-1">
+                    <label class="block text-xs font-bold text-slate-700">Gravité perçue :</label>
+                    <select id="risk-level" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-red-600 focus:outline-none">
+                        <option value="Critique 🔴">Immédiat (Danger)</option>
+                        <option value="Modéré 🟠">Sous 24 Heures</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-bold text-slate-700">Priorité DUERP :</label>
+                    <select id="risk-duerp" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none">
+                        <option value="Fréquent / Majeur">Fréquent / Majeur</option>
+                        <option value="Rare / Mineur">Rare / Mineur</option>
+                    </select>
+                </div>
+            </div>
+            <div class="space-y-1">
+                <label class="block text-xs font-bold text-slate-700">Description :</label>
+                <textarea id="risk-desc" rows="2" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none" placeholder="Détails..."></textarea>
+            </div>
+            <div class="grid grid-cols-2 gap-3 pt-1">
+                <button type="button" onclick="switchScreen('scr-employee')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 py-2.5 rounded-xl text-xs font-bold transition">Retour</button>
+                <button type="button" onclick="submitRealRiskReport()" class="bg-restev-magenta text-white py-2.5 rounded-xl text-xs font-bold shadow-md hover:opacity-95 transition">Transmettre</button>
+            </div>
+        </section>
+
+        <section id="scr-onboarding-1" class="screen max-w-md mx-auto w-full bg-white p-5 rounded-3xl border border-slate-100 shadow-premium space-y-4">
+            <h3 class="text-base font-extrabold text-slate-900">Charte Interne de Prévention</h3>
+            <div id="employee-rules-container" class="space-y-2.5 text-xs text-slate-600 leading-relaxed"></div>
+            
+            <div class="border-t border-slate-100 pt-4 space-y-2.5">
+                <label class="block text-xs font-bold text-slate-700">Vérification de compréhension :</label>
+                <label class="flex items-center space-x-3 bg-slate-50 p-3 rounded-xl text-xs cursor-pointer hover:bg-slate-100/70 transition">
+                    <input type="radio" name="q1" value="ok" checked class="text-restev-blue"> 
+                    <span class="font-semibold text-slate-800">Je m'engage à respecter scrupuleusement ces consignes.</span>
+                </label>
+            </div>
+            <div class="grid grid-cols-2 gap-3 border-t border-slate-100 pt-4">
+                <button onclick="switchScreen('scr-employee')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 py-2.5 rounded-xl text-xs font-bold transition">Retour</button>
+                <button onclick="switchScreen('scr-signature')" class="bg-restev-blue text-white py-2.5 rounded-xl text-xs font-bold shadow transition hover:opacity-95">Valider</button>
+            </div>
+        </section>
+
+        <section id="scr-signature" class="screen max-w-md mx-auto w-full bg-white p-5 rounded-3xl border border-slate-100 shadow-premium space-y-4">
+            <h3 class="text-base font-extrabold text-slate-900 text-center">Émargement Électronique</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1 tracking-wider">Signature du Salarié :</label>
+                    <div class="border border-slate-200 rounded-xl bg-slate-50 overflow-hidden">
+                        <canvas id="canv-employee" class="w-full bg-slate-50" height="90"></canvas>
+                    </div>
+                    <button type="button" onclick="clearCanvas('canv-employee')" class="text-[10px] text-slate-400 font-semibold underline mt-1">Effacer</button>
+                </div>
+                <div>
+                    <input type="text" id="tutor-name" value="M. Vigneron (Référent HSE)" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs mb-1.5 font-bold focus:outline-none">
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1 tracking-wider">Signature du Responsable :</label>
+                    <div class="border border-slate-200 rounded-xl bg-slate-50 overflow-hidden">
+                        <canvas id="canv-tutor" class="w-full bg-slate-50" height="90"></canvas>
+                    </div>
+                    <button type="button" onclick="clearCanvas('canv-tutor')" class="text-[10px] text-slate-400 font-semibold underline mt-1">Effacer</button>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3 border-t border-slate-100 pt-4">
+                <button type="button" onclick="switchScreen('scr-onboarding-1')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 py-2.5 rounded-xl text-xs font-bold transition">Retour</button>
+                <button type="button" onclick="finalizeOfficialAttestation()" class="bg-restev-teal text-white py-2.5 rounded-xl text-xs font-bold shadow-md hover:opacity-95 transition">Générer l'Attestation</button>
+            </div>
+        </section>
+
+        <section id="scr-attestation" class="screen max-w-lg mx-auto w-full bg-white p-6 rounded-3xl shadow-premium border-2 border-restev-teal space-y-6">
+            <div class="border-2 border-slate-900 p-5 rounded-xl space-y-4 text-xs bg-white print-view" id="print-area">
+                <h4 class="text-center font-extrabold uppercase text-slate-900 text-xs tracking-wider">Attestation Individuelle de Formation Générale à la Sécurité</h4>
+                <div class="grid grid-cols-2 gap-3 text-[11px] pt-1">
+                    <p><strong>Salarié :</strong> <span id="lbl-view-emp">...</span></p>
+                    <p><strong>Établissement :</strong> <span id="lbl-view-company">...</span></p>
+                    <p><strong>Statut :</strong> <span id="lbl-view-status" class="text-restev-blue font-bold">...</span></p>
+                    <p><strong>Formateur :</strong> <span id="lbl-view-tutor">...</span></p>
+                </div>
+                <div class="grid grid-cols-2 gap-4 pt-3 border-t border-slate-100">
+                    <div class="text-center">
+                        <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Visa Travailleur :</span>
+                        <img id="img-render-emp" class="h-12 mx-auto object-contain bg-slate-50 border rounded p-1">
+                    </div>
+                    <div class="text-center">
+                        <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">Visa Responsable :</span>
+                        <img id="img-render-tutor" class="h-12 mx-auto object-contain bg-slate-50 border rounded p-1">
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 gap-2 no-print">
+                <button onclick="window.print()" class="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 shadow transition">
+                    <i class="fa-solid fa-print"></i> <span>Imprimer</span>
+                </button>
+                <button onclick="switchScreen('scr-home')" class="no-employee w-full bg-slate-50 text-slate-500 py-2.5 rounded-xl text-xs font-bold border text-center transition hover:bg-slate-100">Retourner au Portail</button>
+            </div>
+        </section>
+        
+        <section id="scr-studio" class="screen max-w-2xl mx-auto w-full p-4 space-y-6">
+    <div class="flex items-center justify-between">
+        <h2 class="text-lg font-extrabold text-slate-900">Studio : <span id="lbl-studio-metier">...</span></h2>
+        <button onclick="switchScreen('scr-manager')" class="text-xs bg-slate-100 px-4 py-2 rounded-xl font-bold">Fermer</button>
+    </div>
+
+    <div id="studio-rules-list" class="space-y-4">
+        </div>
+
+    <button onclick="saveCustomQCM()" class="w-full bg-restev-blue text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-restev-blue-dark transition">
+        Enregistrer les modifications pour mon entreprise
+    </button>
+</section>
     </main>
 
     <script>
