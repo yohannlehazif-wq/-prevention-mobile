@@ -430,7 +430,27 @@
             </div>
             <div class="grid grid-cols-2 gap-3 border-t border-slate-100 pt-4">
                 <button onclick="switchScreen('scr-employee')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 py-2.5 rounded-xl text-xs font-bold transition">Retour</button>
-                <button onclick="switchScreen('scr-signature')" class="bg-restev-blue text-white py-2.5 rounded-xl text-xs font-bold shadow transition hover:opacity-95">Valider</button>
+                <button onclick="goToEPICheckScreen()" class="bg-restev-blue text-white py-2.5 rounded-xl text-xs font-bold shadow transition hover:opacity-95">Valider</button>
+            </div>
+        </section>
+
+        <section id="scr-epi-check" class="screen max-w-md mx-auto w-full bg-white p-5 rounded-3xl border border-slate-100 shadow-premium space-y-4">
+            <div class="space-y-1">
+                <span class="bg-restev-gold text-slate-950 text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider">Obligation de l'Employeur</span>
+                <h3 class="text-base font-extrabold text-slate-900">Remise des Équipements (EPI)</h3>
+                <p class="text-[11px] text-slate-400">Cochez les équipements qui vous ont été physiquement remis pour votre poste :</p>
+            </div>
+
+            <div id="employee-epi-container" class="space-y-2">
+                </div>
+
+            <div class="p-3 bg-amber-50 rounded-xl border border-amber-200/60 text-[11px] text-amber-800 leading-relaxed">
+                <i class="fa-solid fa-triangle-exclamation mr-1"></i> <strong>Engagement :</strong> En validant, vous reconnaissez avoir reçu ces équipements en parfait état et vous vous engagez à les porter rigoureusement.
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 border-t border-slate-100 pt-4">
+                <button onclick="switchScreen('scr-onboarding-1')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 py-2.5 rounded-xl text-xs font-bold transition">Retour</button>
+                <button onclick="validateEPICheck()" class="bg-restev-blue text-white py-2.5 rounded-xl text-xs font-bold shadow transition hover:opacity-95">Confirmer & Signer</button>
             </div>
         </section>
 
@@ -454,7 +474,7 @@
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3 border-t border-slate-100 pt-4">
-                <button type="button" onclick="switchScreen('scr-onboarding-1')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 py-2.5 rounded-xl text-xs font-bold transition">Retour</button>
+                <button type="button" onclick="goToEPICheckScreen()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 py-2.5 rounded-xl text-xs font-bold transition">Retour</button>
                 <button type="button" onclick="finalizeOfficialAttestation()" class="bg-restev-teal text-white py-2.5 rounded-xl text-xs font-bold shadow-md hover:opacity-95 transition">Générer l'Attestation</button>
             </div>
         </section>
@@ -467,6 +487,7 @@
                     <p><strong>Établissement :</strong> <span id="lbl-view-company">...</span></p>
                     <p><strong>Statut :</strong> <span id="lbl-view-status" class="text-restev-blue font-bold">...</span></p>
                     <p><strong>Formateur :</strong> <span id="lbl-view-tutor">...</span></p>
+                    <p class="col-span-2 mt-1 border-t border-slate-100 pt-1"><strong>EPI Remis & Certifiés :</strong> <span id="lbl-view-epi" class="italic text-slate-600">...</span></p>
                 </div>
                 <div class="grid grid-cols-2 gap-4 pt-3 border-t border-slate-100">
                     <div class="text-center">
@@ -509,6 +530,7 @@
             "Général (Bureau & Administratif)": {
                 icon: " 💻 ",
                 categories: ["Risque lié à l'écran (Fatigue visuelle)", "Troubles Musculosquelettiques (TMS) / Posture", "Risque Électrique", "Chute de plain-pied / Câbles", "Risques Psychosociaux (RPS)"],
+                epi: ["Aucun équipement spécifique requis"],
                 rules: [
                     { title: "Règle 1 : Posture au poste de travail", desc: "Ajustez la hauteur de votre siège et de votre écran. Faites des pauses visuelles régulières.", color: "border-restev-blue" },
                     { title: "Règle 2 : Déplacements internes", desc: "Maintenez les zones de circulation dégagées de tout câble ou matériel.", color: "border-restev-teal" }
@@ -517,6 +539,7 @@
             "Bâtiment & Travaux Publics (BTP)": {
                 icon: " 🏗️ ",
                 categories: ["Chute de Hauteur", "Heurt par Engin de Chantier", "Non-port du Casque / EPI", "Chute d'Objets / Échafaudage", "Bruit / Poussières"],
+                epi: ["Casque de chantier (NF EN 397) 🪖", "Chaussures de sécurité S3 🥾", "Gilet haute visibilité Classe 2 🦺", "Gants de protection mécanique 🧤"],
                 rules: [
                     { title: "Règle 1 : Protection Crânienne & Antichute", desc: "Casque attaché et harnais obligatoire sur zones surélevées sans protection collective.", color: "border-amber-500" },
                     { title: "Règle 2 : Balisage & Coactivité", desc: "Interdiction absolue de circuler sous les charges suspendues.", color: "border-red-500" }
@@ -525,6 +548,7 @@
             "Logistique & Transport": {
                 icon: " 📦 ",
                 categories: ["Chute de Quai", "Coactivité Piétons / Chariots", "Défaut d'arrimage", "Manutention Manuelle", "Stress / Délais"],
+                epi: ["Chaussures de sécurité avec embout 🥾", "Gilet haute visibilité 🦺", "Gants de manutention antidérapants 🧤"],
                 rules: [
                     { title: "Règle 1 : Haute Visibilité", desc: "Gilet classe 2 et chaussures de sécurité obligatoires sur les quais et zones de stockage.", color: "border-restev-blue" },
                     { title: "Règle 2 : Priorité Piétons", desc: "Circulation des chariots limitée à 8 km/h. Priorité systématique aux piétons.", color: "border-restev-gold" }
@@ -533,6 +557,7 @@
             "Agro-Alimentaire": {
                 icon: " 🍏 ",
                 categories: ["Glissade / Sol Humide", "Coupure / Outils tranchants", "Risque Thermique (Chambre froide)", "Hygiène / Contamination", "Mouvement répétitif"],
+                epi: ["Chaussures antidérapantes SRC 🥾", "Blouse de protection 🧥", "Charlotte / Coiffe d'hygiène 🧼", "Gants jetables contact alimentaire 🧤"],
                 rules: [
                     { title: "Règle 1 : Tenue d'Hygiène & Sécurité", desc: "Charlotte, blouse et chaussures antidérapantes obligatoires en zone de production.", color: "border-restev-teal" },
                     { title: "Règle 2 : Sol propre", desc: "Tout déversement accidentel doit être immédiatement nettoyé et la zone signalée.", color: "border-sky-500" }
@@ -541,6 +566,7 @@
             "Santé, Soins & Services à la Personne": {
                 icon: " 🏥 ",
                 categories: ["Accident d'Exposition au Sang (AES)", "Manutention de Patients (Lombaires)", "Risque Infectieux / Biologique", "Agression / Incivilité", "Produits chimiques (Désinfection)"],
+                epi: ["Blouse / Tunique médicale 🥼", "Chaussures de protection hospitalières 👟", "Gants en nitrile à usage unique 🧤", "Masque de protection chirurgical 😷"],
                 rules: [
                     { title: "Règle 1 : Prévention Biologique", desc: "Port des gants obligatoire lors des soins. Respect strict des protocoles de tri des DASRI.", color: "border-restev-magenta" },
                     { title: "Règle 2 : Manutention", desc: "Utilisation prioritaire des lève-personnes et draps de glisse pour mobiliser les patients.", color: "border-restev-blue" }
@@ -549,9 +575,55 @@
             "Métallurgie & Industrie Lourde": {
                 icon: " ⚙️ ",
                 categories: ["Brûlure / Projections", "Bruit excessif", "Manutention mécanique", "Inhalation Fumées / Gaz", "Machine en mouvement / Happement"],
+                epi: ["Lunettes de protection (Impact) 🥽", "Chaussures de sécurité montantes S3 🥾", "Casque anti-bruit ou bouchons moulés 🎧", "Vêtements de travail ignifugés 🧥", "Gants de manutention lourde 🧤"],
                 rules: [
                     { title: "Règle 1 : EPI Spécifiques", desc: "Bouchons d'oreilles, lunettes de protection et vêtements ignifugés exigés dans l'atelier.", color: "border-orange-600" },
                     { title: "Règle 2 : Consignation", desc: "Aucune intervention sur machine sans procédure de consignation électrique et mécanique.", color: "border-red-600" }
+                ]
+            },
+            "Bois, Menuiserie & Ameublement": {
+                icon: " 🪵 ",
+                categories: ["Inhalation de Poussières", "Coupure / Outils Tranchants", "Machine en mouvement / Happement", "Troubles Musculosquelettiques (TMS)", "Bruit Élevé"],
+                epi: ["Lunettes de protection enveloppantes 🥽", "Masque antipoussière FFP3 😷", "Chaussures de sécurité anti-perforation 🥾", "Casque ou bouchons anti-bruit 🎧"],
+                rules: [
+                    { title: "Règle 1 : Captage des poussières", desc: "Assurez-vous que l'aspiration centralisée ou individuelle est active avant tout usinage.", color: "border-amber-700" },
+                    { title: "Règle 2 : Changement d'outil & Consignation", desc: "Interdiction stricte d'ajuster une lame ou une fraise sans coupure d'énergie avérée.", color: "border-red-600" }
+                ]
+            },
+            "Hôtellerie, Restauration & Tourisme": {
+                icon: " 🛎️ ",
+                categories: ["Brûlure / Projections Thermiques", "Glissade / Sol Humide", "Coupure (Cuisine)", "Rythme de travail / Rush", "Manutention de charges (Fûts, caisses)"],
+                epi: ["Chaussures de cuisine de sécurité antidérapantes 🥾", "Tablier de protection thermique 🦺", "Gants anti-chaleur haute température 🧤"],
+                rules: [
+                    { title: "Règle 1 : Déplacements sécurisés", desc: "Port des chaussures antidérapantes obligatoire. Signalez et essuyez immédiatement tout produit versé au sol.", color: "border-restev-teal" },
+                    { title: "Règle 2 : Postes chauds", desc: "Utilisez systématiquement les gants anti-chaleur pour manipuler les plaques, ovens et bains de friture.", color: "border-orange-500" }
+                ]
+            },
+            "Agriculture, Viticulture & Espaces Verts": {
+                icon: " 🚜 ",
+                categories: ["Retournement d'Engin / Tracteur", "Risque Chimique (Phytosanitaire)", "Outils rotatifs / Prise de force", "Risque Biologique / Zoonoses", "Exposition Solaire / Déshydratation"],
+                epi: ["Chaussures ou bottes de sécurité S5 🥾", "Gants de protection phytosanitaire (EN 374) 🧤", "Lunettes de protection 🥽", "Masque de protection respiratoire A2P3 😷"],
+                rules: [
+                    { title: "Règle 1 : Travail sur machines", desc: "Ne montez/descendez jamais d'un engin en mouvement. Les carters de protection des cardans doivent être en place.", color: "border-emerald-600" },
+                    { title: "Règle 2 : Protections individuelles", desc: "Port du masque et des gants spécifiques obligatoire lors de la manipulation de produits de traitement.", color: "border-restev-blue" }
+                ]
+            },
+            "Commerce & Grande Distribution": {
+                icon: " 🛒 ",
+                categories: ["Manutention répétitive / Posture", "Heurt avec transpalette", "Chute d'objets (Stockage en hauteur)", "Coupure (Cutter / Déballage)", "Incivilités / Public"],
+                epi: ["Chaussures de sécurité légères 🥾", "Gants de manutention fine et anti-coupure 🧤"],
+                rules: [
+                    { title: "Règle 1 : Gestes et Postures", desc: "Utilisez les aides mécaniques (transpalettes) pour les charges lourdes et pliez les genoux pour ramasser au sol.", color: "border-restev-blue" },
+                    { title: "Règle 2 : Sécurité en mise en rayon", desc: "Interdiction d'utiliser des palettes ou des cartons comme marchepied. Utilisez un escabeau conforme.", color: "border-restev-gold" }
+                ]
+            },
+            "Automotive / Garages & Réparation Meca": {
+                icon: " 🚗 ",
+                categories: ["Chute de véhicule (Pont élévateur)", "Inhalation de vapeurs / Solvants", "Écrasement / Coincement", "Risque Électrique (Véhicules Hybrides/EV)", "Incendie / Explosion"],
+                epi: ["Chaussures de sécurité hydrofuges 🥾", "Lunettes de protection mécanique 🥽", "Gants en nitrile épais pour mécaniciens 🧤", "Écran facial de meulage 🛡️"],
+                rules: [
+                    { title: "Règle 1 : Travail sous levage", desc: "Vérifiez le bon positionnement des tampons du pont avant de lever le véhicule. Enclenchez les crans mécaniques.", color: "border-red-600" },
+                    { title: "Règle 2 : Ventilation active", desc: "Activez l'aspiration des gaz d'échappement dès qu'un moteur thermique tourne dans l'atelier.", color: "border-slate-700" }
                 ]
             }
         };
@@ -559,7 +631,7 @@
         let appState = {
             currentSelectedCompany: "",
             currentActivity: "Général (Bureau & Administratif)",
-            currentEmployeeProfile: { name: "", status: "Parcours Standard" },
+            currentEmployeeProfile: { name: "", status: "Parcours Standard", deliveredEPI: [] },
             risksDB: [],
             totalPassportsCount: 0,
             corporateZonesDB: {
@@ -569,7 +641,7 @@
             base64UploadedPhoto: ""
         };
 
-        const EMPLOYEE_SECURE_SCREENS = ['scr-employee', 'scr-report', 'scr-onboarding-1', 'scr-signature', 'scr-attestation'];
+        const EMPLOYEE_SECURE_SCREENS = ['scr-employee', 'scr-report', 'scr-onboarding-1', 'scr-epi-check', 'scr-signature', 'scr-attestation'];
         let myLeafletMap = null; let myMapMarker = null; let chartInstance = null; let isDrawing = false; let activeCanvas = {}; let ctxCanvas = {};
         
         function buildActivityDropdown() {
@@ -614,6 +686,46 @@
             `).join('');
         }
         
+        function goToEPICheckScreen() {
+            const container = document.getElementById('employee-epi-container');
+            if (!container) return;
+
+            const preset = METIER_PRESETS[appState.currentActivity];
+            if (!preset || !preset.epi || preset.epi.length === 0) {
+                switchScreen('scr-signature');
+                return;
+            }
+
+            container.innerHTML = preset.epi.map((epiName, index) => `
+                <label class="flex items-center space-x-3 bg-slate-50 p-3 rounded-xl text-xs cursor-pointer hover:bg-slate-100/80 transition border border-slate-200/60">
+                    <input type="checkbox" id="epi-${index}" value="${epiName}" class="w-4 h-4 text-restev-blue rounded border-slate-300 focus:ring-restev-blue" checked> 
+                    <span class="font-bold text-slate-800">${epiName}</span>
+                </label>
+            `).join('');
+
+            switchScreen('scr-epi-check');
+        }
+
+        function validateEPICheck() {
+            const preset = METIER_PRESETS[appState.currentActivity];
+            let selectedEPIs = [];
+            
+            preset.epi.forEach((_, index) => {
+                const checkbox = document.getElementById(`epi-${index}`);
+                if (checkbox && checkbox.checked) {
+                    selectedEPIs.push(checkbox.value);
+                }
+            });
+
+            if (selectedEPIs.length === 0) {
+                alert("⚠️ Vous devez posséder au moins un équipement de protection ou valider votre dotation avec votre tuteur avant de commencer.");
+                return;
+            }
+
+            appState.currentEmployeeProfile.deliveredEPI = selectedEPIs;
+            switchScreen('scr-signature');
+        }
+
         async function pullLatestRisksFromCloud() {
             const badge = document.getElementById('cloud-sync-badge');
             try {
@@ -809,7 +921,7 @@
             if (params.get('mode') === 'employee') {
                 appState.currentSelectedCompany = params.get('comp') || "Simulation Usine";
                 appState.currentActivity = params.get('activity') || "Général (Bureau & Administratif)";
-                appState.currentEmployeeProfile = { name: params.get('name') || "Nouvel Arrivant", status: params.get('status') || "Parcours Standard" };
+                appState.currentEmployeeProfile = { name: params.get('name') || "Nouvel Arrivant", status: params.get('status') || "Parcours Standard", deliveredEPI: [] };
                 document.body.classList.add('employee-lockdown');
                 buildRiskCategoryDropdown(); buildEmployeeRulesLayout();
                 document.getElementById('lbl-emp-welcome').innerText = `Bonjour ${appState.currentEmployeeProfile.name}`;
@@ -825,7 +937,7 @@
             const name = document.getElementById('reg-emp-name').value.trim();
             const status = document.getElementById('reg-emp-status').value;
             if (!name) return alert("Veuillez indiquer l'identité du travailleur.");
-            appState.currentEmployeeProfile = { name, status };
+            appState.currentEmployeeProfile = { name, status, deliveredEPI: [] };
             const baseUrl = window.location.href.split('?')[0];
             const url = `${baseUrl}?mode=employee&name=${encodeURIComponent(name)}&comp=${encodeURIComponent(appState.currentSelectedCompany)}&status=${encodeURIComponent(status)}&activity=${encodeURIComponent(appState.currentActivity)}`;
             document.getElementById('qr-area').classList.remove('hidden');
@@ -989,6 +1101,12 @@
             document.getElementById('lbl-view-company').innerText = appState.currentSelectedCompany;
             document.getElementById('lbl-view-status').innerText = appState.currentEmployeeProfile.status; 
             document.getElementById('lbl-view-tutor').innerText = document.getElementById('tutor-name').value;
+            
+            const epiListText = appState.currentEmployeeProfile.deliveredEPI && appState.currentEmployeeProfile.deliveredEPI.length > 0 
+                ? appState.currentEmployeeProfile.deliveredEPI.join(', ') 
+                : 'Aucun équipement requis ou coché';
+            document.getElementById('lbl-view-epi').innerText = epiListText;
+
             document.getElementById('img-render-emp').src = activeCanvas['canv-employee'].toDataURL(); 
             document.getElementById('img-render-tutor').src = activeCanvas['canv-tutor'].toDataURL();
             switchScreen('scr-attestation');
