@@ -36,7 +36,7 @@
     </script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;500;600;700;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
         .screen { display: none; }
         .screen.active { display: block; animation: smoothSlide 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -109,7 +109,7 @@
                             <div class="p-3 bg-restev-blue/10 text-restev-blue rounded-xl text-lg group-hover:bg-restev-blue group-hover:text-white transition-all"><i class="fa-solid fa-user-tie"></i></div>
                             <div>
                                 <h3 class="font-bold text-slate-900 text-xs">1. Espace Établissement & Management</h3>
-                                <p class="text-[11px] text-slate-400 mt-0.5">Sélection de l'usine, personnalisation du métier et QR Codes.</p>
+                                <p class="text-[11px] text-slate-400 mt-0.5">Accès via votre identifiant unique et gestion des sessions.</p>
                             </div>
                         </button>
                         <button onclick="accessEmployeeDirect()" class="bg-white p-4 rounded-xl border border-slate-200 hover:border-restev-magenta text-left flex items-center space-x-4 transition-all shadow-sm hover:shadow-md group">
@@ -217,26 +217,35 @@
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                     <div>
                         <span class="text-[9px] font-bold uppercase text-slate-400 tracking-wider block">Étape 1 sur 2</span>
-                        <h2 class="text-sm font-extrabold text-slate-900">Identification de l'Établissement</h2>
+                        <h2 class="text-sm font-extrabold text-slate-900">Connexion Établissement</h2>
                     </div>
                     <button onclick="switchScreen('scr-home')" class="text-xs bg-slate-50 hover:bg-slate-100 text-slate-500 px-3 py-1.5 rounded-xl font-bold transition"><i class="fa-solid fa-arrow-left"></i></button>
                 </div>
+                
                 <div class="space-y-4">
                     <div class="space-y-1.5">
-                        <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Sélectionner votre Entreprise</label>
-                        <select id="manager-company-name" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-restev-blue focus:outline-none">
-                            </select>
+                        <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Saisir votre Code Entreprise unique</label>
+                        <input type="text" id="manager-company-code" placeholder="Ex: RSTV-MEN-3F5A" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase tracking-wider focus:ring-2 focus:ring-restev-blue focus:outline-none">
                     </div>
+                    <button onclick="handleManagerLogin()" class="w-full bg-gradient-to-r from-restev-blue to-restev-blue-dark text-white py-3 rounded-xl text-xs font-bold shadow-md hover:opacity-95 transition">
+                        Valider et Ouvrir la Console Manager
+                    </button>
                     
-                    <div class="pt-4 border-t border-slate-100 space-y-2">
-                        <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider block">Nouvel Adhérent ? Ajouter votre structure</label>
+                    <div class="pt-4 border-t border-slate-100 space-y-3">
+                        <label class="text-[10px] font-bold uppercase text-slate-400 tracking-wider block">Nouvel Adhérent ? Générer un espace</label>
                         <div class="flex gap-2">
                             <input type="text" id="new-company-name" placeholder="Ex: Menuiserie Marais 85" class="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-restev-blue">
-                            <button onclick="createNewCompany()" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-2.5 rounded-xl text-xs font-bold transition shadow-sm shrink-0">Créer</button>
+                            <button onclick="createNewCompany()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-sm shrink-0">Créer</button>
+                        </div>
+                        
+                        <div id="generated-code-box" class="hidden p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-center space-y-2">
+                            <span class="text-[9px] font-bold text-emerald-700 uppercase block">Espace créé ! Notez bien votre code secret :</span>
+                            <div class="flex items-center justify-center gap-2">
+                                <span id="lbl-generated-code" class="text-xs font-black text-slate-900 tracking-wider uppercase bg-white px-3 py-1 rounded-md border border-emerald-300"></span>
+                                <button onclick="copyGeneratedCode()" class="text-xs bg-slate-800 text-white px-2.5 py-1 rounded-md font-bold hover:bg-slate-950 transition"><i class="fa-regular fa-copy"></i></button>
+                            </div>
                         </div>
                     </div>
-
-                    <button onclick="handleManagerLogin()" class="w-full bg-gradient-to-r from-restev-blue to-restev-blue-dark text-white py-3 rounded-xl text-xs font-bold shadow-md hover:opacity-95 transition">Valider et Ouvrir la Console Manager</button>
                 </div>
             </div>
         </section>
@@ -247,7 +256,7 @@
                     <div class="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></div>
                     <h2 class="text-xs font-extrabold text-slate-900">Console Manager Adhérent : <span id="lbl-manager-comp-name" class="text-restev-blue"></span></h2>
                 </div>
-                <button onclick="switchScreen('scr-home')" class="text-xs bg-red-50 text-red-600 hover:bg-red-100 font-bold px-3.5 py-2 rounded-xl transition">
+                <button onclick="logoutManager()" class="text-xs bg-red-50 text-red-600 hover:bg-red-100 font-bold px-3.5 py-2 rounded-xl transition">
                     <i class="fa-solid fa-right-from-bracket mr-1"></i> Déconnexion Usine
                 </button>
             </div>
@@ -326,7 +335,7 @@
 
         <section id="scr-employee" class="screen max-w-md mx-auto w-full space-y-4">
             <div class="bg-gradient-to-br from-restev-blue via-restev-blue-dark to-restev-magenta text-white p-6 rounded-3xl shadow-lg space-y-2 relative overflow-hidden">
-                <span class="bg-restev-gold text-slate-950 text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider shadow-sm">Session Salarié Verrouillée</span>
+                <span class="bg-restev-gold text-slate-950 text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider shadow-sm">Session Salarié Active</span>
                 <h2 class="text-lg font-extrabold tracking-tight" id="lbl-emp-welcome">Bonjour</h2>
                 <p class="text-xs text-blue-100" id="lbl-emp-company">Chargement des données...</p>
             </div>
@@ -548,15 +557,13 @@
         };
 
         let appState = {
-            currentSelectedCompany: "Bati-Vendée Logistique 85",
+            currentSelectedCompany: "",
             currentActivity: "Général (Bureau & Administratif)",
             currentEmployeeProfile: { name: "", status: "Parcours Standard" },
             risksDB: [],
-            datasetAdherents: new Set(["Bati-Vendée Logistique 85", "Manufacture Ouest Sables", "Agro-Alimentaire Yonnais", "EHPAD Les Mimosas", "Garage Central"]),
             totalPassportsCount: 0,
             corporateZonesDB: {
-                "Bati-Vendée Logistique 85": ["Atelier Quai Nord", "Zone de Stockage B"],
-                "EHPAD Les Mimosas": ["Aile Est", "Cuisine Centrale", "Buanderie"]
+                "Simulation Usine": ["Zone Générale", "Atelier Logistique"]
             },
             currentGPSCoords: "46.6705, -1.4265",
             base64UploadedPhoto: ""
@@ -630,39 +637,17 @@
             }
         }
 
-        async function loadCompaniesFromCloud() {
-            try {
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/companies?order=name.asc`, {
-                    method: 'GET',
-                    headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` }
-                });
-                
-                if (response.ok) {
-                    const companies = await response.json();
-                    const selectElement = document.getElementById('manager-company-name');
-                    if (!selectElement) return;
-                    
-                    selectElement.innerHTML = '';
-                    appState.datasetAdherents.clear();
-                    
-                    companies.forEach(comp => {
-                        appState.datasetAdherents.add(comp.name);
-                        const option = document.createElement('option');
-                        option.value = comp.name;
-                        option.innerText = `🏢 ${comp.name}`;
-                        selectElement.appendChild(option);
-                    });
-                    updateDirectionDashboardCounters();
-                }
-            } catch (e) {
-                showToast("⚠️ Impossible de synchroniser les entreprises.");
-            }
+        function generateRandomCode(companyName) {
+            const cleanName = companyName.slice(0, 3).toUpperCase().replace(/[^A-Z0-9]/g, 'X');
+            const randomHex = Math.random().toString(16).slice(2, 6).toUpperCase();
+            return `RSTV-${cleanName}-${randomHex}`;
         }
 
         async function createNewCompany() {
             const companyName = document.getElementById('new-company-name').value.trim();
             if (!companyName) return showToast("⚠️ Veuillez saisir le nom de l'entreprise.");
 
+            const uniqueCode = generateRandomCode(companyName);
             showToast("🔄 Création de l'espace...");
             
             try {
@@ -671,22 +656,78 @@
                     headers: { 
                         "apikey": SUPABASE_ANON_KEY, 
                         "Authorization": `Bearer ${SUPABASE_ANON_KEY}`, 
-                        "Content-Type": "application/json" 
+                        "Content-Type": "application/json",
+                        "Prefer": "return=minimal"
                     },
-                    body: JSON.stringify({ name: companyName })
+                    body: JSON.stringify({ name: companyName, code: uniqueCode })
                 });
 
                 if (response.ok) {
                     showToast("✅ Espace entreprise créé !");
                     document.getElementById('new-company-name').value = '';
-                    await loadCompaniesFromCloud();
-                    document.getElementById('manager-company-name').value = companyName;
+                    
+                    const codeBox = document.getElementById('generated-code-box');
+                    document.getElementById('lbl-generated-code').innerText = uniqueCode;
+                    codeBox.classList.remove('hidden');
+                    
+                    document.getElementById('manager-company-code').value = uniqueCode;
                 } else {
-                    showToast("❌ Cette structure existe déjà.");
+                    showToast("❌ Impossible de créer cette structure.");
                 }
             } catch (error) {
                 showToast("❌ Erreur de connexion au serveur.");
             }
+        }
+
+        function copyGeneratedCode() {
+            const codeText = document.getElementById('lbl-generated-code').innerText;
+            if (!codeText) return;
+            navigator.clipboard.writeText(codeText);
+            showToast("📋 Code copié dans le presse-papiers !");
+        }
+
+        async function handleManagerLogin() {
+            const inputCode = document.getElementById('manager-company-code').value.trim().toUpperCase();
+            if (!inputCode) return showToast("⚠️ Veuillez saisir votre Code Entreprise.");
+
+            showToast("🔄 Vérification...");
+
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/companies?code=eq.${encodeURIComponent(inputCode)}`, {
+                    method: 'GET',
+                    headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.length > 0) {
+                        const companyData = data[0];
+                        appState.currentSelectedCompany = companyData.name;
+                        
+                        document.getElementById('lbl-manager-comp-name').innerText = appState.currentSelectedCompany;
+                        showToast(`🔓 Espace validé : ${appState.currentSelectedCompany}`);
+                        switchScreen('scr-manager');
+                        
+                        updateCompanyActivityProfile(); 
+                        renderManagerZonesList(); 
+                        refreshManagerRiskView();
+                    } else {
+                        showToast("❌ Code Entreprise inconnu.");
+                    }
+                } else {
+                    showToast("❌ Erreur d'authentification.");
+                }
+            } catch (e) {
+                showToast("❌ Erreur réseau.");
+            }
+        }
+
+        function logoutManager() {
+            appState.currentSelectedCompany = "";
+            document.getElementById('manager-company-code').value = "";
+            document.getElementById('generated-code-box').classList.add('hidden');
+            showToast("🔒 Déconnexion réussie.");
+            switchScreen('scr-home');
         }
         
         function renderActivityFeedInDashboard() {
@@ -717,8 +758,8 @@
             switchScreen('scr-studio');
         }
         
-        async function saveCustomQCM() {
-            showToast("✅ Modifications enregistrées avec succès !");
+        function saveCustomQCM() {
+            showToast("✅ Modifications enregistrées localement !");
             switchScreen('scr-manager');
         }
         
@@ -758,25 +799,15 @@
             if (accessCode === "8500") { showToast("🔓 Accès validé."); switchScreen('scr-direction'); } else if (accessCode !== null) { showToast("❌ Code incorrect."); }
         }
         
-        function handleManagerLogin() {
-            appState.currentSelectedCompany = document.getElementById('manager-company-name').value;
-            if(!appState.currentSelectedCompany) return showToast("⚠️ Sélectionnez ou créez une entreprise.");
-            document.getElementById('lbl-manager-comp-name').innerText = appState.currentSelectedCompany;
-            switchScreen('scr-manager');
-            updateCompanyActivityProfile(); renderManagerZonesList(); refreshManagerRiskView();
-        }
-        
         window.onload = async function() {
             buildActivityDropdown();
             initRestevAnalyticsChart();
             buildRiskCategoryDropdown();
             buildEmployeeRulesLayout();
             
-            await loadCompaniesFromCloud();
-            
             const params = new URLSearchParams(window.location.search);
             if (params.get('mode') === 'employee') {
-                appState.currentSelectedCompany = params.get('comp') || "Bati-Vendée Logistique 85";
+                appState.currentSelectedCompany = params.get('comp') || "Simulation Usine";
                 appState.currentActivity = params.get('activity') || "Général (Bureau & Administratif)";
                 appState.currentEmployeeProfile = { name: params.get('name') || "Nouvel Arrivant", status: params.get('status') || "Parcours Standard" };
                 document.body.classList.add('employee-lockdown');
@@ -787,7 +818,7 @@
             } else {
                 await pullLatestRisksFromCloud();
             }
-            setInterval(pullLatestRisksFromCloud, 10000);
+            setInterval(pullLatestRisksFromCloud, 15000);
         };
         
         function generateEmployeeAccess() {
@@ -803,9 +834,10 @@
         }
         
         function accessEmployeeDirect() {
+            appState.currentSelectedCompany = "Simulation Usine";
             buildRiskCategoryDropdown(); buildEmployeeRulesLayout();
-            document.getElementById('lbl-emp-welcome').innerText = `Bonjour Mode Démo`;
-            document.getElementById('lbl-emp-company').innerText = `Simulation Usine`;
+            document.getElementById('lbl-emp-welcome').innerText = `Bonjour (Mode Démo)`;
+            document.getElementById('lbl-emp-company').innerText = `${appState.currentSelectedCompany}`;
             switchScreen('scr-employee');
         }
         
@@ -817,7 +849,7 @@
             if (!desc) return alert("Détails requis.");
             
             const payload = { 
-                company: appState.currentSelectedCompany, 
+                company: appState.currentSelectedCompany || 'Simulation Usine', 
                 employee: appState.currentEmployeeProfile.name || 'Salarié Connecté', 
                 category: cat, 
                 description: desc, 
@@ -837,11 +869,13 @@
                 if(!response.ok) throw new Error("Erreur réseau");
                 showToast("✅ Alerte synchronisée cloud !");
             } catch(e) {
-                showToast("⚠️ Mode local : Alerte sauvegardée sur l'appareil.");
+                showToast("⚠️ Mode local : Sauvegardé hors-ligne.");
             }
             
             appState.risksDB.unshift({ id: Date.now(), ...payload });
-            updateChartStatsDynamically(); updateDirectionDashboardCounters(); refreshManagerRiskView();
+            updateChartStatsDynamically(); 
+            updateDirectionDashboardCounters(); 
+            refreshManagerRiskView();
             
             document.getElementById('risk-desc').value = ""; 
             document.getElementById('photo-preview').classList.add('hidden'); 
@@ -889,7 +923,7 @@
         
         function renderManagerZonesList() {
             const container = document.getElementById('manager-zones-list');
-            const currentZones = appState.corporateZonesDB[appState.currentSelectedCompany] || [];
+            const currentZones = appState.corporateZonesDB[appState.currentSelectedCompany] || ["Zone Générale"];
             container.innerHTML = currentZones.map(zone => `<span class="bg-slate-100 text-[11px] font-bold px-3 py-1.5 rounded-xl border"><i class="fa-solid fa-industry text-slate-400 mr-2"></i> ${zone}</span>`).join('');
         }
         
@@ -900,12 +934,12 @@
         }
         
         function buildZoneDropdownOptions() {
-            const dropdown = document.getElementById('risk-location'); const currentZones = appState.corporateZonesDB[appState.currentSelectedCompany] || ["Zone Industrielle Générale"];
+            const dropdown = document.getElementById('risk-location'); const currentZones = appState.corporateZonesDB[appState.currentSelectedCompany] || ["Zone Générale"];
             dropdown.innerHTML = currentZones.map(zone => `<option value="${zone}">📍 ${zone}</option>`).join('');
         }
         
         function updateDirectionDashboardCounters() {
-            document.getElementById('lbl-dir-adherents').innerText = appState.datasetAdherents.size;
+            document.getElementById('lbl-dir-adherents').innerText = "RESTEV Cloud";
             document.getElementById('lbl-dir-passports').innerText = appState.totalPassportsCount;
             document.getElementById('lbl-dir-alert-count').innerText = appState.risksDB.length;
         }
@@ -929,7 +963,6 @@
         
         function initCanvas(id) {
             const canvas = document.getElementById(id); if (!canvas) return; 
-            // Sécurité anti-largeurs nulles si l'élément parent est temporairement masqué
             let computedWidth = canvas.parentElement.clientWidth || 340;
             canvas.width = computedWidth; canvas.height = 90;
             
