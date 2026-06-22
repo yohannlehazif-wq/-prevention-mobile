@@ -1016,7 +1016,38 @@ function generateRandomCode(companyName) {
             showToast("🔒 Déconnexion réussie.");
             switchScreen('scr-home');
         }
-        
+       // Exemple de fonction de génération sécurisée
+function genererQRCode(texteAEncoder) {
+    // 1. Vérifier que la bibliothèque est bien chargée
+    if (typeof QRCode === 'undefined') {
+        console.error("Erreur : La bibliothèque QRCode n'est pas chargée.");
+        return;
+    }
+
+    // 2. Vérifier que la donnée n'est pas vide
+    if (!texteAEncoder) {
+        console.error("Erreur : Aucune donnée à encoder dans le QR Code.");
+        return;
+    }
+
+    const canvasCible = document.getElementById('votre-canvas-id'); // À adapter avec votre ID
+    
+    if (!canvasCible) {
+        console.error("Erreur : L'élément HTML cible n'a pas été trouvé.");
+        return;
+    }
+
+    // 3. Génération avec gestion des erreurs
+    QRCode.toCanvas(canvasCible, texteAEncoder, { width: 200, margin: 2 }, function (error) {
+        if (error) {
+            console.error("Échec de la génération du QR Code :", error);
+        } else {
+            console.log("QR Code généré avec succès !");
+            // Si vous devez ensuite l'injecter dans une image ou une attestation finale :
+            // document.getElementById('img-render-tutor').src = canvasCible.toDataURL();
+        }
+    });
+} 
         function renderActivityFeedInDashboard() {
             const feed = document.getElementById('direction-activity-feed');
             if (!feed) return;
