@@ -997,35 +997,35 @@
             if (accessCode === "8500") { showToast("🔓 Accès validé."); switchScreen('scr-direction'); } else if (accessCode !== null) { showToast("❌ Code incorrect."); }
         }
         
-        async function resolveRisk(riskId) {
-            if (!confirm("Voulez-vous clôturer ce signalement ? L'action a bien été mise en place sur le terrain ?")) return;
-            showToast("🔄 Clôture en cours...");
-            try {
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/risks?id=eq.${riskId}`, {
-                    method: 'PATCH',
-                    headers: { 
-                        "apikey": SUPABASE_ANON_KEY, 
-                        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`, 
-                        "Content-Type": "application/json",
-                        "Prefer": "return=minimal"
-                    },
-                    body: JSON.stringify({ status: 'Traité' })
-                });
-                if (response.ok) {
-                    showToast("✅ Risque traité avec succès !");
-                    const riskIndex = appState.risksDB.findIndex(r => r.id === riskId);
-                    if (riskIndex !== -1) {
-                        appState.risksDB[riskIndex].status = 'Traité';
-                        refreshManagerRiskView();
-                        const alertesActives = appState.risksDB.filter(r => r.status !== 'Traité');
-                    }
-                } else {
-                    showToast("❌ Erreur de synchronisation avec le serveur.");
-                }
-            } catch (e) {
-                showToast("❌ Erreur réseau. Vérifiez votre connexion.");
-            }
-        }
+       async function resolveRisk(riskId) { 
+    if (!confirm("Voulez-vous SUPPRIMER définitivement ce signalement de la base cloud ?")) return;
+    
+    showToast(" 🔄 Suppression en cours..."); 
+    try { 
+        const response = await fetch(`${"https://bcuzmjcbhriyzmmiodsi.supabase.co"}/rest/v1/risks?id=eq.${riskId}`, { 
+            method: 'DELETE', // Changement de PATCH à DELETE
+            headers: { 
+                "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdXptamNiaHJpeXptbWlvZHNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODU5NjIsImV4cCI6MjA5NzE2MTk2Mn0.lbYUBi-JEJCoUIdAAAVS35sdy6o0EHHGoqVs3cL1ApQ", 
+                "Authorization": `Bearer ${"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdXptamNiaHJpeXptbWlvZHNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODU5NjIsImV4cCI6MjA5NzE2MTk2Mn0.lbYUBi-JEJCoUIdAAAVS35sdy6o0EHHGoqVs3cL1ApQ"}`
+            } 
+        });
+        
+        if (response.ok) { 
+            showToast(" 🗑️ Risque supprimé avec succès !"); 
+            // Retirer le risque de l'état local pour mettre à jour l'écran immédiatement
+            appState.risksDB = appState.risksDB.filter(r => r.id !== riskId); 
+            
+            // Rafraîchir vos différents compteurs et vues
+            updateChartStatsDynamically();
+            updateDirectionDashboardCounters();
+            refreshManagerRiskView(); 
+        } else { 
+            showToast(" ❌ Erreur de suppression avec le serveur."); 
+        } 
+    } catch (e) { 
+        showToast(" ❌ Erreur réseau. Vérifiez votre connexion."); 
+    } 
+}
 
         function generateEmployeeAccess() {
             const name = document.getElementById('reg-emp-name').value.trim();
