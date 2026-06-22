@@ -914,13 +914,14 @@ function playManagerAlertSound() {
             }
         }
 
-        function copyGeneratedCode() {
-            const codeText = document.getElementById('lbl-generated-code').innerText;
-            if (!codeText) return;
-            navigator.clipboard.writeText(codeText);
-            showToast("📋 Code copié dans le presse-papiers !");
-        }
-
+       // Fonction requise pour générer un code entreprise unique à partir de son nom
+function generateRandomCode(companyName) {
+    // Extrait les 3 premières lettres du nom en majuscules (ou complète si trop court)
+    const prefix = (companyName.replace(/[^a-zA-Z]/g, '') || "RSTV").substring(0, 3).toUpperCase();
+    // Génère une chaîne aléatoire de 4 caractères hexadécimaux
+    const randomHex = Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1).toUpperCase();
+    return `RSTV-${prefix}-${randomHex}`;
+}
         async function handleManagerLogin() {
             const inputCode = document.getElementById('manager-company-code').value.trim().toUpperCase();
             if (!inputCode) return showToast("⚠️ Veuillez saisir votre Code Entreprise.");
