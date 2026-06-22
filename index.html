@@ -641,27 +641,38 @@
     </main>
 
     <script>
-        const SUPABASE_URL = "https://bcuzmjcbhriyzmmiodsi.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdXptamNiaHJpeXptbWlvZHNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODU5NjIsImV4cCI6MjA5NzE2MTk2Mn0.lbYUBi-JEJCoUIdAAAVS35sdy6o0EHHGoqVs3cL1ApQ";
-        const supabaseManager = {
-    client: supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY),
-    
-    // Écoute en temps réel (Le cœur de ta synchro)
-    initRealtime: (onUpdate) => {
-        return supabaseManager.client
-            .channel('risks_channel')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'risks' }, payload => {
-                onUpdate(payload);
-            })
-            .subscribe();
+      // 1. Initialisation (Remplace par tes vraies clés)
+const SUPABASE_URL = "https://bcuzmjcbhriyzmmiodsi.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdXptamNiaHJpeXptbWlvZHNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODU5NjIsImV4cCI6MjA5NzE2MTk2Mn0.lbYUBi-JEJCoUIdAAAVS35sdy6o0EHHGoqVs3cL1ApQ";
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// 2. Notre Manager de Données Centralisé
+const db = {
+    // Récupérer tous les risques
+    fetchRisks: async () => {
+        const { data, error } = await supabase.from('risks').select('*').order('created_at', { ascending: false });
+        if (error) console.error("Erreur fetchRisks:", error);
+        return data;
     },
 
-    // Méthode simple pour récupérer les données
-    fetchRisks: async () => {
-        return await supabaseManager.client
-            .from('risks')
+    // Récupérer les échanges pour un risque précis (ex: lors de l'ouverture d'un détail)
+    fetchExchangesForRisk: async (riskId) => {
+        const { data, error } = await supabase
+            .from('exchanges')
             .select('*')
-            .order('created_at', { ascending: false });
+            .eq('risk_id', riskId) // Filtre pour n'avoir que les échanges du risque concerné
+            .order('created_at', { ascending: true });
+        if (error) console.error("Erreur fetchExchanges:", error);
+        return data;
+    },
+
+    // Ajouter un échange
+    addExchange: async (riskId, message, sender) => {
+        const { data, error } = await supabase
+            .from('exchanges')
+            .insert([{ risk_id: riskId, message: message, sender: sender }]);
+        if (error) console.error("Erreur addExchange:", error);
+        return data;
     }
 };
         const METIER_PRESETS = {
