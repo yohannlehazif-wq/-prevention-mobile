@@ -51,8 +51,10 @@
         body.employee-lockdown header { pointer-events: none; cursor: default; }
     </style>
 </head>
-    <div id="alert-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+   
 <body class="bg-gradient-to-b from-slate-50 to-blue-50/30 text-slate-800 antialiased min-h-screen flex flex-col">
+    <!-- Déplacé ici pour être dans le flux du document -->
+    <div id="alert-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
     
     <header class="bg-white/95 backdrop-blur-md border-b border-blue-100/60 py-2.5 px-4 shadow-sm no-print sticky top-0 z-40">
         <div class="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
@@ -862,7 +864,7 @@
             `;
         }
 
-       async function pullLatestRisksFromCloud() {
+      async function pullLatestRisksFromCloud() {
     const badge = document.getElementById('cloud-sync-badge');
     try {
         const response = await fetch(`${SUPABASE_URL}/rest/v1/risks?order=id.desc&limit=10`, {
@@ -873,52 +875,37 @@
         if (response.ok) {
             const data = await response.json();
             
-            // Si les données sont différentes de l'état actuel
-            if (data && JSON.stringify(appState.risksDB) !== JSON.stringify(data)) {
+            // Vérification simple : si le premier ID a changé, il y a une nouveauté
+            if (data.length > 0 && appState.risksDB.length > 0 && data[0].id !== appState.risksDB[0].id) {
                 
-                // --- DÉBUT LOGIQUE D'ALERTE MANAGER ---
-                // 1. On isole les anciens IDs pour détecter les nouveaux
-                const oldIds = new Set(appState.risksDB.map(r => r.id));
-                const newRisks = data.filter(r => !oldIds.has(r.id));
+                const newRisks = data.filter(r => !appState.risksDB.some(old => old.id === r.id));
                 
-                // 2. Mise à jour classique de l'interface
                 appState.risksDB = data;
-                updateChartStatsDynamically(); 
+                updateChartStatsDynamically();
                 updateDirectionDashboardCounters();
-                renderActivityFeedInDashboard(); 
+                renderActivityFeedInDashboard();
                 refreshManagerRiskView();
                 
-                // 3. Déclenchement de l'alerte ciblée
-                // On vérifie que quelqu'un est connecté en tant que manager et qu'il n'est pas en mode "salarié"
+                // Déclenchement de l'alerte si le manager est connecté
                 const isManagerActive = appState.currentSelectedCompany && 
-                                        !document.body.classList.contains('employee-lockdown') &&
                                         document.getElementById('scr-manager').classList.contains('active');
                 
-                if (isManagerActive) {
-                    // On filtre les nouveaux risques pour ne garder que ceux de SON entreprise
-                    const managerNewRisks = newRisks.filter(r => 
-                        r.company === appState.currentSelectedCompany && 
-                        r.status !== 'Traité'
-                    );
-                    
-                    if (managerNewRisks.length > 0) {
-                        const latest = managerNewRisks[0];
-                        // Affichage de la notification (Toast)
-                        showToast(`🚨 URGENT : Nouveau danger signalé par ${latest.employee || 'Anonyme'} (${latest.location}) !`);
-                        // Déclenchement du son
-                        playManagerAlertSound();
-                    }
+                if (isManagerActive && newRisks.length > 0) {
+                    const latest = newRisks[0];
+                    // Affiche une alerte persistante (en rouge car c'est un danger)
+                    showAlert(`⚠️ ALERTE : Nouveau risque signalé à ${latest.location} par ${latest.employee || 'un salarié'}`, true);
+                    playManagerAlertSound();
                 }
-                // --- FIN LOGIQUE D'ALERTE MANAGER ---
+            } else if (appState.risksDB.length === 0) {
+                // Initialisation au chargement
+                appState.risksDB = data;
             }
             if (badge) badge.innerHTML = `<i class="fa-solid fa-cloud mr-1"></i> Synchrone`;
         }
     } catch (e) {
         if (badge) badge.innerHTML = `<i class="fa-solid fa-wifi mr-1 text-amber-600"></i> Mode Local`;
     }
-    updateSPSTIStats();
 }
-// Fonction pour jouer un signal d'alerte sonore pour le manager
 function playManagerAlertSound() {
     try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
