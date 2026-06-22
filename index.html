@@ -643,7 +643,27 @@
     <script>
         const SUPABASE_URL = "https://bcuzmjcbhriyzmmiodsi.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdXptamNiaHJpeXptbWlvZHNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODU5NjIsImV4cCI6MjA5NzE2MTk2Mn0.lbYUBi-JEJCoUIdAAAVS35sdy6o0EHHGoqVs3cL1ApQ";
-        
+        const supabaseManager = {
+    client: supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY),
+    
+    // Écoute en temps réel (Le cœur de ta synchro)
+    initRealtime: (onUpdate) => {
+        return supabaseManager.client
+            .channel('risks_channel')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'risks' }, payload => {
+                onUpdate(payload);
+            })
+            .subscribe();
+    },
+
+    // Méthode simple pour récupérer les données
+    fetchRisks: async () => {
+        return await supabaseManager.client
+            .from('risks')
+            .select('*')
+            .order('created_at', { ascending: false });
+    }
+};
         const METIER_PRESETS = {
             "Général (Bureau & Administratif)": {
                 icon: " 💻 ",
