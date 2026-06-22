@@ -938,22 +938,40 @@ function validateEmergencyCheck() {
         }
         
         function refreshManagerRiskView() {
-            const box = document.getElementById('manager-risk-box');
-            if (!box) return;
-            const filtered = appState.risksDB.filter(r => r.company === appState.currentSelectedCompany);
-            if (filtered.length === 0) {
-                box.innerHTML = `<p class="text-center py-6 text-slate-400 text-xs italic">Aucune alerte dans vos ateliers.</p>`; return;
-            }
-            box.innerHTML = filtered.map(r => `
-                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1">
-                    <div class="flex justify-between"><span class="font-extrabold text-slate-900">${r.employee || 'Anonyme'}</span><span class="text-red-700 bg-red-50 px-2 rounded text-[9px] font-black">${r.severity || '🔴'}</span></div>
-                    <p class="text-slate-600"><span class="text-slate-400">Type :</span> ${r.category}</p>
-                    <p class="text-restev-blue font-bold"><i class="fa-solid fa-location-dot"></i> Atelier : ${r.location}</p>
-                    <p class="text-slate-600 bg-white p-2 rounded border border-slate-100 mt-1">${r.description}</p>
-                    ${r.photo ? `<img src="${r.photo}" class="w-full h-24 object-cover rounded-lg border mt-1.5" alt="Preuve terrain">` : ''}
+    const box = document.getElementById('manager-risk-box');
+    if (!box) return;
+    
+    // On filtre pour ne garder que l'entreprise active ET exclure les risques traités
+    const filtered = appState.risksDB.filter(r => 
+        r.company === appState.currentSelectedCompany && 
+        r.status !== 'Traité'
+    );
+    
+    if (filtered.length === 0) {
+        box.innerHTML = `<p class="text-center py-6 text-slate-400 text-xs italic">Aucune anomalie en cours. L'atelier est sécurisé ! <i class="fa-solid fa-shield-check text-emerald-500"></i></p>`; 
+        return;
+    }
+    
+    box.innerHTML = filtered.map(r => `
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-2 relative overflow-hidden group">
+            <div class="flex justify-between items-start">
+                <div>
+                    <span class="font-extrabold text-slate-900">${r.employee || 'Anonyme'}</span>
+                    <span class="text-red-700 bg-red-50 px-2 py-0.5 rounded text-[9px] font-black ml-1">${r.severity || '🔴'}</span>
                 </div>
-            `).join('');
-        }
+                <!-- BOUTON TRAITER -->
+                <button onclick="resolveRisk(${r.id})" class="bg-white hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 border border-slate-200 hover:border-emerald-300 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition shadow-sm flex items-center">
+                    <i class="fa-solid fa-check mr-1.5"></i> Traiter
+                </button>
+            </div>
+            
+            <p class="text-slate-600"><span class="text-slate-400">Type :</span> ${r.category}</p>
+            <p class="text-restev-blue font-bold"><i class="fa-solid fa-location-dot"></i> Atelier : ${r.location}</p>
+            <p class="text-slate-600 bg-white p-2 rounded border border-slate-100 mt-1">${r.description}</p>
+            ${r.photo ? `<img src="${r.photo}" class="w-full h-24 object-cover rounded-lg border mt-1.5" alt="Preuve terrain">` : ''}
+        </div>
+    `).join('');
+}
         
         function switchScreen(screenId) {
             if (document.body.classList.contains('employee-lockdown') && !EMPLOYEE_SECURE_SCREENS.includes(screenId)) {
@@ -994,7 +1012,41 @@ function validateEmergencyCheck() {
             }
             setInterval(pullLatestRisksFromCloud, 15000);
         };
-        
+        async function resolveRisk(riskId) {
+    // 1. Demander confirmation pour éviter les erreurs de clic
+    if (!confirm("Voulez-vous clôturer ce signalement ? L'action a bien été mise en place sur le terrain ?")) return;
+
+    showToast("🔄 Clôture en cours...");
+
+    try {
+        // 2. Envoyer la requête PATCH à Supabase pour mettre à jour la ligne
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/risks?id=eq.${riskId}`, {
+            method: 'PATCH',
+            headers: { 
+                "apikey": SUPABASE_ANON_KEY, 
+                "Authorization": `Bearer ${SUPABASE_ANON_KEY}`, 
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal"
+            },
+            body: JSON.stringify({ status: 'Traité' })
+        });
+
+        if (response.ok) {
+            showToast("✅ Risque traité avec succès !");
+            
+            // 3. Mettre à jour l'affichage localement sans avoir à recharger toute la page
+            const riskIndex = appState.risksDB.findIndex(r => r.id === riskId);
+            if (riskIndex !== -1) {
+                appState.risksDB[riskIndex].status = 'Traité';
+                refreshManagerRiskView(); // On rafraîchit la liste des alertes
+            }
+        } else {
+            showToast("❌ Erreur de synchronisation avec le serveur.");
+        }
+    } catch (e) {
+        showToast("❌ Erreur réseau. Vérifiez votre connexion.");
+    }
+}
         function generateEmployeeAccess() {
             const name = document.getElementById('reg-emp-name').value.trim();
             const status = document.getElementById('reg-emp-status').value;
@@ -1031,6 +1083,7 @@ function validateEmergencyCheck() {
                 severity: sev, 
                 gps: appState.currentGPSCoords, 
                 photo: appState.base64UploadedPhoto || null 
+                status: 'En cours'
             };
             
             showToast("🔄 Envoi du signalement...");
