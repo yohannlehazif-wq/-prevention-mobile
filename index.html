@@ -691,7 +691,7 @@
             base64UploadedPhoto: ""
         };
 
-        const EMPLOYEE_SECURE_SCREENS = ['scr-employee', 'scr-report', 'scr-onboarding-1', 'scr-epi-check', 'scr-signature', 'scr-attestation'];
+        const EMPLOYEE_SECURE_SCREENS = ['scr-employee', 'scr-report', 'scr-onboarding-1', 'scr-epi-check', 'scr-emergency-check', 'scr-signature', 'scr-attestation'];
         let myLeafletMap = null; let myMapMarker = null; let chartInstance = null; let isDrawing = false; let activeCanvas = {}; let ctxCanvas = {};
         
         function buildActivityDropdown() {
@@ -756,24 +756,24 @@
             switchScreen('scr-epi-check');
         }
 
-        function validateEPICheck() {
-            const preset = METIER_PRESETS[appState.currentActivity];
-            let selectedEPIs = [];
-            
-            preset.epi.forEach((_, index) => {
-                const checkbox = document.getElementById(`epi-${index}`);
-                if (checkbox && checkbox.checked) {
-                    selectedEPIs.push(checkbox.value);
-                }
-            });
+       function validateEPICheck() {
+    const preset = METIER_PRESETS[appState.currentActivity];
+    let selectedEPIs = [];
 
-            if (selectedEPIs.length === 0) {
-                alert("⚠️ Vous devez posséder au moins un équipement de protection ou valider votre dotation avec votre tuteur avant de commencer.");
-                return;
-            }
+    preset.epi.forEach((_, index) => {
+        const checkbox = document.getElementById(`epi-${index}`);
+        if (checkbox && checkbox.checked) {
+            selectedEPIs.push(checkbox.value);
+        }
+    });
+    if (selectedEPIs.length === 0) {
+        alert("⚠️ Vous devez posséder au moins un équipement de protection ou valider votre dotation avec votre tuteur avant de commencer.");
+        return;
+    }
+    appState.currentEmployeeProfile.deliveredEPI = selectedEPIs;
 
             appState.currentEmployeeProfile.deliveredEPI = selectedEPIs;
-            switchScreen('scr-signature');
+            switchScreen('scr-emergency-check');
         }
 
         async function pullLatestRisksFromCloud() {
@@ -798,7 +798,19 @@
                 if (badge) badge.innerHTML = `<i class="fa-solid fa-wifi mr-1 text-amber-600"></i> Mode Local`;
             }
         }
+function validateEmergencyCheck() {
+    const chkFire = document.getElementById('chk-fire').checked;
+    const chkSst = document.getElementById('chk-sst').checked;
+    const chkHab = document.getElementById('chk-hab').checked;
 
+    if (!chkFire || !chkSst || !chkHab) {
+        alert("⚠️ Vous devez prendre connaissance de toutes les consignes de sécurité et d'urgence pour continuer.");
+        return;
+    }
+    
+    // Si tout est coché, on passe à l'émargement
+    switchScreen('scr-signature');
+}
         function generateRandomCode(companyName) {
             const cleanName = companyName.slice(0, 3).toUpperCase().replace(/[^A-Z0-9]/g, 'X');
             const randomHex = Math.random().toString(16).slice(2, 6).toUpperCase();
