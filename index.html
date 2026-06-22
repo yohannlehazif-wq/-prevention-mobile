@@ -799,36 +799,87 @@
             `;
         }
 
-        async function pullLatestRisksFromCloud() {
-            const badge = document.getElementById('cloud-sync-badge');
-            try {
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/risks?order=id.desc&limit=10`, {
-                    method: 'GET',
-                    headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data && JSON.stringify(appState.risksDB) !== JSON.stringify(data)) {
-                        appState.risksDB = data;
-                        updateChartStatsDynamically(); 
-                        updateDirectionDashboardCounters();
-                        renderActivityFeedInDashboard(); 
-                        refreshManagerRiskView();
+       async function pullLatestRisksFromCloud() {
+    const badge = document.getElementById('cloud-sync-badge');
+    try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/risks?order=id.desc&limit=10`, {
+            method: 'GET',
+            headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            // Si les données sont différentes de l'état actuel
+            if (data && JSON.stringify(appState.risksDB) !== JSON.stringify(data)) {
+                
+                // --- DÉBUT LOGIQUE D'ALERTE MANAGER ---
+                // 1. On isole les anciens IDs pour détecter les nouveaux
+                const oldIds = new Set(appState.risksDB.map(r => r.id));
+                const newRisks = data.filter(r => !oldIds.has(r.id));
+                
+                // 2. Mise à jour classique de l'interface
+                appState.risksDB = data;
+                updateChartStatsDynamically(); 
+                updateDirectionDashboardCounters();
+                renderActivityFeedInDashboard(); 
+                refreshManagerRiskView();
+                
+                // 3. Déclenchement de l'alerte ciblée
+                // On vérifie que quelqu'un est connecté en tant que manager et qu'il n'est pas en mode "salarié"
+                const isManagerActive = appState.currentSelectedCompany && 
+                                        !document.body.classList.contains('employee-lockdown') &&
+                                        document.getElementById('scr-manager').classList.contains('active');
+                
+                if (isManagerActive) {
+                    // On filtre les nouveaux risques pour ne garder que ceux de SON entreprise
+                    const managerNewRisks = newRisks.filter(r => 
+                        r.company === appState.currentSelectedCompany && 
+                        r.status !== 'Traité'
+                    );
+                    
+                    if (managerNewRisks.length > 0) {
+                        const latest = managerNewRisks[0];
+                        // Affichage de la notification (Toast)
+                        showToast(`🚨 URGENT : Nouveau danger signalé par ${latest.employee || 'Anonyme'} (${latest.location}) !`);
+                        // Déclenchement du son
+                        playManagerAlertSound();
                     }
-                    if (badge) badge.innerHTML = `<i class="fa-solid fa-cloud mr-1"></i> Synchrone`;
                 }
-            } catch (e) {
-                if (badge) badge.innerHTML = `<i class="fa-solid fa-wifi mr-1 text-amber-600"></i> Mode Local`;
+                // --- FIN LOGIQUE D'ALERTE MANAGER ---
             }
-            updateSPSTIStats();
+            if (badge) badge.innerHTML = `<i class="fa-solid fa-cloud mr-1"></i> Synchrone`;
         }
-
-        function generateRandomCode(companyName) {
-            const cleanName = companyName.slice(0, 3).toUpperCase().replace(/[^A-Z0-9]/g, 'X');
-            const randomHex = Math.random().toString(16).slice(2, 6).toUpperCase();
-            return `RSTV-${cleanName}-${randomHex}`;
-        }
-
+    } catch (e) {
+        if (badge) badge.innerHTML = `<i class="fa-solid fa-wifi mr-1 text-amber-600"></i> Mode Local`;
+    }
+    updateSPSTIStats();
+}
+// Fonction pour jouer un signal d'alerte sonore pour le manager
+function playManagerAlertSound() {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        // Configuration du son (style sirène rapide/bip strident)
+        oscillator.type = 'square';
+        oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); // Note La
+        oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1);
+        
+        // Gestion du volume pour éviter un bruit trop agressif
+        gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+        
+        oscillator.start(audioCtx.currentTime);
+        oscillator.stop(audioCtx.currentTime + 0.5);
+    } catch(e) {
+        console.warn("L'alerte sonore a été bloquée par le navigateur (interaction utilisateur requise au préalable).");
+    }
+}
         async function createNewCompany() {
             const companyName = document.getElementById('new-company-name').value.trim();
             if (!companyName) return showToast("⚠️ Veuillez saisir le nom de l'entreprise.");
