@@ -51,6 +51,7 @@
         body.employee-lockdown header { pointer-events: none; cursor: default; }
     </style>
 </head>
+    <div id="alert-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
 <body class="bg-gradient-to-b from-slate-50 to-blue-50/30 text-slate-800 antialiased min-h-screen flex flex-col">
     
     <header class="bg-white/95 backdrop-blur-md border-b border-blue-100/60 py-2.5 px-4 shadow-sm no-print sticky top-0 z-40">
@@ -1304,7 +1305,32 @@ function generateRandomCode(companyName) {
             toast.classList.remove('translate-y-20', 'opacity-0'); toast.classList.add('translate-y-0', 'opacity-100');
             setTimeout(() => { toast.classList.remove('translate-y-0', 'opacity-100'); toast.classList.add('translate-y-20', 'opacity-0'); }, 4000);
         }
-        
+        function showAlert(message, isError = false) {
+    const container = document.getElementById('alert-container');
+    const alertDiv = document.createElement('div');
+    
+    // Style minimaliste et propre
+    alertDiv.style.cssText = `
+        padding: 15px 25px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        color: white;
+        font-family: sans-serif;
+        font-weight: bold;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        background-color: ${isError ? '#e74c3c' : '#27ae60'};
+        transition: opacity 0.5s ease;
+    `;
+    
+    alertDiv.innerText = message;
+    container.appendChild(alertDiv);
+    
+    // Disparaît automatiquement après 3 secondes
+    setTimeout(() => {
+        alertDiv.style.opacity = '0';
+        setTimeout(() => alertDiv.remove(), 500);
+    }, 3000);
+}
       function finalizeOfficialAttestation() {
     appState.totalPassportsCount++; 
     updateDirectionDashboardCounters();
