@@ -1186,36 +1186,71 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg-
     }
 }
 
-// Appliquer le thème au chargement
-// Remplace tes deux blocs window.onload par celui-ci :
-
+// --- Nettoyage : Une seule fonction d'initialisation ---
 window.onload = async function() {
-    // 1. Gestion du thème
+    // 1. Gestion du thème (Priorité)
     if (localStorage.getItem('theme') === 'dark') {
         document.documentElement.classList.add('dark');
     }
 
-    // 2. Initialisation de l'application (le code qui manquait)
+    // 2. Initialisation métier
     buildActivityDropdown();
     initRestevAnalyticsChart();
     buildRiskCategoryDropdown();
     buildEmployeeRulesLayout();
     
-    // 3. Logique de chargement (Employee vs Manager)
+    // 3. Logique de chargement (Mode Employee vs Manager)
     const params = new URLSearchParams(window.location.search);
     if (params.get('mode') === 'employee') {
         appState.currentSelectedCompany = params.get('comp') || "Simulation Usine";
         appState.currentActivity = params.get('activity') || "Général (Bureau & Administratif)";
-        appState.currentEmployeeProfile = { name: params.get('name') || "Nouvel Arrivant", status: params.get('status') || "Parcours Standard", deliveredEPI: [] };
+        appState.currentEmployeeProfile = { 
+            name: params.get('name') || "Nouvel Arrivant", 
+            status: params.get('status') || "Parcours Standard", 
+            deliveredEPI: [] 
+        };
+        
         document.body.classList.add('employee-lockdown');
-        buildRiskCategoryDropdown(); 
-        buildEmployeeRulesLayout();
         document.getElementById('lbl-emp-welcome').innerText = `Bonjour ${appState.currentEmployeeProfile.name}`;
         document.getElementById('lbl-emp-company').innerText = `${appState.currentSelectedCompany}`;
+        
         switchScreen('scr-employee');
     } else {
+        // En mode Manager, on charge les risques
         await pullLatestRisksFromCloud();
     }
+    
+    // 4. Synchronisation
+    setInterval(pullLatestRisksFromCloud, 15000);
+};
+
+// --- Modification de la fonction QR Code pour plus de robustesse ---
+function generateEmployeeAccess() {
+    const name = document.getElementById('reg-emp-name').value.trim();
+    const status = document.getElementById('reg-emp-status').value;
+    const company = appState.currentSelectedCompany;
+
+    if (!name) return showToast("⚠️ Veuillez indiquer le nom du salarié.");
+    if (!company) return showToast("⚠️ Espace non défini (reconnectez-vous).");
+
+    appState.currentEmployeeProfile = { name, status, deliveredEPI: [] };
+    
+    const baseUrl = window.location.href.split('?')[0];
+    const url = `${baseUrl}?mode=employee&name=${encodeURIComponent(name)}&comp=${encodeURIComponent(company)}&status=${encodeURIComponent(status)}&activity=${encodeURIComponent(appState.currentActivity)}`;
+    
+    const canvas = document.getElementById('qr-canvas');
+    const qrArea = document.getElementById('qr-area');
+    
+    if (canvas && typeof QRCode !== 'undefined') {
+        qrArea.classList.remove('hidden');
+        QRCode.toCanvas(canvas, url, { width: 140, margin: 1, color: { dark: '#b72077', light: '#ffffff' } }, (error) => {
+            if (error) console.error(error);
+            else showToast("✅ QR Code généré !");
+        });
+    } else {
+        showToast("❌ Erreur : Bibliothèque QR manquante ou Canvas introuvable.");
+    }
+}
     
     // 4. Lancement de la boucle de synchronisation
     setInterval(pullLatestRisksFromCloud, 15000);
