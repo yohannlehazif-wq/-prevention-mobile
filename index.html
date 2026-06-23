@@ -992,27 +992,6 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg-
             if (accessCode === "8500") { showToast("🔓 Accès validé."); switchScreen('scr-direction'); } else if (accessCode !== null) { showToast("❌ Code incorrect."); }
         }
         
-        window.onload = async function() {
-            buildActivityDropdown();
-            initRestevAnalyticsChart();
-            buildRiskCategoryDropdown();
-            buildEmployeeRulesLayout();
-            
-            const params = new URLSearchParams(window.location.search);
-            if (params.get('mode') === 'employee') {
-                appState.currentSelectedCompany = params.get('comp') || "Simulation Usine";
-                appState.currentActivity = params.get('activity') || "Général (Bureau & Administratif)";
-                appState.currentEmployeeProfile = { name: params.get('name') || "Nouvel Arrivant", status: params.get('status') || "Parcours Standard", deliveredEPI: [] };
-                document.body.classList.add('employee-lockdown');
-                buildRiskCategoryDropdown(); buildEmployeeRulesLayout();
-                document.getElementById('lbl-emp-welcome').innerText = `Bonjour ${appState.currentEmployeeProfile.name}`;
-                document.getElementById('lbl-emp-company').innerText = `${appState.currentSelectedCompany}`;
-                switchScreen('scr-employee');
-            } else {
-                await pullLatestRisksFromCloud();
-            }
-            setInterval(pullLatestRisksFromCloud, 15000);
-        };
         
         function generateEmployeeAccess() {
             const name = document.getElementById('reg-emp-name').value.trim();
@@ -1191,7 +1170,8 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg-
 }
 
 // --- Nettoyage : Une seule fonction d'initialisation ---
-window.onload = async function() {
+
+//window.onload = async function() {
     // 1. Gestion du thème (Priorité)
     if (localStorage.getItem('theme') === 'dark') {
         document.documentElement.classList.add('dark');
@@ -1224,11 +1204,10 @@ window.onload = async function() {
         await pullLatestRisksFromCloud();
     }
     
-    // 4. Synchronisation
+    // 4. Lancement de la boucle de synchronisation
     setInterval(pullLatestRisksFromCloud, 15000);
 };
-
-// --- Modification de la fonction QR Code pour plus de robustesse ---
+            --- Modification de la fonction QR Code pour plus de robustesse ---
 function generateEmployeeAccess() {
     const name = document.getElementById('reg-emp-name').value.trim();
     const status = document.getElementById('reg-emp-status').value;
