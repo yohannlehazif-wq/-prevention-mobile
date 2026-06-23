@@ -1187,11 +1187,38 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg-
 }
 
 // Appliquer le thème au chargement
+// Remplace tes deux blocs window.onload par celui-ci :
+
 window.onload = async function() {
+    // 1. Gestion du thème
     if (localStorage.getItem('theme') === 'dark') {
         document.documentElement.classList.add('dark');
     }
-    // ... reste de votre fonction onload actuelle
+
+    // 2. Initialisation de l'application (le code qui manquait)
+    buildActivityDropdown();
+    initRestevAnalyticsChart();
+    buildRiskCategoryDropdown();
+    buildEmployeeRulesLayout();
+    
+    // 3. Logique de chargement (Employee vs Manager)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') === 'employee') {
+        appState.currentSelectedCompany = params.get('comp') || "Simulation Usine";
+        appState.currentActivity = params.get('activity') || "Général (Bureau & Administratif)";
+        appState.currentEmployeeProfile = { name: params.get('name') || "Nouvel Arrivant", status: params.get('status') || "Parcours Standard", deliveredEPI: [] };
+        document.body.classList.add('employee-lockdown');
+        buildRiskCategoryDropdown(); 
+        buildEmployeeRulesLayout();
+        document.getElementById('lbl-emp-welcome').innerText = `Bonjour ${appState.currentEmployeeProfile.name}`;
+        document.getElementById('lbl-emp-company').innerText = `${appState.currentSelectedCompany}`;
+        switchScreen('scr-employee');
+    } else {
+        await pullLatestRisksFromCloud();
+    }
+    
+    // 4. Lancement de la boucle de synchronisation
+    setInterval(pullLatestRisksFromCloud, 15000);
 };
         function finalizeOfficialAttestation() {
             appState.totalPassportsCount++; updateDirectionDashboardCounters();
