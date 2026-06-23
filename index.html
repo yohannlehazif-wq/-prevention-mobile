@@ -1345,28 +1345,37 @@ async function loadEmployeeAlerts() {
     
     switchScreen('scr-attestation');
 }
-        window.onload = async function() {
-            buildActivityDropdown();
-            initRestevAnalyticsChart();
-            buildRiskCategoryDropdown();
-            buildEmployeeRulesLayout();
-            
-            const params = new URLSearchParams(window.location.search);
-            if (params.get('mode') === 'employee') {
-                appState.currentSelectedCompany = params.get('comp') || "Simulation Usine";
-                appState.currentActivity = params.get('activity') || "Général (Bureau & Administratif)";
-                appState.currentEmployeeProfile = { name: params.get('name') || "Nouvel Arrivant", status: params.get('status') || "Parcours Standard", deliveredEPI: [] };
-                document.body.classList.add('employee-lockdown');
-                buildRiskCategoryDropdown(); buildEmployeeRulesLayout();
-                document.getElementById('lbl-emp-welcome').innerText = `Bonjour ${appState.currentEmployeeProfile.name}`;
-                document.getElementById('lbl-emp-company').innerText = `${appState.currentSelectedCompany}`;
-                switchScreen('scr-employee');
-            } else {
-                await pullLatestRisksFromCloud();
-            }
-            updateSPSTIStats();
-            setInterval(pullLatestRisksFromCloud, 15000);
+       window.onload = async function() {
+    buildActivityDropdown();
+    initRestevAnalyticsChart();
+    buildRiskCategoryDropdown();
+    buildEmployeeRulesLayout();
+    
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') === 'employee') {
+        appState.currentSelectedCompany = params.get('comp') || "Simulation Usine";
+        // CORRECTION ICI : Suppression de l'antislash qui faisait bugger la chaîne de caractères
+        appState.currentActivity = params.get('activity') || "Général (Bureau & Administratif)"; 
+        
+        appState.currentEmployeeProfile = { 
+            name: params.get('name') || "Nouvel Arrivant", 
+            status: params.get('status') || "Parcours Standard", 
+            deliveredEPI: [] 
         };
+        
+        document.body.classList.add('employee-lockdown');
+        buildRiskCategoryDropdown(); 
+        buildEmployeeRulesLayout();
+        
+        document.getElementById('lbl-emp-welcome').innerText = `Bonjour ${appState.currentEmployeeProfile.name}`;
+        document.getElementById('lbl-emp-company').innerText = `${appState.currentSelectedCompany}`;
+        switchScreen('scr-employee');
+    } else {
+        await pullLatestRisksFromCloud();
+    }
+    updateSPSTIStats();
+    setInterval(pullLatestRisksFromCloud, 15000);
+};
     </script>
 </body>
 </html>
