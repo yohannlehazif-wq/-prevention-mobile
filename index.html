@@ -971,17 +971,21 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg-
         }
         
         function switchScreen(screenId) {
-            if (document.body.classList.contains('employee-lockdown') && !EMPLOYEE_SECURE_SCREENS.includes(screenId)) {
-                showToast("🔒 Accès bloqué en session salarié."); return;
-            }
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            const targetScreen = document.getElementById(screenId);
-            if (targetScreen) targetScreen.classList.add('active');
-            
-            if (screenId === 'scr-signature') { setTimeout(() => { initCanvas('canv-employee'); initCanvas('canv-tutor'); }, 150); }
-            if (screenId === 'scr-report') { buildZoneDropdownOptions(); acquireRealtimeGPSLocation(); }
-            if (screenId === 'scr-direction') { pullLatestRisksFromCloud(); }
-        }
+    console.log("Tentative de basculement vers : " + screenId);
+    
+    // Masquer tous les écrans
+    const screens = document.querySelectorAll('.screen');
+    screens.forEach(s => s.classList.remove('active'));
+    
+    // Afficher l'écran cible
+    const target = document.getElementById(screenId);
+    if (target) {
+        target.classList.add('active');
+        console.log("Succès : Écran " + screenId + " affiché.");
+    } else {
+        console.error("ERREUR : Impossible de trouver l'écran avec l'ID : " + screenId);
+    }
+}
         
         function handleDirectionAccess() {
             const accessCode = prompt("🔒 Code de sécurité RESTEV :");
