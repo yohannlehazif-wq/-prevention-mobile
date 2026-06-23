@@ -382,10 +382,13 @@
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
-                <div class="space-y-1">
-                    <label class="block text-xs font-bold text-slate-700">Type de Risque :</label>
-                    <select id="risk-category" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none"></select>
-                </div>
+               <!-- NOUVEAU BLOC ERGONOMIQUE -->
+<div class="space-y-2 col-span-2">
+    <label class="block text-xs font-bold text-slate-700">Type de Risque constaté (Sélection rapide) :</label>
+    <div id="risk-category-grid" class="grid grid-cols-2 gap-2">
+        <!-- Injecté dynamiquement par JS -->
+    </div>
+</div>
                 <div class="space-y-1">
                     <label class="block text-xs font-bold text-slate-700">Atelier / Secteur :</label>
                     <select id="risk-location" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-restev-blue focus:outline-none"></select>
@@ -667,13 +670,44 @@
             showToast(`💼 Profil mis à jour : ${appState.currentActivity}`);
         }
         
-        function buildRiskCategoryDropdown() {
-            const dropdown = document.getElementById('risk-category');
-            if (!dropdown) return;
-            const categories = METIER_PRESETS[appState.currentActivity].categories;
-            dropdown.innerHTML = categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+       // Variable globale pour stocker le choix du salarié
+appState.currentSelectedCategory = "";
+
+function buildRiskCategoryDropdown() {
+    const grid = document.getElementById('risk-category-grid');
+    if (!grid) return;
+    
+    const categories = METIER_PRESETS[appState.currentActivity].categories;
+    grid.innerHTML = ''; // On vide la grille
+    
+    categories.forEach((cat, index) => {
+        const btn = document.createElement('button');
+        btn.type = "button";
+        btn.className = "p-3 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 text-center transition-all hover:bg-slate-100 active:scale-95 flex items-center justify-center min-h-[50px]";
+        btn.innerText = cat;
+        
+        // Gestion du clic ergonomique
+        btn.onclick = () => {
+            // Reset des autres boutons
+            document.querySelectorAll('#risk-category-grid button').forEach(b => {
+                b.classList.remove('border-restev-magenta', 'bg-magenta-50/20', 'text-restev-magenta');
+                b.classList.add('border-slate-200', 'bg-slate-50', 'text-slate-700');
+            });
+            // Activation du bouton sélectionné
+            btn.classList.remove('border-slate-200', 'bg-slate-50', 'text-slate-700');
+            btn.classList.add('border-restev-magenta', 'bg-magenta-50/20', 'text-restev-magenta', 'ring-2', 'ring-restev-magenta/20');
+            
+            appState.currentSelectedCategory = cat;
+        };
+        
+        // Sélectionner le premier par défaut
+        if(index === 0) {
+            setTimeout(() => btn.click(), 50);
         }
         
+        grid.appendChild(btn);
+    });
+}
         function buildEmployeeRulesLayout() {
             const container = document.getElementById('employee-rules-container');
             if (!container) return;
