@@ -793,7 +793,20 @@ function buildRiskCategoryDropdown() {
                 if (badge) badge.innerHTML = `<i class="fa-solid fa-wifi mr-1 text-amber-600"></i> Mode Local`;
             }
         }
-
+// À ajouter juste à la fin du bloc "if (response.ok)" de pullLatestRisksFromCloud :
+if (data.length > lastKnownRisksCount) {
+    // Si on est connecté sur l'écran manager et qu'il y a une nouvelle ligne
+    if(document.getElementById('scr-manager').classList.contains('active') && lastKnownRisksCount > 0) {
+        playSafetyAlertSound();
+        // Flash visuel sur la boîte des risques
+        const box = document.getElementById('manager-risk-box');
+        if(box) {
+            box.classList.add('ring-4', 'ring-red-500', 'animate-pulse');
+            setTimeout(() => box.classList.remove('ring-4', 'ring-red-500', 'animate-pulse'), 3000);
+        }
+    }
+    lastKnownRisksCount = data.length;
+}
         function generateRandomCode(companyName) {
             const cleanName = companyName.slice(0, 3).toUpperCase().replace(/[^A-Z0-9]/g, 'X');
             const randomHex = Math.random().toString(16).slice(2, 6).toUpperCase();
