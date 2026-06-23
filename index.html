@@ -933,40 +933,34 @@ function playManagerAlertSound() {
         console.warn("L'alerte sonore a été bloquée par le navigateur (interaction utilisateur requise au préalable).");
     }
 }
-        async function createNewCompany() {
-            const companyName = document.getElementById('new-company-name').value.trim();
-            if (!companyName) return showToast("⚠️ Veuillez saisir le nom de l'entreprise.");
-            const uniqueCode = generateRandomCode(companyName);
-            showToast("🔄 Création de l'espace...");
-            
-            try {
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/companies`, {
-                    method: 'POST',
-                    headers: { 
-                        "apikey": SUPABASE_ANON_KEY, 
-                        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`, 
-                        "Content-Type": "application/json",
-                        "Prefer": "return=minimal"
-                    },
-                    body: JSON.stringify({ name: companyName, code: uniqueCode })
-                });
-                if (response.ok) {
-                    showToast("✅ Espace entreprise créé !");
-                    document.getElementById('new-company-name').value = '';
-                    
-                    const codeBox = document.getElementById('generated-code-box');
-                    document.getElementById('lbl-generated-code').innerText = uniqueCode;
-                    codeBox.classList.remove('hidden');
-                    
-                    document.getElementById('manager-company-code').value = uniqueCode;
-                } else {
-                    showToast("❌ Impossible de créer cette structure.");
-                }
-            } catch (error) {
-                showToast("❌ Erreur de connexion au serveur.");
-            }
-        }
+       async function createNewCompany() {
+  const companyName = document.getElementById('new-company-name').value.trim();
+  if (!companyName) return showToast("⚠️ Veuillez saisir le nom de l'entreprise.");
+  const uniqueCode = generateRandomCode(companyName);
+  showToast("🔄 Création de l'espace...");
 
+  try {
+    // Utilisation du SDK Supabase au lieu de fetch pour plus de fiabilité
+    const { data, error } = await supabaseClient
+      .from('companies')
+      .insert([{ name: companyName, code: uniqueCode }])
+      .select();
+
+    if (error) throw error;
+
+    showToast("✅ Espace entreprise créé !");
+    document.getElementById('new-company-name').value = '';
+
+    const codeBox = document.getElementById('generated-code-box');
+    document.getElementById('lbl-generated-code').innerText = uniqueCode;
+    codeBox.classList.remove('hidden');
+
+    document.getElementById('manager-company-code').value = uniqueCode;
+  } catch (error) {
+    console.error("Erreur création entreprise:", error);
+    showToast("❌ Impossible de créer cette structure. Vérifiez les droits RLS Supabase.");
+  }
+}
        // Fonction requise pour générer un code entreprise unique à partir de son nom
 function generateRandomCode(companyName) {
     // Extrait les 3 premières lettres du nom en majuscules (ou complète si trop court)
