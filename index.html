@@ -1189,7 +1189,37 @@ function generateRandomCode(companyName) {
             appState.base64UploadedPhoto = "";
             switchScreen('scr-employee');
         }
-        
+        // À COLLER JUSTE APRÈS submitRealRiskReport()
+
+async function loadEmployeeAlerts() {
+    const listContainer = document.getElementById('employee-alerts-list');
+    if (!listContainer) return;
+    
+    // Filtrer les risques par le nom du salarié actuel
+    const myRisks = appState.risksDB.filter(r => r.employee === appState.currentEmployeeProfile.name);
+    
+    // S'il n'y a pas de signalement
+    if (myRisks.length === 0) {
+        listContainer.innerHTML = '<p class="text-xs text-slate-500 text-center py-4 italic">Aucun signalement en cours.</p>';
+        return;
+    }
+
+    // Affichage des signalements du salarié
+    listContainer.innerHTML = myRisks.map(r => `
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-2 shadow-sm">
+            <div class="flex justify-between items-start">
+                <span class="font-extrabold text-slate-900">${r.category}</span>
+                <span class="text-[9px] px-2 py-0.5 rounded font-black ${r.status === 'Traité' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">${r.status || 'En cours'}</span>
+            </div>
+            <p class="text-slate-600"><i class="fa-solid fa-location-dot text-restev-blue"></i> ${r.location}</p>
+            <p class="text-slate-500 text-[10px] mt-1 line-clamp-2">${r.description}</p>
+            
+            <button onclick="alert('Module de discussion à venir !')" class="mt-2 w-full bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-restev-blue font-bold shadow-sm hover:bg-blue-50 transition flex justify-center items-center gap-2">
+                <i class="fa-regular fa-comments"></i> Consulter les messages
+            </button>
+        </div>
+    `).join('');
+}
         function acquireRealtimeGPSLocation() {
             if (!navigator.geolocation) return updateMap(46.6705, -1.4265);
             document.getElementById('geo-status').innerText = "Coordonnées GPS en cours de calcul...";
