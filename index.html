@@ -1148,21 +1148,38 @@
             switchScreen('scr-employee');
         }
         
-        function acquireRealtimeGPSLocation() {
-            if (!navigator.geolocation) return updateMap(46.6705, -1.4265);
-            document.getElementById('geo-status').innerText = "Analyse géospatiale satellite en cours...";
-            navigator.geolocation.getCurrentPosition(
-                (p) => { 
-                    appState.currentGPSCoords = `${p.coords.latitude.toFixed(6)}, ${p.coords.longitude.toFixed(6)}`; 
-                    document.getElementById('geo-status').innerText = `📍 Balise GPS Verrouillée : ${appState.currentGPSCoords}`;
-                    updateMap(p.coords.latitude, p.coords.longitude); 
-                },
-                () => { 
-                    document.getElementById('geo-status').innerText = "⚠️ Positionnement approximatif (La Roche-sur-Yon)";
-                    updateMap(46.6705, -1.4265); 
-                }
-            );
+       function acquireRealtimeGPSLocation() {
+    // Coordonnées de repli (La Roche-sur-Yon) pour les tests sur PC
+    const fallbackLat = 46.6705;
+    const fallbackLon = -1.4265;
+
+    if (!navigator.geolocation) {
+        document.getElementById('geo-status').innerText = "⚠️ GPS non supporté par l'appareil.";
+        return updateMap(fallbackLat, fallbackLon);
+    }
+
+    document.getElementById('geo-status').innerText = "🛰️ Accroche du signal satellite en cours...";
+    
+    navigator.geolocation.getCurrentPosition(
+        (p) => { 
+            // Succès : on a les vraies coordonnées
+            appState.currentGPSCoords = `${p.coords.latitude.toFixed(6)}, ${p.coords.longitude.toFixed(6)}`; 
+            document.getElementById('geo-status').innerText = `📍 Balise GPS Verrouillée : ${appState.currentGPSCoords}`;
+            updateMap(p.coords.latitude, p.coords.longitude); 
+        },
+        (error) => { 
+            // Échec (Refus de l'utilisateur ou délai dépassé)
+            console.warn("Erreur géoloc:", error.message);
+            document.getElementById('geo-status').innerText = "⚠️ Signal GPS faible ou bloqué. Mode simulation activé.";
+            updateMap(fallbackLat, fallbackLon); 
+        },
+        { 
+            enableHighAccuracy: true, // Déverrouille la puce GPS matérielle
+            timeout: 10000,           // Laisse 10 secondes à l'appareil pour trouver
+            maximumAge: 0             // Empêche d'utiliser une ancienne position en cache
         }
+    );
+}
         
         function updateMap(lat, lon) {
             if (!myLeafletMap) {
@@ -1333,15 +1350,40 @@
             switchScreen('scr-attestation');
         }
 
-        // INITIALISATION UNIQUE LORS DU CHARGEMENT
-        window.addEventListener('DOMContentLoaded', () => {
-            buildActivityDropdown();
-            updateCompanyActivityProfile();
-            initRestevAnalyticsChart();
-            pullLatestRisksFromCloud();
-            loadTopAlerts();
-            setInterval(pullLatestRisksFromCloud, 10000);
-        });
+        // INITIALISATION ET ROUTAGE
+window.addEventListener('DOMContentLoaded', async () => {
+    buildActivityDropdown();
+    updateCompanyActivityProfile();
+    initRestevAnalyticsChart();
+
+    // Détection si on arrive via un flash de QR Code
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') === 'employee') {
+        // Chargement du profil via l'URL
+        appState.currentSelectedCompany = params.get('comp') || "Structure Inconnue";
+        appState.currentActivity = params.get('activity') || "Général (Bureau & Administratif)";
+        appState.currentEmployeeProfile = {
+            name: params.get('name') || "Nouvel Arrivant",
+            status: params.get('status') || "Parcours Standard",
+            deliveredEPI: []
+        };
+
+        // Mise à jour de l'interface
+        document.getElementById('lbl-emp-welcome').innerText = `Bonjour ${appState.currentEmployeeProfile.name}`;
+        document.getElementById('lbl-emp-company').innerText = `${appState.currentSelectedCompany}`;
+
+        buildRiskCategoryDropdown();
+        buildEmployeeRulesLayout();
+        
+        // Bascule directe sur l'écran du salarié
+        switchScreen('scr-employee');
+    } else {
+        // Démarrage classique sur l'Accueil / Mode Manager
+        await pullLatestRisksFromCloud();
+        loadTopAlerts();
+        setInterval(pullLatestRisksFromCloud, 10000);
+    }
+});
     </script>
 </body>
 </html>
