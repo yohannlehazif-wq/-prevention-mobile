@@ -907,27 +907,28 @@ async function loadTopAlerts() {
         const text = document.getElementById('toast-text');
         
         // Styles selon le type
+       // 1. On sort les services utilitaires au niveau global
+const AlertService = {
+    showToast: function(message, type = 'info') {
+        const toast = document.getElementById('toast');
+        const text = document.getElementById('toast-text');
+        
         const colors = {
             'success': 'from-emerald-500 to-emerald-600',
             'error': 'from-red-500 to-red-600',
             'info': 'from-slate-900 to-slate-800'
         };
-
-        // Appliquer les styles et le texte
+        
         toast.className = `fixed bottom-6 right-6 bg-gradient-to-r ${colors[type] || colors.info} text-white text-xs font-bold py-3.5 px-5 rounded-2xl shadow-xl z-50 transition-all duration-300 transform translate-y-0 opacity-100 flex items-center space-x-3 border border-white/20`;
         text.innerText = message;
-
-        // Auto-masquage après 3 secondes
+        
         setTimeout(() => {
             toast.className = toast.className.replace('translate-y-0 opacity-100', 'translate-y-20 opacity-0');
         }, 3000);
     },
-
-    // 2. Met à jour le fil d'activité (pour la console Direction/Manager)
     addToFeed: function(containerId, action, category) {
         const container = document.getElementById(containerId);
         if (!container) return;
-
         const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const html = `
             <div class="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800 animate-in fade-in slide-in-from-bottom-2">
@@ -942,36 +943,31 @@ async function loadTopAlerts() {
     }
 };
 
-    // 2. Met à jour le fil d'activité (pour la console Direction/Manager)
-    addToFeed: function(containerId, action, category) {
-        const container = document.getElementById(containerId);
-        if (!container) return;
 const Haptic = {
-    // Fonction de base
     trigger: function(pattern) {
         if ("vibrate" in navigator) {
             navigator.vibrate(pattern);
         }
     },
-    // Vibration courte (validation)
     success: function() { this.trigger(50); },
-    // Vibration saccadée (erreur / attention)
     error: function() { this.trigger([200, 100, 200]); } 
 };
-        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const html = `
-            <div class="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800 animate-in fade-in slide-in-from-bottom-2">
-                <div class="flex justify-between text-[10px] font-bold text-slate-400 mb-1">
-                    <span>${category}</span>
-                    <span>${timestamp}</span>
-                </div>
-                <p class="text-xs font-semibold text-slate-800 dark:text-slate-200">${action}</p>
-            </div>
-        `;
-        container.insertAdjacentHTML('afterbegin', html);
-    }
-};
-    // Couleurs pour le podium (1er = Rouge, 2ème = Orange, 3ème = Jaune/Bleu)
+
+// 2. On répare la fonction loadTopAlerts
+async function loadTopAlerts() {
+    const container = document.getElementById('top-alerts-container');
+    if (!container) return;
+
+    // Simulation de données (à remplacer par votre appel Supabase)
+    const sortedAlerts = [
+        { nom: "EPI non portés / manquants", categorie: "Sécurité Terrain", total: 24 },
+        { nom: "Vitesse excessive", categorie: "Logistique", total: 12 },
+        { nom: "Câbles au sol", categorie: "Bureaux", total: 5 }
+    ];
+
+    // On vide le conteneur avant d'injecter
+    container.innerHTML = '';
+
     const podiumStyles = [
         { bg: 'bg-red-100 dark:bg-red-950/50 text-red-600', badge: 'bg-red-50 dark:bg-red-950/40 text-red-600 border-red-100 dark:border-red-900/30' },
         { bg: 'bg-amber-100 dark:bg-amber-950/50 text-amber-600', badge: 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 border-amber-100 dark:border-amber-900/30' },
@@ -979,7 +975,7 @@ const Haptic = {
     ];
 
     sortedAlerts.forEach((alerte, index) => {
-        const style = podiumStyles[index] || podiumStyles[2]; // Sécurité si plus de 3
+        const style = podiumStyles[index] || podiumStyles[2]; 
         
         const html = `
             <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 transition hover:translate-x-1 duration-200">
