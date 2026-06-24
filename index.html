@@ -279,7 +279,43 @@
                     <i class="fa-solid fa-right-from-bracket mr-1"></i> Quitter l'Espace
                 </button>
             </div>
-            
+            <!-- SECTION : TABLEAU DE BORD - ALERTES RÉCURRENTES -->
+<div class="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-premium space-y-4">
+    
+    <!-- En-tête du bloc -->
+    <div class="flex items-center justify-between border-b pb-3">
+        <h3 class="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <i class="fa-solid fa-triangle-exertion text-amber-500 animate-pulse"></i> 
+            Alertes les plus fréquentes
+        </h3>
+        <span class="text-[10px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-1 rounded-full">
+            30 derniers jours
+        </span>
+    </div>
+
+    <!-- Conteneur de la liste des alertes -->
+    <div id="top-alerts-container" class="space-y-3">
+        <!-- Exemple d'élément (généré dynamiquement en JS) -->
+        <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-950/50 flex items-center justify-center text-red-600 font-black text-xs">
+                    1er
+                </div>
+                <div>
+                    <p class="text-xs font-extrabold text-slate-800 dark:text-white">EPI non portés / manquants</p>
+                    <p class="text-[10px] text-slate-500">Catégorie: Sécurité Terrain</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <span class="bg-red-50 dark:bg-red-950/40 text-red-600 text-xs font-black px-2.5 py-1 rounded-lg border border-red-100 dark:border-red-900/30">
+                    24 fois
+                </span>
+            </div>
+        </div>
+        
+        <!-- Les autres lignes s'injecteront ici -->
+    </div>
+</div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-6">
                     <!-- Étape 1 : Profil -->
@@ -862,7 +898,73 @@
                 }
             }
         }
+async function loadTopAlerts() {
+    // 1. Récupérer les alertes (ex: sur la table 'tickets_alerte' ou 'consignes_non_validees')
+    const { data: alertes, error } = await supabase
+        .from('votre_table_alertes')
+        .select('type_alerte, categorie')
+        // Optionnel : filtrer sur les 30 derniers jours
+        .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
 
+    if (error) {
+        console.error("Erreur lors de la récup des alertes:", error);
+        return;
+    }
+
+    // 2. Compter les occurrences de chaque type d'alerte
+    const counts = alertes.reduce((acc, curr) => {
+        if (!acc[curr.type_alerte]) {
+            acc[curr.type_alerte] = { nom: curr.type_alerte, categorie: curr.categorie || 'Général', total: 0 };
+        }
+        acc[curr.type_alerte].total += 1;
+        return acc;
+    }, {});
+
+    // 3. Trier du plus grand au plus petit et prendre les 3 premières
+    const sortedAlerts = Object.values(counts)
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 3);
+
+    // 4. Afficher dans le HTML
+    const container = document.getElementById('top-alerts-container');
+    container.innerHTML = ''; // On vide le loader/l'ancien contenu
+
+    if (sortedAlerts.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-500 text-center py-4">Aucune alerte à signaler. RAS ! 👍</p>`;
+        return;
+    }
+
+    // Couleurs pour le podium (1er = Rouge, 2ème = Orange, 3ème = Jaune/Bleu)
+    const podiumStyles = [
+        { bg: 'bg-red-100 dark:bg-red-950/50 text-red-600', badge: 'bg-red-50 dark:bg-red-950/40 text-red-600 border-red-100 dark:border-red-900/30' },
+        { bg: 'bg-amber-100 dark:bg-amber-950/50 text-amber-600', badge: 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 border-amber-100 dark:border-amber-900/30' },
+        { bg: 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300', badge: 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700' }
+    ];
+
+    sortedAlerts.forEach((alerte, index) => {
+        const style = podiumStyles[index] || podiumStyles[2]; // Sécurité si plus de 3
+        
+        const html = `
+            <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 transition hover:translate-x-1 duration-200">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg ${style.bg} flex items-center justify-center font-black text-xs">
+                        ${index + 1}e
+                    </div>
+                    <div>
+                        <p class="text-xs font-extrabold text-slate-800 dark:text-white">${alerte.nom}</p>
+                        <p class="text-[10px] text-slate-500">Catégorie: ${alerte.categorie}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span class="${style.badge} text-xs font-black px-2.5 py-1 rounded-lg border shadow-sm">
+                        ${alerte.total} fois
+                    </span>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', html);
+    });
+}
         function generateRandomCode(companyName) {
             const cleanName = companyName.slice(0, 3).toUpperCase().replace(/[^A-Z0-9]/g, 'X');
             const randomHex = Math.random().toString(16).slice(2, 6).toUpperCase();
