@@ -927,7 +927,18 @@ async function loadTopAlerts() {
     addToFeed: function(containerId, action, category) {
         const container = document.getElementById(containerId);
         if (!container) return;
-
+const Haptic = {
+    // Fonction de base
+    trigger: function(pattern) {
+        if ("vibrate" in navigator) {
+            navigator.vibrate(pattern);
+        }
+    },
+    // Vibration courte (validation)
+    success: function() { this.trigger(50); },
+    // Vibration saccadée (erreur / attention)
+    error: function() { this.trigger([200, 100, 200]); } 
+};
         const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const html = `
             <div class="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800 animate-in fade-in slide-in-from-bottom-2">
