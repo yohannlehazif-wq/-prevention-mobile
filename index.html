@@ -900,7 +900,7 @@
         }
 async function loadTopAlerts() {
     // 1. Récupérer les alertes (ex: sur la table 'tickets_alerte' ou 'consignes_non_validees')
-   const AlertService = {
+  const AlertService = {
     // 1. Affiche un "Toast" en bas à droite
     showToast: function(message, type = 'info') {
         const toast = document.getElementById('toast');
@@ -922,6 +922,25 @@ async function loadTopAlerts() {
             toast.className = toast.className.replace('translate-y-0 opacity-100', 'translate-y-20 opacity-0');
         }, 3000);
     },
+
+    // 2. Met à jour le fil d'activité (pour la console Direction/Manager)
+    addToFeed: function(containerId, action, category) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const html = `
+            <div class="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800 animate-in fade-in slide-in-from-bottom-2">
+                <div class="flex justify-between text-[10px] font-bold text-slate-400 mb-1">
+                    <span>${category}</span>
+                    <span>${timestamp}</span>
+                </div>
+                <p class="text-xs font-semibold text-slate-800 dark:text-slate-200">${action}</p>
+            </div>
+        `;
+        container.insertAdjacentHTML('afterbegin', html);
+    }
+};
 
     // 2. Met à jour le fil d'activité (pour la console Direction/Manager)
     addToFeed: function(containerId, action, category) {
