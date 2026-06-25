@@ -1090,6 +1090,52 @@
                 oscillator.stop(audioCtx.currentTime + 0.5);
             } catch(e) {}
         }
+        // Fonction universelle pour remplir ton interface selon le métier choisi
+function loadSectorDashboard(sectorName) {
+    const data = METIER_PRESETS[sectorName];
+    
+    if (!data) {
+        console.error("Secteur non trouvé : " + sectorName);
+        return;
+    }
+
+    // 1. Mise à jour des catégories de risques
+    const catContainer = document.getElementById('list-categories');
+    if (catContainer) {
+        catContainer.innerHTML = data.categories.map(cat => 
+            `<li class="flex items-center gap-2 text-xs font-medium text-slate-600 mb-2">
+                <i class="fa-solid fa-circle-exclamation text-restev-magenta"></i> ${cat}
+             </li>`
+        ).join('');
+    }
+
+    // 2. Mise à jour des EPI (Équipements)
+    const epiContainer = document.getElementById('list-epi');
+    if (epiContainer) {
+        epiContainer.innerHTML = data.epi.map(item => 
+            `<span class="inline-block bg-slate-100 text-[10px] font-bold px-2 py-1 rounded-md mr-1 mb-1">${item}</span>`
+        ).join('');
+    }
+
+    // 3. Mise à jour des Règles de sécurité (Cartes)
+    const rulesContainer = document.getElementById('container-rules');
+    if (rulesContainer) {
+        rulesContainer.innerHTML = data.rules.map(rule => `
+            <div class="p-3 border-l-4 ${rule.color} bg-white shadow-sm rounded-r-lg mb-3">
+                <h4 class="text-xs font-bold text-slate-800">${rule.title}</h4>
+                <p class="text-[10px] text-slate-500 mt-1">${rule.desc}</p>
+            </div>
+        `).join('');
+    }
+
+    // 4. Chargement automatique du QCM (Si tu es sur l'écran QCM)
+    // Utilise la fonction que nous avions vue précédemment
+    if (typeof loadQCMForSector === 'function') {
+        loadQCMForSector(sectorName);
+    }
+    
+    console.log("Interface mise à jour pour : " + sectorName);
+}
         function toggleMuteManagerSound() {
             isManagerSoundMuted = !isManagerSoundMuted;
             document.getElementById('btn-mute-manager').innerText = isManagerSoundMuted ? "🔇 Muet" : "🔊 Actif";
