@@ -1442,26 +1442,46 @@ function validateQCMAndProceed() {
             `).join('');
         }
         
-        function switchScreen(screenId) {
-            const screens = document.querySelectorAll('.screen');
-            screens.forEach(s => s.classList.remove('active'));
-            
-            const target = document.getElementById(screenId);
-            if (target) {
-                target.classList.add('active');
-                if (screenId === 'scr-signature' && !canvasInitialized) {
-                    setTimeout(() => {
-                        initCanvas('canv-employee');
-                        initCanvas('canv-tutor');
-                        canvasInitialized = true;
-                    }, 100);
-                }
-                if (screenId === 'scr-report') {
-                    acquireRealtimeGPSLocation();
-                    buildZoneDropdownOptions();
-                }
-            }
-        }
+        // ==========================================
+// GESTION DE LA NAVIGATION ENTRE ÉCRANS
+// ==========================================
+
+function switchScreen(screenId) {
+    console.log("Changement d'écran vers :", screenId);
+    
+    // 1. On sélectionne toutes les sections qui ont la classe 'screen'
+    const screens = document.querySelectorAll('.screen');
+    
+    // 2. On les cache toutes en enlevant 'active' et en ajoutant 'hidden' (Tailwind)
+    screens.forEach(screen => {
+        screen.classList.remove('active');
+        screen.classList.add('hidden');
+    });
+    
+    // 3. On trouve l'écran cible et on l'affiche
+    const targetScreen = document.getElementById(screenId);
+    if (targetScreen) {
+        targetScreen.classList.add('active');
+        targetScreen.classList.remove('hidden');
+    } else {
+        console.warn(`Attention : L'écran avec l'ID "${screenId}" n'existe pas encore dans ton HTML.`);
+        alert(`L'écran "${screenId}" est relié au bouton, mais la section correspondante n'existe pas dans le code.`);
+    }
+}
+
+// Fonction pour le bouton "Organisme de Santé / Centre RESTEV"
+function handleDirectionAccess() {
+    // Si tu as un écran pour l'audit, remplace 'scr-home' par son ID (ex: 'scr-audit')
+    // switchScreen('scr-audit');
+    alert("Fonctionnalité 'Centre RESTEV / Audit' cliquée ! Relie-la à ton écran d'audit.");
+}
+
+// Fonction pour le bouton "Émargement Salarié"
+function accessEmployeeDirect() {
+    // Si ton écran salarié s'appelle 'scr-employee', remplace 'scr-home' par son ID
+    // switchScreen('scr-employee');
+    alert("Accès direct à l'Interface d'Émargement Salarié !");
+}
         
         function handleDirectionAccess() {
             const accessCode = prompt("🔒 Entrez le code secret Superviseur RESTEV :");
