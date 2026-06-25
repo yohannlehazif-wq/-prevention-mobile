@@ -38,25 +38,26 @@
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;500;600;700;800&display=swap');
-
         :root { --bg-main: #f8fafc; --text-main: #1e293b; --card-bg: #ffffff; }
         .dark { --bg-main: #0f172a; --text-main: #f1f5f9; --card-bg: #1e293b; }
-
         body { font-family: 'Plus Jakarta Sans', sans-serif; transition: background-color 0.3s, color 0.3s; }
         .card { background-color: var(--card-bg); border-radius: 20px; transition: all 0.3s; }
-
         .screen { display: none; }
         .screen.active { display: block; animation: smoothSlide 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
-
         @keyframes smoothSlide { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-
         .rounded-2xl { border-radius: 1.25rem; }
         .shadow-premium { box-shadow: 0 10px 25px -5px rgba(51, 65, 85, 0.08), 0 4px 12px -2px rgba(51, 65, 85, 0.03); }
+        
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; color: black; }
+            .print-view { border: 2px solid black !important; padding: 20px !important; box-shadow: none !important; }
+        }
     </style>
 </head>
 <body class="bg-gradient-to-tr from-slate-50 via-blue-50/40 to-pink-50/20 text-slate-800 antialiased min-h-screen flex flex-col dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
     
-    <header class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-blue-100/80 dark:border-slate-800 py-3 px-4 sticky top-0 z-40 shadow-sm">
+    <header class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-blue-100/80 dark:border-slate-800 py-3 px-4 sticky top-0 z-40 shadow-sm no-print">
         <div class="max-w-5xl mx-auto flex justify-between items-center">
             <div class="flex items-center cursor-pointer transform hover:scale-105 transition" onclick="switchScreen('scr-home')">
                 <img src="logo.png" class="h-11 w-auto" onerror="this.src='https://placehold.co/150x50?text=RESTEV+85'">
@@ -66,7 +67,7 @@
                     <i class="fa-solid fa-moon dark:fa-sun text-base"></i>
                 </button>
                 <span id="cloud-sync-badge" class="bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 px-3 py-1.5 rounded-full uppercase text-[10px] font-extrabold tracking-wider border border-emerald-200/50 dark:border-emerald-800/30 shadow-sm flex items-center gap-1.5">
-                    <i class="fa-solid fa-rotate animate-spin"></i> Cloud...
+                    <i class="fa-solid fa-check"></i> Synchronisé
                 </span>
             </div>
         </div>
@@ -80,87 +81,81 @@
     <main class="max-w-5xl mx-auto p-4 md:p-6 flex-1 w-full flex flex-col justify-center">
         
         <!-- ÉCRAN : ACCUEIL -->
-       <!-- ÉCRAN : ACCUEIL REFONDU -->
-<section id="scr-home" class="screen active max-w-xl mx-auto w-full space-y-8 py-6">
-    <!-- En-tête Joyeux et Pro -->
-    <div class="text-center space-y-4">
-        <div class="inline-block bg-gradient-to-r from-emerald-400 to-teal-500 text-white text-[11px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-md transform -rotate-1 hover:rotate-0 transition-transform cursor-default">
-            PST 2026-2030 Compliant
-        </div>
-        <h1 class="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-restev-blue-dark via-restev-blue to-restev-magenta tracking-tight pb-1">
-            Passeport Prévention
-        </h1>
-        <p class="text-sm font-medium text-slate-500 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
-            Bienvenue ! Sélectionnez votre espace réglementaire pour une intégration simple, sécurisée et dynamique.
-        </p>
-    </div>
-
-    <div class="space-y-5 pt-4">
-        <!-- Bouton Découvrir (Plus accueillant) -->
-        <button onclick="switchScreen('scr-about')" class="w-full bg-white dark:bg-slate-800 p-5 rounded-3xl text-left flex items-center justify-between transition-all border-2 border-transparent hover:border-restev-blue-dark shadow-lg hover:shadow-2xl transform hover:-translate-y-1 group">
-            <div class="flex items-center space-x-4">
-                <div class="w-14 h-14 bg-gradient-to-br from-blue-100 to-blue-50 dark:from-slate-700 dark:to-slate-800 rounded-2xl flex items-center justify-center text-2xl text-restev-blue shadow-inner group-hover:scale-110 transition-transform">
-                    <i class="fa-solid fa-face-smile-beam"></i>
+        <section id="scr-home" class="screen active max-w-xl mx-auto w-full space-y-8 py-6">
+            <div class="text-center space-y-4">
+                <div class="inline-block bg-gradient-to-r from-emerald-400 to-teal-500 text-white text-[11px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-md transform -rotate-1 hover:rotate-0 transition-transform cursor-default">
+                    PST 2026-2030 Compliant
                 </div>
-                <div>
-                    <h3 class="font-black text-base text-slate-800 dark:text-white tracking-wide">Découvrir la démarche</h3>
-                    <p class="text-xs text-slate-500 mt-1 font-medium">L'application, les enjeux et les objectifs.</p>
-                </div>
+                <h1 class="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-restev-blue-dark via-restev-blue to-restev-magenta tracking-tight pb-1">
+                    Passeport Prévention
+                </h1>
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
+                    Bienvenue ! Sélectionnez votre espace réglementaire pour une intégration simple, sécurisée et dynamique.
+                </p>
             </div>
-            <div class="w-10 h-10 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center group-hover:bg-restev-blue transition-colors">
-                <i class="fa-solid fa-arrow-right text-slate-400 group-hover:text-white transition-colors"></i>
-            </div>
-        </button>
 
-        <!-- Section Organisme de Santé -->
-        <div class="bg-gradient-to-br from-amber-50 to-orange-50/60 dark:from-slate-900 dark:to-amber-950/20 border-2 border-amber-100 dark:border-amber-900/30 p-5 rounded-3xl shadow-sm relative overflow-hidden">
-            <div class="absolute -right-4 -top-4 w-24 h-24 bg-amber-200/40 rounded-full blur-2xl"></div>
-            <span class="text-[11px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest flex items-center gap-2 mb-4 relative z-10">
-                <i class="fa-solid fa-building-shield"></i> Organisme de Santé
-            </span>
-            <button onclick="handleDirectionAccess()" class="w-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm p-4 rounded-2xl border border-white/50 hover:border-restev-gold text-left flex items-center space-x-4 transition-all shadow-sm hover:shadow-lg group relative z-10">
-                <div class="p-3 bg-amber-100/50 text-restev-gold rounded-xl text-xl group-hover:bg-restev-gold group-hover:text-white transition-colors">
-                    <i class="fa-solid fa-chart-line"></i>
-                </div>
-                <div>
-                    <h3 class="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
-                        Centre RESTEV <span class="bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] px-2 py-0.5 rounded-md font-black shadow-sm">AUDIT</span>
-                    </h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">Statistiques et cartographie DUERP.</p>
-                </div>
-            </button>
-        </div>
-
-        <!-- Parcours Entreprises avec la séparation stricte demandée -->
-        <div class="bg-gradient-to-br from-blue-50 to-pink-50/50 dark:from-slate-900 dark:to-slate-900/80 border-2 border-blue-100/50 dark:border-slate-800 p-5 rounded-3xl shadow-sm">
-            <span class="text-[11px] font-black text-restev-blue dark:text-blue-400 uppercase tracking-widest flex items-center gap-2 mb-4">
-                <i class="fa-solid fa-industry"></i> Parcours Entreprises
-            </span>
-            <div class="grid grid-cols-1 gap-3.5">
-                <!-- Espace Management -->
-                <button onclick="switchScreen('scr-auth')" class="bg-white dark:bg-slate-800 border-l-4 border-l-restev-blue hover:border-l-8 p-4 rounded-2xl text-left flex items-center space-x-4 transition-all shadow-sm hover:shadow-md group">
-                    <div class="p-3 bg-blue-50 dark:bg-slate-700 text-restev-blue rounded-xl text-xl group-hover:bg-restev-blue group-hover:text-white transition-colors">
-                        <i class="fa-solid fa-user-tie"></i>
+            <div class="space-y-5 pt-4">
+                <button onclick="switchScreen('scr-about')" class="w-full bg-white dark:bg-slate-800 p-5 rounded-3xl text-left flex items-center justify-between transition-all border-2 border-transparent hover:border-restev-blue-dark shadow-lg hover:shadow-2xl transform hover:-translate-y-1 group">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-14 h-14 bg-gradient-to-br from-blue-100 to-blue-50 dark:from-slate-700 dark:to-slate-800 rounded-2xl flex items-center justify-center text-2xl text-restev-blue shadow-inner group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-face-smile-beam"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-black text-base text-slate-800 dark:text-white tracking-wide">Découvrir la démarche</h3>
+                            <p class="text-xs text-slate-500 mt-1 font-medium">L'application, les enjeux et les objectifs.</p>
+                        </div>
                     </div>
-                    <div>
-                        <h3 class="font-black text-slate-900 dark:text-white text-sm">Espace Management</h3>
-                        <p class="text-xs text-slate-500 mt-0.5 font-medium">Gestion des sessions et identifiants.</p>
+                    <div class="w-10 h-10 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center group-hover:bg-restev-blue transition-colors">
+                        <i class="fa-solid fa-arrow-right text-slate-400 group-hover:text-white transition-colors"></i>
                     </div>
                 </button>
-                <!-- Interface Salarié -->
-                <button onclick="accessEmployeeDirect()" class="bg-white dark:bg-slate-800 border-l-4 border-l-restev-magenta hover:border-l-8 p-4 rounded-2xl text-left flex items-center space-x-4 transition-all shadow-sm hover:shadow-md group">
-                    <div class="p-3 bg-pink-50 dark:bg-slate-700 text-restev-magenta rounded-xl text-xl group-hover:bg-restev-magenta group-hover:text-white transition-colors">
-                        <i class="fa-solid fa-user-shield"></i>
+
+                <div class="bg-gradient-to-br from-amber-50 to-orange-50/60 dark:from-slate-900 dark:to-amber-950/20 border-2 border-amber-100 dark:border-amber-900/30 p-5 rounded-3xl shadow-sm relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 w-24 h-24 bg-amber-200/40 rounded-full blur-2xl"></div>
+                    <span class="text-[11px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest flex items-center gap-2 mb-4 relative z-10">
+                        <i class="fa-solid fa-building-shield"></i> Organisme de Santé
+                    </span>
+                    <button onclick="handleDirectionAccess()" class="w-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm p-4 rounded-2xl border border-white/50 hover:border-restev-gold text-left flex items-center space-x-4 transition-all shadow-sm hover:shadow-lg group relative z-10">
+                        <div class="p-3 bg-amber-100/50 text-restev-gold rounded-xl text-xl group-hover:bg-restev-gold group-hover:text-white transition-colors">
+                            <i class="fa-solid fa-chart-line"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+                                Centre RESTEV <span class="bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] px-2 py-0.5 rounded-md font-black shadow-sm">AUDIT</span>
+                            </h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">Statistiques et cartographie DUERP.</p>
+                        </div>
+                    </button>
+                </div>
+
+                <div class="bg-gradient-to-br from-blue-50 to-pink-50/50 dark:from-slate-900 dark:to-slate-900/80 border-2 border-blue-100/50 dark:border-slate-800 p-5 rounded-3xl shadow-sm">
+                    <span class="text-[11px] font-black text-restev-blue dark:text-blue-400 uppercase tracking-widest flex items-center gap-2 mb-4">
+                        <i class="fa-solid fa-industry"></i> Parcours Entreprises
+                    </span>
+                    <div class="grid grid-cols-1 gap-3.5">
+                        <button onclick="switchScreen('scr-auth')" class="bg-white dark:bg-slate-800 border-l-4 border-l-restev-blue hover:border-l-8 p-4 rounded-2xl text-left flex items-center space-x-4 transition-all shadow-sm hover:shadow-md group">
+                            <div class="p-3 bg-blue-50 dark:bg-slate-700 text-restev-blue rounded-xl text-xl group-hover:bg-restev-blue group-hover:text-white transition-colors">
+                                <i class="fa-solid fa-user-tie"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-black text-slate-900 dark:text-white text-sm">Espace Management</h3>
+                                <p class="text-xs text-slate-500 mt-0.5 font-medium">Gestion des sessions et identifiants.</p>
+                            </div>
+                        </button>
+                        <button onclick="accessEmployeeDirect()" class="bg-white dark:bg-slate-800 border-l-4 border-l-restev-magenta hover:border-l-8 p-4 rounded-2xl text-left flex items-center space-x-4 transition-all shadow-sm hover:shadow-md group">
+                            <div class="p-3 bg-pink-50 dark:bg-slate-700 text-restev-magenta rounded-xl text-xl group-hover:bg-restev-magenta group-hover:text-white transition-colors">
+                                <i class="fa-solid fa-user-shield"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-black text-slate-900 dark:text-white text-sm">Émargement Salarié</h3>
+                                <p class="text-xs text-slate-500 mt-0.5 font-medium">Livret d'accueil et remontée terrain.</p>
+                            </div>
+                        </button>
                     </div>
-                    <div>
-                        <h3 class="font-black text-slate-900 dark:text-white text-sm">Émargement Salarié</h3>
-                        <p class="text-xs text-slate-500 mt-0.5 font-medium">Livret d'accueil et remontée terrain.</p>
-                    </div>
-                </button>
+                </div>
             </div>
-        </div>
-    </div>
-</section>
+        </section>
+
         <!-- ÉCRAN : À PROPOS -->
         <section id="scr-about" class="screen max-w-2xl mx-auto w-full space-y-6 py-2">
             <div class="flex items-center justify-between mb-4">
@@ -172,7 +167,7 @@
             <div class="bg-gradient-to-br from-restev-blue via-blue-600 to-restev-magenta p-6 md:p-8 rounded-3xl text-white shadow-xl relative overflow-hidden">
                 <div class="absolute -right-10 -top-10 w-44 h-44 bg-white/10 rounded-full blur-3xl"></div>
                 <h2 class="text-2xl md:text-3xl font-black tracking-tight mb-2 relative z-10">Pourquoi cette application ?</h2>
-                <p class="text-blue-50 text-sm leading-relaxed relative z-10 font-medium">Une solution digitale dynamique développée par le RESTEV 85 pour répondre aux exigences du PST 2026-2030 et sécuriser de manière ludique et infalsifiable l'accueil sécurité des salariés.</p>
+                <p class="text-blue-50 text-sm leading-relaxed relative z-10 font-medium">Une solution digitale dynamique développée par le RESTEV 85 pour répondre aux exigences du PST 2026-2030 et sécuriser de manière ludique l'accueil sécurité des salariés.</p>
             </div>
             <div class="space-y-4">
                 <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm space-y-3 border-t-4 border-t-restev-gold">
@@ -219,15 +214,14 @@
                     <i class="fa-solid fa-arrow-left mr-1"></i> Quitter la Console
                 </button>
             </div>
-
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="bg-gradient-to-br from-white to-blue-50/40 dark:from-slate-800 dark:to-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-premium flex items-center space-x-3.5 border-t-4 border-t-restev-blue">
                     <div class="p-3 bg-restev-blue/10 text-restev-blue rounded-xl text-lg shadow-sm"><i class="fa-solid fa-building"></i></div>
-                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Adhérents</span><span id="lbl-dir-adherents" class="text-base font-black text-slate-900 dark:text-white truncate block max-w-[120px]">0</span></div>
+                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Adhérents</span><span id="lbl-dir-adherents" class="text-base font-black text-slate-900 dark:text-white truncate block max-w-[120px]">12</span></div>
                 </div>
                 <div class="bg-gradient-to-br from-white to-teal-50/30 dark:from-slate-800 dark:to-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-premium flex items-center space-x-3.5 border-t-4 border-t-restev-teal">
                     <div class="p-3 bg-restev-teal/10 text-restev-teal rounded-xl text-lg shadow-sm"><i class="fa-solid fa-id-card-clip"></i></div>
-                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Passeports</span><span id="lbl-dir-passports" class="text-xl font-black text-slate-900 dark:text-white">0</span></div>
+                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Passeports</span><span id="lbl-dir-passports" class="text-xl font-black text-slate-900 dark:text-white">48</span></div>
                 </div>
                 <div class="bg-gradient-to-br from-white to-emerald-50/40 dark:from-slate-800 dark:to-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-premium flex items-center space-x-3.5 border-t-4 border-t-emerald-500">
                     <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl text-lg shadow-sm"><i class="fa-solid fa-shield-halved"></i></div>
@@ -238,7 +232,6 @@
                     <div><span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Alertes</span><span id="lbl-dir-alert-count" class="text-xl font-black text-red-600 dark:text-red-400">0</span></div>
                 </div>
             </div>
-
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-premium lg:col-span-2 space-y-4">
                     <h3 class="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-chart-pie text-restev-blue"></i> Répartition Départementale par Typologie</h3>
@@ -375,11 +368,13 @@
                 <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-premium flex flex-col justify-between border-t-4 border-t-red-500">
                     <div>
                         <h3 class="font-black text-slate-900 dark:text-white text-xs uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-bell text-red-500 animate-bounce"></i> Signalements Dangers en direct</h3>
-                        <div id="manager-risk-box" class="space-y-3 max-h-[580px] overflow-y-auto pt-3 pr-1"></div>
+                        <div id="manager-risk-box" class="space-y-3 max-h-[580px] overflow-y-auto pt-3 pr-1">
+                            <p class="text-xs text-slate-400 italic text-center py-8">Aucun danger signalé pour le moment.</p>
+                        </div>
                     </div>
                 </div>
             </div>
-
+            
             <div class="bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-900 dark:to-slate-900/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between gap-4 mb-3 shadow-sm">
                 <span class="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider flex items-center gap-2">
                     <i class="fa-solid fa-volume-high text-restev-blue"></i> Alertes Sonores Manager
@@ -445,7 +440,6 @@
                     <img id="photo-preview" class="w-full h-32 object-cover rounded-xl hidden border relative z-20 shadow-md" alt="Aperçu danger">
                 </div>
             </div>
-
             <div class="grid grid-cols-1 gap-3">
                 <div class="space-y-2">
                     <label class="block text-xs font-black text-slate-700 dark:text-slate-300">Type de Risque (Sélection obligatoire) :</label>
@@ -456,7 +450,6 @@
                     <select id="risk-location" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-restev-blue dark:text-blue-400 focus:outline-none"></select>
                 </div>
             </div>
-
             <div class="grid grid-cols-2 gap-3">
                 <div class="space-y-1">
                     <label class="block text-xs font-black text-slate-700 dark:text-slate-300">Gravité estimée :</label>
@@ -473,12 +466,10 @@
                     </select>
                 </div>
             </div>
-
             <div class="space-y-1">
                 <label class="block text-xs font-black text-slate-700 dark:text-slate-300">Précisions sur la situation :</label>
                 <textarea id="risk-desc" rows="2" class="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none dark:text-white" placeholder="Décrivez succinctement l'anomalie..."></textarea>
             </div>
-
             <div class="grid grid-cols-2 gap-3 pt-2">
                 <button type="button" onclick="switchScreen('scr-employee')" class="bg-slate-100 dark:bg-slate-700 dark:text-white hover:bg-slate-200 text-slate-600 py-2.5 rounded-xl text-xs font-bold transition">Retour</button>
                 <button type="button" onclick="submitRealRiskReport()" class="bg-gradient-to-r from-restev-magenta to-restev-magenta-dark text-white py-2.5 rounded-xl text-xs font-extrabold shadow-md hover:opacity-95 transition-all">Transmettre l'Alerte</button>
@@ -486,27 +477,25 @@
         </section>
 
         <!-- PARCOURS SALARIÉ : CHARTE HSE -->
-       <section id="scr-onboarding-1" class="screen max-w-md mx-auto w-full bg-white dark:bg-slate-800 p-5 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-premium space-y-4">
-    <h3 class="text-base font-black text-slate-900 dark:text-white border-b pb-2 flex items-center gap-2"><i class="fa-solid fa-shield-halved text-restev-blue"></i> Charte Interne & Évaluation</h3>
-    
-    <div id="employee-rules-container" class="space-y-2.5 text-xs text-slate-600 dark:text-slate-300 leading-relaxed"></div>
-
-    <div class="border-t border-slate-100 dark:border-slate-700 pt-4 space-y-3">
-        <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider"><i class="fa-solid fa-list-check text-restev-magenta mr-1"></i> Validation des acquis (QCM obligatoire)</label>
-        
-        <div id="employee-qcm-container" class="space-y-4"></div>
-        
-        <div id="qcm-error-msg" class="hidden p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-[11px] font-bold flex items-center gap-2">
-            <i class="fa-solid fa-circle-exclamation"></i>
-            <span>Toutes les réponses doivent être correctes pour valider l'accueil sécurité.</span>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-2 gap-3 border-t border-slate-100 dark:border-slate-700 pt-4">
-        <button onclick="switchScreen('scr-employee')" class="bg-slate-100 dark:bg-slate-700 dark:text-white hover:bg-slate-200 text-slate-600 py-2.5 rounded-xl text-xs font-bold transition">Retour</button>
-        <button onclick="validateQCMAndProceed()" class="bg-restev-blue text-white py-2.5 rounded-xl text-xs font-extrabold shadow transition hover:opacity-95">Valider mes réponses</button>
-    </div>
-</section>
+        <section id="scr-onboarding-1" class="screen max-w-md mx-auto w-full bg-white dark:bg-slate-800 p-5 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-premium space-y-4">
+            <h3 class="text-base font-black text-slate-900 dark:text-white border-b pb-2 flex items-center gap-2"><i class="fa-solid fa-shield-halved text-restev-blue"></i> Charte Interne & Évaluation</h3>
+            
+            <div id="employee-rules-container" class="space-y-2.5 text-xs text-slate-600 dark:text-slate-300 leading-relaxed"></div>
+            <div class="border-t border-slate-100 dark:border-slate-700 pt-4 space-y-3">
+                <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider"><i class="fa-solid fa-list-check text-restev-magenta mr-1"></i> Validation des acquis (QCM obligatoire)</label>
+                
+                <div id="employee-qcm-container" class="space-y-4"></div>
+                
+                <div id="qcm-error-msg" class="hidden p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-[11px] font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span>Toutes les réponses doivent être correctes pour valider l'accueil sécurité.</span>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3 border-t border-slate-100 dark:border-slate-700 pt-4">
+                <button onclick="switchScreen('scr-employee')" class="bg-slate-100 dark:bg-slate-700 dark:text-white hover:bg-slate-200 text-slate-600 py-2.5 rounded-xl text-xs font-bold transition">Retour</button>
+                <button onclick="validateQCMAndProceed()" class="bg-restev-blue text-white py-2.5 rounded-xl text-xs font-extrabold shadow transition hover:opacity-95">Valider mes réponses</button>
+            </div>
+        </section>
 
         <!-- PARCOURS SALARIÉ : DOTATION EPI -->
         <section id="scr-epi-check" class="screen max-w-md mx-auto w-full bg-white dark:bg-slate-800 p-5 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-premium space-y-4">
@@ -547,7 +536,7 @@
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3 border-t border-slate-100 dark:border-slate-700 pt-4">
-                <button type="button" onclick="goToEPICheckScreen()" class="bg-slate-100 dark:bg-slate-700 dark:text-white hover:bg-slate-200 text-slate-600 py-2.5 rounded-xl text-xs font-bold transition">Retour</button>
+                <button type="button" onclick="switchScreen('scr-epi-check')" class="bg-slate-100 dark:bg-slate-700 dark:text-white hover:bg-slate-200 text-slate-600 py-2.5 rounded-xl text-xs font-bold transition">Retour</button>
                 <button type="button" onclick="finalizeOfficialAttestation()" class="bg-gradient-to-r from-restev-teal to-emerald-500 text-white py-2.5 rounded-xl text-xs font-extrabold shadow-md hover:opacity-95 transition-all">Générer l'Attestation Officielle</button>
             </div>
         </section>
@@ -578,7 +567,7 @@
                 <button onclick="window.print()" class="w-full bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 text-white py-3 rounded-xl text-xs font-black flex items-center justify-center space-x-2 shadow-md transition-all">
                     <i class="fa-solid fa-print text-sm"></i> <span>Imprimer ou Sauvegarder PDF</span>
                 </button>
-                <button onclick="switchScreen('scr-home')" class="no-employee w-full bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 py-2.5 rounded-xl text-xs font-bold border dark:border-slate-700 text-center transition hover:bg-slate-100">Retourner au Portail</button>
+                <button onclick="switchScreen('scr-home')" class="w-full bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 py-2.5 rounded-xl text-xs font-bold border dark:border-slate-700 text-center transition hover:bg-slate-100">Retourner au Portail</button>
             </div>
         </section>
         
@@ -590,7 +579,7 @@
                 </h2>
                 <button onclick="switchScreen('scr-manager')" class="text-xs bg-slate-100 dark:bg-slate-700 dark:text-white hover:bg-slate-200 px-4 py-2 rounded-xl font-bold transition">Fermer</button>
             </div>
-            <div id="studio-rules-list" class="space-y-4"></div>
+            <div id="studio-rules-list" class="space-y-4 max-h-[500px] overflow-y-auto pr-2"></div>
             <button onclick="saveCustomQCM()" class="w-full bg-gradient-to-r from-restev-blue to-restev-blue-dark text-white py-4 rounded-2xl font-black shadow-lg hover:opacity-95 transition">
                 Enregistrer les Règles pour mon Entreprise
             </button>
@@ -604,417 +593,6 @@
         let lastKnownRisksCount = 0;
         let isManagerSoundMuted = false;
         let managerVolume = 0.5;
-
-    const METIER_PRESETS = {
-  "Général (Bureau & Administratif)": {
-    icon: " 💻 ",
-    categories: ["Risque lié à l'écran (Fatigue visuelle)", "Troubles Musculosquelettiques (TMS) / Posture", "Risque Électrique", "Chute de plain-pied / Câbles", "Risques Psychosociaux (RPS)"],
-    epi: ["Aucun équipement spécifique requis"],
-    rules: [
-      { title: "Règle 1 : Posture au poste de travail", desc: "Ajustez la hauteur de votre siège et de votre écran. Faites des pauses visuelles régulières.", color: "border-restev-blue" },
-      { title: "Règle 2 : Déplacements internes", desc: "Maintenez les zones de circulation dégagées de tout câble ou matériel.", color: "border-restev-teal" }
-    ],
-    qcm: [
-      {
-        question: "En cas d'alarme incendie, quelle est la première action à réaliser ?",
-        options: ["Terminer son appel téléphonique ou son mail en cours", "Évacuer immédiatement et dans le calme vers le point de rassemblement", "Prendre l'ascenseur pour descendre plus vite"],
-        answer: 1
-      },
-      {
-        question: "Pour prévenir l'apparition de Troubles Musculosquelettiques (TMS) au bureau, je dois :",
-        options: ["Garder une posture statique toute la journée", "Placer mon écran le plus haut possible", "Régler mon siège, mon écran à hauteur des yeux et faire des pauses régulières"],
-        answer: 2
-      },
-      {
-        question: "Que devez-vous faire si vous constatez un câble électrique dénudé ou une prise détériorée ?",
-        options: ["Mettre du scotch dessus et continuer à l'utiliser", "Interdire l'utilisation et le signaler immédiatement au service maintenance / prévention", "Attendre que quelqu'un d'autre s'en occupe"],
-        answer: 1
-      },
-      {
-        question: "Pour éviter les chutes de plain-pied dans les bureaux, quelle règle appliquez-vous ?",
-        options: ["Je laisse mes cartons et câbles au milieu du passage si c'est temporaire", "Je garde les voies de circulation et les accès aux issues de secours totalement dégagés", "Je marche plus vite pour éviter de trébucher"],
-        answer: 1
-      },
-      {
-        question: "Si vous ressentez une surcharge de travail durable ou un stress intense, vous devez :",
-        options: ["Garder cela pour vous et attendre que ça passe", "En parler rapidement à votre manager, aux RH ou à votre préventeur RESTEV", "Ignorer les signaux d'alerte"],
-        answer: 1
-      }
-    ]
-  },
-  "Bâtiment & Travaux Publics (BTP)": {
-    icon: " 🏗️ ",
-    categories: ["Chute de Hauteur", "Heurt par Engin de Chantier", "Non-port du Casque / EPI", "Chute d'Objets / Échafaudage", "Bruit / Poussières"],
-    epi: ["Casque de chantier (NF EN 397) 🪖", "Chaussures de sécurité S3 🥾", "Gilet haute visibilité Classe 2 🦺", "Gants de protection mécanique 🧤"],
-    rules: [
-      { title: "Règle 1 : Protection Crânienne & Antichute", desc: "Casque attaché et harnais obligatoire sur zones surélevées sans protection collective.", color: "border-amber-500" },
-      { title: "Règle 2 : Balisage & Coactivité", desc: "Interdiction absolue de circuler sous les charges suspendues.", color: "border-red-500" }
-    ],
-    qcm: [
-      {
-        question: "Lors d'une intervention en hauteur sans protection collective (garde-corps), que devez-vous porter ?",
-        options: ["Rien si l'intervention dure moins de 5 minutes", "Un harnais de sécurité correctement ancré à un point fixe validé", "Une ceinture de maintien simple sans longe"],
-        answer: 1
-      },
-      {
-        question: "Face à un engin de chantier en mouvement (ex: pelleteuse), quelle est la règle vitale ?",
-        options: ["S'assurer d'avoir établi un contact visuel clair avec le conducteur avant d'approcher", "Passer rapidement dans son angle mort pour ne pas le déranger", "Crier fort en courant derrière l'engin"],
-        answer: 0
-      },
-      {
-        question: "À quel moment devez-vous porter vos EPI fondamentaux (Casque, Chaussures S3, Gilet) ?",
-        options: ["Uniquement quand le chef de chantier est présent", "Dès l'entrée sur le chantier et pendant toute la durée de votre présence", "Seulement si j'effectue une tâche jugée dangereuse"],
-        answer: 1
-      },
-      {
-        question: "Dans une tranchée ou une fouille, quel est le risque majeur non visible instantanément ?",
-        options: ["Le risque d'ensevelissement par effondrement des parois (nécessité d'un blindage)", "Le risque de perdre ses outils", "Le risque d'attraper froid"],
-        answer: 0
-      },
-      {
-        question: "Comment gérez-vous l'ordre et la propreté de votre zone de travail sur le chantier ?",
-        options: ["Je nettoie uniquement en fin de semaine", "Je dégage les gravats et clous perforants au fur et à mesure pour éviter les chutes et blessures", "Je pousse les déchets chez le lot voisin"],
-        answer: 1
-      }
-    ]
-  },
-      "Industrie Agroalimentaire": {
-    icon: " 🥩 ",
-    categories: ["Glissade / Sols humides", "Coupure / Machines de découpe", "Risque Biologique & Hygiène", "Froid / Chaud extrême", "Risque Chimique (Nettoyage/Désinfection)"],
-    epi: ["Bottes de sécurité montantes blanches (SRC) 🥾", "Blouse ou combinaison jetable 🧥", "Charlotte et masque d'hygiène 😷", "Gants en cotte de mailles (selon poste) 🧤", "Protections auditives 🎧"],
-    rules: [
-      { title: "Règle 1 : Hygiène & Corps Étrangers", desc: "Retrait obligatoire de tous les bijoux, montres et piercings avant d'entrer en zone de production.", color: "border-restev-blue" },
-      { title: "Règle 2 : Sécurité Machines", desc: "Interdiction absolue de neutraliser ou contourner les carters de protection et barrières immatérielles.", color: "border-red-600" }
-    ],
-    qcm: [
-      {
-        question: "Pour nettoyer votre poste de travail en fin de poste, vous devez utiliser des produits chimiques concentrés. Quelle est la règle d'or ?",
-        options: ["Mélanger les produits pour que ça décape plus vite", "Ne jamais mélanger deux produits différents (risque de dégagement de gaz toxique)", "Diluer à l'œil sans regarder les consignes"],
-        answer: 1
-      },
-      {
-        question: "Une machine de conditionnement se bloque. Quelle est votre première action ?",
-        options: ["Mettre la main dans la machine rapidement pour décoincer le produit", "Arrêter la machine, appliquer la procédure d'arrêt sécurisé (ou consignation) avant toute intervention", "Appeler un collègue pour qu'il relance la machine pendant que vous réparez"],
-        answer: 1
-      },
-      {
-        question: "Pourquoi les bijoux, montres et faux ongles sont-ils strictement interdits en zone de production agroalimentaire ?",
-        options: ["Uniquement pour éviter de les abîmer avec l'eau", "Pour éviter les risques de contamination du produit (corps étrangers) et le risque de happement par les machines", "Parce que ce n'est pas esthétique avec la blouse"],
-        answer: 1
-      },
-      {
-        question: "Les sols en agroalimentaire sont souvent humides ou gras. Comment prévenez-vous le risque de chute ?",
-        options: ["Je cours pour passer moins de temps sur les zones glissantes", "Je porte obligatoirement mes bottes/chaussures de sécurité anti-dérapantes (norme SRC) et je signale toute flaque anormale", "Je marche pieds nus"],
-        answer: 1
-      },
-      {
-        question: "Vous devez travailler dans une zone de congélation ou une chambre froide positive prolongée. Que devez-vous faire ?",
-        options: ["Y aller en t-shirt si c'est pour moins de 10 minutes", "Porter les vêtements thermiques réglementaires fournis (veste/pantalon grand froid) et limiter le temps d'exposition", "Attendre que la pièce se réchauffe"],
-        answer: 1
-      }
-    ]
-  },
-  "Métiers du Bois & Menuiserie": {
-    icon: " 🪵 ",
-    categories: ["Coupure / Amputation (Scie, toupie)", "Inhalation de Poussières de bois (Cancérogène)", "Risque Incendie / Explosion (Sciure)", "Bruit intensif", "Manutention de panneaux"],
-    epi: ["Chaussures de sécurité anti-perforation S3 🥾", "Lunettes de protection enveloppantes 🥽", "Masque de protection respiratoire FFP3 😷", "Casque anti-bruit haute atténuation 🎧"],
-    rules: [
-      { title: "Règle 1 : Risque Poussières", desc: "Aspiration centralisée connectée obligatoirement avant le démarrage de toute machine-outil.", color: "border-amber-600" },
-      { title: "Règle 2 : Machines Dangereuses", desc: "Utilisation systématique des poussoirs pour les pièces de petite taille sur scie circulaire.", color: "border-red-600" }
-    ],
-    qcm: [
-      {
-        question: "Les poussières de bois durs (chêne, hêtre...) représentent un risque grave pour la santé. Lequel ?",
-        options: ["Aucun risque particulier, c'est du matériel naturel", "Un risque de cancer des fosses nasales en cas d'inhalation prolongée", "Uniquement un risque de toux passagère"],
-        answer: 1
-      },
-      {
-        question: "Lors de l'utilisation d'une scie circulaire ou d'une toupie, quelle est la règle concernant le port des gants ?",
-        options: ["Il est obligatoire de porter des gants en cuir épais", "Il est strictement INTERDIT de porter des gants près des outils rotatifs (risque d'entraînement de la main)", "Le port des gants est optionnel"],
-        answer: 1
-      },
-      {
-        question: "Vous devez nettoyer vos vêtements couverts de sciure et de copeaux de bois en fin de journée :",
-        options: ["J'utilise la soufflette d'air comprimé directement sur mes vêtements", "J'interdis l'usage de la soufflette sur moi (risque d'embolie/lésion cutanée) et j'utilise un système d'aspiration adapté", "Je secoue mes vêtements fort dans l'atelier"],
-        answer: 1
-      },
-      {
-        question: "Pour couper une pièce de bois de petite taille à la scie sur table, que devez-vous utiliser ?",
-        options: ["Mes mains en les approchant le plus possible de la lame", "Un guide-poussoir adapté pour maintenir mes mains à distance de sécurité de la lame", "Une autre pièce de bois tenue à la va-vite"],
-        answer: 1
-      },
-      {
-        question: "Comment limite-t-on le risque d'incendie et d'explosion lié à la sciure dans l'atelier ?",
-        options: ["En laissant la sciure s'accumuler au sol", "En s'assurant du bon fonctionnement de l'aspiration et en nettoyant régulièrement l'atelier avec un aspirateur industriel ATEX", "En ouvrant simplement les fenêtres"],
-        answer: 1
-      }
-    ]
-  },
-  "Hôtellerie, Restauration & Cafés (HCR)": {
-    icon: " 🍽️ ",
-    categories: ["Coupure (Couteaux, trancheurs)", "Brûlure (Huiles, plaques, vapeur)", "Chute de plain-pied (Sols gras/mouillés)", "Manutention (Fûts, caisses de boissons)", "Stress / Coup de feu"],
-    epi: ["Chaussures de cuisine anti-dérapantes coquées 👟", "Tablier de protection thermique/chimique 🎽", "Gants anti-coupure en mailles (pour la plonge/découpe lourde) 🧤"],
-    rules: [
-      { title: "Règle 1 : Prévention des Chutes", desc: "Essuyage immédiat de toute zone de sol souillée par de l'eau ou des matières grasses en cuisine.", color: "border-restev-gold" },
-      { title: "Règle 2 : Utilisation des Trancheurs", desc: "Utilisation du chariot et du poussoir obligatoire. Nettoyage de la lame uniquement machine débranchée.", color: "border-red-500" }
-    ],
-    qcm: [
-      {
-        question: "Un liquide ou de la graisse tombe au sol en cuisine pendant le coup de feu. Que faites-vous ?",
-        options: ["Je laisse sécher et je verrai après le service", "Je jette un chiffon dessus sans nettoyer", "J'essuie immédiatement la zone ou je la balise pour éviter une glissade immédiate"],
-        answer: 2
-      },
-      {
-        question: "Quelle est la procédure correcte pour nettoyer la lame d'un trancheur à jambon ?",
-        options: ["Laisser l'appareil allumé pour aller plus vite en frottant avec une éponge", "Éteindre l'appareil, débrancher la prise électrique, régler l'épaisseur à zéro et nettoyer avec un outil adapté", "Passer un coup de chiffon rapide pendant que la lame tourne"],
-        answer: 1
-      },
-      {
-        question: "Vous devez sortir un plat lourd et brûlant d'un four à haute température :",
-        options: ["J'utilise un torchon légèrement humide", "J'utilise des gants de protection thermique adaptés et secs, en vérifiant que le passage est dégagé", "Je le prends à mains nues très rapidement"],
-        answer: 1
-      },
-      {
-        question: "Pour ouvrir une boîte de conserve au format professionnel (restauration collective), quel est le risque majeur ?",
-        options: ["Le risque d'éclaboussure", "Le risque de coupure profonde avec les bords tranchants de la boîte (nécessité d'utiliser l'ouvre-boîte conforme)", "Le risque d'abîmer l'ouvre-boîte"],
-        answer: 1
-      },
-      {
-        question: "Les livraisons de fûts de bière ou de caisses de denrées arrivent en réserve. Comment les manipuler ?",
-        options: ["Porter le maximum de caisses d'un coup pour finir vite", "Utiliser un diable ou un chariot de manutention et appliquer les gestes et postures (dos droit, genoux pliés)", "Fléchir le dos en gardant les jambes tendues"],
-        answer: 1
-      }
-    ]
-  },
-  "Agriculture, Viticulture & Espaces Verts": {
-    icon: " 🚜 ",
-    categories: ["Risque Engins / Écrasement / Retournement", "Risque Phytosanitaire (Produits chimiques)", "Outils Tranchants (Tronçonneuse, broyeur)", "Chute de hauteur (Échelles, arbres)", "Risque Biologique (Tétanos, tiques)"],
-    epi: ["Chaussures ou bottes de sécurité renforcées 🥾", "Pantalon anti-coupure (si usage de tronçonneuse) 👖", "Écran facial ou lunettes de protection 🽽", "Combinaison et masque à cartouche (pour traitements) 😷"],
-    rules: [
-      { title: "Règle 1 : Sécurité Prise de Force", desc: "Interdiction d'approcher ou de travailler près d'une prise de force de tracteur sans son protecteur en plastique.", color: "border-red-600" },
-      { title: "Règle 2 : Risque Phyto", desc: "Respect strict des Délais de Rentrée (DRE) dans les parcelles après application d'un traitement.", color: "border-green-600" }
-    ],
-    qcm: [
-      {
-        question: "Lorsque vous descendez de la cabine d'un tracteur ou d'un engin agricole, quelle méthode utilisez-vous ?",
-        options: ["Je saute directement au sol depuis la cabine", "Je descends face à la cabine en utilisant les marchepieds et les poignées (la règle des 3 points d'appui)", "Je descends à reculons sans regarder"],
-        answer: 1
-      },
-      {
-        question: "Quelle est la consigne de sécurité absolue concernant la prise de force d'un tracteur ?",
-        options: ["Elle peut être utilisée sans son capot en plastique si on fait attention", "Le protecteur en plastique (fourreau et cuvelage) doit être en parfait état et attaché pour éviter l'enroulement mortel", "On peut sauter par-dessus lorsqu'elle tourne"],
-        answer: 1
-      },
-      {
-        question: "Vous devez appliquer un produit phytosanitaire (traitement des cultures). Quels EPI portez-vous ?",
-        options: ["Mes vêtements de travail habituels suffisent", "Une combinaison étanche type 4, des gants en nitrile, des bottes et un masque équipé de filtres adaptés (A2P3)", "Un simple masque chirurgical et un short"],
-        answer: 1
-      },
-      {
-        question: "Lors de l'utilisation d'une tronçonneuse (élagage / coupe), quel équipement est obligatoire pour protéger vos jambes ?",
-        options: ["Un jean épais", "Un pantalon de protection anti-coupure homologué (classe adaptée à la vitesse de la chaîne)", "Des genouillères de chantier"],
-        answer: 1
-      },
-      {
-        question: "Après une journée de travail dans les champs ou les espaces verts, face au risque de maladie de Lyme, que devez-vous inspecter ?",
-        options: ["Si mes chaussures sont propres", "L'absence de tiques sur l'ensemble de mon corps", "Si j'ai pris des coups de soleil"],
-        answer: 1
-      }
-    ]
-  }  
-      "Automobile & Moto (Mécanique / Carrosserie)": {
-    icon: " 🚗🏍️ ",
-    categories: ["Heurt / Écrasement (Pont élévateur)", "Risque Électrique (Véhicules Hybrides/Électriques)", "Risque Chimique (Huiles, solvants, batteries)", "Projections / Brûlures (Meulage, soudage)", "Chute de plain-pied (Sols gras/huiles)"],
-    epi: ["Chaussures de sécurité anti-dérapantes et anti-perforation S3 🥾", "Gants en nitrile (protection chimique) ou gants mécaniques 🧤", "Lunettes de protection d'impact (norme EN 166) 🥽", "Casque anti-bruit (selon outils utilisés) 🎧"],
-    rules: [
-      { title: "Règle 1 : Sécurité sur Pont Élévateur", desc: "Vérification systématique du positionnement des tampons de levage et enclenchement obligatoire des crans de sécurité mécaniques avant de travailler sous le véhicule.", color: "border-red-500" },
-      { title: "Règle 2 : Risque Haute Tension", desc: "Interdiction absolue de toucher ou d'intervenir sur les câbles orange d'un véhicule électrique/hybride sans habilitation électrique spécifique.", color: "border-restev-blue" }
-    ],
-    qcm: [
-      {
-        question: "Avant de monter un véhicule sur un pont élévateur et de travailler en dessous, quelle est la procédure vitale ?",
-        options: ["Vérifier le niveau de carburant", "Positionner les tampons sur les points de levage constructeur, lever légèrement pour tester la stabilité, puis enclencher la sécurité mécanique du pont", "Monter le pont au maximum le plus vite possible"],
-        answer: 1
-      },
-      {
-        question: "Sur les véhicules électriques ou hybrides, de quelle couleur sont les câbles transportant la haute tension (danger d'électrocution mortelle) ?",
-        options: ["Bleus", "Blancs", "Orange"],
-        answer: 2
-      },
-      {
-        question: "Vous devez manipuler des huiles de vidange usagées ou des solvants de nettoyage. Quelle règle appliquez-vous ?",
-        options: ["Je travaille à mains nues pour mieux ressentir les pièces", "Je porte des gants en nitrile adaptés car ces produits pénètrent la peau et sont hautement toxiques / cancérogènes", "Je mets des gants en tissu classiques"],
-        answer: 1
-      },
-      {
-        question: "De l'huile moteur ou du liquide de frein se répand accidentellement au sol dans votre baie de travail. Que faites-vous ?",
-        options: ["Je laisse le liquide s'évaporer tout seul", "Je jette immédiatement un absorbant industriel, je nettoie et je jette le résidu dans le bac spécifique aux déchets dangereux (filière de recyclage)", "Je pousse le liquide avec une raclette sous l'établi du voisin"],
-        answer: 1
-      },
-      {
-        question: "Lors de l'utilisation d'une meuleuse d'angle (disqueuse) ou d'un outil de découpe en carrosserie, comment protégez-vous vos yeux ?",
-        options: ["Je ferme légèrement les yeux pendant l'opération", "Mes lunettes de vue ou de soleil suffisent", "Je porte obligatoirement des lunettes de protection d'impact enveloppantes ou une visière complète conforme"],
-        answer: 2
-      }
-    ]
-  }
-  "Logistique & Transport": {
-    icon: " 📦 ",
-    categories: ["Chute de Quai", "Coactivité Piétons / Chariots", "Défaut d'arrimage", "Manutention Manuelle", "Stress / Délais"],
-    epi: ["Chaussures de sécurité avec embout 🥾", "Gilet haute visibilité 🦺", "Gants de manutention antidérapants 🧤"],
-    rules: [
-      { title: "Règle 1 : Haute Visibilité", desc: "Gilet classe 2 et chaussures de sécurité obligatoires sur les quais et zones de stockage.", color: "border-restev-blue" },
-      { title: "Règle 2 : Priorité Piétons", desc: "Circulation des chariots limitée à 8 km/h. Priorité systématique aux piétons.", color: "border-restev-gold" }
-    ],
-    qcm: [
-      {
-        question: "Dans la zone logistique, comment devez-vous obligatoirement vous déplacer à pied ?",
-        options: ["Au milieu des allées de circulation des chariots pour être bien vu", "Exclusivement sur les cheminements piétons matérialisés au sol", "En diagonale pour aller plus vite"],
-        answer: 1
-      },
-      {
-        question: "Pour soulever une charge lourde au sol en protégeant votre dos, quelle posture adoptez-vous ?",
-        options: ["Je plie les genoux, je garde le dos droit et je maintiens la charge près du corps", "Je garde les jambes tendues et je courbe le dos au maximum", "Je pivote le buste brusquement pendant l'effort"],
-        answer: 0
-      },
-      {
-        question: "Quelle est la règle absolue concernant la vitesse des engins (caristes) dans l'entrepôt ?",
-        options: ["Rouler le plus vite possible pour respecter les cadences", "Respecter les limitations (ex: 8 km/h) et accorder la priorité absolue aux piétons", "Klaxonner en continu sans ralentir aux intersections"],
-        answer: 1
-      },
-      {
-        question: "Avant d'entrer dans un camion à quai avec un transpalette, quelle vérification est obligatoire ?",
-        options: ["Regarder si le camion est propre", "Vérifier que le camion est immobilisé (calé), le frein tiré et que le pont de liaison est sécurisé", "Entrer directement sans vérification"],
-        answer: 1
-      },
-      {
-        question: "Une palette stockée en hauteur sur un rack présente un défaut de filmage ou penche. Que faites-vous ?",
-        options: ["Je passe en dessous rapidement", "Je balise la zone au sol, j'interdis le passage et je signale l'anomalie pour reconditionnement", "Je tape dedans avec mon chariot pour la remettre droite"],
-        answer: 1
-      }
-    ]
-  },
-  "Santé, Soins & Services à la Personne": {
-    icon: " 🏥 ",
-    categories: ["Accident d'Exposition au Sang (AES)", "Manutention de Patients (Lombaires)", "Risque Infectieux / Biologique", "Agression / Incivilité", "Produits chimiques (Désinfection)"],
-    epi: ["Blouse / Tunique médicale 🥼", "Chaussures de protection hospitalières 👟", "Gants en nitrile à usage unique 🧤", "Masque de protection chirurgical 😷"],
-    rules: [
-      { title: "Règle 1 : Prévention Biologique", desc: "Port des gants obligatoire lors des soins. Respect strict des protocoles de tri des DASRI.", color: "border-restev-magenta" },
-      { title: "Règle 2 : Manutention", desc: "Utilisation prioritaire des lève-personnes et draps de glisse pour mobiliser les patients.", color: "border-restev-blue" }
-    ],
-    qcm: [
-      {
-        question: "En cas d'Accident d'Exposition au Sang (AES) par piqûre avec une aiguille souillée, quelle est l'action immédiate ?",
-        options: ["Faire saigner, laver à l'eau et au savon, désinfecter (Dakin/Bétadine 5 min) et déclarer sous 48h", "Mettre un pansement simple et continuer son service sans rien dire", "Sucer la plaie pour extraire le produit"],
-        answer: 0
-      },
-      {
-        question: "Où devez-vous jeter une aiguille, un tranchant ou un piquant immédiatement après son utilisation ?",
-        options: ["Dans la poubelle classique des déchets ménagers (DAOM)", "Dans un collecteur rigide jaune spécifique aux objets perforants (boîte DASRI)", "Dans le sac à linge sale"],
-        answer: 1
-      },
-      {
-        question: "Pour mobiliser ou transférer un patient lourd du lit au fauteuil, que devez-vous faire ?",
-        options: ["Forcer seul en portant le patient à bout de bras", "Utiliser impérativement les aides techniques disponibles (lève-personne, guidon de transfert, drap de glisse)", "Demander au patient de sauter"],
-        answer: 1
-      },
-      {
-        question: "Lors de l'utilisation de produits chimiques de désinfection (détergents, désinfectants concentrés), quel est le danger ?",
-        options: ["Aucun danger, ce sont des produits de nettoyage", "Le risque de brûlure chimique cutanée ou oculaire, et l'inhalation de vapeurs toxiques (EPI obligatoires)", "Uniquement une mauvaise odeur"],
-        answer: 1
-      },
-      {
-        question: "Quelle est la règle d'or pour l'hygiène des mains afin de bloquer les risques infectieux ?",
-        options: ["Se laver les mains uniquement en arrivant le matin", "Pratiquer une friction hydro-alcoolique méthodique avant et après chaque contact avec un patient", "Porter les mêmes gants toute la journée"],
-        answer: 1
-      }
-    ]
-  },
-  "Métallurgie & Industrie Lourde": {
-    icon: " ⚙️ ",
-    categories: ["Brûlure / Projections", "Bruit excessif", "Manutention mécanique", "Inhalation Fumées / Gaz", "Machine en mouvement / Happement"],
-    epi: ["Lunettes de protection (Impact) 🥽", "Chaussures de sécurité montantes S3 🥾", "Casque anti-bruit ou bouchons moulés 🎧", "Vêtements de travail ignifugés 🧥", "Gants de manutention lourde 🧤"],
-    rules: [
-      { title: "Règle 1 : EPI Spécifiques", desc: "Bouchons d'oreilles, lunettes de protection et vêtements ignifugés exigés dans l'atelier.", color: "border-orange-600" },
-      { title: "Règle 2 : Consignation", desc: "Aucune intervention sur machine sans procédure de consignation électrique et mécanique.", color: "border-red-600" }
-    ],
-    qcm: [
-      {
-        question: "Avant de nettoyer ou de réparer une machine outil, quelle procédure d'isolement est obligatoire ?",
-        options: ["Appuyer sur le bouton stop de la machine", "Réaliser une consignation stricte (coupure des énergies électrique/pneumatique et cadenassage)", "Demander à un collègue de surveiller l'interrupteur"],
-        answer: 1
-      },
-      {
-        question: "Le port des Protections Individuelles Contre le Bruit (PICB) est obligatoire dans l'atelier :",
-        options: ["Seulement quand le niveau sonore devient insupportable pour moi", "En continu dès lors que l'on circule ou travaille dans une zone balisée 'Bruit obligatoire'", "Uniquement pour les conducteurs de machines"],
-        answer: 1
-      },
-      {
-        question: "Pour éviter les risques de happement par les organes en mouvement d'une machine, je dois :",
-        options: ["Porter des vêtements amples pour être à l'aise", "Porter des vêtements de travail ajustés, cheveux attachés, sans bijoux ni vêtements flottants", "Mettre des gants trop grands"],
-        answer: 1
-      },
-      {
-        question: "Lors d'opérations de meulage, d'ébarbage ou de soudage, quel équipement protège vos yeux des projections ?",
-        options: ["Mes lunettes de vue classiques", "Des lunettes de protection d'impact ou un écran facial adapté conformes aux normes", "Fermer les yeux à moitié pendant le travail"],
-        answer: 1
-      },
-      {
-        question: "Lorsqu'un pont roulant déplace une charge lourde dans l'atelier, quelle est la consigne ?",
-        options: ["Guider la charge à la main directement en dessous", "Interdiction absolue de stationner ou de circuler sous la charge suspendue", "Courir en dessous pour passer avant elle"],
-        answer: 1
-      }
-    ]
-  }
-};
-       // Variable d'état global à déclarer au début du script si ce n'est pas fait
-let appState = {
-    currentSelectedCompany: "Non défini"
-};
-
-async function handleManagerLogin() {
-    const codeInput = document.getElementById('manager-company-code').value.trim().toUpperCase();
-    if (!codeInput) {
-        showToast("⚠️ Veuillez saisir un code valide.");
-        return;
-    }
-    
-    showToast("🔄 Connexion en cours...");
-    
-    try {
-        // Remplacer par ton véritable appel Supabase plus tard
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/companies?code=eq.${codeInput}`, {
-            method: 'GET',
-            headers: { 
-                "apikey": SUPABASE_ANON_KEY, 
-                "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            if (data.length > 0) {
-                const company = data[0];
-                appState.currentSelectedCompany = company.name;
-                document.getElementById('lbl-manager-comp-name').innerText = company.name;
-                
-                showToast(`✅ Bienvenue, ${company.name} !`);
-                switchScreen('scr-manager'); // Accès à l'espace séparé manager
-            } else {
-                showToast("❌ Code introuvable. Veuillez vérifier.");
-            }
-        } else {
-            showToast("❌ Erreur lors de la vérification du code.");
-        }
-    } catch (error) {
-        showToast("ℹ️ Mode hors ligne activé (Démo).");
-        // Fallback hors-ligne pour pouvoir tester sans base de données
-        appState.currentSelectedCompany = codeInput || "Entreprise Démo";
-        document.getElementById('lbl-manager-comp-name').innerText = appState.currentSelectedCompany;
-        switchScreen('scr-manager');
-    }
-}
-
         let myLeafletMap = null; 
         let myMapMarker = null; 
         let chartInstance = null; 
@@ -1022,8 +600,61 @@ async function handleManagerLogin() {
         let activeCanvas = {}; 
         let ctxCanvas = {};
         let canvasInitialized = false;
+        let selectedRiskCategory = "";
 
-        // --- ACOUSTIQUE ---
+        let appState = {
+            currentSelectedCompany: "Non défini",
+            currentCompanyCode: "DEMO-85",
+            currentActivity: "Général (Bureau & Administratif)",
+            employeeName: "Salarié Démo",
+            employeeStatus: "Nouvel Arrivant CDI",
+            customZones: ["Zone Logistique", "Atelier Principal", "Quai d'expédition"],
+            riskReports: []
+        };
+
+        const METIER_PRESETS = {
+            "Général (Bureau & Administratif)": {
+                icon: " 💻 ",
+                categories: ["Risque lié à l'écran", "Troubles Musculosquelettiques", "Risque Électrique", "Chute de plain-pied"],
+                epi: ["Aucun équipement spécifique requis"],
+                rules: [
+                    { title: "Règle 1 : Posture au poste de travail", desc: "Ajustez la hauteur de votre siège et de votre écran. Faites des pauses visuelles régulières.", color: "border-restev-blue" },
+                    { title: "Règle 2 : Déplacements internes", desc: "Maintenez les zones de circulation dégagées de tout câble ou matériel.", color: "border-restev-teal" }
+                ],
+                qcm: [
+                    { question: "En cas d'alarme incendie, quelle est la première action à réaliser ?", options: ["Terminer son appel", "Évacuer immédiatement vers le point de rassemblement", "Prendre l'ascenseur"], answer: 1 },
+                    { question: "Pour prévenir l'apparition de TMS au bureau, je dois :", options: ["Garder une posture statique", "Placer mon écran le plus haut possible", "Régler mon siège et faire des pauses"], answer: 2 }
+                ]
+            },
+            "Bâtiment & Travaux Publics (BTP)": {
+                icon: " 🏗️ ",
+                categories: ["Chute de Hauteur", "Heurt par Engin", "Non-port du Casque", "Chute d'Objets"],
+                epi: ["Casque de chantier (NF EN 397) 🪖", "Chaussures de sécurité S3 🥾", "Gilet haute visibilité 🦺", "Gants de protection 🧤"],
+                rules: [
+                    { title: "Règle 1 : Protection Crânienne & Antichute", desc: "Casque attaché et harnais obligatoire sur zones surélevées.", color: "border-amber-500" },
+                    { title: "Règle 2 : Balisage & Coactivité", desc: "Interdiction absolue de circuler sous les charges suspendues.", color: "border-red-500" }
+                ],
+                qcm: [
+                    { question: "Lors d'une intervention en hauteur sans garde-corps, que devez-vous porter ?", options: ["Rien si c'est rapide", "Un harnais de sécurité ancré à un point fixe", "Une ceinture de maintien simple"], answer: 1 },
+                    { question: "Face à un engin de chantier en mouvement, quelle est la règle ?", options: ["Établir un contact visuel avec le conducteur", "Passer rapidement dans son angle mort", "Courir derrière l'engin"], answer: 0 }
+                ]
+            },
+            "Industrie Agroalimentaire": {
+                icon: " 🥩 ",
+                categories: ["Glissade / Sols humides", "Coupure", "Risque Biologique", "Risque Chimique"],
+                epi: ["Bottes de sécurité (SRC) 🥾", "Blouse jetable 🧥", "Charlotte et masque 😷", "Protections auditives 🎧"],
+                rules: [
+                    { title: "Règle 1 : Hygiène & Corps Étrangers", desc: "Retrait obligatoire de tous les bijoux avant d'entrer en zone.", color: "border-restev-blue" },
+                    { title: "Règle 2 : Sécurité Machines", desc: "Interdiction de neutraliser ou contourner les carters de protection.", color: "border-red-600" }
+                ],
+                qcm: [
+                    { question: "Une machine de conditionnement se bloque. Quelle est votre action ?", options: ["Mettre la main pour décoincer", "Arrêter et appliquer la procédure de consignation", "Appeler un collègue sans couper"], answer: 1 },
+                    { question: "Les sols sont souvent humides. Comment prévenez-vous le risque ?", options: ["Je cours pour aller plus vite", "Je porte mes bottes antidérapantes SRC", "Je marche sur la pointe des pieds"], answer: 1 }
+                ]
+            }
+        };
+
+        // --- ENTRAÎNEMENT ACOUSTIQUE ---
         function playSafetyAlertSound() {
             if (isManagerSoundMuted) return;
             try {
@@ -1044,8 +675,7 @@ async function handleManagerLogin() {
 
         function toggleMuteManagerSound() {
             isManagerSoundMuted = !isManagerSoundMuted;
-            const btn = document.getElementById('btn-mute-manager');
-            if (btn) btn.innerText = isManagerSoundMuted ? "🔇 Muet" : "🔊 Actif";
+            document.getElementById('btn-mute-manager').innerText = isManagerSoundMuted ? "🔇 Muet" : "🔊 Actif";
         }
 
         function updateManagerVolume(val) {
@@ -1053,92 +683,446 @@ async function handleManagerLogin() {
             if (managerVolume === 0) {
                 isManagerSoundMuted = true;
                 document.getElementById('btn-mute-manager').innerText = "🔇 Muet";
-            } else if (isManagerSoundMuted) {
+            } else {
                 isManagerSoundMuted = false;
                 document.getElementById('btn-mute-manager').innerText = "🔊 Actif";
             }
         }
-// Fonction pour générer le QCM en fonction du métier
-// Fonction pour générer le QCM en fonction du métier
-function buildEmployeeQCMLayout() {
-    const container = document.getElementById('employee-qcm-container');
-    if (!container) return;
-    
-    // Sécurité au cas où l'activité n'est pas encore définie
-    const currentActivity = appState.currentActivity || "Général (Bureau & Administratif)";
-    const preset = METIER_PRESETS[currentActivity];
-    
-    if (!preset || !preset.qcm) {
-        container.innerHTML = "<p class='text-xs text-slate-500 italic'>Aucun questionnaire requis pour ce secteur.</p>";
-        return;
-    }
-    
-    let html = "";
-    preset.qcm.forEach((q, qIndex) => {
-        html += `
-            <div class="p-3.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
-                <p class="text-xs font-bold text-slate-800 dark:text-white">${qIndex + 1}. ${q.question}</p>
-                <div class="space-y-1.5">
-        `;
-        q.options.forEach((opt, oIndex) => {
-            html += `
-                <label class="flex items-start gap-2.5 p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700 text-[11px] font-medium text-slate-600 dark:text-slate-300 cursor-pointer hover:bg-blue-50/50 dark:hover:bg-slate-700/50 transition">
-                    <input type="radio" name="qcm_question_${qIndex}" value="${oIndex}" class="mt-0.5 accent-restev-blue">
-                    <span>${opt}</span>
-                </label>
-            `;
-        });
-        html += `
-                </div>
-            </div>
-        `;
-    });
-    
-    container.innerHTML = html;
-}
 
-// Initialisation au chargement de la page
-window.addEventListener('DOMContentLoaded', () => {
-    // Définir une activité par défaut si nécessaire
-    if (!appState.currentActivity) {
-        appState.currentActivity = "Général (Bureau & Administratif)";
-    }
-    // Remplissage initial ou fonctions d'amorçage
-});
-
-// Fonctions de navigation globale requises par l'interface
-function switchScreen(screenId) {
-    document.querySelectorAll('.screen').forEach(scr => scr.classList.remove('active'));
-    const target = document.getElementById(screenId);
-    if (target) {
-        target.classList.add('active');
-        // Si on va sur l'écran d'onboarding, on génère le QCM mis à jour
-        if (screenId === 'scr-onboarding-1') {
-            buildEmployeeQCMLayout();
+        // --- NAVIGATION ET APPLICATION ---
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(scr => scr.classList.remove('active'));
+            const target = document.getElementById(screenId);
+            if (target) {
+                target.classList.add('active');
+                if (screenId === 'scr-onboarding-1') buildEmployeeQCMLayout();
+                if (screenId === 'scr-report') initLeafletMap();
+                if (screenId === 'scr-signature') initSignatures();
+                if (screenId === 'scr-manager') renderManagerZones();
+            }
         }
-    }
-}
 
-function toggleDarkMode() {
-    document.documentElement.classList.toggle('dark');
-}
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+        }
 
-function showToast(text) {
-    const toast = document.getElementById('toast');
-    const toastText = document.getElementById('toast-text');
-    if (toast && toastText) {
-        toastText.innerText = text;
-        toast.classList.remove('translate-y-20', 'opacity-0');
-        setTimeout(() => {
-            toast.classList.add('translate-y-20', 'opacity-0');
-        }, 3500);
-    }
-}
+        function showToast(text) {
+            const toast = document.getElementById('toast');
+            const toastText = document.getElementById('toast-text');
+            if (toast && toastText) {
+                toastText.innerText = text;
+                toast.classList.remove('translate-y-20', 'opacity-0');
+                setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3500);
+            }
+        }
 
-// Fallbacks de navigation pour les boutons du portail
-function handleDirectionAccess() { switchScreen('scr-direction'); }
-function accessEmployeeDirect() { switchScreen('scr-employee'); }
-function logoutManager() { switchScreen('scr-home'); }
-</script>
+        function handleDirectionAccess() { 
+            switchScreen('scr-direction'); 
+            initDirectionChart();
+            renderDirectionActivity();
+        }
+        function accessEmployeeDirect() { 
+            document.getElementById('lbl-emp-welcome').innerText = "Bonjour " + appState.employeeName;
+            document.getElementById('lbl-emp-company').innerText = "Structure : " + appState.currentSelectedCompany + " (" + appState.currentActivity + ")";
+            switchScreen('scr-employee'); 
+        }
+        function logoutManager() { switchScreen('scr-home'); }
+
+        // --- CONNEXION & ADHÉRENTS ---
+        async function handleManagerLogin() {
+            const codeInput = document.getElementById('manager-company-code').value.trim().toUpperCase();
+            if (!codeInput) {
+                showToast("⚠️ Saisissez votre identifiant unique.");
+                return;
+            }
+            appState.currentCompanyCode = codeInput;
+            appState.currentSelectedCompany = "Firme Adhérente Vendée";
+            document.getElementById('lbl-manager-comp-name').innerText = appState.currentSelectedCompany;
+            showToast("✅ Espace connecté avec succès.");
+            switchScreen('scr-manager');
+        }
+
+        function createNewCompany() {
+            const name = document.getElementById('new-company-name').value.trim();
+            if (!name) {
+                showToast("⚠️ Indiquez la raison sociale.");
+                return;
+            }
+            const generatedCode = "RSTV-" + name.substring(0,3).toUpperCase() + "-" + Math.floor(1000 + Math.random() * 9000);
+            document.getElementById('lbl-generated-code').innerText = generatedCode;
+            document.getElementById('generated-code-box').classList.remove('hidden');
+            appState.currentSelectedCompany = name;
+            appState.currentCompanyCode = generatedCode;
+            showToast("⚡ Code entreprise généré.");
+        }
+
+        function copyGeneratedCode() {
+            const code = document.getElementById('lbl-generated-code').innerText;
+            navigator.clipboard.writeText(code);
+            showToast("📋 Code copié dans le presse-papiers !");
+            document.getElementById('manager-company-code').value = code;
+        }
+
+        // --- INTERFACE MANAGER ---
+        function initActivitySelect() {
+            const select = document.getElementById('manager-activity-select');
+            select.innerHTML = "";
+            Object.keys(METIER_PRESETS).forEach(key => {
+                const opt = document.createElement('option');
+                opt.value = key;
+                opt.innerText = METIER_PRESETS[key].icon + " " + key;
+                select.appendChild(opt);
+            });
+            updateCompanyActivityProfile();
+        }
+
+        function updateCompanyActivityProfile() {
+            const selected = document.getElementById('manager-activity-select').value;
+            appState.currentActivity = selected;
+            const preset = METIER_PRESETS[selected];
+            document.getElementById('manager-activity-preview').innerText = preset.categories.join(', ');
+        }
+
+        function registerCustomZone() {
+            const zoneInput = document.getElementById('txt-new-zone');
+            const newZone = zoneInput.value.trim();
+            if (!newZone) return;
+            appState.customZones.push(newZone);
+            zoneInput.value = "";
+            renderManagerZones();
+            showToast("📍 Zone ajoutée.");
+        }
+
+        function renderManagerZones() {
+            const container = document.getElementById('manager-zones-list');
+            container.innerHTML = "";
+            appState.customZones.forEach(zone => {
+                container.innerHTML += `<span class="bg-blue-50 text-restev-blue text-[11px] px-3 py-1 rounded-full border border-blue-200 dark:bg-slate-900 dark:border-slate-700 font-bold">${zone}</span>`;
+            });
+        }
+
+        function generateEmployeeAccess() {
+            const name = document.getElementById('reg-emp-name').value.trim();
+            const status = document.getElementById('reg-emp-status').value;
+            if (!name) {
+                showToast("⚠️ Saisissez le nom du salarié.");
+                return;
+            }
+            appState.employeeName = name;
+            appState.employeeStatus = status;
+            
+            document.getElementById('qr-area').classList.remove('hidden');
+            const canvas = document.getElementById('qr-canvas');
+            QRCode.toCanvas(canvas, `https://restev85.fr/onboarding?company=${encodeURIComponent(appState.currentSelectedCompany)}&worker=${encodeURIComponent(name)}`, { width: 140 });
+            showToast("📱 QR Code d'émargement actif !");
+        }
+
+        // --- STUDIO PERSONNALISATION ---
+        let tempPresetQCM = [];
+        function openStudio(metier) {
+            document.getElementById('lbl-studio-metier').innerText = metier;
+            const container = document.getElementById('studio-rules-list');
+            container.innerHTML = "";
+            tempPresetQCM = JSON.parse(JSON.stringify(METIER_PRESETS[metier].qcm));
+            
+            tempPresetQCM.forEach((q, index) => {
+                container.innerHTML += `
+                    <div class="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl space-y-2 border">
+                        <input type="text" value="${q.question}" onchange="tempPresetQCM(${index}).question = this.value" class="w-full p-2 text-xs font-bold border rounded bg-white dark:bg-slate-800 dark:text-white">
+                        <div class="space-y-1">
+                            ${q.options.map((opt, oIdx) => `
+                                <input type="text" value="${opt}" onchange="tempPresetQCM[${index}].options[${oIdx}] = this.value" class="w-full p-2 text-[11px] border rounded bg-white dark:bg-slate-800 dark:text-slate-300">
+                            `).join('')}
+                        </div>
+                    </div>`;
+            });
+            switchScreen('scr-studio');
+        }
+
+        function saveCustomQCM() {
+            const metier = appState.currentActivity;
+            METIER_PRESETS[metier].qcm = tempPresetQCM;
+            showToast("💾 Configuration QCM enregistrée.");
+            switchScreen('scr-manager');
+        }
+
+        // --- PARCOURS SALARIÉ : SÉCURITÉ ---
+        function buildEmployeeQCMLayout() {
+            const rulesContainer = document.getElementById('employee-rules-container');
+            const qcmContainer = document.getElementById('employee-qcm-container');
+            const preset = METIER_PRESETS[appState.currentActivity];
+            
+            // Règles
+            rulesContainer.innerHTML = "";
+            preset.rules.forEach(r => {
+                rulesContainer.innerHTML += `
+                    <div class="p-3 bg-white dark:bg-slate-900 border-l-4 ${r.color} rounded-xl shadow-sm border">
+                        <h4 class="font-bold text-slate-900 dark:text-white">${r.title}</h4>
+                        <p class="text-[11px] text-slate-500">${r.desc}</p>
+                    </div>`;
+            });
+
+            // QCM
+            qcmContainer.innerHTML = "";
+            preset.qcm.forEach((q, qIdx) => {
+                qcmContainer.innerHTML += `
+                    <div class="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border space-y-2">
+                        <p class="text-xs font-bold">${qIdx + 1}. ${q.question}</p>
+                        <div class="space-y-1.5">
+                            ${q.options.map((opt, oIdx) => `
+                                <label class="flex items-center gap-2.5 p-2 bg-white dark:bg-slate-800 border rounded-lg text-[11px] cursor-pointer">
+                                    <input type="radio" name="qcm_${qIdx}" value="${oIdx}">
+                                    <span>${opt}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>`;
+            });
+
+            // Catégories de risques (Report screen)
+            const catGrid = document.getElementById('risk-category-grid');
+            catGrid.innerHTML = "";
+            preset.categories.forEach(cat => {
+                catGrid.innerHTML += `
+                    <button type="button" onclick="selectRiskCategory('${cat}', this)" class="p-2.5 bg-slate-50 dark:bg-slate-900 border rounded-xl text-[10px] font-bold text-slate-600 dark:text-slate-300 transition-all hover:border-restev-magenta text-left">
+                        ${cat}
+                    </button>`;
+            });
+
+            // Zones
+            const locSelect = document.getElementById('risk-location');
+            locSelect.innerHTML = "";
+            appState.customZones.forEach(z => {
+                locSelect.innerHTML += `<option value="${z}">${z}</option>`;
+            });
+
+            // EPI
+            const epiContainer = document.getElementById('employee-epi-container');
+            epiContainer.innerHTML = "";
+            preset.epi.forEach((epi, eIdx) => {
+                epiContainer.innerHTML += `
+                    <label class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl cursor-pointer text-xs font-bold">
+                        <input type="checkbox" id="epi_${eIdx}" class="w-4 h-4 accent-restev-blue">
+                        <span>${epi}</span>
+                    </label>`;
+            });
+        }
+
+        function selectRiskCategory(cat, btn) {
+            selectedRiskCategory = cat;
+            document.querySelectorAll('#risk-category-grid button').forEach(b => b.classList.remove('border-restev-magenta', 'bg-pink-50'));
+            btn.classList.add('border-restev-magenta', 'bg-pink-50');
+        }
+
+        function validateQCMAndProceed() {
+            const preset = METIER_PRESETS[appState.currentActivity];
+            let allCorrect = true;
+            preset.qcm.forEach((q, qIdx) => {
+                const selected = document.querySelector(`input[name="qcm_${qIdx}"]:checked`);
+                if (!selected || parseInt(selected.value) !== q.answer) {
+                    allCorrect = false;
+                }
+            });
+
+            if (!allCorrect) {
+                document.getElementById('qcm-error-msg').classList.remove('hidden');
+                showToast("❌ Erreur de validation QCM.");
+            } else {
+                document.getElementById('qcm-error-msg').classList.add('hidden');
+                showToast("✅ Compétences validées !");
+                switchScreen('scr-epi-check');
+            }
+        }
+
+        function validateEPICheck() {
+            showToast("✅ Dotation EPI enregistrée.");
+            switchScreen('scr-signature');
+        }
+
+        // --- GÉOLOCALISATION & CARTOGRAPHIE (LEAFLET) ---
+        function initLeafletMap() {
+            setTimeout(() => {
+                if (myLeafletMap) return;
+                myLeafletMap = L.map('map').setView([46.6705, -1.4264], 13); // La Roche-sur-Yon default
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(myLeafletMap);
+                myMapMarker = L.marker([46.6705, -1.4264], { draggable: true }).addTo(myLeafletMap);
+                
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(position => {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        myLeafletMap.setView([lat, lng], 16);
+                        myMapMarker.setLatLng([lat, lng]);
+                        document.getElementById('geo-status').innerText = `📍 Coordonnées GPS Verrouillées (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+                    }, () => {
+                        document.getElementById('geo-status').innerText = "⚠️ Position par défaut (La Roche-sur-Yon)";
+                    });
+                }
+            }, 300);
+        }
+
+        let capturePhotoBase64 = "";
+        function processRealPhoto(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    capturePhotoBase64 = e.target.result;
+                    const preview = document.getElementById('photo-preview');
+                    preview.src = capturePhotoBase64;
+                    preview.classList.remove('hidden');
+                    document.getElementById('photo-placeholder').classList.add('hidden');
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function submitRealRiskReport() {
+            if (!selectedRiskCategory) {
+                showToast("⚠️ Sélectionnez un type de risque.");
+                return;
+            }
+            const data = {
+                category: selectedRiskCategory,
+                location: document.getElementById('risk-location').value,
+                level: document.getElementById('risk-level').value,
+                desc: document.getElementById('risk-desc').value || "Aucune description.",
+                date: new Date().toLocaleTimeString('fr-FR'),
+                photo: capturePhotoBase64
+            };
+            
+            appState.riskReports.unshift(data);
+            playSafetyAlertSound();
+            showToast("🚨 Signalement transmis en direct !");
+            
+            // Mise à jour console manager
+            const mBox = document.getElementById('manager-risk-box');
+            if (appState.riskReports.length === 1) mBox.innerHTML = "";
+            
+            mBox.innerHTML = `
+                <div class="p-3 bg-red-50 dark:bg-slate-900 border border-red-200 dark:border-slate-700 rounded-xl space-y-1">
+                    <div class="flex justify-between items-center text-xs font-black">
+                        <span class="text-red-600">${data.level} - ${data.category}</span>
+                        <span class="text-slate-400">${data.date}</span>
+                    </div>
+                    <p class="text-[11px] font-bold">Zone : ${data.location}</p>
+                    <p class="text-[11px] text-slate-500">${data.desc}</p>
+                    ${data.photo ? `<img src="${data.photo}" class="h-16 w-full object-cover rounded mt-1">` : ''}
+                </div>` + mBox.innerHTML;
+                
+            switchScreen('scr-employee');
+        }
+
+        // --- SIGNATURES NUMÉRIQUES (HTML5 CANVAS) ---
+        function initSignatures() {
+            if (canvasInitialized) return;
+            setupCanvasPad('canv-employee');
+            setupCanvasPad('canv-tutor');
+            canvasInitialized = true;
+        }
+
+        function setupCanvasPad(id) {
+            const canvas = document.getElementById(id);
+            const ctx = canvas.getContext('2d');
+            activeCanvas[id] = canvas;
+            ctxCanvas[id] = ctx;
+            
+            // Fix resolution
+            canvas.width = canvas.parentElement.clientWidth;
+            
+            function getPos(e) {
+                const rect = canvas.getBoundingClientRect();
+                return {
+                    x: (e.clientX || e.touches[0].clientX) - rect.left,
+                    y: (e.clientY || e.touches[0].clientY) - rect.top
+                };
+            }
+            
+            function start(e) { isDrawing = true; draw(e); }
+            function stop() { isDrawing = false; ctx.beginPath(); }
+            
+            function draw(e) {
+                if (!isDrawing) return;
+                e.preventDefault();
+                const pos = getPos(e);
+                ctx.lineWidth = 2;
+                ctx.lineCap = 'round';
+                ctx.strokeStyle = '#1e293b';
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(pos.x, pos.y);
+            }
+            
+            canvas.addEventListener('mousedown', start);
+            canvas.addEventListener('mousemove', draw);
+            window.addEventListener('mouseup', stop);
+            
+            canvas.addEventListener('touchstart', start, { passive: false });
+            canvas.addEventListener('touchmove', draw, { passive: false });
+            window.addEventListener('touchend', stop);
+        }
+
+        function clearCanvas(id) {
+            const canvas = activeCanvas[id];
+            const ctx = ctxCanvas[id];
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function finalizeOfficialAttestation() {
+            document.getElementById('lbl-view-emp').innerText = appState.employeeName;
+            document.getElementById('lbl-view-company').innerText = appState.currentSelectedCompany;
+            document.getElementById('lbl-view-status').innerText = appState.employeeStatus;
+            document.getElementById('lbl-view-tutor').innerText = document.getElementById('tutor-name').value;
+            
+            // Collecte EPIs cochés
+            const chosenEPI = [];
+            document.querySelectorAll('#employee-epi-container input:checked').forEach(cb => {
+                chosenEPI.push(cb.nextElementSibling.innerText);
+            });
+            document.getElementById('lbl-view-epi').innerText = chosenEPI.length > 0 ? chosenEPI.join(', ') : "Aucun équipement remis.";
+
+            // Transfert signatures
+            document.getElementById('img-render-emp').src = activeCanvas['canv-employee'].toDataURL();
+            document.getElementById('img-render-tutor').src = activeCanvas['canv-tutor'].toDataURL();
+            
+            showToast("🎓 Passeport Prévention validé et signé !");
+            switchScreen('scr-attestation');
+        }
+
+        // --- CONSOLE INTERNE DIRECTION RESTEV ---
+        function initDirectionChart() {
+            if (chartInstance) chartInstance.destroy();
+            const ctx = document.getElementById('chart-restev-risks').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Chutes de Hauteur', 'Sols glissants', 'Manutention', 'Risque Chimique'],
+                    datasets: [{
+                        data: [35, 25, 20, 20],
+                        backgroundColor: ['#3a7bd5', '#4ec3b1', '#ffb007', '#e0248a']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        function renderDirectionActivity() {
+            const feed = document.getElementById('direction-activity-feed');
+            feed.innerHTML = `
+                <div class="flex items-center gap-2 border-b pb-1">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span>Audit initial validé : Menuiserie Marais 85</span>
+                </div>
+                <div class="flex items-center gap-2 border-b pb-1">
+                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                    <span>Nouveau passeport émis : Interim BTP - ${appState.employeeName}</span>
+                </div>`;
+        }
+
+        // --- INITIALISATION GÉNÉRALE ---
+        window.addEventListener('DOMContentLoaded', () => {
+            initActivitySelect();
+        });
+    </script>
 </body>
 </html>
