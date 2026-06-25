@@ -1138,7 +1138,74 @@
             document.getElementById('lbl-manager-comp-name').innerText = appState.currentSelectedCompany;
             showToast("✅ Espace connecté avec succès.");
             switchScreen('scr-manager');
-        }
+            populateSectorsDropdown();
+}
+      
+        // Fonction pour remplir automatiquement les Ateliers / Secteurs selon le métier
+function populateSectorsDropdown() {
+    const selectLocation = document.getElementById('risk-location');
+    if (!selectLocation) return;
+
+    // On vide le sélecteur actuel pour éviter les doublons
+    selectLocation.innerHTML = "";
+
+    // Ateliers génériques par défaut
+    let sectors = [
+        "Zone de Production / Atelier Principal", 
+        "Zone Stockage & Logistique", 
+        "Quai de Déchargement / Réception", 
+        "Atelier Maintenance", 
+        "Bureaux / Administration"
+    ];
+
+    // On récupère l'activité en cours dans l'application
+    const currentActivity = (typeof appState !== 'undefined' && appState.currentActivity) ? appState.currentActivity : "Général";
+
+    // Personnalisation dynamique des ateliers selon le profil métier choisi
+    if (currentActivity.includes("Métallurgie") || currentActivity.includes("Industrie")) {
+        sectors = [
+            "Atelier Soudure & Chaudronnerie", 
+            "Zone Meulage & Ébarbage", 
+            "Ligne d'Assemblage / Usinage", 
+            "Zone Expédition", 
+            "Atelier Maintenance & Outillage"
+        ];
+    } else if (currentActivity.includes("Restauration") || currentActivity.includes("Boulangerie") || currentActivity.includes("Métiers de bouche")) {
+        sectors = [
+            "Cuisine Chaude (Four/Feux)", 
+            "Zone Préparation Froide", 
+            "Plonge & Lavage", 
+            "Réserve Sèche / Économat", 
+            "Zone Livraison & Réception"
+        ];
+    } else if (currentActivity.includes("BTP") || currentActivity.includes("Chantier")) {
+        sectors = [
+            "Zone Gros Œuvre", 
+            "Zone Second Œuvre", 
+            "Zone Stockage Matériaux & Silos", 
+            "Base Vie / Zone Roulotte", 
+            "Zone Levage / Grue"
+        ];
+    } else if (currentActivity.includes("Logistique") || currentActivity.includes("Transport")) {
+        sectors = [
+            "Zone de Picking / Préparation", 
+            "Quais d'Expédition & Réception", 
+            "Allées de Stockage (Haute Hauteur)", 
+            "Zone de Charge Batteries (Chariots)", 
+            "Bureaux Logistique"
+        ];
+    }
+
+    // Injection des options HTML à l'intérieur du select
+    sectors.forEach(sector => {
+        const opt = document.createElement('option');
+        opt.value = sector;
+        opt.innerText = sector;
+        selectLocation.appendChild(opt);
+    });
+
+    console.log("Ateliers chargés avec succès pour le secteur : " + currentActivity);
+}
         function createNewCompany() {
             const name = document.getElementById('new-company-name').value.trim();
             if (!name) {
