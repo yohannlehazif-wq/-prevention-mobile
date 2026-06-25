@@ -1499,6 +1499,178 @@ function populateSectorsDropdown() {
             setupCanvasPad('canv-tutor');
             canvasInitialized = true;
         }
+        function submitDangerAlert() {
+    try {
+        console.log("Tentative d'envoi d'une alerte sécurité...");
+
+        // 1. Récupération des éléments du formulaire
+        const selectLocation = document.getElementById('risk-location');
+        const selectCategory = document.getElementById('risk-category') || document.getElementById('risk-type');
+        const txtDescription = document.getElementById('risk-description') || document.getElementById('danger-desc');
+        const selectSeverity = document.getElementById('risk-severity') || document.getElementById('danger-level');
+
+        // Vérification de sécurité minimale
+        const location = selectLocation ? selectLocation.value : "Zone non spécifiée";
+        const category = selectCategory ? selectCategory.value : "Risque Général";
+        const description = txtDescription ? txtDescription.value.trim() : "";
+        const severity = selectSeverity ? selectSeverity.value : "Moyen";
+
+        if (!description) {
+            alert("⚠️ Veuillez décrire brièvement la situation dangereuse ou l'anomalie constatée.");
+            return;
+        }
+
+        // 2. Création de l'objet Alerte
+        const newAlert = {
+            id: 'ALT-' + Date.now(),
+            date: new Date().toLocaleDateString('fr-FR'),
+            time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+            company: (typeof appState !== 'undefined' && appState.currentSelectedCompany) ? appState.currentSelectedCompany : "RESTEV 85",
+            employee: (typeof appState !== 'undefined' && appState.currentEmployeeProfile) ? appState.currentEmployeeProfile.name : "Salarié Terrain",
+            location: location,
+            category: category,
+            description: description,
+            severity: severity, // Faible, Moyen, Critique
+            status: "En attente" // En attente, En cours, Résolu
+        };
+
+        // 3. Stockage dans la mémoire globale de l'application
+        if (typeof appState !== 'undefined') {
+            if (!appState.alerts) appState.alerts = [];
+            appState.alerts.unshift(newAlert); // On met la plus récente en premier
+        }
+
+        console.log("Alerte enregistrée avec succès :", newAlert);
+
+        // 4. Nettoyage du formulaire pour le prochain signalement
+        if (txtDescription) txtDescription.value = "";
+        
+        // 5. Message de succès et redirection
+        alert("🛡️ Votre alerte sécurité a bien été transmise au Responsable HSE. Merci pour votre vigilance !");
+        
+        // Rafraîchir l'affichage du dashboard manager au cas où
+        function renderManagerAlerts() {
+    try {
+        if (typeof appState === 'undefined' || !appState.alerts) {
+            appState.alerts = []; // Initialisation si vide
+        }
+
+        // 1. MISE À JOUR DES COMPTEURS DU DASHBOARD
+        // On compte les alertes qui ne sont pas encore "Résolues"
+        const activeAlertsCount = appState.alerts.filter(a => a.status !== "Résolu").length;
+        
+        // Cible tes badges ou compteurs dans le dashboard manager (id à adapter selon ton HTML)
+        const badgeCounter = document.getElementById('badge-alert-count') || document.getElementById('lbl-alert-counter');
+        if (badgeCounter) {
+            badgeCounter.innerText = activeAlertsCount;
+            if (activeAlertsCount > 0) {
+                badgeCounter.classList.remove('hidden');
+            } else {
+                badgeCounter.classList.add('hidden');
+            }
+        }
+
+        // 2. GÉNÉRATION DE LA LISTE VISUELLE
+        // Cible le conteneur où s'affichent les alertes chez le manager
+        const container = document.getElementById('div-alerts-list') || document.getElementById('manager-alerts-container');
+        if (!container) return;
+
+        if (appState.alerts.length === 0) {
+            container.innerHTML = `
+                <div class="p-6 text-center text-xs text-slate-400 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-dashed">
+                    <i class="fa-solid fa-shield-cat text-lg mb-2 block text-slate-300"></i>
+                    Aucune alerte remontée pour le moment. Tout est sous contrôle !
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = ""; // On vide avant de reconstruire
+
+        appState.alerts.forEach(alertItem => {
+            // Détermination des couleurs selon la gravité
+            let severityClass = "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400";
+            if (alertItem.severity === "Moyen") {
+                severityClass = "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400";
+            } else if (alertItem.severity === "Critique" || alertItem.severity === "Élevé") {
+                severityClass = "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400";
+            }
+
+            // Détermination du badge de statut
+            let statusBadge = `<span class="bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded-full font-bold">En attente</span>`;
+            if (alertItem.status === "En cours") {
+                statusBadge = `<span class="bg-blue-100 text-blue-600 text-[10px] px-2 py-0.5 rounded-full font-bold">En cours</span>`;
+            } else if (alertItem.status === "Résolu") {
+                statusBadge = `<span class="bg-emerald-100 text-emerald-600 text-[10px] px-2 py-0.5 rounded-full font-bold">✓ Résolu</span>`;
+            }
+
+            // Création de la carte HTML de l'alerte
+            const card = document.createElement('div');
+            card.className = "bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm space-y-3 relative overflow-hidden transition hover:shadow-md";
+            
+            card.innerHTML = `
+                <div class="flex items-start justify-between gap-2">
+                    <div class="space-y-0.5">
+                        <span class="text-[10px] text-slate-400 font-semibold">${alertItem.date} à ${alertItem.time}</span>
+                        <h4 class="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                            <i class="fa-solid fa-location-dot text-slate-400"></i> ${alertItem.location}
+                        </h4>
+                    </div>
+                    <div class="flex flex-col items-end gap-1">
+                        <span class="text-[9px] font-extrabold uppercase border px-2 py-0.5 rounded-md ${severityClass}">${alertItem.severity}</span>
+                        ${statusBadge}
+                    </div>
+                </div>
+
+                <div class="p-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
+                    <strong class="text-[10px] uppercase text-slate-400 block mb-0.5">${alertItem.category} :</strong>
+                    "${alertItem.description}"
+                </div>
+
+                <div class="flex items-center justify-between text-[10px] pt-1 text-slate-500">
+                    <span>Par : <strong>${alertItem.employee}</strong></span>
+                    
+                    ${alertItem.status !== "Résolu" ? `
+                        <div class="flex gap-1.5">
+                            ${alertItem.status === "En attente" ? `
+                                <button onclick="changeAlertStatus('${alertItem.id}', 'En cours')" class="bg-slate-100 dark:bg-slate-700 dark:text-white hover:bg-blue-50 hover:text-blue-600 px-2.5 py-1 rounded-lg font-bold transition">Prendre en charge</button>
+                            ` : ''}
+                            <button onclick="changeAlertStatus('${alertItem.id}', 'Résolu')" class="bg-emerald-500 text-white hover:bg-emerald-600 px-2.5 py-1 rounded-lg font-bold shadow-sm transition">Clôturer</button>
+                        </div>
+                    ` : `<span class="text-emerald-500 font-semibold"><i class="fa-solid fa-check-double"></i> Traité</span>`}
+                </div>
+            `;
+
+            container.appendChild(card);
+        });
+
+    } catch (err) {
+        console.error("Erreur lors du rendu des alertes manager :", err);
+    }
+}
+        
+        // Retour à l'accueil de l'espace employé
+        if (typeof switchScreen === 'function') {
+            switchScreen('scr-employee');
+        }
+
+    } catch (error) {
+        console.error("Erreur lors de l'envoi de l'alerte :", error);
+        alert("Une erreur est survenue lors de l'envoi. Veuillez réessayer.");
+    }
+}
+        function changeAlertStatus(alertId, newStatus) {
+    if (typeof appState !== 'undefined' && appState.alerts) {
+        const alertFound = appState.alerts.find(a => a.id === alertId);
+        if (alertFound) {
+            alertFound.status = newStatus;
+            console.log(`Statut de l'alerte ${alertId} modifié en : ${newStatus}`);
+            
+            // On rafraîchit immédiatement l'affichage pour voir le changement de couleur/bouton
+            renderManagerAlerts();
+        }
+    }
+}
         function setupCanvasPad(id) {
             const canvas = document.getElementById(id);
             const ctx = canvas.getContext('2d');
