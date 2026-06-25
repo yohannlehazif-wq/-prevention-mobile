@@ -1477,73 +1477,127 @@
             const ctx = ctxCanvas[id];
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
-        function finalizeOfficial() {
+       function finalizeOfficial() {
     try {
-        console.log("Tentative de génération de l'attestation...");
+        console.log("Génération de l'attestation en cours...");
 
-        // 1. Récupération du nom du tuteur depuis le formulaire
-        const tutorInput = document.getElementById('tutor-name');
-        const tutorName = tutorInput ? tutorInput.value : "Non renseigné";
+        // 1. RÉCUPÉRATION DU NOM DU SALARIÉ (Multi-sources pour être sûr)
+        let employeeName = "";
+        if (typeof appState !== 'undefined' && appState.currentEmployeeProfile && appState.currentEmployeeProfile.name) {
+            employeeName = appState.currentEmployeeProfile.name;
+        }
+        if (!employeeName) {
+            const empInput = document.getElementById('emp-name') || 
+                             document.getElementById('employee-name') || 
+                             document.getElementById('worker-name') ||
+                             document.querySelector('input[placeholder*="nom" i]') ||
+                             document.querySelector('input[placeholder*="Nom" i]');
+            if (empInput && empInput.value) employeeName = empInput.value;
+        }
+        if (!employeeName || employeeName.trim() === "...") {
+            employeeName = "Nouvel Arrivant";
+        }
 
-        // 2. Récupération des Canvas de signature
-        const canvasEmp = document.getElementById('canv-employee');
-        const canvasTutor = document.getElementById('canv-tutor');
 
-        // 3. Injection sécurisée des données dans l'écran final (scr-attestation)
+        // 2. RÉCUPÉRATION DU NOM DE L'ENTREPRISE (Scan de l'interface)
+        let companyName = "";
+        if (typeof appState !== 'undefined' && appState.currentSelectedCompany) {
+            companyName = appState.currentSelectedCompany;
+        }
+        if (!companyName || companyName === "...") {
+            const compElement = document.getElementById('lbl-current-company') || 
+                                document.getElementById('current-company') || 
+                                document.getElementById('company-name') ||
+                                document.getElementById('lbl-company-name');
+            if (compElement) companyName = compElement.innerText || compElement.value;
+        }
+        if (!companyName || companyName.trim() === "...") {
+            const authComp = document.getElementById('new-company-name');
+            if (authComp && authComp.value) companyName = authComp.value;
+        }
+        if (!companyName || companyName.trim() === "...") {
+            companyName = "RESTEV 85 (Adhérent)";
+        }
+
+
+        // 3. RÉCUPÉRATION DU STATUT (CDI, CDD, Intérim...)
+        let employeeStatus = "Standard";
+        if (typeof appState !== 'undefined' && appState.currentEmployeeProfile && appState.currentEmployeeProfile.status) {
+            employeeStatus = appState.currentEmployeeProfile.status;
+        } else {
+            const statusSelect = document.getElementById('emp-status') || document.getElementById('employee-status');
+            if (statusSelect && statusSelect.value) {
+                employeeStatus = statusSelect.value;
+            } else {
+                const checkedRadio = document.querySelector('input[name="status"]:checked') || document.querySelector('input[name="emp-status"]:checked');
+                if (checkedRadio) employeeStatus = checkedRadio.value;
+            }
+        }
+
+
+        // 4. RÉCUPÉRATION DYNAMIQUE DES ÉPI COCHÉS (On scanne l'écran directement)
+        let selectedEpi = [];
+        const epiScreen = document.getElementById('scr-epi-check') || document;
+        const checkedBoxes = epiScreen.querySelectorAll('input[type="checkbox"]:checked');
         
-        // Nom du tuteur
-        const lblTutor = document.getElementById('lbl-view-tutor');
-        if (lblTutor) lblTutor.innerText = tutorName;
+        checkedBoxes.forEach(box => {
+            const parentLabel = box.closest('label') || box.parentElement;
+            if (parentLabel) {
+                // Nettoie le texte (enlève les retours à la ligne et espaces en trop)
+                let text = parentLabel.innerText.replace(/[\n\r]+/g, ' ').trim();
+                if (text) selectedEpi.push(text);
+            }
+        });
 
-        // Infos de l'employé (sécurité si appState est utilisé)
+        let epiText = "Aucun ÉPI spécifique sélectionné";
+        if (selectedEpi.length > 0) {
+            epiText = selectedEpi.join(', ');
+        }
+
+
+        // 5. INJECTION DANS LES LABELS DE L'ATTESTATION FINALE
         const lblEmp = document.getElementById('lbl-view-emp');
-        if (lblEmp && typeof appState !== 'undefined' && appState.currentEmployeeProfile) {
-            lblEmp.innerText = appState.currentEmployeeProfile.name || "Nouvel Arrivant";
-        }
-        
+        if (lblEmp) lblEmp.innerText = employeeName;
+
         const lblCompany = document.getElementById('lbl-view-company');
-        if (lblCompany && typeof appState !== 'undefined') {
-            lblCompany.innerText = appState.currentSelectedCompany || "Établissement Adhérent";
-        }
+        if (lblCompany) lblCompany.innerText = companyName;
 
         const lblStatus = document.getElementById('lbl-view-status');
-        if (lblStatus && typeof appState !== 'undefined' && appState.currentEmployeeProfile) {
-            lblStatus.innerText = appState.currentEmployeeProfile.status || "Standard";
-        }
+        if (lblStatus) lblStatus.innerText = employeeStatus.toUpperCase();
 
-        // 4. Conversion et injection des signatures (avec sécurité anti-crash)
+        const lblEpi = document.getElementById('lbl-view-epi');
+        if (lblEpi) lblEpi.innerText = epiText;
+
+        // Tuteur
+        const tutorInput = document.getElementById('tutor-name');
+        const lblTutor = document.getElementById('lbl-view-tutor');
+        if (lblTutor) lblTutor.innerText = tutorInput ? tutorInput.value : "M. Vigneron (Référent HSE)";
+
+
+        // 6. CONVERSION DES SIGNATURES CANVASES
+        const canvasEmp = document.getElementById('canv-employee');
         const imgRenderEmp = document.getElementById('img-render-emp');
         if (canvasEmp && imgRenderEmp) {
-            try {
-                imgRenderEmp.src = canvasEmp.toDataURL('image/png');
-            } catch (e) {
-                console.error("Erreur conversion signature employé :", e);
-            }
+            try { imgRenderEmp.src = canvasEmp.toDataURL('image/png'); } catch(e) { console.log(e); }
         }
 
+        const canvasTutor = document.getElementById('canv-tutor');
         const imgRenderTutor = document.getElementById('img-render-tutor');
         if (canvasTutor && imgRenderTutor) {
-            try {
-                imgRenderTutor.src = canvasTutor.toDataURL('image/png');
-            } catch (e) {
-                console.error("Erreur conversion signature tuteur :", e);
-            }
+            try { imgRenderTutor.src = canvasTutor.toDataURL('image/png'); } catch(e) { console.log(e); }
         }
 
-        // 5. Force le passage à l'écran de l'attestation quoi qu'il arrive
-        console.log("Redirection vers scr-attestation");
+        // 7. BASCULEMENT SUR L'ÉCRAN ATTESTATION
         if (typeof switchScreen === 'function') {
             switchScreen('scr-attestation');
         } else {
-            // Repli si switchScreen a un problème
             document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-            const targetScreen = document.getElementById('scr-attestation');
-            if (targetScreen) targetScreen.classList.remove('hidden');
+            const target = document.getElementById('scr-attestation');
+            if (target) target.classList.remove('hidden');
         }
 
     } catch (globalError) {
-        // En cas d'erreur imprévue, on l'affiche en console mais on force quand même l'affichage
-        console.error("Erreur critique dans finalizeOfficial :", globalError);
+        console.error("Erreur lors de la finalisation :", globalError);
         if (typeof switchScreen === 'function') switchScreen('scr-attestation');
     }
 }
