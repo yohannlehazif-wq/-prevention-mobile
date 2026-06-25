@@ -1054,21 +1054,36 @@
                 container.innerHTML += `<span class="bg-blue-50 text-restev-blue text-[11px] px-3 py-1 rounded-full border border-blue-200 dark:bg-slate-900 dark:border-slate-700 font-bold">${zone}</span>`;
             });
         }
-        function generateEmployeeAccess() {
-            const name = document.getElementById('reg-emp-name').value.trim();
-            const status = document.getElementById('reg-emp-status').value;
-            if (!name) {
-                showToast("⚠️ Saisissez le nom du salarié.");
-                return;
-            }
-            appState.employeeName = name;
-            appState.employeeStatus = status;
-            
-            document.getElementById('qr-area').classList.remove('hidden');
-            const canvas = document.getElementById('qr-canvas');
-            QRCode.toCanvas(canvas, `https://restev85.fr/onboarding?company=${encodeURIComponent(appState.currentSelectedCompany)}&worker=${encodeURIComponent(name)}`, { width: 140 });
-            showToast("📱 QR Code d'émargement actif !");
-        }
+       function generateEmployeeAccess() {
+    const name = document.getElementById('reg-emp-name').value.trim();
+    const status = document.getElementById('reg-emp-status').value;
+    if (!name) {
+        showToast("⚠️ Saisissez le nom du salarié.");
+        return;
+    }
+    appState.employeeName = name;
+    appState.employeeStatus = status;
+    
+    document.getElementById('qr-area').classList.remove('hidden');
+    const canvas = document.getElementById('qr-canvas');
+    
+    // 1. On récupère dynamiquement l'adresse de ton site sur GitHub Pages
+    const baseUrl = window.location.origin + window.location.pathname;
+    
+    // 2. On récupère l'activité en cours ou une valeur par défaut
+    const activity = appState.currentActivity || "Général (Bureau & Administratif)";
+    const company = appState.currentSelectedCompany || "Simulation Usine";
+
+    // 3. On construit la bonne URL avec les termes exacts attendus au démarrage (mode=employee, comp, name, status...)
+    const urlTarget = `${baseUrl}?mode=employee&comp=${encodeURIComponent(company)}&name=${encodeURIComponent(name)}&status=${encodeURIComponent(status)}&activity=${encodeURIComponent(activity)}`;
+    
+    // 4. On génère le QR Code avec cette URL parfaite
+    QRCode.toCanvas(canvas, urlTarget, { width: 140 }, function (error) {
+        if (error) console.error("Erreur QR code :", error);
+    });
+    
+    showToast("📱 QR Code d'émargement actif !");
+}
         // --- STUDIO PERSONNALISATION ---
         let tempPresetQCM = [];
         function openStudio(metier) {
