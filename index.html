@@ -711,7 +711,45 @@
     <script>
         const SUPABASE_URL = "https://bcuzmjcbhriyzmmiodsi.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdXptamNiaHJpeXptbWlvZHNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODU5NjIsImV4cCI6MjA5NzE2MTk2Mn0.lbYUBi-JEJCoUIdAAAVS35sdy6o0EHHGoqVs3cL1ApQ";
-        
+        async function sendAlert(companyCode, employeeName, message, severity = 'warning') {
+    const { data, error } = await supabase
+        .from('alerts')
+        .insert([
+            { 
+                company_id: companyCode, 
+                employee_name: employeeName, 
+                message: message, 
+                severity: severity,
+                status: 'pending' 
+            }
+        ]);
+
+    if (error) {
+        console.error("Erreur envoi alerte:", error);
+    } else {
+        console.log("Alerte envoyée avec succès");
+        // Optionnel : déclencher une notification visuelle (toast)
+        showToast("Alerte signalée au responsable.");
+    }
+}
+        async function registerTreatment(alertId, managerName, actionDescription) {
+    // 1. Ajouter le traitement
+    await supabase.from('treatments').insert([
+        { 
+            alert_id: alertId, 
+            manager_name: managerName, 
+            action_taken: actionDescription 
+        }
+    ]);
+
+    // 2. Mettre à jour le statut de l'alerte
+    const { error } = await supabase
+        .from('alerts')
+        .update({ status: 'resolved' })
+        .eq('id', alertId);
+
+    if (!error) showToast("Action corrective enregistrée.");
+}
         let lastKnownRisksCount = 0;
         let isManagerSoundMuted = false;
         let managerVolume = 0.5;
