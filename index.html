@@ -1059,732 +1059,86 @@ async function handleManagerLogin() {
             }
         }
 // Fonction pour générer le QCM en fonction du métier
+// Fonction pour générer le QCM en fonction du métier
 function buildEmployeeQCMLayout() {
     const container = document.getElementById('employee-qcm-container');
     if (!container) return;
     
-    const preset = METIER_PRESETS[appState.currentActivity];
-    // Si aucun QCM n'est défini pour le métier, on vide le conteneur
+    // Sécurité au cas où l'activité n'est pas encore définie
+    const currentActivity = appState.currentActivity || "Général (Bureau & Administratif)";
+    const preset = METIER_PRESETS[currentActivity];
+    
     if (!preset || !preset.qcm) {
-        container.innerHTML = `<p class="text-xs text-slate-400 italic">Aucun QCM configuré pour ce secteur.</p>`;
+        container.innerHTML = "<p class='text-xs text-slate-500 italic'>Aucun questionnaire requis pour ce secteur.</p>";
         return;
     }
-
-    container.innerHTML = preset.qcm.map((q, qIndex) => `
-        <div class="p-3.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2.5 shadow-sm qcm-question" data-correct="${q.answer}">
-            <p class="font-extrabold text-slate-800 dark:text-white text-[11px] leading-tight">Question ${qIndex + 1} : ${q.question}</p>
-            <div class="space-y-1.5">
-                ${q.options.map((opt, oIndex) => `
-                    <label class="flex items-start space-x-2.5 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition">
-                        <input type="radio" name="qcm_${qIndex}" value="${oIndex}" class="mt-0.5 w-3.5 h-3.5 text-restev-blue focus:ring-restev-blue border-slate-300">
-                        <span class="text-[10px] font-semibold text-slate-600 dark:text-slate-300 leading-snug">${opt}</span>
-                    </label>
-                `).join('')}
-            </div>
-        </div>
-    `).join('');
-}
-
-// Fonction de validation du QCM avant de passer aux EPI
-// Fonction de validation stricte du QCM
-function validateQCMAndProceed() {
-    const questions = document.querySelectorAll('.qcm-question');
-    const errorMsg = document.getElementById('qcm-error-msg');
-    let allCorrect = true;
-    let allAnswered = true;
-
-    questions.forEach((qBlock, index) => {
-        const correctIndex = qBlock.getAttribute('data-correct');
-        const selected = document.querySelector(`input[name="qcm_${index}"]:checked`);
-        
-        // Nettoyage des anciennes classes de style
-        qBlock.classList.remove('border-red-400', 'bg-red-50/50', 'border-emerald-400', 'bg-emerald-50/30');
-        
-        if (!selected) {
-            allAnswered = false;
-            allCorrect = false;
-            // Style d'erreur visuel direct sur la question oubliée
-            qBlock.classList.add('border-red-400', 'bg-red-50/50');
-        } else if (selected.value !== correctIndex) {
-            allCorrect = false;
-            // Style d'erreur visuel direct sur la mauvaise réponse
-            qBlock.classList.add('border-red-400', 'bg-red-50/50');
-        } else {
-            // Validation visuelle positive pour encourager le salarié
-            qBlock.classList.add('border-emerald-400', 'bg-emerald-50/30');
-        }
-    });
-
-    // 1er niveau de blocage : Questions non répondues
-    if (!allAnswered) {
-        errorMsg.innerHTML = `<i class="fa-solid fa-circle-exclamation text-red-500 text-sm"></i> <span>Attention Yoyo, le salarié n'a pas répondu à toutes les questions obligatoires.</span>`;
-        errorMsg.classList.remove('hidden');
-        errorMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        return; // ARRÊT STRICT : On ne passe pas à l'écran suivant
-    }
-
-    // 2ème niveau de blocage : Erreur détectée dans les réponses
-    if (!allCorrect) {
-        errorMsg.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-500 text-sm"></i> <span>Échec de l'évaluation sécurité. Toutes les réponses doivent être correctes pour valider l'accueil et obtenir la dotation EPI. Veuillez revoir vos choix.</span>`;
-        errorMsg.classList.remove('hidden');
-        errorMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        return; // ARRÊT STRICT : Le salarié reste bloqué ici tant que ce n'est pas un sans-faute
-    }
-
-    // SI TOUT EST OK (Sans-faute sur les 5 questions)
-    errorMsg.classList.add('hidden');
     
-    // On passe enfin à la dotation EPI (Etape suivante)
-    goToEPICheckScreen();
-}
-    if (!allCorrect) {
-        errorMsg.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> <span>Erreur. Revoyez les consignes de sécurité, vos réponses ne sont pas toutes correctes.</span>`;
-        errorMsg.classList.remove('hidden');
-        return;
-    }
-
-    // Tout est bon, on masque l'erreur et on passe à l'écran suivant (Dotation EPI)
-    errorMsg.classList.add('hidden');
-    goToEPICheckScreen();
-}
-        // --- GESTION INTERFACES ET SECTEURS ---
-        function buildActivityDropdown() {
-            const selectElement = document.getElementById('manager-activity-select');
-            if (!selectElement) return;
-            selectElement.innerHTML = '';
-            for (const metierName in METIER_PRESETS) {
-                const metierData = METIER_PRESETS[metierName];
-                const option = document.createElement('option');
-                option.value = metierName;
-                option.innerText = `${metierData.icon} ${metierName}`;
-                selectElement.appendChild(option);
-            }
-            selectElement.value = appState.currentActivity;
-        }
-        
-        function updateCompanyActivityProfile() {
-            appState.currentActivity = document.getElementById('manager-activity-select').value;
-            const preset = METIER_PRESETS[appState.currentActivity];
-            if(document.getElementById('manager-activity-preview')) {
-                document.getElementById('manager-activity-preview').innerText = preset.categories.join(' • ');
-            }
-            buildRiskCategoryDropdown();
-            buildEmployeeRulesLayout();
-            showToast(`💼 Profil mis à jour : ${appState.currentActivity}`);
-        }
-        
-        function buildRiskCategoryDropdown() {
-            const grid = document.getElementById('risk-category-grid');
-            if (!grid) return;
-            
-            const categories = METIER_PRESETS[appState.currentActivity].categories;
-            grid.innerHTML = ''; 
-            
-            categories.forEach((cat, index) => {
-                const btn = document.createElement('button');
-                btn.type = "button";
-                btn.className = "p-3 bg-slate-50 border border-slate-200 dark:bg-slate-900 dark:border-slate-700 rounded-xl text-[11px] font-bold text-slate-700 dark:text-slate-300 text-center transition-all hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 flex items-center justify-center min-h-[50px] shadow-sm";
-                btn.innerText = cat;
-                
-                btn.onclick = () => {
-                    document.querySelectorAll('#risk-category-grid button').forEach(b => {
-                        b.classList.remove('border-restev-magenta', 'bg-magenta-50/30', 'text-restev-magenta', 'ring-2', 'ring-restev-magenta/20');
-                        b.classList.add('border-slate-200', 'bg-slate-50', 'text-slate-700');
-                    });
-                    btn.classList.remove('border-slate-200', 'bg-slate-50', 'text-slate-700');
-                    btn.classList.add('border-restev-magenta', 'bg-magenta-50/30', 'text-restev-magenta', 'ring-2', 'ring-restev-magenta/20');
-                    
-                    appState.currentSelectedCategory = cat;
-                };
-                
-                if(index === 0) {
-                    setTimeout(() => btn.click(), 50);
-                }
-                grid.appendChild(btn);
-            });
-        }
-
-        function buildEmployeeRulesLayout() {
-            const container = document.getElementById('employee-rules-container');
-            if (!container) return;
-            const rules = METIER_PRESETS[appState.currentActivity].rules;
-            container.innerHTML = rules.map(r => `
-                <div class="p-4.5 bg-gradient-to-r from-slate-50 to-white dark:from-slate-900 dark:to-slate-900/60 rounded-xl border-l-4 ${r.color} shadow-sm border-y border-r border-slate-100 dark:border-slate-800">
-                    <p class="font-black text-slate-900 dark:text-white text-xs">${r.title}</p>
-                    <p class="text-slate-500 dark:text-slate-400 mt-1 font-medium leading-relaxed">${r.desc}</p>
-                </div>
-            `).join('');
-        }
-        
-        function goToEPICheckScreen() {
-            const container = document.getElementById('employee-epi-container');
-            if (!container) return;
-            const preset = METIER_PRESETS[appState.currentActivity];
-            if (!preset || !preset.epi || preset.epi.length === 0) {
-                switchScreen('scr-signature');
-                return;
-            }
-            container.innerHTML = preset.epi.map((epiName, index) => `
-                <label class="flex items-center space-x-3 bg-slate-50 dark:bg-slate-900 p-3.5 rounded-xl text-xs cursor-pointer hover:bg-blue-50/40 dark:hover:bg-slate-800 transition border border-slate-200/60 dark:border-slate-700 shadow-sm">
-                    <input type="checkbox" id="epi-${index}" value="${epiName}" class="w-4 h-4 text-restev-blue rounded border-slate-300 dark:border-slate-600 focus:ring-restev-blue" checked> 
-                    <span class="font-bold text-slate-800 dark:text-white">${epiName}</span>
+    let html = "";
+    preset.qcm.forEach((q, qIndex) => {
+        html += `
+            <div class="p-3.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                <p class="text-xs font-bold text-slate-800 dark:text-white">${qIndex + 1}. ${q.question}</p>
+                <div class="space-y-1.5">
+        `;
+        q.options.forEach((opt, oIndex) => {
+            html += `
+                <label class="flex items-start gap-2.5 p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700 text-[11px] font-medium text-slate-600 dark:text-slate-300 cursor-pointer hover:bg-blue-50/50 dark:hover:bg-slate-700/50 transition">
+                    <input type="radio" name="qcm_question_${qIndex}" value="${oIndex}" class="mt-0.5 accent-restev-blue">
+                    <span>${opt}</span>
                 </label>
-            `).join('');
-            switchScreen('scr-epi-check');
-        }
-
-        function validateEPICheck() {
-            const preset = METIER_PRESETS[appState.currentActivity];
-            let selectedEPIs = [];
-            
-            preset.epi.forEach((_, index) => {
-                const checkbox = document.getElementById(`epi-${index}`);
-                if (checkbox && checkbox.checked) {
-                    selectedEPIs.push(checkbox.value);
-                }
-            });
-            if (selectedEPIs.length === 0) {
-                alert("⚠️ Vous devez posséder au moins un équipement de protection ou valider votre dotation avant de poursuivre.");
-                return;
-            }
-            appState.currentEmployeeProfile.deliveredEPI = selectedEPIs;
-            switchScreen('scr-signature');
-        }
-
-        // --- SUPABASE CLOUD SYNC ---
-        async function pullLatestRisksFromCloud() {
-            const badge = document.getElementById('cloud-sync-badge');
-            try {
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/risks?order=id.desc&limit=10`, {
-                    method: 'GET',
-                    headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    
-                    if (data.length > lastKnownRisksCount) {
-                        if(document.getElementById('scr-manager').classList.contains('active') && lastKnownRisksCount > 0) {
-                            playSafetyAlertSound();
-                            const box = document.getElementById('manager-risk-box');
-                            if(box) {
-                                box.classList.add('ring-4', 'ring-red-500', 'animate-pulse');
-                                setTimeout(() => box.classList.remove('ring-4', 'ring-red-500', 'animate-pulse'), 3000);
-                            }
-                        }
-                        lastKnownRisksCount = data.length;
-                    }
-
-                    if (data && JSON.stringify(appState.risksDB) !== JSON.stringify(data)) {
-                        appState.risksDB = data;
-                        updateChartStatsDynamically(); 
-                        updateDirectionDashboardCounters();
-                        renderActivityFeedInDashboard(); 
-                        refreshManagerRiskView();
-                    }
-                    if (badge) {
-                        badge.className = "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 px-3 py-1.5 rounded-full uppercase text-[10px] font-extrabold tracking-wider border border-emerald-200/50 dark:border-emerald-800/30 shadow-sm flex items-center gap-1.5";
-                        badge.innerHTML = `<i class="fa-solid fa-cloud shadow-sm"></i> Synchrone`;
-                    }
-                }
-            } catch (e) {
-                if (badge) {
-                    badge.className = "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 px-3 py-1.5 rounded-full uppercase text-[10px] font-extrabold tracking-wider border border-emerald-200/50 dark:border-emerald-800/30 shadow-sm flex items-center gap-1.5";
-                    badge.innerHTML = `<i class="fa-solid fa-wifi"></i> Local (Hors ligne)`;
-                }
-            }
-        }
-
-        function generateRandomCode(companyName) {
-            const cleanName = companyName.slice(0, 3).toUpperCase().replace(/[^A-Z0-9]/g, 'X');
-            const randomHex = Math.random().toString(16).slice(2, 6).toUpperCase();
-            return `RSTV-${cleanName}-${randomHex}`;
-        }
-
-        async function createNewCompany() {
-            const companyName = document.getElementById('new-company-name').value.trim();
-            if (!companyName) return showToast("⚠️ Saisissez le nom de la structure.");
-            const uniqueCode = generateRandomCode(companyName);
-            showToast("🔄 Enregistrement de l'espace...");
-            
-            try {
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/companies`, {
-                    method: 'POST',
-                    headers: { 
-                        "apikey": SUPABASE_ANON_KEY, 
-                        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`, 
-                        "Content-Type": "application/json",
-                        "Prefer": "return=minimal"
-                    },
-                    body: JSON.stringify({ name: companyName, code: uniqueCode })
-                });
-                if (response.ok) {
-                    showToast("✅ Espace créé avec succès !");
-                    document.getElementById('new-company-name').value = '';
-                    
-                    const codeBox = document.getElementById('generated-code-box');
-                    document.getElementById('lbl-generated-code').innerText = uniqueCode;
-                    codeBox.classList.remove('hidden');
-                    
-                    document.getElementById('manager-company-code').value = uniqueCode;
-                } else {
-                    showToast("❌ Échec de la création.");
-                }
-            } catch (error) {
-                showToast("❌ Erreur réseau.");
-            }
-        }
-
-        function copyGeneratedCode() {
-            const codeText = document.getElementById('lbl-generated-code').innerText;
-            if (!codeText) return;
-            navigator.clipboard.writeText(codeText);
-            showToast("📋 Code d'accès copié !");
-        }
-
-        async function handleManagerLogin() {
-            const inputCode = document.getElementById('manager-company-code').value.trim().toUpperCase();
-            if (!inputCode) return showToast("⚠️ Veuillez entrer un code valide.");
-            showToast("🔄 Authentification...");
-            try {
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/companies?code=eq.${encodeURIComponent(inputCode)}`, {
-                    method: 'GET',
-                    headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}` }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data && data.length > 0) {
-                        const companyData = data[0];
-                        appState.currentSelectedCompany = companyData.name;
-                        
-                        document.getElementById('lbl-manager-comp-name').innerText = appState.currentSelectedCompany;
-                        showToast(`🔓 Bienvenue dans votre console`);
-                        switchScreen('scr-manager');
-                        
-                        updateCompanyActivityProfile(); 
-                        renderManagerZonesList(); 
-                        refreshManagerRiskView();
-                    } else {
-                        showToast("❌ Identifiant entreprise inconnu.");
-                    }
-                } else {
-                    showToast("❌ Erreur serveur.");
-                }
-            } catch (e) {
-                showToast("❌ Connexion perdue.");
-            }
-        }
-
-        function logoutManager() {
-            appState.currentSelectedCompany = "";
-            document.getElementById('manager-company-code').value = "";
-            document.getElementById('generated-code-box').classList.add('hidden');
-            showToast("🔒 Déconnexion sécurisée.");
-            switchScreen('scr-home');
-        }
-        
-        function renderActivityFeedInDashboard() {
-            const feed = document.getElementById('direction-activity-feed');
-            if (!feed) return;
-            feed.innerHTML = appState.risksDB.map(r => `
-                <div class="border-l-4 border-l-restev-magenta pl-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-r-lg shadow-sm">
-                    <p class="font-black text-slate-800 dark:text-slate-200 text-[10px]">${r.category}</p>
-                    <p class="text-slate-500 dark:text-slate-400 text-[9px] mt-0.5"><i class="fa-solid fa-location-dot text-slate-400"></i> Zone : ${r.location}</p>
-                    <p class="text-restev-blue font-bold text-[8px] uppercase tracking-wide">${r.company}</p>
+            `;
+        });
+        html += `
                 </div>
-            `).join('');
-        }
-        
-        function openStudio(metierName) {
-            const preset = METIER_PRESETS[metierName];
-            document.getElementById('lbl-studio-metier').innerText = metierName;
-            const list = document.getElementById('studio-rules-list');
-            list.innerHTML = ''; 
-            preset.rules.forEach((rule, index) => {
-                list.innerHTML += `
-                    <div class="bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-inner space-y-2">
-                        <input type="text" value="${rule.title}" class="font-black text-slate-900 dark:text-white w-full bg-white dark:bg-slate-800 p-2.5 rounded-xl border border-slate-100" id="edit-title-${index}">
-                        <textarea class="text-xs font-semibold text-slate-500 dark:text-slate-300 w-full bg-white dark:bg-slate-800 p-2.5 rounded-xl border border-slate-100" id="edit-desc-${index}">${rule.desc}</textarea>
-                    </div>
-                `;
-            });
-            switchScreen('scr-studio');
-        }
-        
-        function saveCustomQCM() {
-            showToast("✅ Changements mémorisés avec succès !");
-            switchScreen('scr-manager');
-        }
-        
-        function refreshManagerRiskView() {
-            const box = document.getElementById('manager-risk-box');
-            if (!box) return;
-            const filtered = appState.risksDB.filter(r => r.company === appState.currentSelectedCompany);
-            if (filtered.length === 0) {
-                box.innerHTML = `<p class="text-center py-8 text-slate-400 text-xs italic font-medium">Aucun signalement en attente pour votre site.</p>`; return;
-            }
-            box.innerHTML = filtered.map(r => `
-                <div class="bg-gradient-to-br from-slate-50 via-white to-slate-50/50 dark:from-slate-900 dark:to-slate-900/40 p-4 rounded-xl border border-slate-200 dark:border-slate-700 text-xs space-y-1.5 shadow-sm">
-                    <div class="flex justify-between items-center border-b pb-1.5"><span class="font-black text-slate-900 dark:text-white">${r.employee || 'Anonyme'}</span><span class="text-red-700 bg-red-50 dark:bg-red-950/60 dark:text-red-400 px-2.5 py-0.5 rounded-md text-[9px] font-black shadow-sm">${r.severity || '🔴'}</span></div>
-                    <p class="text-slate-600 dark:text-slate-300 font-medium"><span class="text-slate-400 font-bold">Catégorie :</span> ${r.category}</p>
-                    <p class="text-restev-blue dark:text-blue-400 font-black flex items-center gap-1"><i class="fa-solid fa-map-location-dot"></i> Zone : ${r.location}</p>
-                    <p class="text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 p-2.5 rounded-xl border border-slate-100 dark:border-slate-700 mt-1 font-semibold">${r.description}</p>
-                    ${r.photo ? `
-                    <div class="mt-2.5 space-y-1">
-                        <span class="text-[9px] text-slate-400 font-bold block"><i class="fa-solid fa-magnifying-glass-plus"></i> Tap pour agrandir la photo</span>
-                        <img src="${r.photo}" 
-                             onclick="this.classList.toggle('max-h-28'); this.classList.toggle('max-h-[500px]'); this.classList.toggle('scale-105');" 
-                             class="w-full max-h-28 object-cover rounded-xl border border-slate-200 shadow-md cursor-zoom-in transition-all duration-300 transform origin-center" 
-                             alt="Preuve terrain">
-                    </div>` : ''}
-                </div>
-            `).join('');
-        }
-        
-        // ==========================================
-// GESTION DE LA NAVIGATION ENTRE ÉCRANS
-// ==========================================
-
-function switchScreen(screenId) {
-    console.log("Changement d'écran vers :", screenId);
-    
-    // 1. On sélectionne toutes les sections qui ont la classe 'screen'
-    const screens = document.querySelectorAll('.screen');
-    
-    // 2. On les cache toutes en enlevant 'active' et en ajoutant 'hidden' (Tailwind)
-    screens.forEach(screen => {
-        screen.classList.remove('active');
-        screen.classList.add('hidden');
+            </div>
+        `;
     });
     
-    // 3. On trouve l'écran cible et on l'affiche
-    const targetScreen = document.getElementById(screenId);
-    if (targetScreen) {
-        targetScreen.classList.add('active');
-        targetScreen.classList.remove('hidden');
-    } else {
-        console.warn(`Attention : L'écran avec l'ID "${screenId}" n'existe pas encore dans ton HTML.`);
-        alert(`L'écran "${screenId}" est relié au bouton, mais la section correspondante n'existe pas dans le code.`);
+    container.innerHTML = html;
+}
+
+// Initialisation au chargement de la page
+window.addEventListener('DOMContentLoaded', () => {
+    // Définir une activité par défaut si nécessaire
+    if (!appState.currentActivity) {
+        appState.currentActivity = "Général (Bureau & Administratif)";
+    }
+    // Remplissage initial ou fonctions d'amorçage
+});
+
+// Fonctions de navigation globale requises par l'interface
+function switchScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(scr => scr.classList.remove('active'));
+    const target = document.getElementById(screenId);
+    if (target) {
+        target.classList.add('active');
+        // Si on va sur l'écran d'onboarding, on génère le QCM mis à jour
+        if (screenId === 'scr-onboarding-1') {
+            buildEmployeeQCMLayout();
+        }
     }
 }
 
-// Fonction pour le bouton "Organisme de Santé / Centre RESTEV"
-function handleDirectionAccess() {
-    // Si tu as un écran pour l'audit, remplace 'scr-home' par son ID (ex: 'scr-audit')
-    // switchScreen('scr-audit');
-    alert("Fonctionnalité 'Centre RESTEV / Audit' cliquée ! Relie-la à ton écran d'audit.");
+function toggleDarkMode() {
+    document.documentElement.classList.toggle('dark');
 }
 
-// Fonction pour le bouton "Émargement Salarié"
-function accessEmployeeDirect() {
-    // Si ton écran salarié s'appelle 'scr-employee', remplace 'scr-home' par son ID
-    // switchScreen('scr-employee');
-    alert("Accès direct à l'Interface d'Émargement Salarié !");
+function showToast(text) {
+    const toast = document.getElementById('toast');
+    const toastText = document.getElementById('toast-text');
+    if (toast && toastText) {
+        toastText.innerText = text;
+        toast.classList.remove('translate-y-20', 'opacity-0');
+        setTimeout(() => {
+            toast.classList.add('translate-y-20', 'opacity-0');
+        }, 3500);
+    }
 }
-        
-        function handleDirectionAccess() {
-            const accessCode = prompt("🔒 Entrez le code secret Superviseur RESTEV :");
-            if (accessCode === "8500") { showToast("🔓 Accès superviseur accordé."); switchScreen('scr-direction'); } else if (accessCode !== null) { showToast("❌ Code incorrect."); }
-        }
-        
-        function generateEmployeeAccess() {
-            const name = document.getElementById('reg-emp-name').value.trim();
-            const status = document.getElementById('reg-emp-status').value;
-            const company = appState.currentSelectedCompany;
 
-            if (!name) return showToast("⚠️ Renseignez le nom du collaborateur.");
-            if (!company) return showToast("⚠️ Erreur de session entreprise.");
-
-            appState.currentEmployeeProfile = { name, status, deliveredEPI: [] };
-            
-            const baseUrl = window.location.href.split('?')[0];
-            const url = `${baseUrl}?mode=employee&name=${encodeURIComponent(name)}&comp=${encodeURIComponent(company)}&status=${encodeURIComponent(status)}&activity=${encodeURIComponent(appState.currentActivity)}`;
-            
-            const canvas = document.getElementById('qr-canvas');
-            const qrArea = document.getElementById('qr-area');
-            
-            if (canvas && typeof QRCode !== 'undefined') {
-                qrArea.classList.remove('hidden');
-                QRCode.toCanvas(canvas, url, { width: 150, margin: 1, color: { dark: '#e0248a', light: '#ffffff' } }, (error) => {
-                    if (error) console.error(error);
-                    else showToast("✅ QR Code d'émargement actif !");
-                });
-            }
-        }
-        
-        function accessEmployeeDirect() {
-            appState.currentSelectedCompany = "Simulation Usine";
-            buildRiskCategoryDropdown(); 
-            buildEmployeeRulesLayout();
-            document.getElementById('lbl-emp-welcome').innerText = `Espace Salarié (Démonstration)`;
-            document.getElementById('lbl-emp-company').innerText = `${appState.currentSelectedCompany}`;
-            switchScreen('scr-employee');
-        }
-        
-        async function submitRealRiskReport() {
-            const desc = document.getElementById('risk-desc').value.trim();
-            const loc = document.getElementById('risk-location').value;
-            const sev = document.getElementById('risk-level').value;
-            const cat = appState.currentSelectedCategory;
-            if (!desc) return alert("Veuillez décrire brièvement l'anomalie.");
-            if (!cat) return alert("Sélectionnez une catégorie.");
-            
-            const payload = { 
-                company: appState.currentSelectedCompany || 'Simulation Usine', 
-                employee: appState.currentEmployeeProfile.name || 'Salarié Connecté', 
-                category: cat, 
-                description: desc, 
-                location: loc, 
-                severity: sev, 
-                gps: appState.currentGPSCoords, 
-                photo: appState.base64UploadedPhoto || null 
-            };
-            
-            showToast("🔄 Transmission cryptée cloud...");
-            try { 
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/risks`, { 
-                    method: 'POST', 
-                    headers: { "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${SUPABASE_ANON_KEY}`, "Content-Type": "application/json" }, 
-                    body: JSON.stringify(payload) 
-                });
-                if(!response.ok) throw new Error("Network offline");
-                showToast("✅ Signalement synchronisé avec la console !");
-            } catch(e) {
-                showToast("⚠️ Stockage local (Synchronisation différée).");
-            }
-            
-            appState.risksDB.unshift({ id: Date.now(), ...payload });
-            updateChartStatsDynamically(); 
-            updateDirectionDashboardCounters(); 
-            refreshManagerRiskView();
-            
-            document.getElementById('risk-desc').value = ""; 
-            document.getElementById('photo-preview').classList.add('hidden'); 
-            document.getElementById('photo-placeholder').classList.remove('hidden'); 
-            appState.base64UploadedPhoto = "";
-            switchScreen('scr-employee');
-        }
-        
-        function acquireRealtimeGPSLocation() {
-            if (!navigator.geolocation) return updateMap(46.6705, -1.4265);
-            document.getElementById('geo-status').innerText = "Analyse géospatiale satellite en cours...";
-            navigator.geolocation.getCurrentPosition(
-                (p) => { 
-                    appState.currentGPSCoords = `${p.coords.latitude.toFixed(6)}, ${p.coords.longitude.toFixed(6)}`; 
-                    document.getElementById('geo-status').innerText = `📍 Balise GPS Verrouillée : ${appState.currentGPSCoords}`;
-                    updateMap(p.coords.latitude, p.coords.longitude); 
-                },
-                () => { 
-                    document.getElementById('geo-status').innerText = "⚠️ Positionnement approximatif (La Roche-sur-Yon)";
-                    updateMap(46.6705, -1.4265); 
-                }
-            );
-        }
-        
-        function updateMap(lat, lon) {
-            if (!myLeafletMap) {
-                myLeafletMap = L.map('map', { zoomControl: false }).setView([lat, lon], 17);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(myLeafletMap);
-                myMapMarker = L.marker([lat, lon]).addTo(myLeafletMap);
-            } else { 
-                myLeafletMap.setView([lat, lon], 17); 
-                myMapMarker.setLatLng([lat, lon]); 
-            }
-            setTimeout(() => { myLeafletMap.invalidateSize(); }, 300);
-        }
-        
-        function processRealPhoto(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    appState.base64UploadedPhoto = e.target.result;
-                    const preview = document.getElementById('photo-preview'); 
-                    preview.src = e.target.result; 
-                    preview.classList.remove('hidden'); 
-                    document.getElementById('photo-placeholder').classList.add('hidden');
-                }; 
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-        
-        function renderManagerZonesList() {
-            const container = document.getElementById('manager-zones-list');
-            if(!container) return;
-            const currentZones = appState.corporateZonesDB[appState.currentSelectedCompany] || ["Zone Générale"];
-            container.innerHTML = currentZones.map(zone => `<span class="bg-white dark:bg-slate-900 text-[11px] font-bold px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center"><i class="fa-solid fa-map-pin text-restev-blue mr-1.5"></i> ${zone}</span>`).join('');
-        }
-        
-        function registerCustomZone() {
-            const input = document.getElementById('txt-new-zone'); 
-            const zoneName = input.value.trim(); 
-            if (!zoneName) return;
-            if (!appState.corporateZonesDB[appState.currentSelectedCompany]) appState.corporateZonesDB[appState.currentSelectedCompany] = [];
-            appState.corporateZonesDB[appState.currentSelectedCompany].push(zoneName); 
-            input.value = ""; 
-            renderManagerZonesList(); 
-            showToast("✅ Nouvel atelier configuré.");
-        }
-        
-        function buildZoneDropdownOptions() {
-            const dropdown = document.getElementById('risk-location'); 
-            if(!dropdown) return;
-            const currentZones = appState.corporateZonesDB[appState.currentSelectedCompany] || ["Zone Générale"];
-            dropdown.innerHTML = currentZones.map(zone => `<option value="${zone}">📍 ${zone}</option>`).join('');
-        }
-        
-        function updateDirectionDashboardCounters() {
-            if(document.getElementById('lbl-dir-adherents')) document.getElementById('lbl-dir-adherents').innerText = "RESTEV Cloud";
-            if(document.getElementById('lbl-dir-passports')) document.getElementById('lbl-dir-passports').innerText = appState.totalPassportsCount;
-            if(document.getElementById('lbl-dir-alert-count')) document.getElementById('lbl-dir-alert-count').innerText = appState.risksDB.length;
-        }
-        
-        function initRestevAnalyticsChart() {
-            const canvasElement = document.getElementById('chart-restev-risks');
-            if(!canvasElement) return;
-            const ctx = canvasElement.getContext('2d');
-            chartInstance = new Chart(ctx, { 
-                type: 'doughnut', 
-                data: { 
-                    labels: ['Bureau / Santé', 'BTP / Espaces Verts', 'Logistique / Garage', 'Agro / Restauration', 'Métallurgie'], 
-                    datasets: [{ data: [0, 0, 0, 0, 0], backgroundColor: ['#3a7bd5', '#e0248a', '#ffb007', '#4ec3b1', '#64748b'], borderWidth: 3 }] 
-                }, 
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { weight: 'bold', size: 11 } } } } } 
-            });
-        }
-        
-        function updateChartStatsDynamically() {
-            if (!chartInstance) return; 
-            const counts = [0, 0, 0, 0, 0];
-            appState.risksDB.forEach(r => {
-                if (r.category.includes('RPS') || r.category.includes('Biologique') || r.category.includes('écran')) counts[0]++;
-                else if (r.category.includes('Hauteur') || r.category.includes('Chantier') || r.category.includes('Casque')) counts[1]++;
-                else if (r.category.includes('Quai') || r.category.includes('Levage') || r.category.includes('Piétons')) counts[2]++;
-                else if (r.category.includes('Coupure') || r.category.includes('Huile') || r.category.includes('Glissade')) counts[3]++;
-                else counts[4]++;
-            });
-            chartInstance.data.datasets[0].data = counts; 
-            chartInstance.update();
-        }
-        
-        function initCanvas(id) {
-            const canvas = document.getElementById(id); 
-            if (!canvas) return; 
-            let computedWidth = canvas.parentElement.clientWidth || 340;
-            canvas.width = computedWidth; 
-            canvas.height = 90;
-            
-            const ctx = canvas.getContext('2d'); 
-            ctx.lineWidth = 3; 
-            ctx.lineCap = 'round'; 
-            ctx.strokeStyle = '#0f172a'; 
-            activeCanvas[id] = canvas; 
-            ctxCanvas[id] = ctx;
-            
-            const getPos = (e) => { 
-                const r = canvas.getBoundingClientRect();
-                return { x: (e.touches ? e.touches[0].clientX : e.clientX) - r.left, y: (e.touches ? e.touches[0].clientY : e.clientY) - r.top }; 
-            };
-            const drawStart = (e) => { 
-                e.preventDefault(); 
-                isDrawing = true; 
-                const p = getPos(e); 
-                ctx.beginPath();
-                ctx.moveTo(p.x, p.y); 
-            };
-            const drawMove = (e) => { 
-                if (!isDrawing) return; 
-                e.preventDefault(); 
-                const p = getPos(e); 
-                ctx.lineTo(p.x, p.y); 
-                ctx.stroke(); 
-            };
-            canvas.addEventListener('mousedown', drawStart); 
-            canvas.addEventListener('mousemove', drawMove); 
-            window.addEventListener('mouseup', () => isDrawing = false);
-            canvas.addEventListener('touchstart', drawStart, {passive:false}); 
-            canvas.addEventListener('touchmove', drawMove, {passive:false}); 
-            window.addEventListener('touchend', () => isDrawing = false);
-        }
-        
-        function clearCanvas(id) { 
-            if(ctxCanvas[id]) ctxCanvas[id].clearRect(0,0,activeCanvas[id].width,activeCanvas[id].height); 
-        }
-        
-        function showToast(text) {
-            const toast = document.getElementById('toast'); 
-            document.getElementById('toast-text').innerText = text;
-            toast.classList.remove('translate-y-20', 'opacity-0'); 
-            toast.classList.add('translate-y-0', 'opacity-100');
-            setTimeout(() => { 
-                toast.classList.remove('translate-y-0', 'opacity-100'); 
-                toast.classList.add('translate-y-20', 'opacity-0'); 
-            }, 4000);
-        }
-
-        function toggleDarkMode() {
-            const html = document.documentElement;
-            html.classList.toggle('dark');
-            if (html.classList.contains('dark')) {
-                localStorage.setItem('theme', 'dark');
-                showToast("🌙 Environnement de nuit actif");
-            } else {
-                localStorage.setItem('theme', 'light');
-                showToast("☀️ Environnement de jour actif");
-            }
-        }
-
-        function finalizeOfficialAttestation() {
-            appState.totalPassportsCount++; 
-            updateDirectionDashboardCounters();
-            document.getElementById('lbl-view-emp').innerText = appState.currentEmployeeProfile.name || 'Salarié Émargé'; 
-            document.getElementById('lbl-view-company').innerText = appState.currentSelectedCompany;
-            document.getElementById('lbl-view-status').innerText = appState.currentEmployeeProfile.status; 
-            document.getElementById('lbl-view-tutor').innerText = document.getElementById('tutor-name').value;
-            
-            const epiListText = appState.currentEmployeeProfile.deliveredEPI && appState.currentEmployeeProfile.deliveredEPI.length > 0 
-                ? appState.currentEmployeeProfile.deliveredEPI.join(', ') 
-                : 'Aucun équipement requis ou coché';
-            document.getElementById('lbl-view-epi').innerText = epiListText;
-            
-            if(activeCanvas['canv-employee']) document.getElementById('img-render-emp').src = activeCanvas['canv-employee'].toDataURL(); 
-            if(activeCanvas['canv-tutor']) document.getElementById('img-render-tutor').src = activeCanvas['canv-tutor'].toDataURL();
-            switchScreen('scr-attestation');
-        }
-
-        // --- ENCLENCHEMENT ---
-        window.onload = async function() {
-            if (localStorage.getItem('theme') === 'dark') {
-                document.documentElement.classList.add('dark');
-            }
-
-            buildActivityDropdown();
-            initRestevAnalyticsChart();
-            buildRiskCategoryDropdown();
-            buildEmployeeRulesLayout();
-            
-            const params = new URLSearchParams(window.location.search);
-            if (params.get('mode') === 'employee') {
-                appState.currentSelectedCompany = params.get('comp') || "Simulation Usine";
-                appState.currentActivity = params.get('activity') || "Général (Bureau & Administratif)";
-                appState.currentEmployeeProfile = { 
-                    name: params.get('name') || "Nouvel Arrivant", 
-                    status: params.get('status') || "Parcours Standard", 
-                    deliveredEPI: [] 
-                };
-                
-                document.getElementById('lbl-emp-welcome').innerText = `Bonjour ${appState.currentEmployeeProfile.name}`;
-                document.getElementById('lbl-emp-company').innerText = `${appState.currentSelectedCompany}`;
-                
-                buildRiskCategoryDropdown(); 
-                buildEmployeeRulesLayout();
-                switchScreen('scr-employee');
-            } else {
-                await pullLatestRisksFromCloud();
-            }
-            
-            setInterval(pullLatestRisksFromCloud, 15000);
-        };
-    </script>
+// Fallbacks de navigation pour les boutons du portail
+function handleDirectionAccess() { switchScreen('scr-direction'); }
+function accessEmployeeDirect() { switchScreen('scr-employee'); }
+function logoutManager() { switchScreen('scr-home'); }
+</script>
 </body>
 </html>
