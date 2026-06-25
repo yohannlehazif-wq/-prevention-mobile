@@ -228,12 +228,12 @@ J'ai compris, accéder au portail
 </div>
 
 <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-premium border border-slate-100 dark:border-slate-700 space-y-4 border-t-4 border-t-restev-blue">
-<h2 class="text-xl font-black text-slate-900 dark:text-white">Connexion Manager</h2>
+<h2 class="text-xl font-black text-slate-900 dark:text-white">Connexion </h2>
 <p class="text-xs text-slate-500 dark:text-slate-400">Saisissez votre code établissement pour accéder à la console.</p>
 
 <div class="space-y-3">
-<input type="text" id="manager-company-code" placeholder="Ex: RSTV-DEMO-1234" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold uppercase focus:outline-none focus:border-restev-blue dark:text-white">
-<button onclick="handleManagerLogin()" class="w-full bg-restev-blue text-white py-3 rounded-xl text-sm font-extrabold shadow-md hover:opacity-95 transition">Accéder à l'Espace</button>
+<input type="text" id="-company-code" placeholder="Ex: RSTV-DEMO-1234" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold uppercase focus:outline-none focus:border-restev-blue dark:text-white">
+<button onclick="handleLogin()" class="w-full bg-restev-blue text-white py-3 rounded-xl text-sm font-extrabold shadow-md hover:opacity-95 transition">Accéder à l'Espace</button>
 </div>
 </div>
 <div class="bg-gradient-to-br from-slate-50 to-amber-50/30 dark:from-slate-900 dark:to-slate-800 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-4">
@@ -635,6 +635,51 @@ const { error } = await supabaseClient.from('alerts').update({ status: 'resolved
 if (!error && typeof showToast === 'function') showToast("Action corrective enregistrée.");
 }
 
+  async function loadAlerts(companyId) {
+    const { data, error } = await supabase
+        .from('alerts')
+        .select(`
+            *,
+            treatments (
+                id,
+                manager_name,
+                action_taken,
+                created_at
+            )
+        `)
+        .eq('company_id', companyId)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error("Erreur lors de la récupération des alertes :", error);
+        return [];
+    }
+    return data;
+}
+  async function resolveAlert(alertId, managerName, actionTaken) {
+    // 1. On ajoute l'action dans la table des traitements
+    const { error: treatmentError } = await supabase
+        .from('treatments')
+        .insert([
+            { 
+                alert_id: alertId, 
+                manager_name: managerName, 
+                action_taken: actionTaken 
+            }
+        ]);
+
+    if (treatmentError) throw treatmentError;
+
+    // 2. On passe le statut de l'alerte à 'resolved'
+    const { error: alertError } = await supabase
+        .from('alerts')
+        .update({ status: 'resolved' })
+        .eq('id', alertId);
+
+    if (alertError) throw alertError;
+    
+    console.log("Alerte traitée et clôturée avec succès !");
+}
 let lastKnownRisksCount = 0;
 let isManagerSoundMuted = false;
 let managerVolume = 0.5;
