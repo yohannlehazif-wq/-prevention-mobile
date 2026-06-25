@@ -1199,25 +1199,57 @@
             btn.classList.add('border-restev-magenta', 'bg-pink-50');
         }
 
-        function validateQCMAndProceed() {
-            const preset = METIER_PRESETS[appState.currentActivity];
-            let allCorrect = true;
-            preset.qcm.forEach((q, qIdx) => {
-                const selected = document.querySelector(`input[name="qcm_${qIdx}"]:checked`);
-                if (!selected || parseInt(selected.value) !== q.answer) {
-                    allCorrect = false;
-                }
-            });
+        // Fonction de validation stricte du QCM
+function validateQCMAndProceed() {
+    const questions = document.querySelectorAll('.qcm-question');
+    const errorMsg = document.getElementById('qcm-error-msg');
+    let allCorrect = true;
+    let allAnswered = true;
 
-            if (!allCorrect) {
-                document.getElementById('qcm-error-msg').classList.remove('hidden');
-                showToast("❌ Erreur de validation QCM.");
-            } else {
-                document.getElementById('qcm-error-msg').classList.add('hidden');
-                showToast("✅ Compétences validées !");
-                switchScreen('scr-epi-check');
-            }
+    questions.forEach((qBlock, index) => {
+        const correctIndex = qBlock.getAttribute('data-correct');
+        const selected = document.querySelector(`input[name="qcm_${index}"]:checked`);
+        
+        // Nettoyage des anciennes classes de style
+        qBlock.classList.remove('border-red-400', 'bg-red-50/50', 'border-emerald-400', 'bg-emerald-50/30');
+        
+        if (!selected) {
+            allAnswered = false;
+            allCorrect = false;
+            // Style d'erreur visuel direct sur la question oubliée
+            qBlock.classList.add('border-red-400', 'bg-red-50/50');
+        } else if (selected.value !== correctIndex) {
+            allCorrect = false;
+            // Style d'erreur visuel direct sur la mauvaise réponse
+            qBlock.classList.add('border-red-400', 'bg-red-50/50');
+        } else {
+            // Validation visuelle positive pour encourager le salarié
+            qBlock.classList.add('border-emerald-400', 'bg-emerald-50/30');
         }
+    });
+
+    // 1er niveau de blocage : Questions non répondues
+    if (!allAnswered) {
+        errorMsg.innerHTML = `<i class="fa-solid fa-circle-exclamation text-red-500 text-sm"></i> <span>Attention Yoyo, le salarié n'a pas répondu à toutes les questions obligatoires.</span>`;
+        errorMsg.classList.remove('hidden');
+        errorMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return; // ARRÊT STRICT : On ne passe pas à l'écran suivant
+    }
+
+    // 2ème niveau de blocage : Erreur détectée dans les réponses
+    if (!allCorrect) {
+        errorMsg.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-500 text-sm"></i> <span>Échec de l'évaluation sécurité. Toutes les réponses doivent être correctes pour valider l'accueil et obtenir la dotation EPI. Veuillez revoir vos choix.</span>`;
+        errorMsg.classList.remove('hidden');
+        errorMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return; // ARRÊT STRICT : Le salarié reste bloqué ici tant que ce n'est pas un sans-faute
+    }
+
+    // SI TOUT EST OK (Sans-faute sur les 5 questions)
+    errorMsg.classList.add('hidden');
+    
+    // On passe enfin à la dotation EPI (Etape suivante)
+    goToEPICheckScreen();
+}
 
         function validateEPICheck() {
             showToast("✅ Dotation EPI enregistrée.");
