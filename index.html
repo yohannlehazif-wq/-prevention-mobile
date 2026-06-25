@@ -1167,6 +1167,20 @@
                 if (screenId === 'scr-manager') renderManagerZones();
             }
         }
+        function generateQRCode(text) {
+    const qrCodeContainer = document.getElementById("qrcode");
+    
+    // On vide le contenu existant pour éviter les doublons
+    if (qrCodeContainer) {
+        qrCodeContainer.innerHTML = ""; 
+        
+        // Génération du QR Code
+        QRCode.toCanvas(qrCodeContainer, text, { width: 128 }, function (error) {
+            if (error) console.error(error);
+            console.log('QR Code généré !');
+        });
+    }
+}
         function toggleDarkMode() {
             document.documentElement.classList.toggle('dark');
         }
