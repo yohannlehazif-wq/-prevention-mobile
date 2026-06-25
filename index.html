@@ -1,11 +1,3 @@
-Ah, mince ! Autant pour moi Yoyo, j'ai voulu trop pousser les détails visuels et j'ai bloqué deux mécaniques en cours de route.
-Voici exactement pourquoi ça coinçait :
- 1. **Pour le mode Jour/Nuit :** Le script du CDN Tailwind a absolument besoin de la mention darkMode: 'class' dans sa configuration pour comprendre qu'on applique manuellement la classe .dark sur la balise <html>. Sans ça, il l'ignore complètement.
- 2. **Pour les signatures :** J'avais inversé deux lignes dans la fonction du tracé (beginPath() se déclenchait *après* le moveTo(), ce qui annulait le point de départ). De plus, en passant le fond de la signature en noir en mode nuit, le stylo écrivait en noir sur du noir... invisible !
-> 💡 **Correction ergonomique :** Pour éviter que la signature devienne invisible une fois exportée sur l'attestation officielle (qui reste blanche pour l'impression), j'ai configuré la zone de signature pour qu'elle reste blanche comme une feuille de papier, peu importe le mode sélectionné.
-> 
-Voici le code corrigé à 100 %, prêt à être collé :
-```html
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -1338,5 +1330,3 @@ Voici le code corrigé à 100 %, prêt à être collé :
     </script>
 </body>
 </html>
-
-```
