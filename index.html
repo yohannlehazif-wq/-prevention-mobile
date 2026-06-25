@@ -151,7 +151,6 @@
                 </div>
             </div>
         </section>
-       <!-- SECTION PRÉSENTATION DU PROJET & OBJECTIFS (scr-about) -->
         <!-- SECTION PRÉSENTATION DU PROJET (scr-about) -->
         <section id="scr-about" class="screen max-w-2xl mx-auto w-full space-y-6 py-2">
             
@@ -1426,24 +1425,76 @@
             const ctx = ctxCanvas[id];
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
-        function finalizeOfficialAttestation() {
-            document.getElementById('lbl-view-emp').innerText = appState.employeeName;
-            document.getElementById('lbl-view-company').innerText = appState.currentSelectedCompany;
-            document.getElementById('lbl-view-status').innerText = appState.employeeStatus;
-            document.getElementById('lbl-view-tutor').innerText = document.getElementById('tutor-name').value;
-            
-            const chosenEPI = [];
-            document.querySelectorAll('#employee-epi-container input:checked').forEach(cb => {
-                chosenEPI.push(cb.nextElementSibling.innerText);
-            });
-            document.getElementById('lbl-view-epi').innerText = chosenEPI.length > 0 ? chosenEPI.join(', ') : "Aucun équipement remis.";
-            
-            document.getElementById('img-render-emp').src = activeCanvas['canv-employee'].toDataURL();
-            document.getElementById('img-render-tutor').src = activeCanvas['canv-tutor'].toDataURL();
-            
-            showToast("🎓 Passeport Prévention validé et signé !");
-            switchScreen('scr-attestation');
+        function finalizeOfficial() {
+    try {
+        console.log("Tentative de génération de l'attestation...");
+
+        // 1. Récupération du nom du tuteur depuis le formulaire
+        const tutorInput = document.getElementById('tutor-name');
+        const tutorName = tutorInput ? tutorInput.value : "Non renseigné";
+
+        // 2. Récupération des Canvas de signature
+        const canvasEmp = document.getElementById('canv-employee');
+        const canvasTutor = document.getElementById('canv-tutor');
+
+        // 3. Injection sécurisée des données dans l'écran final (scr-attestation)
+        
+        // Nom du tuteur
+        const lblTutor = document.getElementById('lbl-view-tutor');
+        if (lblTutor) lblTutor.innerText = tutorName;
+
+        // Infos de l'employé (sécurité si appState est utilisé)
+        const lblEmp = document.getElementById('lbl-view-emp');
+        if (lblEmp && typeof appState !== 'undefined' && appState.currentEmployeeProfile) {
+            lblEmp.innerText = appState.currentEmployeeProfile.name || "Nouvel Arrivant";
         }
+        
+        const lblCompany = document.getElementById('lbl-view-company');
+        if (lblCompany && typeof appState !== 'undefined') {
+            lblCompany.innerText = appState.currentSelectedCompany || "Établissement Adhérent";
+        }
+
+        const lblStatus = document.getElementById('lbl-view-status');
+        if (lblStatus && typeof appState !== 'undefined' && appState.currentEmployeeProfile) {
+            lblStatus.innerText = appState.currentEmployeeProfile.status || "Standard";
+        }
+
+        // 4. Conversion et injection des signatures (avec sécurité anti-crash)
+        const imgRenderEmp = document.getElementById('img-render-emp');
+        if (canvasEmp && imgRenderEmp) {
+            try {
+                imgRenderEmp.src = canvasEmp.toDataURL('image/png');
+            } catch (e) {
+                console.error("Erreur conversion signature employé :", e);
+            }
+        }
+
+        const imgRenderTutor = document.getElementById('img-render-tutor');
+        if (canvasTutor && imgRenderTutor) {
+            try {
+                imgRenderTutor.src = canvasTutor.toDataURL('image/png');
+            } catch (e) {
+                console.error("Erreur conversion signature tuteur :", e);
+            }
+        }
+
+        // 5. Force le passage à l'écran de l'attestation quoi qu'il arrive
+        console.log("Redirection vers scr-attestation");
+        if (typeof switchScreen === 'function') {
+            switchScreen('scr-attestation');
+        } else {
+            // Repli si switchScreen a un problème
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            const targetScreen = document.getElementById('scr-attestation');
+            if (targetScreen) targetScreen.classList.remove('hidden');
+        }
+
+    } catch (globalError) {
+        // En cas d'erreur imprévue, on l'affiche en console mais on force quand même l'affichage
+        console.error("Erreur critique dans finalizeOfficial :", globalError);
+        if (typeof switchScreen === 'function') switchScreen('scr-attestation');
+    }
+}
         // --- CONSOLE INTERNE DIRECTION RESTEV ---
         function initDirectionChart() {
             if (chartInstance) chartInstance.destroy();
