@@ -394,7 +394,12 @@
                             <span class="font-extrabold text-slate-900 dark:text-white block"><i class="fa-solid fa-triangle-exclamation text-restev-gold mr-1"></i> Risques métiers injectés :</span>
                             <p id="manager-activity-preview" class="italic font-medium">Chargement des paramètres...</p>
                         </div>
-                        <div class="pt-1"> 
+                        <div class="pt-1">
+                            <button onclick="openStudio(document.getElementById('manager-activity-select').value)" class="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-slate-800 to-slate-900 dark:from-slate-700 dark:to-slate-700 text-white py-2.5 rounded-xl text-xs font-bold shadow hover:opacity-95 transition">
+                                <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> Editer le QCM de ce secteur
+                            </button>
+                        </div>
+                    </div>
                     <!-- Étape 2 : Créer Session -->
                     <div class="bg-gradient-to-br from-white to-pink-50/20 dark:from-slate-800 dark:to-slate-800/50 p-5 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-premium space-y-4 border-t-4 border-t-restev-magenta">
                         <div class="flex items-center space-x-2 text-slate-900 dark:text-white font-black text-xs uppercase tracking-wider">
@@ -701,8 +706,8 @@
                     Retourner au Portail
                 </button>
             </div>
-</section>
-   </main>
+        </section>
+    </main>
     <script>
         const SUPABASE_URL = "https://bcuzmjcbhriyzmmiodsi.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdXptamNiaHJpeXptbWlvZHNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODU5NjIsImV4cCI6MjA5NzE2MTk2Mn0.lbYUBi-JEJCoUIdAAAVS35sdy6o0EHHGoqVs3cL1ApQ";
@@ -1071,52 +1076,6 @@
                 oscillator.stop(audioCtx.currentTime + 0.5);
             } catch(e) {}
         }
-        // Fonction universelle pour remplir ton interface selon le métier choisi
-function loadSectorDashboard(sectorName) {
-    const data = METIER_PRESETS[sectorName];
-    
-    if (!data) {
-        console.error("Secteur non trouvé : " + sectorName);
-        return;
-    }
-
-    // 1. Mise à jour des catégories de risques
-    const catContainer = document.getElementById('list-categories');
-    if (catContainer) {
-        catContainer.innerHTML = data.categories.map(cat => 
-            `<li class="flex items-center gap-2 text-xs font-medium text-slate-600 mb-2">
-                <i class="fa-solid fa-circle-exclamation text-restev-magenta"></i> ${cat}
-             </li>`
-        ).join('');
-    }
-
-    // 2. Mise à jour des EPI (Équipements)
-    const epiContainer = document.getElementById('list-epi');
-    if (epiContainer) {
-        epiContainer.innerHTML = data.epi.map(item => 
-            `<span class="inline-block bg-slate-100 text-[10px] font-bold px-2 py-1 rounded-md mr-1 mb-1">${item}</span>`
-        ).join('');
-    }
-
-    // 3. Mise à jour des Règles de sécurité (Cartes)
-    const rulesContainer = document.getElementById('container-rules');
-    if (rulesContainer) {
-        rulesContainer.innerHTML = data.rules.map(rule => `
-            <div class="p-3 border-l-4 ${rule.color} bg-white shadow-sm rounded-r-lg mb-3">
-                <h4 class="text-xs font-bold text-slate-800">${rule.title}</h4>
-                <p class="text-[10px] text-slate-500 mt-1">${rule.desc}</p>
-            </div>
-        `).join('');
-    }
-
-    // 4. Chargement automatique du QCM (Si tu es sur l'écran QCM)
-    // Utilise la fonction que nous avions vue précédemment
-    if (typeof loadQCMForSector === 'function') {
-        loadQCMForSector(sectorName);
-    }
-    
-    console.log("Interface mise à jour pour : " + sectorName);
-}
         function toggleMuteManagerSound() {
             isManagerSoundMuted = !isManagerSoundMuted;
             document.getElementById('btn-mute-manager').innerText = isManagerSoundMuted ? "🔇 Muet" : "🔊 Actif";
@@ -1330,12 +1289,90 @@ function populateSectorsDropdown() {
     
     showToast("📱 QR Code d'émargement actif !");
 }
-       // Variable globale pour stocker les modifications en cours
-let tempPresetQCM = [];
-let currentCategoryEditing = "";
-
-// 1. Fonction pour ouvrir le studio et charger les données
-
+        // --- STUDIO PERSONNALISATION ---
+        let tempPresetQCM = [];
+        function openStudio(metier) {
+            document.getElementById('lbl-studio-metier').innerText = metier;
+            const container = document.getElementById('studio-rules-list');
+            container.innerHTML = "";
+            tempPresetQCM = JSON.parse(JSON.stringify(METIER_PRESETS[metier].qcm));
+            
+            tempPresetQCM.forEach((q, index) => {
+                container.innerHTML += `
+                    <div class="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl space-y-2 border">
+                        <input type="text" value="${q.question}" onchange="tempPresetQCM[${index}].question = this.value" class="w-full p-2 text-xs font-bold border rounded bg-white dark:bg-slate-800 dark:text-white">
+                        <div class="space-y-1">
+                            ${q.options.map((opt, oIdx) => `
+                                <input type="text" value="${opt}" onchange="tempPresetQCM[${index}].options[${oIdx}] = this.value" class="w-full p-2 text-[11px] border rounded bg-white dark:bg-slate-800 dark:text-slate-300">
+                            `).join('')}
+                        </div>
+                    </div>`;
+            });
+            switchScreen('scr-studio');
+        }
+        function saveCustomQCM() {
+            const metier = appState.currentActivity;
+            METIER_PRESETS[metier].qcm = tempPresetQCM;
+            showToast("💾 Configuration QCM enregistrée.");
+            switchScreen('scr-manager');
+        }
+        // --- PARCOURS SALARIÉ : SÉCURITÉ ---
+        function buildEmployeeQCMLayout() {
+            const rulesContainer = document.getElementById('employee-rules-container');
+            const qcmContainer = document.getElementById('employee-qcm-container');
+            const preset = METIER_PRESETS[appState.currentActivity];
+            
+            // Règles
+            rulesContainer.innerHTML = "";
+            preset.rules.forEach(r => {
+                rulesContainer.innerHTML += `
+                    <div class="p-3 bg-white dark:bg-slate-900 border-l-4 ${r.color} rounded-xl shadow-sm border">
+                        <h4 class="font-bold text-slate-900 dark:text-white">${r.title}</h4>
+                        <p class="text-[11px] text-slate-500">${r.desc}</p>
+                    </div>`;
+            });
+            // QCM
+            qcmContainer.innerHTML = "";
+            preset.qcm.forEach((q, qIdx) => {
+                qcmContainer.innerHTML += `
+                    <div class="qcm-question p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border space-y-2" data-correct="${q.answer}">
+                        <p class="text-xs font-bold">${qIdx + 1}. ${q.question}</p>
+                        <div class="space-y-1.5">
+                            ${q.options.map((opt, oIdx) => `
+                                <label class="flex items-center gap-2.5 p-2 bg-white dark:bg-slate-800 border rounded-lg text-[11px] cursor-pointer">
+                                    <input type="radio" name="qcm_${qIdx}" value="${oIdx}">
+                                    <span>${opt}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>`;
+            });
+            // Catégories de risques (Report screen)
+            const catGrid = document.getElementById('risk-category-grid');
+            catGrid.innerHTML = "";
+            preset.categories.forEach(cat => {
+                catGrid.innerHTML += `
+                    <button type="button" onclick="selectRiskCategory('${cat}', this)" class="p-2.5 bg-slate-50 dark:bg-slate-900 border rounded-xl text-[10px] font-bold text-slate-600 dark:text-slate-300 transition-all hover:border-restev-magenta text-left">
+                        ${cat}
+                    </button>`;
+            });
+            // Zones
+            const locSelect = document.getElementById('risk-location');
+            locSelect.innerHTML = "";
+            appState.customZones.forEach(z => {
+                locSelect.innerHTML += `<option value="${z}">${z}</option>`;
+            });
+            // EPI
+            const epiContainer = document.getElementById('employee-epi-container');
+            epiContainer.innerHTML = "";
+            preset.epi.forEach((epi, eIdx) => {
+                epiContainer.innerHTML += `
+                    <label class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl cursor-pointer text-xs font-bold">
+                        <input type="checkbox" id="epi_${eIdx}" class="w-4 h-4 accent-restev-blue">
+                        <span>${epi}</span>
+                    </label>`;
+            });
+        }
         function selectRiskCategory(cat, btn) {
             selectedRiskCategory = cat;
             document.querySelectorAll('#risk-category-grid button').forEach(b => b.classList.remove('border-restev-magenta', 'bg-pink-50'));
@@ -1462,178 +1499,6 @@ let currentCategoryEditing = "";
             setupCanvasPad('canv-tutor');
             canvasInitialized = true;
         }
-        function submitDangerAlert() {
-    try {
-        console.log("Tentative d'envoi d'une alerte sécurité...");
-
-        // 1. Récupération des éléments du formulaire
-        const selectLocation = document.getElementById('risk-location');
-        const selectCategory = document.getElementById('risk-category') || document.getElementById('risk-type');
-        const txtDescription = document.getElementById('risk-description') || document.getElementById('danger-desc');
-        const selectSeverity = document.getElementById('risk-severity') || document.getElementById('danger-level');
-
-        // Vérification de sécurité minimale
-        const location = selectLocation ? selectLocation.value : "Zone non spécifiée";
-        const category = selectCategory ? selectCategory.value : "Risque Général";
-        const description = txtDescription ? txtDescription.value.trim() : "";
-        const severity = selectSeverity ? selectSeverity.value : "Moyen";
-
-        if (!description) {
-            alert("⚠️ Veuillez décrire brièvement la situation dangereuse ou l'anomalie constatée.");
-            return;
-        }
-
-        // 2. Création de l'objet Alerte
-        const newAlert = {
-            id: 'ALT-' + Date.now(),
-            date: new Date().toLocaleDateString('fr-FR'),
-            time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-            company: (typeof appState !== 'undefined' && appState.currentSelectedCompany) ? appState.currentSelectedCompany : "RESTEV 85",
-            employee: (typeof appState !== 'undefined' && appState.currentEmployeeProfile) ? appState.currentEmployeeProfile.name : "Salarié Terrain",
-            location: location,
-            category: category,
-            description: description,
-            severity: severity, // Faible, Moyen, Critique
-            status: "En attente" // En attente, En cours, Résolu
-        };
-
-        // 3. Stockage dans la mémoire globale de l'application
-        if (typeof appState !== 'undefined') {
-            if (!appState.alerts) appState.alerts = [];
-            appState.alerts.unshift(newAlert); // On met la plus récente en premier
-        }
-
-        console.log("Alerte enregistrée avec succès :", newAlert);
-
-        // 4. Nettoyage du formulaire pour le prochain signalement
-        if (txtDescription) txtDescription.value = "";
-        
-        // 5. Message de succès et redirection
-        alert("🛡️ Votre alerte sécurité a bien été transmise au Responsable HSE. Merci pour votre vigilance !");
-        
-        // Rafraîchir l'affichage du dashboard manager au cas où
-        function renderManagerAlerts() {
-    try {
-        if (typeof appState === 'undefined' || !appState.alerts) {
-            appState.alerts = []; // Initialisation si vide
-        }
-
-        // 1. MISE À JOUR DES COMPTEURS DU DASHBOARD
-        // On compte les alertes qui ne sont pas encore "Résolues"
-        const activeAlertsCount = appState.alerts.filter(a => a.status !== "Résolu").length;
-        
-        // Cible tes badges ou compteurs dans le dashboard manager (id à adapter selon ton HTML)
-        const badgeCounter = document.getElementById('badge-alert-count') || document.getElementById('lbl-alert-counter');
-        if (badgeCounter) {
-            badgeCounter.innerText = activeAlertsCount;
-            if (activeAlertsCount > 0) {
-                badgeCounter.classList.remove('hidden');
-            } else {
-                badgeCounter.classList.add('hidden');
-            }
-        }
-
-        // 2. GÉNÉRATION DE LA LISTE VISUELLE
-        // Cible le conteneur où s'affichent les alertes chez le manager
-        const container = document.getElementById('div-alerts-list') || document.getElementById('manager-alerts-container');
-        if (!container) return;
-
-        if (appState.alerts.length === 0) {
-            container.innerHTML = `
-                <div class="p-6 text-center text-xs text-slate-400 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-dashed">
-                    <i class="fa-solid fa-shield-cat text-lg mb-2 block text-slate-300"></i>
-                    Aucune alerte remontée pour le moment. Tout est sous contrôle !
-                </div>
-            `;
-            return;
-        }
-
-        container.innerHTML = ""; // On vide avant de reconstruire
-
-        appState.alerts.forEach(alertItem => {
-            // Détermination des couleurs selon la gravité
-            let severityClass = "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400";
-            if (alertItem.severity === "Moyen") {
-                severityClass = "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400";
-            } else if (alertItem.severity === "Critique" || alertItem.severity === "Élevé") {
-                severityClass = "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400";
-            }
-
-            // Détermination du badge de statut
-            let statusBadge = `<span class="bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded-full font-bold">En attente</span>`;
-            if (alertItem.status === "En cours") {
-                statusBadge = `<span class="bg-blue-100 text-blue-600 text-[10px] px-2 py-0.5 rounded-full font-bold">En cours</span>`;
-            } else if (alertItem.status === "Résolu") {
-                statusBadge = `<span class="bg-emerald-100 text-emerald-600 text-[10px] px-2 py-0.5 rounded-full font-bold">✓ Résolu</span>`;
-            }
-
-            // Création de la carte HTML de l'alerte
-            const card = document.createElement('div');
-            card.className = "bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm space-y-3 relative overflow-hidden transition hover:shadow-md";
-            
-            card.innerHTML = `
-                <div class="flex items-start justify-between gap-2">
-                    <div class="space-y-0.5">
-                        <span class="text-[10px] text-slate-400 font-semibold">${alertItem.date} à ${alertItem.time}</span>
-                        <h4 class="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
-                            <i class="fa-solid fa-location-dot text-slate-400"></i> ${alertItem.location}
-                        </h4>
-                    </div>
-                    <div class="flex flex-col items-end gap-1">
-                        <span class="text-[9px] font-extrabold uppercase border px-2 py-0.5 rounded-md ${severityClass}">${alertItem.severity}</span>
-                        ${statusBadge}
-                    </div>
-                </div>
-
-                <div class="p-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
-                    <strong class="text-[10px] uppercase text-slate-400 block mb-0.5">${alertItem.category} :</strong>
-                    "${alertItem.description}"
-                </div>
-
-                <div class="flex items-center justify-between text-[10px] pt-1 text-slate-500">
-                    <span>Par : <strong>${alertItem.employee}</strong></span>
-                    
-                    ${alertItem.status !== "Résolu" ? `
-                        <div class="flex gap-1.5">
-                            ${alertItem.status === "En attente" ? `
-                                <button onclick="changeAlertStatus('${alertItem.id}', 'En cours')" class="bg-slate-100 dark:bg-slate-700 dark:text-white hover:bg-blue-50 hover:text-blue-600 px-2.5 py-1 rounded-lg font-bold transition">Prendre en charge</button>
-                            ` : ''}
-                            <button onclick="changeAlertStatus('${alertItem.id}', 'Résolu')" class="bg-emerald-500 text-white hover:bg-emerald-600 px-2.5 py-1 rounded-lg font-bold shadow-sm transition">Clôturer</button>
-                        </div>
-                    ` : `<span class="text-emerald-500 font-semibold"><i class="fa-solid fa-check-double"></i> Traité</span>`}
-                </div>
-            `;
-
-            container.appendChild(card);
-        });
-
-    } catch (err) {
-        console.error("Erreur lors du rendu des alertes manager :", err);
-    }
-}
-        
-        // Retour à l'accueil de l'espace employé
-        if (typeof switchScreen === 'function') {
-            switchScreen('scr-employee');
-        }
-
-    } catch (error) {
-        console.error("Erreur lors de l'envoi de l'alerte :", error);
-        alert("Une erreur est survenue lors de l'envoi. Veuillez réessayer.");
-    }
-}
-        function changeAlertStatus(alertId, newStatus) {
-    if (typeof appState !== 'undefined' && appState.alerts) {
-        const alertFound = appState.alerts.find(a => a.id === alertId);
-        if (alertFound) {
-            alertFound.status = newStatus;
-            console.log(`Statut de l'alerte ${alertId} modifié en : ${newStatus}`);
-            
-            // On rafraîchit immédiatement l'affichage pour voir le changement de couleur/bouton
-            renderManagerAlerts();
-        }
-    }
-}
         function setupCanvasPad(id) {
             const canvas = document.getElementById(id);
             const ctx = canvas.getContext('2d');
