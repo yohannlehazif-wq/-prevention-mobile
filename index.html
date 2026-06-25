@@ -1386,8 +1386,52 @@
                 </div>`;
         }
         // --- INITIALISATION GÉNÉRALE ---
+       // --- INITIALISATION GÉNÉRALE ---
         window.addEventListener('DOMContentLoaded', () => {
-            initActivitySelect();
+            // 1. Initialisation par défaut de ton application
+            if (typeof initActivitySelect === 'function') initActivitySelect();
+            
+            // 2. Lecture des paramètres du QR Code dans l'URL
+            const params = new URLSearchParams(window.location.search);
+            
+            if (params.get('mode') === 'employee') {
+                // On extrait et on enregistre les données du salarié dans l'application
+                appState.employeeName = params.get('name') || "Nouvel Arrivant";
+                appState.employeeStatus = params.get('status') || "Parcours Standard";
+                appState.currentSelectedCompany = params.get('comp') || "Entreprise";
+                appState.currentActivity = params.get('activity') || "Général";
+                
+                // Si tu as des étiquettes de texte à mettre à jour à l'écran :
+                const lblWelcome = document.getElementById('lbl-emp-welcome');
+                if (lblWelcome) lblWelcome.innerText = `Bonjour ${appState.employeeName}`;
+                
+                const lblCompany = document.getElementById('lbl-emp-company');
+                if (lblCompany) lblCompany.innerText = appState.currentSelectedCompany;
+                
+                // Si ton code a besoin de rafraîchir les listes de risques pour l'employé :
+                if (typeof buildRiskCategoryDropdown === 'function') buildRiskCategoryDropdown();
+                if (typeof buildEmployeeRulesLayout === 'function') buildEmployeeRulesLayout();
+                
+                // --- 🛡️ SÉCURITÉ & VERROUILLAGE DE L'ESPACE EMPLOYÉ ---
+                
+                // A. On empêche le clic sur le logo/titre en haut (qui renvoie d'habitude à l'accueil manager)
+                const logoHeader = document.querySelector('header .cursor-pointer') || document.querySelector('.cursor-pointer');
+                if (logoHeader) {
+                    logoHeader.removeAttribute('onclick'); // Supprime le lien de redirection
+                    logoHeader.classList.remove('cursor-pointer'); // Enlève la petite main au survol
+                }
+                
+                // B. Si tu as une barre d'onglets ou de navigation pour le manager, on la masque complètement
+                const navBar = document.querySelector('nav') || document.getElementById('main-nav');
+                if (navBar) {
+                    navBar.classList.add('hidden');
+                }
+                
+                // C. On force l'application à afficher uniquement l'écran de l'employé
+                if (typeof switchScreen === 'function') {
+                    switchScreen('scr-employee');
+                }
+            }
         });
     </script>
 </body>
