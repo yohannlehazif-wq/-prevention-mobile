@@ -422,7 +422,71 @@ J'ai compris, accéder au portail
 </div>
 <button onclick="switchScreen('scr-home')" class="no-employee w-full text-center text-xs text-slate-400 hover:text-slate-600 font-bold py-2 transition"><i class="fa-solid fa-arrow-left mr-1"></i> Quitter le parcours</button>
 </section>
+<section id="scr-employee-info" class="screen max-w-md mx-auto w-full space-y-4">
 
+  <div class="flex items-center justify-between mb-2">
+    <button onclick="switchScreen('scr-employee')" class="text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-600 dark:text-slate-300 px-4 py-2 rounded-xl font-bold transition shadow-sm flex items-center gap-1.5">
+      <i class="fa-solid fa-arrow-left"></i> Retour
+    </button>
+  </div>
+
+  <div class="bg-gradient-to-br from-emerald-500 via-teal-500 to-restev-blue text-white p-6 rounded-3xl shadow-xl space-y-2 relative overflow-hidden">
+    <div class="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+    <span class="bg-white/20 text-white text-[9px] font-black px-2.5 py-0.5 rounded uppercase tracking-wider shadow-md">
+      Espace personnel
+    </span>
+    <h2 class="text-xl font-black tracking-tight pt-1" id="info-employee-name">
+      Mon espace prévention
+    </h2>
+    <p class="text-xs text-emerald-50 font-medium" id="info-employee-company">
+      Chargement...
+    </p>
+  </div>
+
+  <div class="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-premium space-y-4">
+
+    <div>
+      <span class="text-[10px] font-black uppercase text-slate-400 tracking-wider">
+        Secteur d’activité
+      </span>
+      <h3 id="info-sector-title" class="text-base font-black text-slate-900 dark:text-white mt-1">
+        -
+      </h3>
+    </div>
+
+    <div class="p-3.5 bg-amber-50 dark:bg-slate-900 rounded-2xl border border-amber-100 dark:border-slate-700">
+      <p class="text-[10px] font-black uppercase text-amber-600 dark:text-amber-400 tracking-wider mb-1">
+        Risques principaux à connaître
+      </p>
+      <p id="info-sector-risks" class="text-xs font-semibold text-slate-700 dark:text-slate-300 leading-relaxed">
+        -
+      </p>
+    </div>
+
+    <div>
+      <p class="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2">
+        Ressources utiles
+      </p>
+      <div id="info-resources-list" class="space-y-2">
+        <!-- Généré automatiquement -->
+      </div>
+    </div>
+
+  </div>
+
+  <div class="grid grid-cols-1 gap-3">
+    <button onclick="switchScreen('scr-onboarding-1')" class="w-full bg-restev-blue text-white py-3 rounded-xl text-xs font-extrabold shadow-md transition hover:opacity-95">
+      <i class="fa-solid fa-clipboard-check mr-1"></i>
+      Démarrer le QCM sécurité
+    </button>
+
+    <button onclick="switchScreen('scr-report')" class="w-full bg-restev-magenta text-white py-3 rounded-xl text-xs font-extrabold shadow-md transition hover:opacity-95">
+      <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+      Signaler une situation dangereuse
+    </button>
+  </div>
+
+</section>
 <section id="scr-report" class="screen max-w-md mx-auto w-full bg-white dark:bg-slate-800 p-5 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-premium space-y-4">
 <h3 class="text-base font-black text-slate-900 dark:text-white flex items-center space-x-2">
 <i class="fa-solid fa-triangle-exclamation text-restev-magenta animate-pulse"></i> <span>Signalement Incident / Danger</span>
@@ -2192,6 +2256,205 @@ function escapeHtml(value) {
 
 function escapeAttr(value) {
   return escapeHtml(value).replaceAll("\n", " ");
+}
+  /* =========================
+   PAGE INFOS SALARIÉ PERSONNALISÉE
+   ========================= */
+
+const SECTOR_RESOURCES = {
+  "Bâtiment & Travaux Publics (BTP)": [
+    {
+      title: "OPPBTP - Prévention BTP",
+      desc: "Ressources, guides, outils et conseils pratiques pour les chantiers BTP.",
+      url: "https://www.preventionbtp.fr/",
+      icon: "fa-helmet-safety",
+      color: "text-orange-600"
+    },
+    {
+      title: "OPPBTP - Toutes les ressources",
+      desc: "Guides, affiches, fiches pratiques, outils et réponses prévention.",
+      url: "https://www.preventionbtp.fr/ressources",
+      icon: "fa-folder-open",
+      color: "text-orange-500"
+    },
+    {
+      title: "INRS - Risques professionnels",
+      desc: "Dossiers prévention : chutes, bruit, poussières, TMS, risques chimiques.",
+      url: "https://www.inrs.fr/risques.html",
+      icon: "fa-book-medical",
+      color: "text-restev-blue"
+    },
+    {
+      title: "CARSAT Pays de la Loire - Prévention",
+      desc: "Informations régionales prévention, formation et accompagnement des entreprises.",
+      url: "https://www.carsat-pl.fr/home/entreprise/prevenir-vos-risques-professionnels.html",
+      icon: "fa-shield-heart",
+      color: "text-emerald-600"
+    }
+  ],
+
+  "Métiers du Bois & Menuiserie": [
+    {
+      title: "INRS - Risques professionnels",
+      desc: "Poussières de bois, machines, bruit, manutentions et risques chimiques.",
+      url: "https://www.inrs.fr/risques.html",
+      icon: "fa-book-medical",
+      color: "text-restev-blue"
+    },
+    {
+      title: "INRS - OiRA outils TPE/PME",
+      desc: "Outils sectoriels pour évaluer les risques et construire un plan d’action.",
+      url: "https://www.inrs.fr/metiers/oira-outil-tpe.html",
+      icon: "fa-clipboard-list",
+      color: "text-emerald-600"
+    },
+    {
+      title: "CARSAT Pays de la Loire - Prévention",
+      desc: "Aides, formations et appui prévention pour les entreprises de la région.",
+      url: "https://www.carsat-pl.fr/home/entreprise/prevenir-vos-risques-professionnels.html",
+      icon: "fa-shield-heart",
+      color: "text-emerald-600"
+    }
+  ],
+
+  "Hôtellerie, Restauration & Cafés (HCR)": [
+    {
+      title: "INRS - Risques professionnels",
+      desc: "Coupures, brûlures, glissades, produits chimiques, TMS et organisation du travail.",
+      url: "https://www.inrs.fr/risques.html",
+      icon: "fa-book-medical",
+      color: "text-restev-blue"
+    },
+    {
+      title: "INRS - OiRA Hôtels, cafés, restaurants",
+      desc: "Outil en ligne pour évaluer les risques et définir un plan d’action.",
+      url: "https://www.inrs.fr/metiers/oira-outil-tpe.html",
+      icon: "fa-utensils",
+      color: "text-amber-600"
+    },
+    {
+      title: "CARSAT Pays de la Loire - Se former à la prévention",
+      desc: "Ressources formation prévention pour employeurs, managers et salariés.",
+      url: "https://www.carsat-pl.fr/home/entreprise/prevenir-vos-risques-professionnels/former-prevention-rp.html",
+      icon: "fa-graduation-cap",
+      color: "text-emerald-600"
+    }
+  ],
+
+  "Agriculture, Viticulture & Espaces Verts": [
+    {
+      title: "INRS - Risques professionnels",
+      desc: "Risques machines, produits chimiques, bruit, TMS, chaleur, zoonoses et UV.",
+      url: "https://www.inrs.fr/risques.html",
+      icon: "fa-book-medical",
+      color: "text-restev-blue"
+    },
+    {
+      title: "CARSAT Pays de la Loire - Prévention",
+      desc: "Ressources régionales santé-sécurité et accompagnement des entreprises.",
+      url: "https://www.carsat-pl.fr/home/entreprise/prevenir-vos-risques-professionnels.html",
+      icon: "fa-shield-heart",
+      color: "text-emerald-600"
+    },
+    {
+      title: "INRS - Outils sectoriels TPE/PME",
+      desc: "Outils d’aide à l’évaluation des risques selon les métiers.",
+      url: "https://www.inrs.fr/metiers/oira-outil-tpe.html",
+      icon: "fa-seedling",
+      color: "text-green-600"
+    }
+  ],
+
+  "Transport, Logistique & Supply Chain": [
+    {
+      title: "INRS - Risques professionnels",
+      desc: "Manutentions, chutes, circulation interne, TMS, produits dangereux et bruit.",
+      url: "https://www.inrs.fr/risques.html",
+      icon: "fa-book-medical",
+      color: "text-restev-blue"
+    },
+    {
+      title: "INRS - OiRA Transport / Logistique",
+      desc: "Outils sectoriels pour document unique et plan d’action prévention.",
+      url: "https://www.inrs.fr/metiers/oira-outil-tpe.html",
+      icon: "fa-truck-ramp-box",
+      color: "text-indigo-600"
+    },
+    {
+      title: "CARSAT Pays de la Loire - Prévention",
+      desc: "Conseils, formation et accompagnement prévention des risques professionnels.",
+      url: "https://www.carsat-pl.fr/home/entreprise/prevenir-vos-risques-professionnels.html",
+      icon: "fa-shield-heart",
+      color: "text-emerald-600"
+    }
+  ]
+};
+
+function renderEmployeeInfoPage() {
+  const employeeName = appState.currentEmployee?.name || appState.employeeName || "Travailleur";
+  const employeeStatus = appState.currentEmployee?.status || appState.employeeStatus || "Parcours sécurité";
+  const companyName = appState.currentCompany?.name || appState.currentSelectedCompany || "Établissement";
+  const sector = appState.currentCompany?.activity || appState.currentActivity || Object.keys(METIER_PRESETS)[0];
+
+  const risks = METIER_PRESETS[sector]?.risques || "Risques généraux : chutes, manutention, bruit, TMS, circulation, risque chimique.";
+  const resources = SECTOR_RESOURCES[sector] || [
+    {
+      title: "INRS - Risques professionnels",
+      desc: "Dossiers de référence pour comprendre et prévenir les risques au travail.",
+      url: "https://www.inrs.fr/risques.html",
+      icon: "fa-book-medical",
+      color: "text-restev-blue"
+    },
+    {
+      title: "CARSAT Pays de la Loire - Prévention",
+      desc: "Ressources régionales prévention pour les entreprises.",
+      url: "https://www.carsat-pl.fr/home/entreprise/prevenir-vos-risques-professionnels.html",
+      icon: "fa-shield-heart",
+      color: "text-emerald-600"
+    }
+  ];
+
+  const titleEl = document.getElementById("info-employee-name");
+  const companyEl = document.getElementById("info-employee-company");
+  const sectorEl = document.getElementById("info-sector-title");
+  const risksEl = document.getElementById("info-sector-risks");
+  const listEl = document.getElementById("info-resources-list");
+
+  if (titleEl) titleEl.innerText = `Bonjour, ${employeeName}`;
+  if (companyEl) companyEl.innerText = `${companyName} - ${employeeStatus}`;
+  if (sectorEl) sectorEl.innerText = sector;
+  if (risksEl) risksEl.innerText = risks;
+
+  if (!listEl) return;
+
+  listEl.innerHTML = "";
+
+  resources.forEach(resource => {
+    const a = document.createElement("a");
+    a.href = resource.url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.className = "block p-3 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 rounded-2xl hover:shadow-md transition group";
+
+    a.innerHTML = `
+      <div class="flex items-start gap-3">
+        <div class="w-10 h-10 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center shadow-sm border border-slate-100 dark:border-slate-700 shrink-0">
+          <i class="fa-solid ${resource.icon} ${resource.color}"></i>
+        </div>
+        <div class="flex-1">
+          <p class="text-xs font-black text-slate-900 dark:text-white group-hover:text-restev-blue transition">
+            ${escapeHtml(resource.title)}
+          </p>
+          <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed mt-0.5">
+            ${escapeHtml(resource.desc)}
+          </p>
+        </div>
+        <i class="fa-solid fa-arrow-up-right-from-square text-slate-300 text-[10px] mt-1"></i>
+      </div>
+    `;
+
+    listEl.appendChild(a);
+  });
 }
 </script>
 </body>
