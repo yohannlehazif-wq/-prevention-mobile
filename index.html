@@ -144,7 +144,7 @@ Centre RESTEV <span class="bg-gradient-to-r from-amber-400 to-orange-500 text-wh
 </div>
 <div>
 <h3 class="font-black text-slate-900 dark:text-white text-sm">Émargement</h3>
-<p class="text-xs text-slate-500 mt-0.5 font-medium">Livret d'accueil et remontée terrain.</p>
+<p class="text-xs text-slate-500 mt-0.5 font-medium">Accès uniquement via QR Code manager.</p>
 </div>
 </button>
 </div>
@@ -930,28 +930,18 @@ function toggleDarkMode() {
    6. LOCAL STORAGE
    ========================= */
 
-function loadLocalStorageData() {
+
+unction loadLocalStorageData() {
   const storedDark = localStorage.getItem("restev_dark_mode");
   appState.isDarkMode = storedDark === "true";
 
   const savedCompanies = localStorage.getItem("restev_companies");
 
   if (!savedCompanies) {
-    const demoCompany = {
-      code: "RSTV-DEMO-85",
-      name: "Menuiserie Vendéenne Intégrale",
-      activity: "Métiers du Bois & Menuiserie",
-      zones: ["Atelier Débit", "Cabine Peinture", "Zone Logistique", "Bureaux"],
-      reports: [],
-      passports: []
-    };
-
-    localStorage.setItem(
-      "restev_companies",
-      JSON.stringify({ "RSTV-DEMO-85": demoCompany })
-    );
+    localStorage.setItem("restev_companies", JSON.stringify({}));
   }
 }
+
 
 function getCompaniesFromStorage() {
   try {
@@ -1000,20 +990,26 @@ async function handleManagerLogin() {
         .eq("code_etablissement", code)
         .maybeSingle();
 
-      if (!error && data) {
+      if (error) {
+        console.warn("Erreur Supabase :", error);
+      }
+
+      if (data) {
         company = {
           code: data.code_etablissement,
           name: data.nom_entreprise || "Entreprise",
           activity:
             data.activite_principale ||
             "Bâtiment & Travaux Publics (BTP)",
-          zones: data.zones || ["Zone Standard", "Atelier Principal"],
+          zones: Array.isArray(data.zones)
+            ? data.zones
+            : ["Zone Standard", "Atelier Principal"],
           reports: [],
           passports: []
         };
       }
     } catch (err) {
-      console.warn("Supabase indisponible, fallback local :", err);
+      console.warn("Connexion Supabase impossible :", err);
     }
   }
 
@@ -1023,7 +1019,7 @@ async function handleManagerLogin() {
   }
 
   if (!company) {
-    showToast("❌ Code inconnu. Essayez : RSTV-DEMO-85");
+    showToast("❌ Code établissement inconnu.");
     return;
   }
 
@@ -1031,7 +1027,6 @@ async function handleManagerLogin() {
   switchScreen("scr-manager");
   showToast(`✅ Bienvenue dans l’espace ${company.name}`);
 }
-
 function setCurrentCompany(company) {
   appState.currentCompany = company;
   appState.currentCompanyCode = company.code;
@@ -1350,16 +1345,12 @@ function generateEmployeeAccess() {
       return;
     }
 
-    showToast("✅ QR Code généré.");
-
-    setTimeout(() => {
-      openEmployeeSession(name, status, appState.currentCompany);
-    }, 1200);
+    showToast("✅ QR Code généré. Le salarié doit le scanner pour démarrer.");
   });
 }
-
 function initUrlSession() {
   const params = new URLSearchParams(window.location.search);
+
   const comp = params.get("comp");
   const emp = params.get("emp");
   const status = params.get("status") || "Parcours Standard";
@@ -1372,6 +1363,37 @@ function initUrlSession() {
   if (company) {
     setCurrentCompany(company);
     openEmployeeSession(emp, status, company);
+    return;
+  }
+
+  if (_supabase) {
+    _supabase
+      .from("etablissements")
+      .select("*")
+      .eq("code_etablissement", comp)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error || !data) {
+          showToast("❌ QR Code invalide ou établissement introuvable.");
+          return;
+        }
+
+        const companyFromSupabase = {
+          code: data.code_etablissement,
+          name: data.nom_entreprise || "Entreprise",
+          activity:
+            data.activite_principale ||
+            "Bâtiment & Travaux Publics (BTP)",
+          zones: Array.isArray(data.zones)
+            ? data.zones
+            : ["Zone Standard", "Atelier Principal"],
+          reports: [],
+          passports: []
+        };
+
+        setCurrentCompany(companyFromSupabase);
+        openEmployeeSession(emp, status, companyFromSupabase);
+      });
   }
 }
 
@@ -1389,22 +1411,7 @@ function openEmployeeSession(name, status, company) {
 }
 
 function accessEmployeeDirect() {
-  const companies = getCompaniesFromStorage();
-  const firstKey = Object.keys(companies)[0];
-
-  if (!firstKey) {
-    showToast("⚠️ Aucun établissement disponible.");
-    return;
-  }
-
-  const company = companies[firstKey];
-  setCurrentCompany(company);
-
-  openEmployeeSession(
-    "Nouvel Opérateur Intérimaire",
-    "Contrat Saisonnier / CDD",
-    company
-  );
+  showToast("⚠️ L’émargement nécessite un QR Code généré par un manager.");
 }
 
 /* =========================
@@ -2062,8 +2069,8 @@ function handleDirectionAccess() {
         ],
         datasets: [
           {
-            label: "Indice prévention Vendée",
-            data: [65, 40, 85, 55, 30],
+            label: "Données prévention",
+            data: [0, 0, 0, 0, 0],
             backgroundColor: "rgba(58, 123, 213, 0.2)",
             borderColor: "#3a7bd5",
             borderWidth: 3,
@@ -2086,22 +2093,13 @@ function handleDirectionAccess() {
     const feed = document.getElementById("direction-activity-feed");
     if (feed) {
       feed.innerHTML = `
-        <div class="p-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 flex justify-between">
-          <span><strong>Menuiserie Vendéenne</strong> - Profil sécurité mis à jour</span>
-          <span class="text-slate-400">À l'instant</span>
-        </div>
-        <div class="p-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 flex justify-between">
-          <span><strong>BTP Challans SA</strong> - 14 livrets d'accueil validés ce mois-ci</span>
-          <span class="text-slate-400">Il y a 2h</span>
-        </div>
+        <p class="text-xs text-slate-400 italic py-4 text-center">
+          Aucune activité enregistrée pour le moment.
+        </p>
       `;
     }
   }, 200);
 }
-
-/* =========================
-   19. AUDIO MANAGER
-   ========================= */
 
 function toggleMuteManagerSound() {
   appState.isManagerMuted = !appState.isManagerMuted;
