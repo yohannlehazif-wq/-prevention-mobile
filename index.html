@@ -1026,16 +1026,41 @@ populateSectorsDropdown();
 }
 
 function populateSectorsDropdown() {
-const selectLocation = document.getElementById('risk-location');
-if (!selectLocation) return;
-selectLocation.innerHTML = "";
-let sectors = ["Zone de Production", "Zone Stockage", "Quai de Déchargement", "Bureaux"];
-sectors.forEach(sector => {
-const opt = document.createElement('option');
-opt.value = sector;
-opt.innerText = sector;
-selectLocation.appendChild(opt);
-});
+    const selectLocation = document.getElementById('risk-location');
+    if (!selectLocation) return;
+    
+    selectLocation.innerHTML = "";
+    
+    // Ateliers génériques par défaut
+    let sectors = [
+        "Zone de Production / Atelier Principal", 
+        "Zone Stockage & Logistique", 
+        "Quai de Déchargement / Réception", 
+        "Atelier Maintenance", 
+        "Bureaux / Administration"
+    ];
+
+    const currentActivity = (typeof appState !== 'undefined' && appState.currentActivity) ? appState.currentActivity : "Général";
+
+    // Personnalisation dynamique
+    if (currentActivity.includes("Métallurgie") || currentActivity.includes("Industrie") || currentActivity.includes("Automobile")) {
+        sectors = ["Atelier Principal", "Zone Meulage", "Ligne d'Assemblage", "Zone Expédition"];
+    } else if (currentActivity.includes("Restauration") || currentActivity.includes("Hôtellerie")) {
+        sectors = ["Cuisine Chaude", "Zone Préparation Froide", "Plonge", "Réserve Sèche", "Salle / Service"];
+    } else if (currentActivity.includes("BTP") || currentActivity.includes("Bois")) {
+        sectors = ["Zone Chantier / Atelier", "Stockage Matériaux", "Zone Découpe", "Base Vie"];
+    } else if (currentActivity.includes("Agriculture")) {
+        sectors = ["Champs / Vignes", "Hangar / Bâtiment Agricole", "Zone de Traitement (Phyto)", "Atelier Engins"];
+    } else if (currentActivity.includes("Santé")) {
+        sectors = ["Chambre Patient", "Salle de Soins", "Couloirs / Circulations", "Réserve Médicale"];
+    }
+
+    sectors.forEach(sector => {
+        const opt = document.createElement('option');
+        opt.value = sector;
+        opt.innerText = sector;
+        selectLocation.appendChild(opt);
+    });
 }
 
 function createNewCompany() {
