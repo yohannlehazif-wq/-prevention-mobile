@@ -143,7 +143,7 @@ Centre RESTEV <span class="bg-gradient-to-r from-amber-400 to-orange-500 text-wh
 <i class="fa-solid fa-user-shield"></i>
 </div>
 <div>
-<h3 class="font-black text-slate-900 dark:text-white text-sm">Émargement Salarié</h3>
+<h3 class="font-black text-slate-900 dark:text-white text-sm">Émargement</h3>
 <p class="text-xs text-slate-500 mt-0.5 font-medium">Livret d'accueil et remontée terrain.</p>
 </div>
 </button>
@@ -543,7 +543,202 @@ J'ai compris, accéder au portail
 
 <!-- SCRIPT APPLICATIF GLOBAL -->
 <script>
-// --- CONFIGURATION ET BASE DE DONNÉES DE RÉFÉRENCE DES MÉTIERS (Vérifiée et validée) ---
+const SUPABASE_URL = "https://TON_PROJECT_ID.supabase.co";
+const SUPABASE_ANON_KEY = "TON_ANON_PUBLIC_KEY";
+
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Rappel de la structure globale de l'état de ton app (ajustée)
+const appState = {
+    currentCompanyCode: "",
+    currentSelectedCompany: "Entreprise",
+    currentActivity: "Général",
+    employeeName: "Nouvel Arrivant",
+    employeeStatus: "Parcours Standard",
+    // Ajoute ces tableaux locaux pour manipuler tes données facilement
+    loadedAlertes: [],
+    loadedPasseports: []
+};
+
+// --- 🔓 ESPACE MANAGEMENT : VERIFICATION DU CODE ÉTABLISSEMENT ---
+async function handleManagerLogin() {
+    const codeInput = document.getElementById('manager-company-code').value.trim().toUpperCase();
+    if (!codeInput) {
+        showToast(" ⚠️ Saisissez votre identifiant unique.");
+        return;
+    }
+
+    showToast(" 🔄 Vérification de l'établissement...");
+
+    try {
+        // Recherche de l'établissement dans Supabase
+        const { data: company, error } = await _supabase
+            .from('etablissements')
+            .select('*')
+            .eq('code_etablissement', codeInput)
+            .single();
+
+        if (error || !company) {
+            showToast(" ❌ Code établissement inconnu ou invalide.");
+            console.error("Détails Supabase :", error);
+            return;
+        }
+
+        // Hydratation de l'application avec les données distantes
+        appState.currentCompanyCode = company.code_etablissement;
+        appState.currentSelectedCompany = company.nom_entreprise;
+        appState.currentActivity = company.activite_principale;
+
+        // Mise à jour de l'interface UI Manager
+        document.getElementById('lbl-manager-comp-name').innerText = appState.currentSelectedCompany;
+        showToast(" ✅ Espace Manager connecté !");
+        
+        switchScreen('scr-manager');
+        
+        // Chargement des tableaux de bord et flux d'activités
+        loadManagerDashboardData();
+
+    } catch (err) {
+        console.error(err);
+        showToast(" ❌ Erreur réseau lors de la connexion.");
+    }
+}
+
+// --- 📥 CHARGEMENT DES ALERTES ET PASSEPORTS POUR LE MANAGER ---
+async function loadManagerDashboardData() {
+    if (!appState.currentCompanyCode) return;
+
+    try {
+        // 1. Récupération des passeports validés
+        const { data: passeports, error: errP } = await _supabase
+            .from('enregistrements_passeports')
+            .select('*')
+            .eq('company_code', appState.currentCompanyCode)
+            .order('created_at', { ascending: false });
+
+        // 2. Récupération des alertes actives
+        const { data: alertes, error: errA } = await _supabase
+            .from('alertes_prevention')
+            .select('*')
+            .eq('company_code', appState.currentCompanyCode)
+            .order('created_at', { ascending: false });
+
+        if (errP) console.error("Erreur Passeports :", errP);
+        if (errA) console.error("Erreur Alertes :", errA);
+
+        appState.loadedPasseports = passeports || [];
+        appState.loadedAlertes = alertes || [];
+
+        // Rendre dynamique ton fil d'actualité (Feed d'activité)
+        renderLiveActivityFeed();
+
+    } catch (err) {
+        console.error("Erreur globale de chargement :", err);
+    }
+}
+
+// --- 📡 ENVOI D'UNE ALERTE SÉCURITÉ (Émargement Salarié / Remontée terrain) ---
+async function submitAlertePrevention(typeAlerte, description, localisation) {
+    if (!appState.currentCompanyCode) {
+        showToast(" ⚠️ Erreur : Aucun établissement rattaché.");
+        return;
+    }
+
+    try {
+        const { data, error } = await _supabase
+            .from('alertes_prevention')
+            .insert([
+                {
+                    company_code: appState.currentCompanyCode,
+                    type_alerte: typeAlerte,
+                    description: description,
+                    localisation: localisation,
+                    statut: 'En attente'
+                }
+            ]);
+
+        if (error) throw error;
+
+        showToast(" 🚀 Alerte envoyée avec succès au pôle HSE !");
+        return true;
+    } catch (err) {
+        console.error(err);
+        showToast(" ❌ Échec de la transmission de l'alerte.");
+        return false;
+    }
+}
+
+// --- ✍️ ENREGISTREMENT FINAL DU PASSEPORT (Signature & validation du livret d'accueil) ---
+async function submitPasseportPrev(scoreQcm, base64SignatureSalarie, base64SignatureTuteur) {
+    if (!appState.currentCompanyCode) {
+        showToast(" ⚠️ Erreur : Identifiant entreprise manquant.");
+        return;
+    }
+
+    try {
+        const { data, error } = await _supabase
+            .from('enregistrements_passeports')
+            .insert([
+                {
+                    company_code: appState.currentCompanyCode,
+                    employee_name: appState.employeeName,
+                    employee_status: appState.employeeStatus,
+                    activity: appState.currentActivity,
+                    score_qcm: scoreQcm,
+                    signature_salarie: base64SignatureSalarie || null,
+                    signature_tuteur: base64SignatureTuteur || null
+                }
+            ]);
+
+        if (error) throw error;
+
+        showToast(" 💾 Passeport enregistré et archivé juridiquement !");
+        return true;
+    } catch (err) {
+        console.error(err);
+        showToast(" ❌ Erreur lors de la sauvegarde du passeport.");
+        return false;
+    }
+}
+
+// --- 🔄 RENDU DYNAMIQUE DU FIL D'ACTUALITÉ MANAGER ---
+function renderLiveActivityFeed() {
+    const feed = document.getElementById('manager-activity-feed') || document.querySelector('.space-y-2');
+    if (!feed) return;
+
+    if (appState.loadedPasseports.length === 0 && appState.loadedAlertes.length === 0) {
+        feed.innerHTML = `<p class="text-xs text-slate-400 italic py-2">Aucun événement récent enregistré.</p>`;
+        return;
+    }
+
+    let htmlContent = "";
+
+    // Affichage des derniers passeports générés
+    appState.loadedPasseports.slice(0, 3).forEach(p => {
+        const dateLoc = new Date(p.created_at).toLocaleDateString('fr-FR');
+        htmlContent += `
+            <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-700/50 pb-2 pt-1">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="text-xs font-medium text-slate-700 dark:text-slate-300">
+                    <strong>Nouveau passeport émis :</strong> ${p.employee_status} - ${p.employee_name} (${p.activity}) le ${dateLoc}
+                </span>
+            </div>`;
+    });
+
+    // Affichage des dernières alertes de sécurité
+    appState.loadedAlertes.slice(0, 3).forEach(a => {
+        let colorStatus = a.type_alerte === 'Risque Imminent' ? 'bg-red-500' : 'bg-amber-500';
+        htmlContent += `
+            <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-700/50 pb-2 pt-1">
+                <span class="w-2 h-2 rounded-full ${colorStatus}"></span>
+                <span class="text-xs font-medium text-slate-700 dark:text-slate-300">
+                    <strong>⚠️ Alerte [${a.type_alerte}] :</strong> ${a.description} (${a.localisation || 'Zone indéterminée'}) - <span class="italic text-slate-400">${a.statut}</span>
+                </span>
+            </div>`;
+    });
+
+    feed.innerHTML = htmlContent;
+}
 const METIER_PRESETS = {
   "Bâtiment & Travaux Publics (BTP)": {
     risques: "Chutes de hauteur, Engins, Silice, Manutention lourde, Risque Électrique",
@@ -1051,12 +1246,61 @@ function playAlertChime() {
   }
 }
 
-// --- TRANSMISSION DU SIGNALEMENT ET ALERTES MANAGER ---
-function submitRiskReport() {
+
+// --- TRANSMISSION DU SIGNALEMENT ET ALERTES MANAGER (VERSION SUPABASE) ---
+async function submitRiskReport() { // <-- Rendu "async" pour pouvoir utiliser "await"
   if (!appState.selectedRiskCategory) {
     alert("Veuillez sélectionner une catégorie de risque obligatoire.");
     return;
   }
+  
+  // 1. Extraction des données avec les VRAIS IDs de ton HTML initial
+  let type = appState.selectedRiskCategory;
+  let desc = document.getElementById('risk-description').value.trim();
+  let atelier = document.getElementById('risk-location').value;
+  
+  // 2. LIAISON SUPABASE : Envoi immédiat dans ta base de données distante
+  showToast("🔄 Synchronisation Supabase en cours...");
+  await submitAlertePrevention(type, desc, atelier);
+  
+  // 3. Conservation de ta logique locale (Historique temporaire + UI)
+  const report = {
+    id: Date.now(),
+    category: type,
+    location: atelier,
+    level: document.getElementById('risk-level').value,
+    frequency: document.getElementById('risk-duerp').value,
+    description: desc || "Aucune description fournie.",
+    photo: appState.capturedPhotoBase64 || "https://placehold.co/100x100?text=Pas+de+photo",
+    worker: appState.currentEmployee ? appState.currentEmployee.name : "Opérateur Externe",
+    time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  };
+  
+  // Sauvegarde dans l'état de l'entreprise courante
+  if (appState.currentCompany) {
+    if (!appState.currentCompany.reports) appState.currentCompany.reports = [];
+    appState.currentCompany.reports.unshift(report);
+    const companies = getCompaniesFromStorage();
+    companies[appState.currentCompany.code] = appState.currentCompany;
+    saveCompaniesToStorage(companies);
+  }
+  
+  // Reset et nettoyage du formulaire après envoi
+  appState.capturedPhotoBase64 = "";
+  document.getElementById('photo-placeholder').classList.remove('hidden');
+  document.getElementById('photo-preview').classList.add('hidden');
+  document.getElementById('risk-description').value = "";
+  
+  showToast("🚨 Alerte transmise instantanément à Supabase et au Manager !");
+  
+  // Lecture de l'alerte sonore et rafraîchissement
+  playAlertChime();
+  if (appState.currentCompany) {
+    renderManagerRiskSignals();
+  }
+  
+  switchScreen('scr-employee');
+}
   
   const report = {
     id: Date.now(),
@@ -1254,9 +1498,73 @@ function clearSignature() {
   sigCtx.beginPathStarted = false;
 }
 
-function finalizeOnboarding() {
-  showToast("✔️ Dossier d'émargement archivé et synchronisé.");
-  switchScreen('scr-home');
+// --- ✍️ VALIDATION ET ARCHIVAGE DU PASSEPORT SALARIÉ (VERSION SUPABASE) ---
+async function savePassport() { // <-- N'oublie pas de rendre la fonction "async"
+  
+  // 1. [Optionnel] Vérification de ton canevas de signature
+  const canvas = document.getElementById('canvas-salarie') || document.getElementById('signature-canvas');
+  if (!canvas) {
+    showToast("⚠️ Erreur : Zone de signature introuvable.");
+    return;
+  }
+
+  // 2. LIAISON SUPABASE : Extraction de la signature et récupération du score
+  showToast("🔄 Archivage du passeport sur Supabase...");
+  
+  // Extraction de l'image de la signature en base64
+  const signSalarieBase64 = canvas.toDataURL();
+  
+  // Récupération dynamique du score (remplace 'appState.qcmScore' par ta variable réelle si besoin)
+  const scoreQCMObtenu = appState.qcmScore || 0; 
+
+  // Envoi direct dans ta table Supabase 'enregistrements_passeports'
+  const success = await submitPasseportPrev(scoreQCMObtenu, signSalarieBase64, null);
+
+  if (!success) {
+    showToast("❌ Échec de la sauvegarde distante. Réessayez.");
+    return;
+  }
+
+  // 3. Conservation de ta logique locale existante (Génération QR Code, Stockage Local, etc.)
+  const currentId = Date.now();
+  const passportData = {
+    id: currentId,
+    name: appState.employeeName,
+    status: appState.employeeStatus,
+    company: appState.currentSelectedCompany,
+    activity: appState.currentActivity,
+    score: scoreQCMObtenu,
+    date: new Date().toLocaleDateString('fr-FR'),
+    signature: signSalarieBase64
+  };
+
+  // Sauvegarde locale dans l'historique de l'établissement pour le Manager
+  if (appState.currentCompany) {
+    if (!appState.currentCompany.passports) appState.currentCompany.passports = [];
+    appState.currentCompany.passports.unshift(passportData);
+    const companies = getCompaniesFromStorage();
+    companies[appState.currentCompany.code] = appState.currentCompany;
+    saveCompaniesToStorage(companies);
+  }
+
+  // 4. Génération de ton QR Code de contrôle de sécurité
+  const qrData = `RESTEV85-${currentId}-${appState.employeeName}`;
+  const qrCanvas = document.getElementById('passport-qrcode');
+  if (qrCanvas) {
+    QRCode.toCanvas(qrCanvas, qrData, { width: 160, margin: 2 }, function (error) {
+      if (error) console.error(error);
+    });
+  }
+
+  // Affichage des données sur l'écran de succès final
+  document.getElementById('success-emp-name').innerText = appState.employeeName;
+  document.getElementById('success-emp-comp').innerText = appState.currentSelectedCompany;
+  document.getElementById('success-emp-score').innerText = `${scoreQCMObtenu} / 20`;
+
+  showToast("✅ Passeport validé et archivé juridiquement !");
+  
+  // Basculer vers l'écran de confirmation
+  switchScreen('scr-employee-success');
 }
 </script>
 </body>
