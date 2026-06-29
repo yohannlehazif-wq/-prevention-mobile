@@ -1245,25 +1245,24 @@ function playAlertChime() {
     console.log("Audio non supporté ou bloqué par le navigateur", e);
   }
 }
-
-
+  
 // --- TRANSMISSION DU SIGNALEMENT ET ALERTES MANAGER (VERSION SUPABASE) ---
-async function submitRiskReport() { // <-- Rendu "async" pour pouvoir utiliser "await"
+async function submitRiskReport() { 
   if (!appState.selectedRiskCategory) {
     alert("Veuillez sélectionner une catégorie de risque obligatoire.");
     return;
   }
   
-  // 1. Extraction des données avec les VRAIS IDs de ton HTML initial
+  // 1. Extraction des données
   let type = appState.selectedRiskCategory;
   let desc = document.getElementById('risk-description').value.trim();
   let atelier = document.getElementById('risk-location').value;
   
-  // 2. LIAISON SUPABASE : Envoi immédiat dans ta base de données distante
+  // 2. LIAISON SUPABASE : Envoi immédiat
   showToast("🔄 Synchronisation Supabase en cours...");
   await submitAlertePrevention(type, desc, atelier);
   
-  // 3. Conservation de ta logique locale (Historique temporaire + UI)
+  // 3. Conservation de la logique locale (Historique temporaire + UI)
   const report = {
     id: Date.now(),
     category: type,
@@ -1285,7 +1284,7 @@ async function submitRiskReport() { // <-- Rendu "async" pour pouvoir utiliser "
     saveCompaniesToStorage(companies);
   }
   
-  // Reset et nettoyage du formulaire après envoi
+  // Reset et nettoyage du formulaire
   appState.capturedPhotoBase64 = "";
   document.getElementById('photo-placeholder').classList.remove('hidden');
   document.getElementById('photo-preview').classList.add('hidden');
@@ -1293,7 +1292,6 @@ async function submitRiskReport() { // <-- Rendu "async" pour pouvoir utiliser "
   
   showToast("🚨 Alerte transmise instantanément à Supabase et au Manager !");
   
-  // Lecture de l'alerte sonore et rafraîchissement
   playAlertChime();
   if (appState.currentCompany) {
     renderManagerRiskSignals();
@@ -1301,39 +1299,6 @@ async function submitRiskReport() { // <-- Rendu "async" pour pouvoir utiliser "
   
   switchScreen('scr-employee');
 }
-  
-  const report = {
-    id: Date.now(),
-    category: appState.selectedRiskCategory,
-    location: document.getElementById('risk-location').value,
-    level: document.getElementById('risk-level').value,
-    frequency: document.getElementById('risk-duerp').value,
-    description: document.getElementById('risk-description').value.trim() || "Aucune description fournie.",
-    photo: appState.capturedPhotoBase64 || "https://placehold.co/100x100?text=Pas+de+photo",
-    worker: appState.currentEmployee ? appState.currentEmployee.name : "Opérateur Externe",
-    time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-  };
-  
-  // Sauvegarde dans l'état de l'entreprise courante
-  appState.currentCompany.reports.unshift(report);
-  const companies = getCompaniesFromStorage();
-  companies[appState.currentCompany.code] = appState.currentCompany;
-  saveCompaniesToStorage(companies);
-  
-  // Reset formulaire de report
-  appState.capturedPhotoBase64 = "";
-  document.getElementById('photo-placeholder').classList.remove('hidden');
-  document.getElementById('photo-preview').classList.add('hidden');
-  document.getElementById('risk-description').value = "";
-  
-  showToast("🚨 Alerte transmise instantanément à la console HSE !");
-  
-  // Lecture de l'alerte sonore manager
-  playAlertChime();
-  
-  switchScreen('scr-employee');
-}
-
 function renderManagerRiskSignals() {
   const container = document.getElementById('manager-risk-box');
   if (!appState.currentCompany.reports || appState.currentCompany.reports.length === 0) {
@@ -1497,25 +1462,23 @@ function clearSignature() {
   sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
   sigCtx.beginPathStarted = false;
 }
-
 // --- ✍️ VALIDATION ET ARCHIVAGE DU PASSEPORT SALARIÉ (VERSION SUPABASE) ---
-async function savePassport() { // <-- N'oublie pas de rendre la fonction "async"
+async function finalizeOnboarding() { 
   
-  // 1. [Optionnel] Vérification de ton canevas de signature
-  const canvas = document.getElementById('canvas-salarie') || document.getElementById('signature-canvas');
+  // 1. Ciblage du bon canevas de signature défini dans ton HTML
+  const canvas = document.getElementById('signature-pad');
   if (!canvas) {
     showToast("⚠️ Erreur : Zone de signature introuvable.");
     return;
   }
 
-  // 2. LIAISON SUPABASE : Extraction de la signature et récupération du score
   showToast("🔄 Archivage du passeport sur Supabase...");
   
-  // Extraction de l'image de la signature en base64
+  // 2. Extraction de l'image de la signature en base64
   const signSalarieBase64 = canvas.toDataURL();
   
-  // Récupération dynamique du score (remplace 'appState.qcmScore' par ta variable réelle si besoin)
-  const scoreQCMObtenu = appState.qcmScore || 0; 
+  // 3. Récupération du score exact depuis le moteur QCM
+  const scoreQCMObtenu = appState.qcm.score || 0; 
 
   // Envoi direct dans ta table Supabase 'enregistrements_passeports'
   const success = await submitPasseportPrev(scoreQCMObtenu, signSalarieBase64, null);
@@ -1525,7 +1488,7 @@ async function savePassport() { // <-- N'oublie pas de rendre la fonction "async
     return;
   }
 
-  // 3. Conservation de ta logique locale existante (Génération QR Code, Stockage Local, etc.)
+  // 4. Conservation de la sauvegarde locale
   const currentId = Date.now();
   const passportData = {
     id: currentId,
@@ -1538,7 +1501,6 @@ async function savePassport() { // <-- N'oublie pas de rendre la fonction "async
     signature: signSalarieBase64
   };
 
-  // Sauvegarde locale dans l'historique de l'établissement pour le Manager
   if (appState.currentCompany) {
     if (!appState.currentCompany.passports) appState.currentCompany.passports = [];
     appState.currentCompany.passports.unshift(passportData);
@@ -1547,24 +1509,10 @@ async function savePassport() { // <-- N'oublie pas de rendre la fonction "async
     saveCompaniesToStorage(companies);
   }
 
-  // 4. Génération de ton QR Code de contrôle de sécurité
-  const qrData = `RESTEV85-${currentId}-${appState.employeeName}`;
-  const qrCanvas = document.getElementById('passport-qrcode');
-  if (qrCanvas) {
-    QRCode.toCanvas(qrCanvas, qrData, { width: 160, margin: 2 }, function (error) {
-      if (error) console.error(error);
-    });
-  }
-
-  // Affichage des données sur l'écran de succès final
-  document.getElementById('success-emp-name').innerText = appState.employeeName;
-  document.getElementById('success-emp-comp').innerText = appState.currentSelectedCompany;
-  document.getElementById('success-emp-score').innerText = `${scoreQCMObtenu} / 20`;
-
   showToast("✅ Passeport validé et archivé juridiquement !");
   
-  // Basculer vers l'écran de confirmation
-  switchScreen('scr-employee-success');
+  // Retour à l'accueil
+  switchScreen('scr-home');
 }
 </script>
 </body>
