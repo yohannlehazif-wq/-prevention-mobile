@@ -100,7 +100,7 @@ Bienvenue ! Sélectionnez votre espace réglementaire pour une intégration simp
 </div>
 <div>
 <h3 class="font-black text-base text-slate-800 dark:text-white tracking-wide">Découvrir la démarche</h3>
-<p class="text-xs text-slate-500 mt-1 font-medium">L'application, les enjeux et les objectifs.</p>
+<p class="text-xs text-slate-500 mt-1 font-medium"> Accès uniquement via QR Code manager.</p>
 </div>
 </div>
 <div class="w-10 h-10 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center group-hover:bg-restev-blue transition-colors">
@@ -544,7 +544,7 @@ J'ai compris, accéder au portail
 <script>
 /* =========================================================
    RESTEV 85 - PASSEPORT PRÉVENTION CONNECTÉ
-   Version corrigée prête à copier/coller
+   Version propre SANS données démo
    ========================================================= */
 
 /* =========================
@@ -552,7 +552,7 @@ J'ai compris, accéder au portail
    ========================= */
 
 const SUPABASE_URL = "https://bcuzmjcbhriyzmmiodsi.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdXptamNiaHJpeXptbWlvZHNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODU5NjIsImV4cCI6MjA5NzE2MTk2Mn0.lbYUBi-JEJCoUIdAAAVS35sdy6o0EHHGoqVs3cL1ApQ";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6ImJjdXptamNiaHJpeXptbWlvZHNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODU5NjIsImV4cCI6MjA5NzE2MTk2Mn0.lbYUBi-JEJCoUIdAAAVS35sdy6o0EHHGoqVs3cL1ApQ";
 
 const _supabase =
   window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY
@@ -835,8 +835,8 @@ let appState = {
   currentActivity: "Bâtiment & Travaux Publics (BTP)",
 
   currentEmployee: null,
-  employeeName: "Nouvel Arrivant",
-  employeeStatus: "Parcours Standard",
+  employeeName: "",
+  employeeStatus: "",
 
   loadedAlertes: [],
   loadedPasseports: [],
@@ -872,7 +872,7 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 /* =========================
-   5. OUTILS UI
+   5. UI GLOBALE
    ========================= */
 
 function switchScreen(screenId) {
@@ -927,21 +927,28 @@ function toggleDarkMode() {
 }
 
 /* =========================
-   6. LOCAL STORAGE
+   6. LOCAL STORAGE SANS DÉMO
    ========================= */
 
-
-unction loadLocalStorageData() {
+function loadLocalStorageData() {
   const storedDark = localStorage.getItem("restev_dark_mode");
   appState.isDarkMode = storedDark === "true";
 
-  const savedCompanies = localStorage.getItem("restev_companies");
+  let companies = {};
 
-  if (!savedCompanies) {
-    localStorage.setItem("restev_companies", JSON.stringify({}));
+  try {
+    companies = JSON.parse(localStorage.getItem("restev_companies")) || {};
+  } catch {
+    companies = {};
   }
-}
 
+  // Nettoyage définitif de l’ancien code démo s’il existe encore dans le navigateur
+  if (companies["RSTV-DEMO-85"]) {
+    delete companies["RSTV-DEMO-85"];
+  }
+
+  localStorage.setItem("restev_companies", JSON.stringify(companies));
+}
 
 function getCompaniesFromStorage() {
   try {
@@ -964,7 +971,7 @@ function saveCurrentCompanyLocal() {
 }
 
 /* =========================
-   7. AUTH MANAGER SUPABASE + FALLBACK LOCAL
+   7. AUTH MANAGER
    ========================= */
 
 async function handleManagerLogin() {
@@ -1013,6 +1020,7 @@ async function handleManagerLogin() {
     }
   }
 
+  // Fallback uniquement sur les entreprises réellement créées depuis l’app
   if (!company) {
     const localCompanies = getCompaniesFromStorage();
     company = localCompanies[code] || null;
@@ -1027,6 +1035,7 @@ async function handleManagerLogin() {
   switchScreen("scr-manager");
   showToast(`✅ Bienvenue dans l’espace ${company.name}`);
 }
+
 function setCurrentCompany(company) {
   appState.currentCompany = company;
   appState.currentCompanyCode = company.code;
@@ -1054,7 +1063,7 @@ function logoutManager() {
 }
 
 /* =========================
-   8. CRÉATION ENTREPRISE
+   8. CRÉATION ÉTABLISSEMENT
    ========================= */
 
 async function createNewCompany() {
@@ -1080,14 +1089,14 @@ async function createNewCompany() {
     code: code,
     name: nameInput,
     activity: Object.keys(METIER_PRESETS)[0],
-    zones: ["Quai de déchargement", "Zone de stockage Alpha"],
+    zones: ["Zone principale", "Zone de stockage"],
     reports: [],
     passports: []
   };
 
   if (_supabase) {
     try {
-      await _supabase.from("etablissements").insert([
+      const { error } = await _supabase.from("etablissements").insert([
         {
           code_etablissement: code,
           nom_entreprise: nameInput,
@@ -1095,8 +1104,10 @@ async function createNewCompany() {
           zones: newCompany.zones
         }
       ]);
+
+      if (error) throw error;
     } catch (err) {
-      console.warn("Création Supabase non réalisée, stockage local utilisé :", err);
+      console.warn("Création Supabase impossible, sauvegarde locale utilisée :", err);
     }
   }
 
@@ -1107,7 +1118,7 @@ async function createNewCompany() {
   document.getElementById("lbl-generated-code").innerText = code;
   document.getElementById("generated-code-box").classList.remove("hidden");
 
-  showToast("✅ Code entreprise généré avec succès.");
+  showToast("✅ Code établissement généré.");
 }
 
 function copyGeneratedCode() {
@@ -1116,12 +1127,12 @@ function copyGeneratedCode() {
   if (!code) return;
 
   navigator.clipboard.writeText(code).then(() => {
-    showToast("📋 Code copié dans le presse-papier.");
+    showToast("📋 Code copié.");
   });
 }
 
 /* =========================
-   9. MANAGER DASHBOARD
+   9. CONSOLE MANAGER
    ========================= */
 
 function populateActivitySelects() {
@@ -1232,7 +1243,7 @@ function populateManagerZonesDropdown(dropdownId) {
 }
 
 /* =========================
-   10. CHARGEMENT SUPABASE MANAGER
+   10. CHARGEMENT DONNÉES MANAGER
    ========================= */
 
 async function loadManagerDashboardData() {
@@ -1303,7 +1314,7 @@ function renderLiveActivityFeed() {
 }
 
 /* =========================
-   11. QR CODE / ACCÈS SALARIÉ
+   11. QR CODE / SALARIÉ
    ========================= */
 
 function generateEmployeeAccess() {
@@ -1341,13 +1352,14 @@ function generateEmployeeAccess() {
   QRCode.toCanvas(canvas, url, { width: 150, margin: 1 }, error => {
     if (error) {
       console.error(error);
-      showToast("❌ Erreur de génération QR Code.");
+      showToast("❌ Erreur génération QR Code.");
       return;
     }
 
-    showToast("✅ QR Code généré. Le salarié doit le scanner pour démarrer.");
+    showToast("✅ QR Code généré. Le salarié doit le scanner.");
   });
 }
+
 function initUrlSession() {
   const params = new URLSearchParams(window.location.search);
 
@@ -1570,10 +1582,10 @@ function handleNextQCMQuestion() {
 
 function displayCertificateScreen() {
   document.getElementById("cert-name").innerText =
-    appState.currentEmployee?.name || "Nouvel Opérateur";
+    appState.currentEmployee?.name || "Travailleur";
 
   document.getElementById("cert-company").innerText =
-    appState.currentCompany?.name || "Établissement Adhérent";
+    appState.currentCompany?.name || "Établissement";
 
   document.getElementById("cert-profile").innerText =
     appState.qcm.currentProfile;
@@ -1711,6 +1723,7 @@ async function finalizeOnboarding() {
       appState.currentEmployee?.status || appState.employeeStatus,
     activity: appState.qcm.currentProfile || appState.currentActivity,
     score_qcm: appState.qcm.score,
+    score_total: appState.qcm.questions.length,
     signature_salarie: signatureBase64,
     signature_tuteur: null,
     user_agent: navigator.userAgent
@@ -1739,6 +1752,7 @@ async function finalizeOnboarding() {
       company: appState.currentCompany.name,
       activity: passportData.activity,
       score: passportData.score_qcm,
+      scoreTotal: passportData.score_total,
       date: new Date().toLocaleString("fr-FR"),
       signature: signatureBase64,
       synced: supabaseOk
@@ -1757,7 +1771,7 @@ async function finalizeOnboarding() {
 }
 
 /* =========================
-   16. SIGNALER UN DANGER
+   16. SIGNALEMENT DANGER
    ========================= */
 
 function generateRiskCategories() {
@@ -1849,7 +1863,7 @@ async function submitRiskReport() {
     photo:
       appState.capturedPhotoBase64 ||
       "https://placehold.co/100x100?text=Pas+de+photo",
-    worker: appState.currentEmployee?.name || "Opérateur Externe",
+    worker: appState.currentEmployee?.name || "Opérateur",
     time: new Date().toLocaleTimeString("fr-FR", {
       hour: "2-digit",
       minute: "2-digit"
@@ -1868,8 +1882,12 @@ async function submitRiskReport() {
           localisation: report.location,
           gravite: report.level,
           frequence: report.frequency,
+          latitude: appState.currentCoords?.[0] || null,
+          longitude: appState.currentCoords?.[1] || null,
           photo_base64: appState.capturedPhotoBase64 || null,
-          statut: "En attente"
+          statut: "En attente",
+          declared_by: report.worker,
+          employee_status: appState.currentEmployee?.status || null
         }
       ]);
 
@@ -1895,7 +1913,7 @@ async function submitRiskReport() {
 
   showToast(
     supabaseOk
-      ? "🚨 Alerte transmise à Supabase."
+      ? "🚨 Alerte enregistrée sur Supabase."
       : "🚨 Alerte enregistrée localement."
   );
 
@@ -1980,7 +1998,7 @@ function renderManagerRiskSignals() {
 }
 
 /* =========================
-   17. CARTE LEAFLET
+   17. CARTE GPS
    ========================= */
 
 function initLeafletMap() {
@@ -2040,7 +2058,7 @@ function initLeafletMap() {
 }
 
 /* =========================
-   18. DIRECTION / AUDIT
+   18. TABLEAU DIRECTION SANS DÉMO
    ========================= */
 
 function handleDirectionAccess() {
@@ -2100,6 +2118,10 @@ function handleDirectionAccess() {
     }
   }, 200);
 }
+
+/* =========================
+   19. AUDIO
+   ========================= */
 
 function toggleMuteManagerSound() {
   appState.isManagerMuted = !appState.isManagerMuted;
