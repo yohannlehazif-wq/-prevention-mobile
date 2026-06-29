@@ -541,523 +541,680 @@ J'ai compris, accéder au portail
 </section>
 </main>
 
-<!-- SCRIPT APPLICATIF GLOBAL -->
 <script>
+/* =========================================================
+   RESTEV 85 - PASSEPORT PRÉVENTION CONNECTÉ
+   Version corrigée prête à copier/coller
+   ========================================================= */
+
+/* =========================
+   1. CONFIG SUPABASE
+   ========================= */
+
 const SUPABASE_URL = "https://bcuzmjcbhriyzmmiodsi.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdXptamNiaHJpeXptbWlvZHNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODU5NjIsImV4cCI6MjA5NzE2MTk2Mn0.lbYUBi-JEJCoUIdAAAVS35sdy6o0EHHGoqVs3cL1ApQ";
 
-const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const _supabase =
+  window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    : null;
 
-// Rappel de la structure globale de l'état de ton app (ajustée)
-const appState = {
-    currentCompanyCode: "",
-    currentSelectedCompany: "Entreprise",
-    currentActivity: "Général",
-    employeeName: "Nouvel Arrivant",
-    employeeStatus: "Parcours Standard",
-    // Ajoute ces tableaux locaux pour manipuler tes données facilement
-    loadedAlertes: [],
-    loadedPasseports: []
-};
+/* =========================
+   2. PRESETS MÉTIERS
+   ========================= */
 
-// --- 🔓 ESPACE MANAGEMENT : VERIFICATION DU CODE ÉTABLISSEMENT ---
-async function handleManagerLogin() {
-    const codeInput = document.getElementById('manager-company-code').value.trim().toUpperCase();
-    if (!codeInput) {
-        showToast(" ⚠️ Saisissez votre identifiant unique.");
-        return;
-    }
-
-    showToast(" 🔄 Vérification de l'établissement...");
-
-    try {
-        // Recherche de l'établissement dans Supabase
-        const { data: company, error } = await _supabase
-            .from('etablissements')
-            .select('*')
-            .eq('code_etablissement', codeInput)
-            .single();
-
-        if (error || !company) {
-            showToast(" ❌ Code établissement inconnu ou invalide.");
-            console.error("Détails Supabase :", error);
-            return;
-        }
-
-        // Hydratation de l'application avec les données distantes
-        appState.currentCompanyCode = company.code_etablissement;
-        appState.currentSelectedCompany = company.nom_entreprise;
-        appState.currentActivity = company.activite_principale;
-
-        // Mise à jour de l'interface UI Manager
-        document.getElementById('lbl-manager-comp-name').innerText = appState.currentSelectedCompany;
-        showToast(" ✅ Espace Manager connecté !");
-        
-        switchScreen('scr-manager');
-        
-        // Chargement des tableaux de bord et flux d'activités
-        loadManagerDashboardData();
-
-    } catch (err) {
-        console.error(err);
-        showToast(" ❌ Erreur réseau lors de la connexion.");
-    }
-}
-
-// --- 📥 CHARGEMENT DES ALERTES ET PASSEPORTS POUR LE MANAGER ---
-async function loadManagerDashboardData() {
-    if (!appState.currentCompanyCode) return;
-
-    try {
-        // 1. Récupération des passeports validés
-        const { data: passeports, error: errP } = await _supabase
-            .from('enregistrements_passeports')
-            .select('*')
-            .eq('company_code', appState.currentCompanyCode)
-            .order('created_at', { ascending: false });
-
-        // 2. Récupération des alertes actives
-        const { data: alertes, error: errA } = await _supabase
-            .from('alertes_prevention')
-            .select('*')
-            .eq('company_code', appState.currentCompanyCode)
-            .order('created_at', { ascending: false });
-
-        if (errP) console.error("Erreur Passeports :", errP);
-        if (errA) console.error("Erreur Alertes :", errA);
-
-        appState.loadedPasseports = passeports || [];
-        appState.loadedAlertes = alertes || [];
-
-        // Rendre dynamique ton fil d'actualité (Feed d'activité)
-        renderLiveActivityFeed();
-
-    } catch (err) {
-        console.error("Erreur globale de chargement :", err);
-    }
-}
-
-// --- 📡 ENVOI D'UNE ALERTE SÉCURITÉ (Émargement Salarié / Remontée terrain) ---
-async function submitAlertePrevention(typeAlerte, description, localisation) {
-    if (!appState.currentCompanyCode) {
-        showToast(" ⚠️ Erreur : Aucun établissement rattaché.");
-        return;
-    }
-
-    try {
-        const { data, error } = await _supabase
-            .from('alertes_prevention')
-            .insert([
-                {
-                    company_code: appState.currentCompanyCode,
-                    type_alerte: typeAlerte,
-                    description: description,
-                    localisation: localisation,
-                    statut: 'En attente'
-                }
-            ]);
-
-        if (error) throw error;
-
-        showToast(" 🚀 Alerte envoyée avec succès au pôle HSE !");
-        return true;
-    } catch (err) {
-        console.error(err);
-        showToast(" ❌ Échec de la transmission de l'alerte.");
-        return false;
-    }
-}
-
-// --- ✍️ ENREGISTREMENT FINAL DU PASSEPORT (Signature & validation du livret d'accueil) ---
-async function submitPasseportPrev(scoreQcm, base64SignatureSalarie, base64SignatureTuteur) {
-    if (!appState.currentCompanyCode) {
-        showToast(" ⚠️ Erreur : Identifiant entreprise manquant.");
-        return;
-    }
-
-    try {
-        const { data, error } = await _supabase
-            .from('enregistrements_passeports')
-            .insert([
-                {
-                    company_code: appState.currentCompanyCode,
-                    employee_name: appState.employeeName,
-                    employee_status: appState.employeeStatus,
-                    activity: appState.currentActivity,
-                    score_qcm: scoreQcm,
-                    signature_salarie: base64SignatureSalarie || null,
-                    signature_tuteur: base64SignatureTuteur || null
-                }
-            ]);
-
-        if (error) throw error;
-
-        showToast(" 💾 Passeport enregistré et archivé juridiquement !");
-        return true;
-    } catch (err) {
-        console.error(err);
-        showToast(" ❌ Erreur lors de la sauvegarde du passeport.");
-        return false;
-    }
-}
-
-// --- 🔄 RENDU DYNAMIQUE DU FIL D'ACTUALITÉ MANAGER ---
-function renderLiveActivityFeed() {
-    const feed = document.getElementById('manager-activity-feed') || document.querySelector('.space-y-2');
-    if (!feed) return;
-
-    if (appState.loadedPasseports.length === 0 && appState.loadedAlertes.length === 0) {
-        feed.innerHTML = `<p class="text-xs text-slate-400 italic py-2">Aucun événement récent enregistré.</p>`;
-        return;
-    }
-
-    let htmlContent = "";
-
-    // Affichage des derniers passeports générés
-    appState.loadedPasseports.slice(0, 3).forEach(p => {
-        const dateLoc = new Date(p.created_at).toLocaleDateString('fr-FR');
-        htmlContent += `
-            <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-700/50 pb-2 pt-1">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span class="text-xs font-medium text-slate-700 dark:text-slate-300">
-                    <strong>Nouveau passeport émis :</strong> ${p.employee_status} - ${p.employee_name} (${p.activity}) le ${dateLoc}
-                </span>
-            </div>`;
-    });
-
-    // Affichage des dernières alertes de sécurité
-    appState.loadedAlertes.slice(0, 3).forEach(a => {
-        let colorStatus = a.type_alerte === 'Risque Imminent' ? 'bg-red-500' : 'bg-amber-500';
-        htmlContent += `
-            <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-700/50 pb-2 pt-1">
-                <span class="w-2 h-2 rounded-full ${colorStatus}"></span>
-                <span class="text-xs font-medium text-slate-700 dark:text-slate-300">
-                    <strong>⚠️ Alerte [${a.type_alerte}] :</strong> ${a.description} (${a.localisation || 'Zone indéterminée'}) - <span class="italic text-slate-400">${a.statut}</span>
-                </span>
-            </div>`;
-    });
-
-    feed.innerHTML = htmlContent;
-}
 const METIER_PRESETS = {
   "Bâtiment & Travaux Publics (BTP)": {
     risques: "Chutes de hauteur, Engins, Silice, Manutention lourde, Risque Électrique",
     questions: [
-      { q: "Avant de monter sur un échafaudage, quelle est la vérification prioritaire ?", r: ["La présence de la bâche publicitaire", "La présence des garde-corps, des plinthes et de la trappe d'accès", "La marque de fabrication de la structure"], c: 1 },
-      { q: "Quel équipement est indispensable lors de travaux générant de la poussière de béton (silice) ?", r: ["Des lunettes de soleil de catégorie 3", "Un masque de protection respiratoire de type FFP3", "Une simple visière en plastique"], c: 1 },
-      { q: "En cas de manutention manuelle d'une charge lourde, comment devez-vous positionner votre corps ?", r: ["Le dos courbé et les jambes tendues", "Le dos droit, les genoux fléchis et la charge au plus près du buste", "Les bras tendus au maximum vers l'avant"], c: 1 },
-      { q: "Que signifie le balisage rouge et blanc sur une zone de chantier ?", r: ["Une zone de repos ou de pause pour les équipes", "Une interdiction absolue d'accès - Zone de danger immédiat", "Un emplacement réservé aux livraisons"], c: 1 },
-      { q: "Qui est autorisé à effectuer le raccordement électrique provisoire d'une armoire de chantier ?", r: ["Tout ouvrier équipé de gants en cuir", "Uniquement un électricien titulaire d'une habilitation électrique valide", "Le chef d'équipe, sans condition de diplôme"], c: 1 }
+      {
+        q: "Avant de monter sur un échafaudage, quelle est la vérification prioritaire ?",
+        r: [
+          "La présence de la bâche publicitaire",
+          "La présence des garde-corps, des plinthes et de la trappe d'accès",
+          "La marque de fabrication de la structure"
+        ],
+        c: 1
+      },
+      {
+        q: "Quel équipement est indispensable lors de travaux générant de la poussière de béton, comme la silice ?",
+        r: [
+          "Des lunettes de soleil",
+          "Un masque de protection respiratoire de type FFP3",
+          "Une simple visière plastique"
+        ],
+        c: 1
+      },
+      {
+        q: "Lors d’une manutention manuelle lourde, quelle posture adopter ?",
+        r: [
+          "Dos courbé et jambes tendues",
+          "Dos droit, genoux fléchis, charge proche du corps",
+          "Bras tendus vers l’avant"
+        ],
+        c: 1
+      },
+      {
+        q: "Que signifie un balisage rouge et blanc sur chantier ?",
+        r: [
+          "Zone de pause",
+          "Zone interdite / danger immédiat",
+          "Zone de livraison"
+        ],
+        c: 1
+      },
+      {
+        q: "Qui peut intervenir sur une armoire électrique de chantier ?",
+        r: [
+          "Tout salarié équipé de gants",
+          "Une personne habilitée électriquement",
+          "Le chef d’équipe uniquement"
+        ],
+        c: 1
+      }
     ]
   },
+
   "Métiers du Bois & Menuiserie": {
-    risques: "Poussières de bois (cancérogène), Coupures, Éclats, Bruit, Machines rotatives",
+    risques: "Poussières de bois, Coupures, Éclats, Bruit, Machines rotatives",
     questions: [
-      { q: "Pourquoi les poussières de bois font-elles l'objet d'une surveillance HSE stricte ?", r: ["Elles rendent le sol glissant uniquement", "Elles sont classées cancérogènes et nécessitent une aspiration à la source", "Elles modifient la couleur des vêtements"], c: 1 },
-      { q: "Quelle action est formellement interdite lors de l'utilisation d'une scie circulaire ?", r: ["Porter des lunettes de protection", "Démonter ou bloquer le capot de protection mobile (carter de sécurité)", "Raccorder la machine au réseau d'aspiration"], c: 1 },
-      { q: "Quel EPI est indispensable lors de l'usage prolongé d'une dégauchisseuse ?", r: ["Des gants de manutention fins", "Un casque anti-bruit ou des bouchons d'oreilles moulés", "Une blouse de coton ample"], c: 1 },
-      { q: "Qu'est-ce qu'un poussoir de sécurité en menuiserie ?", r: ["Un bouton d'arrêt d'urgence déporté", "Un accessoire rigide permettant de guider le bois sans approcher les mains des lames", "Un système de levage mécanique"], c: 1 },
-      { q: "Que devez-vous faire avant de changer la lame ou l'outil d'visseuse de toupie ?", r: ["Éteindre l'interrupteur simple", "Consigner la machine (coupure de l'alimentation électrique générale et verrouillage)", "Demander l'autorisation à un collègue proche"], c: 1 }
+      {
+        q: "Pourquoi les poussières de bois font-elles l'objet d'une surveillance stricte ?",
+        r: [
+          "Elles salissent seulement les vêtements",
+          "Elles sont classées cancérogènes et nécessitent une aspiration à la source",
+          "Elles provoquent uniquement des glissades"
+        ],
+        c: 1
+      },
+      {
+        q: "Quelle action est interdite sur une scie circulaire ?",
+        r: [
+          "Porter des lunettes",
+          "Démonter ou bloquer le carter de protection",
+          "Raccorder l’aspiration"
+        ],
+        c: 1
+      },
+      {
+        q: "Quel EPI est indispensable lors d’un usage prolongé d’une machine bruyante ?",
+        r: [
+          "Gants fins",
+          "Protection auditive",
+          "Blouse ample"
+        ],
+        c: 1
+      },
+      {
+        q: "À quoi sert un poussoir de sécurité ?",
+        r: [
+          "À démarrer la machine",
+          "À guider le bois sans approcher les mains des lames",
+          "À soulever les charges"
+        ],
+        c: 1
+      },
+      {
+        q: "Que faire avant de changer une lame ou un outil ?",
+        r: [
+          "Couper seulement l’interrupteur",
+          "Consigner la machine et couper l’alimentation",
+          "Demander à un collègue de surveiller"
+        ],
+        c: 1
+      }
     ]
   },
+
   "Hôtellerie, Restauration & Cafés (HCR)": {
-    risques: "Coupures, Brûlures graves, Sols glissants (chutes), Risque chimique (plonge), TMS",
+    risques: "Coupures, Brûlures, Sols glissants, Risque chimique, TMS",
     questions: [
-      { q: "Quel est le principal risque lors du nettoyage des sols d'une cuisine professionnelle ?", r: ["Le risque d'électrocution avec l'eau", "La chute de plain-pied due au sol glissant (graisse/eau) nécessitant des chaussures antidérapantes", "Le risque d'intoxication aux odeurs de cuisson"], c: 1 },
-      { q: "Comment réagir immédiatement face à un départ de feu d'huile dans une friteuse ?", r: ["Jeter un seau d'eau froide dessus", "Couper l'alimentation, étouffer le feu avec un couvercle métallique ou une couverture anti-feu", "Souffler fort sur les flammes pour les éteindre"], c: 1 },
-      { q: "Pour manipuler des produits de plonge ultra-concentrés, que devez-vous porter ?", r: ["Votre tablier de service en tissu", "Des gants étanches en nitrile longs et des lunettes de protection contre les projections", "Aucun équipement si l'opération est rapide"], c: 1 },
-      { q: "Quelle est la bonne pratique pour transporter des couteaux de cuisine en mouvement ?", r: ["La lame orientée vers le haut pour être visible", "Le long du corps, pointe dirigée vers le bas et vers l'arrière", "Dans la poche arrière du pantalon de cuisine"], c: 1 },
-      { q: "Quelle posture adopter lors de la plonge pour éviter les maux de dos (TMS) ?", r: ["Travailler en torsion complète du buste", "Garder le dos droit et ajuster la hauteur des bacs si possible, utiliser un marchepied", "Rester en appui constant sur une seule jambe"], c: 1 }
+      {
+        q: "Quel est le principal risque lors du nettoyage d’un sol de cuisine ?",
+        r: [
+          "Intoxication aux odeurs",
+          "Chute de plain-pied sur sol glissant",
+          "Perte de visibilité"
+        ],
+        c: 1
+      },
+      {
+        q: "Que faire en cas de feu d’huile dans une friteuse ?",
+        r: [
+          "Jeter de l’eau",
+          "Couper l’alimentation et étouffer le feu",
+          "Souffler sur les flammes"
+        ],
+        c: 1
+      },
+      {
+        q: "Quel EPI utiliser pour les produits de plonge concentrés ?",
+        r: [
+          "Tablier tissu uniquement",
+          "Gants étanches et lunettes de protection",
+          "Aucun EPI si l’opération est courte"
+        ],
+        c: 1
+      },
+      {
+        q: "Comment transporter un couteau en déplacement ?",
+        r: [
+          "Lame vers le haut",
+          "Pointe vers le bas, le long du corps",
+          "Dans la poche arrière"
+        ],
+        c: 1
+      },
+      {
+        q: "Comment limiter les TMS à la plonge ?",
+        r: [
+          "Travailler en torsion",
+          "Garder le dos droit et adapter la hauteur de travail",
+          "S’appuyer sur une seule jambe"
+        ],
+        c: 1
+      }
     ]
   },
+
   "Agriculture, Viticulture & Espaces Verts": {
-    risques: "Retournement d'engins (tracteurs), Produits phytosanitaires, Outils coupants, Zoonoses, UV",
+    risques: "Retournement d’engins, Produits phytosanitaires, Outils coupants, Zoonoses, UV",
     questions: [
-      { q: "Quelle est la fonction essentielle de l'arceau de sécurité (ROPS) sur un tracteur agricole ?", r: ["Servir de support pour les gyrophares", "Protéger l'opérateur de l'écrasement en cas de retournement de l'engin", "Améliorer l'aérodynamisme du véhicule"], c: 1 },
-      { q: "Lors de la préparation d'une bouillie de produits phytosanitaires, quel EPI est requis ?", r: ["Une casquette et des gants de jardinage classiques", "Une combinaison de type 4, des gants en néoprène, des bottes et un masque à cartouche A2P3", "Un simple masque chirurgical jetable"], c: 1 },
-      { q: "Avant toute intervention mécanique sous la table de coupe d'une machine agricole, que faut-il insérer ?", r: ["Une cale de sécurité mécanique ou vérin de blocage physique", "Un morceau de bois trouvé au sol", "Rien, l'arrêt du moteur suffit amplement"], c: 1 },
-      { q: "Pourquoi faut-il être vigilant concernant les tiques lors des travaux en extérieur ou forêt ?", r: ["Elles dégradent la qualité des vêtements", "Elles transmettent des maladies graves comme la maladie de Lyme", "Elles provoquent de simples rougeurs sans gravité"], c: 1 },
-      { q: "Quelle précaution prendre lors du couplage de l'arbre à cardan d'un outil tracté ?", r: ["Vérifier que le moteur du tracteur tourne au ralenti", "S'assurer que le protecteur en plastique du cardan est présent, en bon état et enchaîné", "Huiler abondamment l'extérieur de la gaine de protection"], c: 1 }
+      {
+        q: "À quoi sert l’arceau de sécurité d’un tracteur ?",
+        r: [
+          "À fixer le gyrophare",
+          "À protéger l’opérateur en cas de retournement",
+          "À améliorer la visibilité"
+        ],
+        c: 1
+      },
+      {
+        q: "Quel EPI porter lors de la préparation de produits phytosanitaires ?",
+        r: [
+          "Casquette et gants classiques",
+          "Combinaison, gants adaptés, bottes et masque filtrant",
+          "Masque chirurgical uniquement"
+        ],
+        c: 1
+      },
+      {
+        q: "Avant une intervention sous une machine agricole, que faut-il mettre en place ?",
+        r: [
+          "Un morceau de bois",
+          "Une cale ou un dispositif mécanique de sécurité",
+          "Rien si le moteur est arrêté"
+        ],
+        c: 1
+      },
+      {
+        q: "Pourquoi faut-il être vigilant aux tiques ?",
+        r: [
+          "Elles salissent les vêtements",
+          "Elles peuvent transmettre la maladie de Lyme",
+          "Elles ne présentent aucun risque"
+        ],
+        c: 1
+      },
+      {
+        q: "Quelle précaution prendre avec un arbre à cardan ?",
+        r: [
+          "Le lubrifier extérieurement",
+          "Vérifier la protection du cardan",
+          "Le manipuler moteur tournant"
+        ],
+        c: 1
+      }
     ]
   },
+
   "Transport, Logistique & Supply Chain": {
-    risques: "Heurt piéton-chariot, TMS (port de charges), Chute de quai, Risques liés au filmage",
+    risques: "Heurt piéton-chariot, TMS, Chute de quai, Stockage, Produits dangereux",
     questions: [
-      { q: "Dans un entrepôt logistique, quelle est la règle absolue de cohabitation piétons / caristes ?", r: ["Le piéton a toujours la priorité absolue partout", "Emprunter obligatoirement les voies piétonnes dédiées et matérialisées au sol", "Les caristes doivent klaxonner en continu"], c: 1 },
-      { q: "Quelle précaution majeure faut-il prendre avant le déchargement d'un camion à quai ?", r: ["Vérifier la propreté de la cabine du conducteur", "Vérifier que le camion est calé et que le pont de liaison est parfaitement en place et verrouillé", "Attendre que le conducteur descende prendre un café"], c: 1 },
-      { q: "Quel geste technique permet d'éviter les blessures aux lombaires lors du filmage manuel d'une palette ?", r: ["Tourner autour de la palette en restant le dos complètement courbé", "Utiliser un dévidoir ergonomique, fléchir les genoux pour filmer le bas et garder le dos aligné", "Filmer le plus rapidement possible en apnée"], c: 1 },
-      { q: "Que signifie le marquage au sol jaune zébré de noir dans un atelier de stockage ?", r: ["Zone de stockage temporaire autorisée", "Zone d'interdiction de stockage - Voie de circulation ou issue de secours à laisser libre", "Emplacement de recharge des batteries"], c: 1 },
-      { q: "En cas de chute d'un colis contenant un produit chimique étiqueté dangereux, quelle est l'attitude correcte ?", r: ["Ramasser le produit immédiatement à mains nues pour nettoyer", "Baliser la zone, s'éloigner et alerter le responsable pour appliquer le protocole de nettoyage de sécurité", "Ignorer le problème et changer d'allée"], c: 1 }
+      {
+        q: "Dans un entrepôt, quelle règle appliquer pour les piétons ?",
+        r: [
+          "Traverser au plus court",
+          "Utiliser les cheminements piétons matérialisés",
+          "Marcher derrière les chariots"
+        ],
+        c: 1
+      },
+      {
+        q: "Avant de décharger un camion à quai, que vérifier ?",
+        r: [
+          "La propreté de la cabine",
+          "Le calage du camion et le pont de liaison",
+          "La pause du conducteur"
+        ],
+        c: 1
+      },
+      {
+        q: "Comment limiter le risque lombaire lors du filmage manuel ?",
+        r: [
+          "Rester dos courbé",
+          "Utiliser un dévidoir et fléchir les genoux",
+          "Tourner rapidement en apnée"
+        ],
+        c: 1
+      },
+      {
+        q: "Que signifie une zone zébrée jaune/noir au sol ?",
+        r: [
+          "Stockage temporaire autorisé",
+          "Zone à laisser libre",
+          "Zone de pause"
+        ],
+        c: 1
+      },
+      {
+        q: "Que faire si un colis contenant un produit dangereux chute ?",
+        r: [
+          "Nettoyer immédiatement à mains nues",
+          "Baliser, s’éloigner et alerter",
+          "Ignorer si l’emballage semble fermé"
+        ],
+        c: 1
+      }
     ]
   }
 };
 
-// --- ÉTAT GLOBAL DE L'APPLICATION ---
+/* =========================
+   3. ÉTAT GLOBAL UNIQUE
+   ========================= */
+
 let appState = {
   isDarkMode: false,
   managerVolume: 0.5,
   isManagerMuted: false,
+
   currentCompany: null,
+  currentCompanyCode: "",
+  currentSelectedCompany: "Entreprise",
+  currentActivity: "Bâtiment & Travaux Publics (BTP)",
+
   currentEmployee: null,
+  employeeName: "Nouvel Arrivant",
+  employeeStatus: "Parcours Standard",
+
+  loadedAlertes: [],
+  loadedPasseports: [],
+
   qcm: {
     currentProfile: "",
     questions: [],
     currentIndex: 0,
-    answers: [],
     score: 0
   },
+
   leafletMap: null,
   mapMarker: null,
-  currentCoords: [46.6705, -1.4264], // Centre de la Vendée par défaut
+  currentCoords: [46.6705, -1.4264],
+
   selectedRiskCategory: "",
   capturedPhotoBase64: ""
 };
 
-// --- INITIALISATION AU CHARGEMENT ---
-window.addEventListener('DOMContentLoaded', () => {
+/* =========================
+   4. INITIALISATION
+   ========================= */
+
+window.addEventListener("DOMContentLoaded", () => {
   loadLocalStorageData();
   populateActivitySelects();
   initSignaturePad();
-  
-  // Appliquer le thème sombre si mémorisé
+  initUrlSession();
+
   if (appState.isDarkMode) {
-    document.documentElement.classList.add('dark');
+    document.documentElement.classList.add("dark");
   }
 });
 
-// --- LOGIQUE DE NAVIGATION (AFFICHAGE DES ÉCRANS) ---
+/* =========================
+   5. OUTILS UI
+   ========================= */
+
 function switchScreen(screenId) {
-  document.querySelectorAll('.screen').forEach(scr => scr.classList.remove('active'));
-  const targetScreen = document.getElementById(screenId);
-  if (targetScreen) {
-    targetScreen.classList.add('active');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  document.querySelectorAll(".screen").forEach(scr => scr.classList.remove("active"));
+
+  const target = document.getElementById(screenId);
+  if (!target) return;
+
+  target.classList.add("active");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+
+  if (screenId === "scr-report") {
+    setTimeout(() => {
+      initLeafletMap();
+      generateRiskCategories();
+      populateManagerZonesDropdown("risk-location");
+    }, 250);
   }
-  
-  // Actions spécifiques lors de l'accès à certains écrans
-  if (screenId === 'scr-report') {
-    setTimeout(initLeafletMap, 200);
-    generateRiskCategories();
-    populateManagerZonesDropdown('risk-location');
-  }
-  if (screenId === 'scr-manager' && appState.currentCompany) {
+
+  if (screenId === "scr-manager") {
     refreshManagerDashboard();
+    loadManagerDashboardData();
   }
+
+  if (screenId === "scr-onboarding-1") {
+    startQCMWorkflow();
+  }
+}
+
+function showToast(message) {
+  const toast = document.getElementById("toast");
+  const toastText = document.getElementById("toast-text");
+
+  if (!toast || !toastText) {
+    console.log(message);
+    return;
+  }
+
+  toastText.innerText = message;
+  toast.classList.remove("translate-y-20", "opacity-0");
+
+  clearTimeout(window.__restevToastTimer);
+  window.__restevToastTimer = setTimeout(() => {
+    toast.classList.add("translate-y-20", "opacity-0");
+  }, 3500);
 }
 
 function toggleDarkMode() {
   appState.isDarkMode = !appState.isDarkMode;
-  if (appState.isDarkMode) {
-    document.documentElement.classList.add('dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-  }
-  localStorage.setItem('restev_dark_mode', appState.isDarkMode);
+  document.documentElement.classList.toggle("dark", appState.isDarkMode);
+  localStorage.setItem("restev_dark_mode", String(appState.isDarkMode));
 }
 
-// --- SYSTÈME DE TOAST NOTIFICATION ---
-function showToast(message) {
-  const toast = document.getElementById('toast');
-  const toastText = document.getElementById('toast-text');
-  toastText.innerText = message;
-  toast.classList.remove('translate-y-20', 'opacity-0');
-  setTimeout(() => {
-    toast.classList.add('translate-y-20', 'opacity-0');
-  }, 3500);
-}
+/* =========================
+   6. LOCAL STORAGE
+   ========================= */
 
-// --- PERSISTENCE LOCALE DU STOCKAGE ---
 function loadLocalStorageData() {
-  const storedDark = localStorage.getItem('restev_dark_mode');
-  if (storedDark) appState.isDarkMode = (storedDark === 'true');
-  
-  const savedCompanies = localStorage.getItem('restev_companies');
+  const storedDark = localStorage.getItem("restev_dark_mode");
+  appState.isDarkMode = storedDark === "true";
+
+  const savedCompanies = localStorage.getItem("restev_companies");
+
   if (!savedCompanies) {
-    // Injecter une entreprise de démo par défaut si vide
     const demoCompany = {
       code: "RSTV-DEMO-85",
       name: "Menuiserie Vendéenne Intégrale",
       activity: "Métiers du Bois & Menuiserie",
       zones: ["Atelier Débit", "Cabine Peinture", "Zone Logistique", "Bureaux"],
-      reports: []
+      reports: [],
+      passports: []
     };
-    localStorage.setItem('restev_companies', JSON.stringify({ "RSTV-DEMO-85": demoCompany }));
+
+    localStorage.setItem(
+      "restev_companies",
+      JSON.stringify({ "RSTV-DEMO-85": demoCompany })
+    );
   }
 }
 
 function getCompaniesFromStorage() {
-  return JSON.parse(localStorage.getItem('restev_companies')) || {};
+  try {
+    return JSON.parse(localStorage.getItem("restev_companies")) || {};
+  } catch {
+    return {};
+  }
 }
 
 function saveCompaniesToStorage(companies) {
-  localStorage.setItem('restev_companies', JSON.stringify(companies));
+  localStorage.setItem("restev_companies", JSON.stringify(companies));
 }
 
-// --- INTERFACE DIRECTION (RESTEV AUDIT) ---
-function handleDirectionAccess() {
-  switchScreen('scr-direction');
-  showToast("Chargement de la cartographie départementale...");
-  
-  // Rendu du graphique statistique des risques
-  const ctx = document.getElementById('chart-restev-risks').getContext('2d');
-  
-  // Détruire l'instance précédente si elle existe pour éviter les bugs graphiques
-  if (window.risksChartInstance) window.risksChartInstance.destroy();
-  
-  window.risksChartInstance = new Chart(ctx, {
-    type: 'radar',
-    data: {
-      labels: ['Risque Chute', 'Risque Chimique', 'Troubles Musculosquelettiques', 'Coupures/Heurts', 'Risque Routier'],
-      datasets: [{
-        label: 'Indice Fréquence Vendée 2026',
-        data: [65, 40, 85, 55, 30],
-        backgroundColor: 'rgba(58, 123, 213, 0.2)',
-        borderColor: '#3a7bd5',
-        borderWidth: 3,
-        pointBackgroundColor: '#e0248a'
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        r: { grid: { color: '#cbd5e1' }, angleLines: { color: '#cbd5e1' }, suggestedMin: 0 }
+function saveCurrentCompanyLocal() {
+  if (!appState.currentCompany) return;
+
+  const companies = getCompaniesFromStorage();
+  companies[appState.currentCompany.code] = appState.currentCompany;
+  saveCompaniesToStorage(companies);
+}
+
+/* =========================
+   7. AUTH MANAGER SUPABASE + FALLBACK LOCAL
+   ========================= */
+
+async function handleManagerLogin() {
+  const code = document
+    .getElementById("manager-company-code")
+    .value.trim()
+    .toUpperCase();
+
+  if (!code) {
+    showToast("⚠️ Saisissez votre code établissement.");
+    return;
+  }
+
+  showToast("🔄 Vérification de l’établissement...");
+
+  let company = null;
+
+  if (_supabase) {
+    try {
+      const { data, error } = await _supabase
+        .from("etablissements")
+        .select("*")
+        .eq("code_etablissement", code)
+        .maybeSingle();
+
+      if (!error && data) {
+        company = {
+          code: data.code_etablissement,
+          name: data.nom_entreprise || "Entreprise",
+          activity:
+            data.activite_principale ||
+            "Bâtiment & Travaux Publics (BTP)",
+          zones: data.zones || ["Zone Standard", "Atelier Principal"],
+          reports: [],
+          passports: []
+        };
       }
+    } catch (err) {
+      console.warn("Supabase indisponible, fallback local :", err);
     }
-  });
+  }
 
-  // Remplissage du fil d'actualité de la direction
-  const feed = document.getElementById('direction-activity-feed');
-  feed.innerHTML = `
-    <div class="p-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 flex justify-between">
-      <span><strong>Menuiserie Vendéenne</strong> - Profil sécurité mis à jour</span>
-      <span class="text-slate-400">À l'instant</span>
-    </div>
-    <div class="p-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 flex justify-between">
-      <span><strong>BTP Challans SA</strong> - 14 livrets d'accueil validés ce mois-ci</span>
-      <span class="text-slate-400">Il y a 2h</span>
-    </div>
-  `;
+  if (!company) {
+    const localCompanies = getCompaniesFromStorage();
+    company = localCompanies[code] || null;
+  }
+
+  if (!company) {
+    showToast("❌ Code inconnu. Essayez : RSTV-DEMO-85");
+    return;
+  }
+
+  setCurrentCompany(company);
+  switchScreen("scr-manager");
+  showToast(`✅ Bienvenue dans l’espace ${company.name}`);
 }
 
-// --- CONTEXTE ET AUTHENTIFICATION ADHÉRENT / MANAGER ---
+function setCurrentCompany(company) {
+  appState.currentCompany = company;
+  appState.currentCompanyCode = company.code;
+  appState.currentSelectedCompany = company.name;
+  appState.currentActivity = company.activity;
+
+  if (!appState.currentCompany.zones) {
+    appState.currentCompany.zones = ["Zone Standard", "Atelier Principal"];
+  }
+
+  if (!appState.currentCompany.reports) {
+    appState.currentCompany.reports = [];
+  }
+
+  if (!appState.currentCompany.passports) {
+    appState.currentCompany.passports = [];
+  }
+}
+
+function logoutManager() {
+  appState.currentCompany = null;
+  appState.currentCompanyCode = "";
+  switchScreen("scr-home");
+  showToast("Déconnexion réussie.");
+}
+
+/* =========================
+   8. CRÉATION ENTREPRISE
+   ========================= */
+
+async function createNewCompany() {
+  const nameInput = document.getElementById("new-company-name").value.trim();
+
+  if (!nameInput) {
+    showToast("⚠️ Veuillez saisir la raison sociale.");
+    return;
+  }
+
+  const cleanPrefix = nameInput
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Z0-9]/gi, "")
+    .substring(0, 4)
+    .toUpperCase();
+
+  const code = `RSTV-${cleanPrefix || "ENTR"}-${Math.floor(
+    1000 + Math.random() * 9000
+  )}`;
+
+  const newCompany = {
+    code: code,
+    name: nameInput,
+    activity: Object.keys(METIER_PRESETS)[0],
+    zones: ["Quai de déchargement", "Zone de stockage Alpha"],
+    reports: [],
+    passports: []
+  };
+
+  if (_supabase) {
+    try {
+      await _supabase.from("etablissements").insert([
+        {
+          code_etablissement: code,
+          nom_entreprise: nameInput,
+          activite_principale: newCompany.activity,
+          zones: newCompany.zones
+        }
+      ]);
+    } catch (err) {
+      console.warn("Création Supabase non réalisée, stockage local utilisé :", err);
+    }
+  }
+
+  const companies = getCompaniesFromStorage();
+  companies[code] = newCompany;
+  saveCompaniesToStorage(companies);
+
+  document.getElementById("lbl-generated-code").innerText = code;
+  document.getElementById("generated-code-box").classList.remove("hidden");
+
+  showToast("✅ Code entreprise généré avec succès.");
+}
+
+function copyGeneratedCode() {
+  const code = document.getElementById("lbl-generated-code").innerText;
+
+  if (!code) return;
+
+  navigator.clipboard.writeText(code).then(() => {
+    showToast("📋 Code copié dans le presse-papier.");
+  });
+}
+
+/* =========================
+   9. MANAGER DASHBOARD
+   ========================= */
+
 function populateActivitySelects() {
-  const select = document.getElementById('manager-activity-select');
+  const select = document.getElementById("manager-activity-select");
+  if (!select) return;
+
   select.innerHTML = "";
+
   Object.keys(METIER_PRESETS).forEach(metier => {
-    const opt = document.createElement('option');
+    const opt = document.createElement("option");
     opt.value = metier;
     opt.innerText = metier;
     select.appendChild(opt);
   });
 }
 
-function createNewCompany() {
-  const nameInput = document.getElementById('new-company-name').value.trim();
-  if (!nameInput) {
-    alert("Veuillez saisir la raison sociale de votre entreprise.");
-    return;
-  }
-  
-  const randomId = Math.floor(1000 + Math.random() * 9000);
-  const code = `RSTV-${nameInput.substring(0, 4).toUpperCase()}-${randomId}`;
-  
-  const newCompany = {
-    code: code,
-    name: nameInput,
-    activity: Object.keys(METIER_PRESETS)[0],
-    zones: ["Quai de déchargement", "Zone de stockage Alpha"],
-    reports: []
-  };
-  
-  const companies = getCompaniesFromStorage();
-  companies[code] = newCompany;
-  saveCompaniesToStorage(companies);
-  
-  document.getElementById('lbl-generated-code').innerText = code;
-  document.getElementById('generated-code-box').classList.remove('hidden');
-  showToast("Code entreprise généré avec succès !");
-}
-
-function copyGeneratedCode() {
-  const code = document.getElementById('lbl-generated-code').innerText;
-  navigator.clipboard.writeText(code).then(() => {
-    showToast("Code copié dans le presse-papier !");
-  });
-}
-
-function handleManagerLogin() {
-  const code = document.getElementById('manager-company-code').value.trim().toUpperCase();
-  const companies = getCompaniesFromStorage();
-  
-  if (companies[code]) {
-    appState.currentCompany = companies[code];
-    switchScreen('scr-manager');
-    showToast(`Bienvenue sur votre espace ${appState.currentCompany.name}`);
-  } else {
-    alert("Code établissement invalide. Essayez le code de démonstration : RSTV-DEMO-85");
-  }
-}
-
-function logoutManager() {
-  appState.currentCompany = null;
-  switchScreen('scr-home');
-  showToast("Déconnexion réussie.");
-}
-
-// --- CONSOLE ET CONFIGURATION MANAGER ---
 function refreshManagerDashboard() {
   if (!appState.currentCompany) return;
-  
-  document.getElementById('lbl-manager-comp-name').innerText = appState.currentCompany.name;
-  document.getElementById('manager-activity-select').value = appState.currentCompany.activity;
-  
+
+  const lbl = document.getElementById("lbl-manager-comp-name");
+  const select = document.getElementById("manager-activity-select");
+
+  if (lbl) lbl.innerText = appState.currentCompany.name;
+
+  if (select) {
+    select.value = appState.currentCompany.activity;
+  }
+
   updateActivityPreviewText();
   renderManagerZonesList();
   renderManagerRiskSignals();
 }
 
 function updateCompanyActivityProfile() {
-  const selectVal = document.getElementById('manager-activity-select').value;
+  if (!appState.currentCompany) return;
+
+  const selectVal = document.getElementById("manager-activity-select").value;
+
   appState.currentCompany.activity = selectVal;
-  
-  const companies = getCompaniesFromStorage();
-  companies[appState.currentCompany.code] = appState.currentCompany;
-  saveCompaniesToStorage(companies);
-  
+  appState.currentActivity = selectVal;
+
+  saveCurrentCompanyLocal();
   updateActivityPreviewText();
-  showToast("Profil sectoriel de l'entreprise mis à jour.");
+
+  showToast("✅ Profil métier mis à jour.");
 }
 
 function updateActivityPreviewText() {
+  if (!appState.currentCompany) return;
+
+  const preview = document.getElementById("manager-activity-preview");
   const act = appState.currentCompany.activity;
-  document.getElementById('manager-activity-preview').innerText = METIER_PRESETS[act] ? METIER_PRESETS[act].risques : "Aucun risque spécifié.";
+
+  if (preview) {
+    preview.innerText =
+      METIER_PRESETS[act]?.risques || "Aucun risque métier configuré.";
+  }
 }
 
 function registerCustomZone() {
-  const zoneInput = document.getElementById('txt-new-zone');
-  const zoneName = zoneInput.value.trim();
+  if (!appState.currentCompany) return;
+
+  const input = document.getElementById("txt-new-zone");
+  const zoneName = input.value.trim();
+
   if (!zoneName) return;
-  
+
   if (!appState.currentCompany.zones.includes(zoneName)) {
     appState.currentCompany.zones.push(zoneName);
-    const companies = getCompaniesFromStorage();
-    companies[appState.currentCompany.code] = appState.currentCompany;
-    saveCompaniesToStorage(companies);
-    
+    saveCurrentCompanyLocal();
     renderManagerZonesList();
-    zoneInput.value = "";
-    showToast(`Zone "${zoneName}" ajoutée.`);
+    input.value = "";
+    showToast(`✅ Zone "${zoneName}" ajoutée.`);
   }
 }
 
 function renderManagerZonesList() {
-  const container = document.getElementById('manager-zones-list');
+  const container = document.getElementById("manager-zones-list");
+  if (!container || !appState.currentCompany) return;
+
   container.innerHTML = "";
+
   appState.currentCompany.zones.forEach(zone => {
-    const span = document.createElement('span');
-    span.className = "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200 text-[11px] font-bold px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center gap-1";
-    span.innerHTML = `${zone} <i class="fa-solid fa-circle text-[6px] text-restev-blue"></i>`;
+    const span = document.createElement("span");
+    span.className =
+      "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200 text-[11px] font-bold px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center gap-1";
+
+    span.innerHTML = `${escapeHtml(zone)} <i class="fa-solid fa-circle text-[6px] text-restev-blue"></i>`;
     container.appendChild(span);
   });
 }
@@ -1065,333 +1222,338 @@ function renderManagerZonesList() {
 function populateManagerZonesDropdown(dropdownId) {
   const dropdown = document.getElementById(dropdownId);
   if (!dropdown) return;
+
   dropdown.innerHTML = "";
-  
-  const zones = appState.currentCompany ? appState.currentCompany.zones : ["Zone Standard", "Atelier Principal"];
-  zones.forEach(z => {
-    const opt = document.createElement('option');
-    opt.value = z;
-    opt.innerText = z;
+
+  const zones =
+    appState.currentCompany?.zones || ["Zone Standard", "Atelier Principal"];
+
+  zones.forEach(zone => {
+    const opt = document.createElement("option");
+    opt.value = zone;
+    opt.innerText = zone;
     dropdown.appendChild(opt);
   });
 }
 
-// --- CONSOLE STUDIO ÉDITION QCM ---
-function openStudio(metier) {
-  document.getElementById('lbl-studio-metier').innerText = metier;
-  const container = document.getElementById('studio-rules-list');
-  container.innerHTML = "";
-  
-  const preset = METIER_PRESETS[metier];
-  if (!preset) return;
-  
-  preset.questions.forEach((qObj, qIdx) => {
-    const div = document.createElement('div');
-    div.className = "p-3.5 bg-slate-50 dark:bg-slate-900 rounded-xl border space-y-2 text-xs";
-    div.innerHTML = `
-      <div class="font-bold">Question ${qIdx + 1} :</div>
-      <input type="text" value="${qObj.q}" class="w-full p-2 bg-white dark:bg-slate-800 border rounded-lg font-medium dark:text-white" data-qidx="${qIdx}">
-      <div class="grid grid-cols-1 gap-1 pl-3 border-l-2 border-slate-200">
-        <div class="text-[10px] text-slate-400 uppercase font-bold">Options de réponse (La première est la bonne) :</div>
-        <input type="text" value="${qObj.r[0]}" class="w-full p-1.5 bg-white dark:bg-slate-800 border rounded font-semibold text-emerald-600" data-ridx="0" data-qidx="${qIdx}">
-        <input type="text" value="${qObj.r[1]}" class="w-full p-1.5 bg-white dark:bg-slate-800 border rounded font-medium" data-ridx="1" data-qidx="${qIdx}">
-        <input type="text" value="${qObj.r[2] || ''}" class="w-full p-1.5 bg-white dark:bg-slate-800 border rounded font-medium" data-ridx="2" data-qidx="${qIdx}">
-      </div>
-    `;
-    container.appendChild(div);
-  });
-  
-  switchScreen('scr-studio');
+/* =========================
+   10. CHARGEMENT SUPABASE MANAGER
+   ========================= */
+
+async function loadManagerDashboardData() {
+  if (!_supabase || !appState.currentCompanyCode) return;
+
+  try {
+    const { data: passeports } = await _supabase
+      .from("enregistrements_passeports")
+      .select("*")
+      .eq("company_code", appState.currentCompanyCode)
+      .order("created_at", { ascending: false });
+
+    const { data: alertes } = await _supabase
+      .from("alertes_prevention")
+      .select("*")
+      .eq("company_code", appState.currentCompanyCode)
+      .order("created_at", { ascending: false });
+
+    appState.loadedPasseports = passeports || [];
+    appState.loadedAlertes = alertes || [];
+
+    renderLiveActivityFeed();
+  } catch (err) {
+    console.warn("Chargement Supabase impossible :", err);
+  }
 }
 
-function saveCustomQCM() {
-  // Simulation de la sauvegarde locale modifiée dans le studio
-  showToast("Modifications enregistrées localement pour cette session.");
-  switchScreen('scr-manager');
-}
+function renderLiveActivityFeed() {
+  const feed = document.getElementById("direction-activity-feed");
+  if (!feed) return;
 
-// --- SYSTÈME DE SIGNALEMENT DU SALARIÉ (QR CODE & ARRIVÉE SUR SITE) ---
-function generateEmployeeAccess() {
-  const name = document.getElementById('reg-emp-name').value.trim();
-  const status = document.getElementById('reg-emp-status').value;
-  
-  if (!name) {
-    alert("Veuillez renseigner le nom et le prénom de l'arrivant.");
+  const passeports = appState.loadedPasseports || [];
+  const alertes = appState.loadedAlertes || [];
+
+  if (passeports.length === 0 && alertes.length === 0) {
+    feed.innerHTML =
+      '<p class="text-xs text-slate-400 italic py-2">Aucun événement récent enregistré.</p>';
     return;
   }
-  
-  appState.currentEmployee = { name: name, status: status };
-  
-  // URL Factice d'accueil connecté pour le QR Code
-  const mockUrl = `${window.location.origin}${window.location.pathname}?emp=${encodeURIComponent(name)}&comp=${encodeURIComponent(appState.currentCompany.code)}`;
-  
-  const canvas = document.getElementById('qr-canvas');
-  document.getElementById('qr-area').classList.remove('hidden');
-  
-  QRCode.toCanvas(canvas, mockUrl, { width: 140, margin: 1 }, function (error) {
-    if (error) console.error(error);
-    showToast("QR Code d'accueil généré ! Flashez-le ou lancez directement.");
-    
-    // Pour la démo : On simule la prise en charge du salarié après 1.5s
-    setTimeout(() => {
-      document.getElementById('lbl-emp-welcome').innerText = `Bonjour, ${appState.currentEmployee.name}`;
-      document.getElementById('lbl-emp-company').innerText = `Parcours d'intégration Sécurité chez : ${appState.currentCompany.name} (${appState.currentEmployee.status})`;
-      switchScreen('scr-employee');
-    }, 1500);
+
+  let html = "";
+
+  passeports.slice(0, 3).forEach(p => {
+    const dateLoc = p.created_at
+      ? new Date(p.created_at).toLocaleDateString("fr-FR")
+      : "";
+
+    html += `
+      <div class="p-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
+        <strong>✅ Passeport émis :</strong> ${escapeHtml(p.employee_name || "Salarié")} 
+        - ${escapeHtml(p.activity || "")} 
+        <span class="text-slate-400">(${dateLoc})</span>
+      </div>
+    `;
   });
+
+  alertes.slice(0, 3).forEach(a => {
+    html += `
+      <div class="p-2.5 bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-100 dark:border-red-900/40">
+        <strong>⚠️ Alerte :</strong> ${escapeHtml(a.type_alerte || "Risque")} 
+        - ${escapeHtml(a.description || "")}
+        <span class="text-slate-400">(${escapeHtml(a.statut || "En attente")})</span>
+      </div>
+    `;
+  });
+
+  feed.innerHTML = html;
+}
+
+/* =========================
+   11. QR CODE / ACCÈS SALARIÉ
+   ========================= */
+
+function generateEmployeeAccess() {
+  if (!appState.currentCompany) {
+    showToast("⚠️ Connectez d’abord un établissement.");
+    return;
+  }
+
+  const name = document.getElementById("reg-emp-name").value.trim();
+  const status = document.getElementById("reg-emp-status").value;
+
+  if (!name) {
+    showToast("⚠️ Veuillez renseigner le nom du travailleur.");
+    return;
+  }
+
+  appState.currentEmployee = { name, status };
+  appState.employeeName = name;
+  appState.employeeStatus = status;
+
+  const token = crypto.randomUUID
+    ? crypto.randomUUID()
+    : String(Date.now()) + Math.random().toString(16).slice(2);
+
+  const url =
+    `${window.location.origin}${window.location.pathname}` +
+    `?session=${encodeURIComponent(token)}` +
+    `&comp=${encodeURIComponent(appState.currentCompany.code)}` +
+    `&emp=${encodeURIComponent(name)}` +
+    `&status=${encodeURIComponent(status)}`;
+
+  const canvas = document.getElementById("qr-canvas");
+  document.getElementById("qr-area").classList.remove("hidden");
+
+  QRCode.toCanvas(canvas, url, { width: 150, margin: 1 }, error => {
+    if (error) {
+      console.error(error);
+      showToast("❌ Erreur de génération QR Code.");
+      return;
+    }
+
+    showToast("✅ QR Code généré.");
+
+    setTimeout(() => {
+      openEmployeeSession(name, status, appState.currentCompany);
+    }, 1200);
+  });
+}
+
+function initUrlSession() {
+  const params = new URLSearchParams(window.location.search);
+  const comp = params.get("comp");
+  const emp = params.get("emp");
+  const status = params.get("status") || "Parcours Standard";
+
+  if (!comp || !emp) return;
+
+  const companies = getCompaniesFromStorage();
+  const company = companies[comp];
+
+  if (company) {
+    setCurrentCompany(company);
+    openEmployeeSession(emp, status, company);
+  }
+}
+
+function openEmployeeSession(name, status, company) {
+  appState.currentEmployee = { name, status };
+  appState.employeeName = name;
+  appState.employeeStatus = status;
+
+  document.getElementById("lbl-emp-welcome").innerText = `Bonjour, ${name}`;
+  document.getElementById(
+    "lbl-emp-company"
+  ).innerText = `Parcours d’intégration sécurité chez : ${company.name} (${status})`;
+
+  switchScreen("scr-employee");
 }
 
 function accessEmployeeDirect() {
-  // Accès rapide sans passer par la console manager (Mode autonome)
   const companies = getCompaniesFromStorage();
-  const firstCompKey = Object.keys(companies)[0];
-  appState.currentCompany = companies[firstCompKey];
-  appState.currentEmployee = { name: "Nouvel Opérateur Intérimaire", status: "Contrat Saisonnier / CDD" };
-  
-  document.getElementById('lbl-emp-welcome').innerText = `Bonjour, ${appState.currentEmployee.name}`;
-  document.getElementById('lbl-emp-company').innerText = `Parcours Sécurité chez : ${appState.currentCompany.name}`;
-  
-  switchScreen('scr-employee');
-}
+  const firstKey = Object.keys(companies)[0];
 
-// --- CARTOGRAPHIE LEAFLET ET PHOTO POUR LES SIGNALEMENTS DE DANGERS ---
-function initLeafletMap() {
-  if (appState.leafletMap) return; // Éviter la double initialisation
-  
-  appState.leafletMap = L.map('map', { zoomControl: false }).setView(appState.currentCoords, 14);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19
-  }).addTo(appState.leafletMap);
-  
-  appState.mapMarker = L.marker(appState.currentCoords, { draggable: false }).addTo(appState.leafletMap);
-  
-  // Géolocalisation réelle sur smartphone si disponible
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition((position) => {
-      appState.currentCoords = [position.coords.latitude, position.coords.longitude];
-      appState.leafletMap.setView(appState.currentCoords, 16);
-      appState.mapMarker.setLatLng(appState.currentCoords);
-      document.getElementById('geo-status').innerHTML = `<i class="fa-solid fa-location-dot text-emerald-500"></i> Coordonnées GPS synchronisées avec succès`;
-      document.getElementById('geo-status').className = "text-[11px] font-bold text-emerald-600 dark:text-emerald-400";
-    }, () => {
-      document.getElementById('geo-status').innerText = "⚠️ Signal GPS faible. Utilisation de la position centrale d'établissement.";
-    });
-  }
-}
-
-function generateRiskCategories() {
-  const cats = ["⚠️ Matériel Défectueux", "💦 Sol Glissant / Fuite", "⚡ Électricité / Câbles", "📦 Stockage Instable", "🔥 Chaleur / Incendie", "🛡️ Non-port des EPI"];
-  const grid = document.getElementById('risk-category-grid');
-  grid.innerHTML = "";
-  
-  cats.forEach(cat => {
-    const btn = document.createElement('button');
-    btn.type = "button";
-    btn.className = "p-2 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 rounded-xl text-[11px] font-bold border hover:border-restev-magenta text-left transition truncate";
-    btn.innerText = cat;
-    btn.onclick = () => {
-      document.querySelectorAll('#risk-category-grid button').forEach(b => b.classList.remove('border-restev-magenta', 'bg-pink-50', 'text-restev-magenta'));
-      btn.classList.add('border-restev-magenta', 'bg-pink-50', 'text-restev-magenta');
-      appState.selectedRiskCategory = cat;
-    };
-    grid.appendChild(btn);
-  });
-}
-
-function processRealPhoto(input) {
-  if (input.files && input.files[0]) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      appState.capturedPhotoBase64 = e.target.result;
-      document.getElementById('photo-placeholder').classList.add('hidden');
-      const img = document.getElementById('photo-preview');
-      img.src = e.target.result;
-      img.classList.remove('hidden');
-    };
-    reader.readAsDataURL(input.files[0]);
-  }
-}
-
-// --- GESTION DES ALERTES AUDIO ---
-function toggleMuteManagerSound() {
-  appState.isManagerMuted = !appState.isManagerMuted;
-  const btn = document.getElementById('btn-mute-manager');
-  btn.innerText = appState.isManagerMuted ? "🔇  Muet" : "🔊  Actif";
-}
-
-function updateManagerVolume(val) {
-  appState.managerVolume = parseFloat(val);
-}
-
-function playAlertChime() {
-  if (appState.isManagerMuted) return;
-  try {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
-    
-    oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime); // Ré5
-    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime + 0.12); // La5
-    
-    gainNode.gain.setValueAtTime(appState.managerVolume * 0.3, audioCtx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-    oscillator.start();
-    oscillator.stop(audioCtx.currentTime + 0.4);
-  } catch(e) {
-    console.log("Audio non supporté ou bloqué par le navigateur", e);
-  }
-}
-  
-// --- TRANSMISSION DU SIGNALEMENT ET ALERTES MANAGER (VERSION SUPABASE) ---
-async function submitRiskReport() { 
-  if (!appState.selectedRiskCategory) {
-    alert("Veuillez sélectionner une catégorie de risque obligatoire.");
+  if (!firstKey) {
+    showToast("⚠️ Aucun établissement disponible.");
     return;
   }
-  
-  // 1. Extraction des données
-  let type = appState.selectedRiskCategory;
-  let desc = document.getElementById('risk-description').value.trim();
-  let atelier = document.getElementById('risk-location').value;
-  
-  // 2. LIAISON SUPABASE : Envoi immédiat
-  showToast("🔄 Synchronisation Supabase en cours...");
-  await submitAlertePrevention(type, desc, atelier);
-  
-  // 3. Conservation de la logique locale (Historique temporaire + UI)
-  const report = {
-    id: Date.now(),
-    category: type,
-    location: atelier,
-    level: document.getElementById('risk-level').value,
-    frequency: document.getElementById('risk-duerp').value,
-    description: desc || "Aucune description fournie.",
-    photo: appState.capturedPhotoBase64 || "https://placehold.co/100x100?text=Pas+de+photo",
-    worker: appState.currentEmployee ? appState.currentEmployee.name : "Opérateur Externe",
-    time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-  };
-  
-  // Sauvegarde dans l'état de l'entreprise courante
-  if (appState.currentCompany) {
-    if (!appState.currentCompany.reports) appState.currentCompany.reports = [];
-    appState.currentCompany.reports.unshift(report);
-    const companies = getCompaniesFromStorage();
-    companies[appState.currentCompany.code] = appState.currentCompany;
-    saveCompaniesToStorage(companies);
-  }
-  
-  // Reset et nettoyage du formulaire
-  appState.capturedPhotoBase64 = "";
-  document.getElementById('photo-placeholder').classList.remove('hidden');
-  document.getElementById('photo-preview').classList.add('hidden');
-  document.getElementById('risk-description').value = "";
-  
-  showToast("🚨 Alerte transmise instantanément à Supabase et au Manager !");
-  
-  playAlertChime();
-  if (appState.currentCompany) {
-    renderManagerRiskSignals();
-  }
-  
-  switchScreen('scr-employee');
+
+  const company = companies[firstKey];
+  setCurrentCompany(company);
+
+  openEmployeeSession(
+    "Nouvel Opérateur Intérimaire",
+    "Contrat Saisonnier / CDD",
+    company
+  );
 }
-function renderManagerRiskSignals() {
-  const container = document.getElementById('manager-risk-box');
-  if (!appState.currentCompany.reports || appState.currentCompany.reports.length === 0) {
-    container.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-8">Aucun danger signalé pour le moment.</p>`;
-    return;
-  }
-  
+
+/* =========================
+   12. STUDIO QCM
+   ========================= */
+
+function openStudio(metier) {
+  const lbl = document.getElementById("lbl-studio-metier");
+  const container = document.getElementById("studio-rules-list");
+
+  if (!container) return;
+
+  if (lbl) lbl.innerText = metier;
+
   container.innerHTML = "";
-  appState.currentCompany.reports.forEach(rep => {
-    const card = document.createElement('div');
-    card.className = "p-3 bg-red-50/60 dark:bg-red-950/20 border border-red-200/60 dark:border-red-900/40 rounded-xl space-y-2 relative animate-[smoothSlide_0.3s_ease-out]";
-    card.innerHTML = `
-      <div class="flex justify-between items-start">
-        <div>
-          <span class="text-xs font-black text-red-700 dark:text-red-400 block">${rep.category}</span>
-          <span class="text-[10px] font-bold text-slate-500"><i class="fa-solid fa-location-crosshairs"></i> ${rep.location}</span>
+
+  const preset = METIER_PRESETS[metier];
+  if (!preset) return;
+
+  preset.questions.forEach((qObj, qIdx) => {
+    const div = document.createElement("div");
+    div.className =
+      "p-3.5 bg-slate-50 dark:bg-slate-900 rounded-xl border space-y-2 text-xs";
+
+    div.innerHTML = `
+      <div class="font-bold dark:text-white">Question ${qIdx + 1} :</div>
+      <input 
+        type="text" 
+        value="${escapeAttr(qObj.q)}" 
+        class="w-full p-2 bg-white dark:bg-slate-800 border rounded-lg font-medium dark:text-white" 
+        data-qidx="${qIdx}" 
+        data-type="question"
+      >
+      <div class="grid grid-cols-1 gap-1 pl-3 border-l-2 border-slate-200">
+        <div class="text-[10px] text-slate-400 uppercase font-bold">
+          Options de réponse :
         </div>
-        <span class="text-[9px] bg-red-600 text-white px-2 py-0.5 rounded-full font-black uppercase tracking-wider shadow-sm">${rep.level.trim()}</span>
-      </div>
-      <div class="flex gap-3 items-center pt-1">
-        <img src="${rep.photo}" class="w-12 h-12 rounded-lg object-cover border bg-white cursor-zoom-in" onclick="alert('Ouverture de la preuve photo plein écran')">
-        <p class="text-[11px] font-medium text-slate-600 dark:text-slate-300 leading-relaxed flex-1">${rep.description}</p>
-      </div>
-      <div class="flex justify-between items-center text-[9px] text-slate-400 border-t border-slate-200/50 dark:border-slate-800 pt-1.5 mt-1 font-semibold">
-        <span>Émetteur : ${rep.worker}</span>
-        <span>Reçu à ${rep.time}</span>
+        ${qObj.r.map((rep, ridx) => `
+          <input 
+            type="text" 
+            value="${escapeAttr(rep)}" 
+            class="w-full p-1.5 bg-white dark:bg-slate-800 border rounded font-medium ${ridx === qObj.c ? "text-emerald-600 font-bold" : ""}" 
+            data-qidx="${qIdx}" 
+            data-ridx="${ridx}" 
+            data-type="answer"
+          >
+        `).join("")}
       </div>
     `;
-    container.appendChild(card);
+
+    container.appendChild(div);
   });
+
+  switchScreen("scr-studio");
 }
 
-// --- ENGINE DU QUESTIONNAIRE DYNAMIQUE (QCM) ---
-// Surcharge du switchScreen natif pour instancier le QCM au besoin
-const originalSwitchScreen = switchScreen;
-switchScreen = function(screenId) {
-  if (screenId === 'scr-onboarding-1') {
-    startQCMWorkflow();
-  }
-  originalSwitchScreen(screenId);
-};
+function saveCustomQCM() {
+  const metier = document.getElementById("lbl-studio-metier").innerText;
+  const preset = METIER_PRESETS[metier];
+
+  if (!preset) return;
+
+  document
+    .querySelectorAll('#studio-rules-list input[data-type="question"]')
+    .forEach(input => {
+      const qidx = Number(input.dataset.qidx);
+      preset.questions[qidx].q = input.value.trim();
+    });
+
+  document
+    .querySelectorAll('#studio-rules-list input[data-type="answer"]')
+    .forEach(input => {
+      const qidx = Number(input.dataset.qidx);
+      const ridx = Number(input.dataset.ridx);
+      preset.questions[qidx].r[ridx] = input.value.trim();
+    });
+
+  showToast("✅ QCM modifié pour cette session.");
+  switchScreen("scr-manager");
+}
+
+/* =========================
+   13. QCM SALARIÉ
+   ========================= */
 
 function startQCMWorkflow() {
-  const profile = appState.currentCompany ? appState.currentCompany.activity : Object.keys(METIER_PRESETS)[0];
+  const profile =
+    appState.currentCompany?.activity || Object.keys(METIER_PRESETS)[0];
+
   appState.qcm.currentProfile = profile;
-  appState.qcm.questions = METIER_PRESETS[profile] ? METIER_PRESETS[profile].questions : [];
+  appState.qcm.questions = METIER_PRESETS[profile]?.questions || [];
   appState.qcm.currentIndex = 0;
-  appState.qcm.answers = [];
   appState.qcm.score = 0;
-  
+
   renderQCMQuestion();
 }
 
 function renderQCMQuestion() {
-  const currentIdx = appState.qcm.currentIndex;
-  const questionsList = appState.qcm.questions;
-  
-  document.getElementById('qcm-progress-badge').innerText = `Question ${currentIdx + 1} / ${questionsList.length}`;
-  
-  const currentQ = questionsList[currentIdx];
-  document.getElementById('qcm-question-text').innerText = currentQ.q;
-  
-  const container = document.getElementById('qcm-answers-container');
+  const questions = appState.qcm.questions;
+  const index = appState.qcm.currentIndex;
+
+  if (!questions.length) {
+    showToast("⚠️ Aucun QCM configuré.");
+    switchScreen("scr-employee");
+    return;
+  }
+
+  const currentQ = questions[index];
+
+  document.getElementById(
+    "qcm-progress-badge"
+  ).innerText = `Question ${index + 1} / ${questions.length}`;
+
+  document.getElementById("qcm-question-text").innerText = currentQ.q;
+
+  const container = document.getElementById("qcm-answers-container");
   container.innerHTML = "";
-  
+
   currentQ.r.forEach((option, idx) => {
-    const label = document.createElement('label');
-    label.className = "flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl cursor-pointer hover:bg-blue-50/50 dark:hover:bg-slate-800/80 transition-all text-xs font-semibold dark:text-slate-200";
+    const label = document.createElement("label");
+    label.className =
+      "flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl cursor-pointer hover:bg-blue-50/50 dark:hover:bg-slate-800/80 transition-all text-xs font-semibold dark:text-slate-200";
+
     label.innerHTML = `
       <input type="radio" name="qcm-opt" value="${idx}" class="accent-restev-blue w-4 h-4 shrink-0">
-      <span>${option}</span>
+      <span>${escapeHtml(option)}</span>
     `;
+
     container.appendChild(label);
   });
 }
 
 function handleNextQCMQuestion() {
-  const checkedOpt = document.querySelector('input[name="qcm-opt"]:checked');
-  if (!checkedOpt) {
-    alert("Veuillez sélectionner une réponse pour continuer l'évaluation.");
+  const checked = document.querySelector('input[name="qcm-opt"]:checked');
+
+  if (!checked) {
+    showToast("⚠️ Veuillez sélectionner une réponse.");
     return;
   }
-  
-  const selectedAnswerIdx = parseInt(checkedOpt.value);
+
+  const selected = Number(checked.value);
   const currentQ = appState.qcm.questions[appState.qcm.currentIndex];
-  
-  // La bonne réponse sur les presets statiques est systématiquement à l'index 1 à cause de l'inversion faite dans l'éditeur ou stockée par défaut. Vérification dynamique :
-  if (selectedAnswerIdx === currentQ.c) {
+
+  if (selected === currentQ.c) {
     appState.qcm.score++;
   }
-  
+
   appState.qcm.currentIndex++;
-  
+
   if (appState.qcm.currentIndex < appState.qcm.questions.length) {
     renderQCMQuestion();
   } else {
@@ -1400,119 +1562,602 @@ function handleNextQCMQuestion() {
 }
 
 function displayCertificateScreen() {
-  document.getElementById('cert-name').innerText = appState.currentEmployee ? appState.currentEmployee.name : "Nouvel Opérateur";
-  document.getElementById('cert-company').innerText = appState.currentCompany ? appState.currentCompany.name : "Établissement Adhérent";
-  document.getElementById('cert-profile').innerText = appState.qcm.currentProfile;
-  document.getElementById('cert-score').innerText = `${appState.qcm.score} / ${appState.qcm.questions.length} Réponses Correctes`;
-  document.getElementById('cert-date').innerText = new Date().toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' });
-  
-  originalSwitchScreen('scr-certificate');
+  document.getElementById("cert-name").innerText =
+    appState.currentEmployee?.name || "Nouvel Opérateur";
+
+  document.getElementById("cert-company").innerText =
+    appState.currentCompany?.name || "Établissement Adhérent";
+
+  document.getElementById("cert-profile").innerText =
+    appState.qcm.currentProfile;
+
+  document.getElementById(
+    "cert-score"
+  ).innerText = `${appState.qcm.score} / ${appState.qcm.questions.length} Réponses Correctes`;
+
+  document.getElementById("cert-date").innerText = new Date().toLocaleString(
+    "fr-FR",
+    { dateStyle: "long", timeStyle: "short" }
+  );
+
   clearSignature();
+  switchScreen("scr-certificate");
 }
 
-// --- CONSOLE MODULE DE SIGNATURE ÉLECTRONIQUE ---
+/* =========================
+   14. SIGNATURE
+   ========================= */
+
+let sigCanvas = null;
+let sigCtx = null;
 let isDrawing = false;
-let sigCanvas, sigCtx;
+let lastPoint = null;
+let signatureTouched = false;
 
 function initSignaturePad() {
-  sigCanvas = document.getElementById('signature-pad');
-  sigCtx = sigCanvas.getContext('2d');
-  
+  sigCanvas = document.getElementById("signature-pad");
+  if (!sigCanvas) return;
+
+  sigCtx = sigCanvas.getContext("2d");
   sigCtx.strokeStyle = "#1e293b";
   sigCtx.lineWidth = 2.5;
   sigCtx.lineCap = "round";
-  
-  // Souris standard
-  sigCanvas.addEventListener('mousedown', (e) => { isDrawing = true; draw(e.offsetX, e.offsetY); });
-  sigCanvas.addEventListener('mousemove', (e) => { if(isDrawing) draw(e.offsetX, e.offsetY); });
-  window.addEventListener('mouseup', () => isDrawing = false);
-  
-  // Écrans tactiles mobiles
-  sigCanvas.addEventListener('touchstart', (e) => {
+  sigCtx.lineJoin = "round";
+
+  sigCanvas.addEventListener("mousedown", event => {
     isDrawing = true;
-    const rect = sigCanvas.getBoundingClientRect();
-    draw(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
-    e.preventDefault();
-  }, { passive: false });
-  
-  sigCanvas.addEventListener('touchmove', (e) => {
-    if(!isDrawing) return;
-    const rect = sigCanvas.getBoundingClientRect();
-    draw(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
-    e.preventDefault();
-  }, { passive: false });
-  
-  sigCanvas.addEventListener('touchend', () => isDrawing = false);
+    signatureTouched = true;
+    lastPoint = getCanvasPoint(event);
+  });
+
+  sigCanvas.addEventListener("mousemove", event => {
+    if (!isDrawing) return;
+    drawToPoint(getCanvasPoint(event));
+  });
+
+  window.addEventListener("mouseup", () => {
+    isDrawing = false;
+    lastPoint = null;
+  });
+
+  sigCanvas.addEventListener(
+    "touchstart",
+    event => {
+      isDrawing = true;
+      signatureTouched = true;
+      lastPoint = getCanvasPoint(event.touches[0]);
+      event.preventDefault();
+    },
+    { passive: false }
+  );
+
+  sigCanvas.addEventListener(
+    "touchmove",
+    event => {
+      if (!isDrawing) return;
+      drawToPoint(getCanvasPoint(event.touches[0]));
+      event.preventDefault();
+    },
+    { passive: false }
+  );
+
+  sigCanvas.addEventListener("touchend", () => {
+    isDrawing = false;
+    lastPoint = null;
+  });
 }
 
-function draw(x, y) {
-  if (!isDrawing) return;
-  if (!sigCtx.beginPathStarted) {
-    sigCtx.beginPath();
-    sigCtx.moveTo(x, y);
-    sigCtx.beginPathStarted = true;
-  } else {
-    sigCtx.lineTo(x, y);
-    sigCtx.stroke();
+function getCanvasPoint(event) {
+  const rect = sigCanvas.getBoundingClientRect();
+
+  return {
+    x: ((event.clientX - rect.left) / rect.width) * sigCanvas.width,
+    y: ((event.clientY - rect.top) / rect.height) * sigCanvas.height
+  };
+}
+
+function drawToPoint(point) {
+  if (!lastPoint) {
+    lastPoint = point;
+    return;
   }
+
+  sigCtx.beginPath();
+  sigCtx.moveTo(lastPoint.x, lastPoint.y);
+  sigCtx.lineTo(point.x, point.y);
+  sigCtx.stroke();
+
+  lastPoint = point;
 }
 
 function clearSignature() {
-  if (!sigCanvas) return;
+  if (!sigCanvas || !sigCtx) return;
   sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
-  sigCtx.beginPathStarted = false;
+  isDrawing = false;
+  lastPoint = null;
+  signatureTouched = false;
 }
-// --- ✍️ VALIDATION ET ARCHIVAGE DU PASSEPORT SALARIÉ (VERSION SUPABASE) ---
-async function finalizeOnboarding() { 
-  
-  // 1. Ciblage du bon canevas de signature défini dans ton HTML
-  const canvas = document.getElementById('signature-pad');
-  if (!canvas) {
-    showToast("⚠️ Erreur : Zone de signature introuvable.");
+
+/* =========================
+   15. ARCHIVAGE PASSEPORT
+   ========================= */
+
+async function finalizeOnboarding() {
+  if (!sigCanvas) {
+    showToast("⚠️ Zone de signature introuvable.");
     return;
   }
 
-  showToast("🔄 Archivage du passeport sur Supabase...");
-  
-  // 2. Extraction de l'image de la signature en base64
-  const signSalarieBase64 = canvas.toDataURL();
-  
-  // 3. Récupération du score exact depuis le moteur QCM
-  const scoreQCMObtenu = appState.qcm.score || 0; 
-
-  // Envoi direct dans ta table Supabase 'enregistrements_passeports'
-  const success = await submitPasseportPrev(scoreQCMObtenu, signSalarieBase64, null);
-
-  if (!success) {
-    showToast("❌ Échec de la sauvegarde distante. Réessayez.");
+  if (!signatureTouched) {
+    showToast("⚠️ Merci de signer avant de terminer.");
     return;
   }
 
-  // 4. Conservation de la sauvegarde locale
-  const currentId = Date.now();
+  showToast("🔄 Archivage du passeport...");
+
+  const signatureBase64 = sigCanvas.toDataURL("image/png");
+
   const passportData = {
-    id: currentId,
-    name: appState.employeeName,
-    status: appState.employeeStatus,
-    company: appState.currentSelectedCompany,
-    activity: appState.currentActivity,
-    score: scoreQCMObtenu,
-    date: new Date().toLocaleDateString('fr-FR'),
-    signature: signSalarieBase64
+    company_code: appState.currentCompanyCode,
+    employee_name: appState.currentEmployee?.name || appState.employeeName,
+    employee_status:
+      appState.currentEmployee?.status || appState.employeeStatus,
+    activity: appState.qcm.currentProfile || appState.currentActivity,
+    score_qcm: appState.qcm.score,
+    signature_salarie: signatureBase64,
+    signature_tuteur: null,
+    user_agent: navigator.userAgent
   };
 
-  if (appState.currentCompany) {
-    if (!appState.currentCompany.passports) appState.currentCompany.passports = [];
-    appState.currentCompany.passports.unshift(passportData);
-    const companies = getCompaniesFromStorage();
-    companies[appState.currentCompany.code] = appState.currentCompany;
-    saveCompaniesToStorage(companies);
+  let supabaseOk = false;
+
+  if (_supabase && appState.currentCompanyCode) {
+    try {
+      const { error } = await _supabase
+        .from("enregistrements_passeports")
+        .insert([passportData]);
+
+      if (error) throw error;
+      supabaseOk = true;
+    } catch (err) {
+      console.warn("Archivage Supabase impossible :", err);
+    }
   }
 
-  showToast("✅ Passeport validé et archivé juridiquement !");
-  
-  // Retour à l'accueil
-  switchScreen('scr-home');
+  if (appState.currentCompany) {
+    appState.currentCompany.passports.unshift({
+      id: Date.now(),
+      name: passportData.employee_name,
+      status: passportData.employee_status,
+      company: appState.currentCompany.name,
+      activity: passportData.activity,
+      score: passportData.score_qcm,
+      date: new Date().toLocaleString("fr-FR"),
+      signature: signatureBase64,
+      synced: supabaseOk
+    });
+
+    saveCurrentCompanyLocal();
+  }
+
+  showToast(
+    supabaseOk
+      ? "✅ Passeport archivé sur Supabase."
+      : "✅ Passeport archivé localement."
+  );
+
+  switchScreen("scr-home");
+}
+
+/* =========================
+   16. SIGNALER UN DANGER
+   ========================= */
+
+function generateRiskCategories() {
+  const cats = [
+    "⚠️ Matériel Défectueux",
+    "💦 Sol Glissant / Fuite",
+    "⚡ Électricité / Câbles",
+    "📦 Stockage Instable",
+    "🔥 Chaleur / Incendie",
+    "🛡️ Non-port des EPI"
+  ];
+
+  const grid = document.getElementById("risk-category-grid");
+  if (!grid) return;
+
+  grid.innerHTML = "";
+
+  cats.forEach(cat => {
+    const btn = document.createElement("button");
+
+    btn.type = "button";
+    btn.className =
+      "p-2 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 rounded-xl text-[11px] font-bold border hover:border-restev-magenta text-left transition truncate";
+    btn.innerText = cat;
+
+    btn.onclick = () => {
+      document
+        .querySelectorAll("#risk-category-grid button")
+        .forEach(b =>
+          b.classList.remove(
+            "border-restev-magenta",
+            "bg-pink-50",
+            "text-restev-magenta"
+          )
+        );
+
+      btn.classList.add(
+        "border-restev-magenta",
+        "bg-pink-50",
+        "text-restev-magenta"
+      );
+
+      appState.selectedRiskCategory = cat;
+    };
+
+    grid.appendChild(btn);
+  });
+}
+
+function processRealPhoto(input) {
+  if (!input.files || !input.files[0]) return;
+
+  const reader = new FileReader();
+
+  reader.onload = event => {
+    appState.capturedPhotoBase64 = event.target.result;
+
+    document.getElementById("photo-placeholder").classList.add("hidden");
+
+    const img = document.getElementById("photo-preview");
+    img.src = event.target.result;
+    img.classList.remove("hidden");
+  };
+
+  reader.readAsDataURL(input.files[0]);
+}
+
+async function submitRiskReport() {
+  if (!appState.selectedRiskCategory) {
+    showToast("⚠️ Sélectionnez une catégorie de risque.");
+    return;
+  }
+
+  const description =
+    document.getElementById("risk-description").value.trim() ||
+    "Aucune description fournie.";
+
+  const atelier = document.getElementById("risk-location").value;
+  const level = document.getElementById("risk-level").value;
+  const frequency = document.getElementById("risk-duerp").value;
+
+  const report = {
+    id: Date.now(),
+    category: appState.selectedRiskCategory,
+    location: atelier,
+    level,
+    frequency,
+    description,
+    photo:
+      appState.capturedPhotoBase64 ||
+      "https://placehold.co/100x100?text=Pas+de+photo",
+    worker: appState.currentEmployee?.name || "Opérateur Externe",
+    time: new Date().toLocaleTimeString("fr-FR", {
+      hour: "2-digit",
+      minute: "2-digit"
+    })
+  };
+
+  let supabaseOk = false;
+
+  if (_supabase && appState.currentCompanyCode) {
+    try {
+      const { error } = await _supabase.from("alertes_prevention").insert([
+        {
+          company_code: appState.currentCompanyCode,
+          type_alerte: report.category,
+          description: report.description,
+          localisation: report.location,
+          gravite: report.level,
+          frequence: report.frequency,
+          photo_base64: appState.capturedPhotoBase64 || null,
+          statut: "En attente"
+        }
+      ]);
+
+      if (error) throw error;
+      supabaseOk = true;
+    } catch (err) {
+      console.warn("Alerte Supabase non envoyée :", err);
+    }
+  }
+
+  if (appState.currentCompany) {
+    appState.currentCompany.reports.unshift({
+      ...report,
+      synced: supabaseOk
+    });
+
+    saveCurrentCompanyLocal();
+  }
+
+  resetRiskForm();
+  playAlertChime();
+  renderManagerRiskSignals();
+
+  showToast(
+    supabaseOk
+      ? "🚨 Alerte transmise à Supabase."
+      : "🚨 Alerte enregistrée localement."
+  );
+
+  switchScreen("scr-employee");
+}
+
+function resetRiskForm() {
+  appState.capturedPhotoBase64 = "";
+  appState.selectedRiskCategory = "";
+
+  const desc = document.getElementById("risk-description");
+  if (desc) desc.value = "";
+
+  const placeholder = document.getElementById("photo-placeholder");
+  const preview = document.getElementById("photo-preview");
+
+  if (placeholder) placeholder.classList.remove("hidden");
+  if (preview) {
+    preview.classList.add("hidden");
+    preview.src = "";
+  }
+
+  document
+    .querySelectorAll("#risk-category-grid button")
+    .forEach(btn =>
+      btn.classList.remove(
+        "border-restev-magenta",
+        "bg-pink-50",
+        "text-restev-magenta"
+      )
+    );
+}
+
+function renderManagerRiskSignals() {
+  const container = document.getElementById("manager-risk-box");
+  if (!container) return;
+
+  const reports = appState.currentCompany?.reports || [];
+
+  if (reports.length === 0) {
+    container.innerHTML =
+      '<p class="text-xs text-slate-400 italic text-center py-8">Aucun danger signalé pour le moment.</p>';
+    return;
+  }
+
+  container.innerHTML = "";
+
+  reports.forEach(rep => {
+    const card = document.createElement("div");
+    card.className =
+      "p-3 bg-red-50/60 dark:bg-red-950/20 border border-red-200/60 dark:border-red-900/40 rounded-xl space-y-2 relative animate-[smoothSlide_0.3s_ease-out]";
+
+    card.innerHTML = `
+      <div class="flex justify-between items-start">
+        <div>
+          <span class="text-xs font-black text-red-700 dark:text-red-400 block">
+            ${escapeHtml(rep.category)}
+          </span>
+          <span class="text-[10px] font-bold text-slate-500">
+            <i class="fa-solid fa-location-crosshairs"></i> ${escapeHtml(rep.location)}
+          </span>
+        </div>
+        <span class="text-[9px] bg-red-600 text-white px-2 py-0.5 rounded-full font-black uppercase tracking-wider shadow-sm">
+          ${escapeHtml(rep.level)}
+        </span>
+      </div>
+
+      <div class="flex gap-3 items-center pt-1">
+        <img src="${rep.photo}" class="w-12 h-12 rounded-lg object-cover border bg-whiteslate-300 leading-relaxed flex-1">
+          ${escapeHtml(rep.description)}
+        </p>
+      </div>
+
+      <div class="flex justify-between items-center text-[9px] text-slate-400 border-t border-slate-200/50 dark:border-slate-800 pt-1.5 mt-1 font-semibold">
+        <span>Émetteur : ${escapeHtml(rep.worker)}</span>
+        <span>${rep.synced ? "Synchronisé" : "Local"} - ${escapeHtml(rep.time)}</span>
+      </div>
+    `;
+
+    container.appendChild(card);
+  });
+}
+
+/* =========================
+   17. CARTE LEAFLET
+   ========================= */
+
+function initLeafletMap() {
+  const mapDiv = document.getElementById("map");
+  if (!mapDiv || !window.L) return;
+
+  if (appState.leafletMap) {
+    setTimeout(() => appState.leafletMap.invalidateSize(), 100);
+    return;
+  }
+
+  appState.leafletMap = L.map("map", { zoomControl: false }).setView(
+    appState.currentCoords,
+    14
+  );
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "&copy; OpenStreetMap"
+  }).addTo(appState.leafletMap);
+
+  appState.mapMarker = L.marker(appState.currentCoords).addTo(
+    appState.leafletMap
+  );
+
+  setTimeout(() => appState.leafletMap.invalidateSize(), 250);
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        appState.currentCoords = [
+          position.coords.latitude,
+          position.coords.longitude
+        ];
+
+        appState.leafletMap.setView(appState.currentCoords, 16);
+        appState.mapMarker.setLatLng(appState.currentCoords);
+
+        const status = document.getElementById("geo-status");
+        status.innerHTML =
+          '<i class="fa-solid fa-location-dot text-emerald-500"></i> Coordonnées GPS synchronisées';
+        status.className =
+          "text-[11px] font-bold text-emerald-600 dark:text-emerald-400";
+      },
+      () => {
+        const status = document.getElementById("geo-status");
+        status.innerText =
+          "⚠️ GPS indisponible. Position approximative utilisée.";
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 8000,
+        maximumAge: 30000
+      }
+    );
+  }
+}
+
+/* =========================
+   18. DIRECTION / AUDIT
+   ========================= */
+
+function handleDirectionAccess() {
+  switchScreen("scr-direction");
+  showToast("📊 Chargement du tableau de bord RESTEV...");
+
+  setTimeout(() => {
+    const canvas = document.getElementById("chart-restev-risks");
+    if (!canvas || !window.Chart) return;
+
+    const ctx = canvas.getContext("2d");
+
+    if (window.risksChartInstance) {
+      window.risksChartInstance.destroy();
+    }
+
+    window.risksChartInstance = new Chart(ctx, {
+      type: "radar",
+      data: {
+        labels: [
+          "Chutes",
+          "Risque chimique",
+          "TMS",
+          "Coupures / Heurts",
+          "Risque routier"
+        ],
+        datasets: [
+          {
+            label: "Indice prévention Vendée",
+            data: [65, 40, 85, 55, 30],
+            backgroundColor: "rgba(58, 123, 213, 0.2)",
+            borderColor: "#3a7bd5",
+            borderWidth: 3,
+            pointBackgroundColor: "#e0248a"
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          r: {
+            suggestedMin: 0,
+            suggestedMax: 100
+          }
+        }
+      }
+    });
+
+    const feed = document.getElementById("direction-activity-feed");
+    if (feed) {
+      feed.innerHTML = `
+        <div class="p-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 flex justify-between">
+          <span><strong>Menuiserie Vendéenne</strong> - Profil sécurité mis à jour</span>
+          <span class="text-slate-400">À l'instant</span>
+        </div>
+        <div class="p-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 flex justify-between">
+          <span><strong>BTP Challans SA</strong> - 14 livrets d'accueil validés ce mois-ci</span>
+          <span class="text-slate-400">Il y a 2h</span>
+        </div>
+      `;
+    }
+  }, 200);
+}
+
+/* =========================
+   19. AUDIO MANAGER
+   ========================= */
+
+function toggleMuteManagerSound() {
+  appState.isManagerMuted = !appState.isManagerMuted;
+
+  const btn = document.getElementById("btn-mute-manager");
+  if (btn) {
+    btn.innerText = appState.isManagerMuted ? "🔇  Muet" : "🔊  Actif";
+  }
+}
+
+function updateManagerVolume(val) {
+  appState.managerVolume = Number(val);
+}
+
+function playAlertChime() {
+  if (appState.isManagerMuted) return;
+
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = new AudioContext();
+
+    const oscillator = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime + 0.12);
+
+    gain.gain.setValueAtTime(appState.managerVolume * 0.3, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+
+    oscillator.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + 0.4);
+  } catch (err) {
+    console.warn("Audio non disponible :", err);
+  }
+}
+
+/* =========================
+   20. HELPERS SÉCURITÉ AFFICHAGE
+   ========================= */
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value).replaceAll("\n", " ");
 }
 </script>
 </body>
