@@ -657,31 +657,366 @@ riskReports: []
 };
 
 const METIER_PRESETS = {
-"Général (Bureau & Administratif)": {
-icon: "💻",
-categories: ["Risque lié à l'écran (Fatigue visuelle)", "Troubles Musculosquelettiques (TMS) / Posture", "Risque Électrique", "Chute de plain-pied / Câbles", "Risques Psychosociaux (RPS)"],
-epi: ["Aucun équipement spécifique requis"],
-rules: [
-{ title: "Règle 1 : Posture au poste de travail", desc: "Ajustez la hauteur de votre siège et de votre écran. Faites des pauses visuelles régulières.", color: "border-restev-blue" },
-{ title: "Règle 2 : Déplacements internes", desc: "Maintenez les zones de circulation dégagées de tout câble ou matériel.", color: "border-restev-teal" }
-],
-qcm: [
-{ question: "En cas d'alarme incendie, quelle est la première action à réaliser ?", options: ["Terminer son appel téléphonique", "Évacuer immédiatement et dans le calme", "Prendre l'ascenseur"], answer: 1 },
-{ question: "Pour prévenir l'apparition de TMS au bureau :", options: ["Garder une posture statique", "Placer l'écran le plus haut possible", "Régler son siège et faire des pauses"], answer: 2 }
-]
-},
-"Bâtiment & Travaux Publics (BTP)": {
-icon: "🏗️",
-categories: ["Chute de Hauteur", "Heurt par Engin de Chantier", "Non-port du Casque / EPI", "Chute d'Objets / Échafaudage", "Bruit / Poussières"],
-epi: ["Casque de chantier (NF EN 397) 🪖", "Chaussures de sécurité S3 🥾", "Gilet haute visibilité Classe 2 🦺", "Gants de protection mécanique 🧤"],
-rules: [
-{ title: "Règle 1 : Protection Crânienne & Antichute", desc: "Casque attaché et harnais obligatoire sur zones surélevées.", color: "border-amber-500" },
-{ title: "Règle 2 : Balisage & Coactivité", desc: "Interdiction absolue de circuler sous les charges suspendues.", color: "border-red-500" }
-],
-qcm: [
-{ question: "Lors d'une intervention en hauteur sans garde-corps, que devez-vous porter ?", options: ["Rien si courte durée", "Un harnais de sécurité correctement ancré", "Une ceinture de maintien simple"], answer: 1 }
-]
-}
+  "Général (Bureau & Administratif)": {
+    icon: " 💻 ",
+    categories: ["Risque lié à l'écran (Fatigue visuelle)", "Troubles Musculosquelettiques (TMS) / Posture", "Risque Électrique", "Chute de plain-pied / Câbles", "Risques Psychosociaux (RPS)"],
+    epi: ["Aucun équipement spécifique requis"],
+    rules: [
+      { title: "Règle 1 : Posture au poste de travail", desc: "Ajustez la hauteur de votre siège et de votre écran. Faites des pauses visuelles régulières.", color: "border-restev-blue" },
+      { title: "Règle 2 : Déplacements internes", desc: "Maintenez les zones de circulation dégagées de tout câble ou matériel.", color: "border-restev-teal" }
+    ],
+    qcm: [
+      {
+        question: "En cas d'alarme incendie, quelle est la première action à réaliser ?",
+        options: ["Terminer son appel téléphonique ou son mail en cours", "Évacuer immédiatement et dans le calme vers le point de rassemblement", "Prendre l'ascenseur pour descendre plus vite"],
+        answer: 1
+      },
+      {
+        question: "Pour prévenir l'apparition de Troubles Musculosquelettiques (TMS) au bureau, je dois :",
+        options: ["Garder une posture statique toute la journée", "Placer mon écran le plus haut possible", "Régler mon siège, mon écran à hauteur des yeux et faire des pauses régulières"],
+        answer: 2
+      },
+      {
+        question: "Que devez-vous faire si vous constatez un câble électrique dénudé ou une prise détériorée ?",
+        options: ["Mettre du scotch dessus et continuer à l'utiliser", "Interdire l'utilisation et le signaler immédiatement au service maintenance / prévention", "Attendre que quelqu'un d'autre s'en occupe"],
+        answer: 1
+      },
+      {
+        question: "Pour éviter les chutes de plain-pied dans les bureaux, quelle règle appliquez-vous ?",
+        options: ["Je laisse mes cartons et câbles au milieu du passage si c'est temporaire", "Je garde les voies de circulation et les accès aux issues de secours totalement dégagés", "Je marche plus vite pour éviter de trébucher"],
+        answer: 1
+      },
+      {
+        question: "Si vous ressentez une surcharge de travail durable ou un stress intense, vous devez :",
+        options: ["Garder cela pour vous et attendre que ça passe", "En parler rapidement à votre manager, aux RH ou à votre préventeur RESTEV", "Ignorer les signaux d'alerte"],
+        answer: 1
+      }
+    ]
+  },
+  "Bâtiment & Travaux Publics (BTP)": {
+    icon: " 🏗️ ",
+    categories: ["Chute de Hauteur", "Heurt par Engin de Chantier", "Non-port du Casque / EPI", "Chute d'Objets / Échafaudage", "Bruit / Poussières"],
+    epi: ["Casque de chantier (NF EN 397) 🪖", "Chaussures de sécurité S3 🥾", "Gilet haute visibilité Classe 2 🦺", "Gants de protection mécanique 🧤"],
+    rules: [
+      { title: "Règle 1 : Protection Crânienne & Antichute", desc: "Casque attaché et harnais obligatoire sur zones surélevées sans protection collective.", color: "border-amber-500" },
+      { title: "Règle 2 : Balisage & Coactivité", desc: "Interdiction absolue de circuler sous les charges suspendues.", color: "border-red-500" }
+    ],
+    qcm: [
+      {
+        question: "Lors d'une intervention en hauteur sans protection collective (garde-corps), que devez-vous porter ?",
+        options: ["Rien si l'intervention dure moins de 5 minutes", "Un harnais de sécurité correctement ancré à un point fixe validé", "Une ceinture de maintien simple sans longe"],
+        answer: 1
+      },
+      {
+        question: "Face à un engin de chantier en mouvement (ex: pelleteuse), quelle est la règle vitale ?",
+        options: ["S'assurer d'avoir établi un contact visuel clair avec le conducteur avant d'approcher", "Passer rapidement dans son angle mort pour ne pas le déranger", "Crier fort en courant derrière l'engin"],
+        answer: 0
+      },
+      {
+        question: "À quel moment devez-vous porter vos EPI fondamentaux (Casque, Chaussures S3, Gilet) ?",
+        options: ["Uniquement quand le chef de chantier est présent", "Dès l'entrée sur le chantier et pendant toute la durée de votre présence", "Seulement si j'effectue une tâche jugée dangereuse"],
+        answer: 1
+      },
+      {
+        question: "Dans une tranchée ou une fouille, quel est le risque majeur non visible instantanément ?",
+        options: ["Le risque d'ensevelissement par effondrement des parois (nécessité d'un blindage)", "Le risque de perdre ses outils", "Le risque d'attraper froid"],
+        answer: 0
+      },
+      {
+        question: "Comment gérez-vous l'ordre et la propreté de votre zone de travail sur le chantier ?",
+        options: ["Je nettoie uniquement en fin de semaine", "Je dégage les gravats et clous perforants au fur et à mesure pour éviter les chutes et blessures", "Je pousse les déchets chez le lot voisin"],
+        answer: 1
+      }
+    ]
+  },
+  "Logistique & Transport": {
+    icon: " 📦 ",
+    categories: ["Chute de Quai", "Coactivité Piétons / Chariots", "Défaut d'arrimage", "Manutention Manuelle", "Stress / Délais"],
+    epi: ["Chaussures de sécurité avec embout 🥾", "Gilet haute visibilité 🦺", "Gants de manutention antidérapants 🧤"],
+    rules: [
+      { title: "Règle 1 : Haute Visibilité", desc: "Gilet classe 2 et chaussures de sécurité obligatoires sur les quais et zones de stockage.", color: "border-restev-blue" },
+      { title: "Règle 2 : Priorité Piétons", desc: "Circulation des chariots limitée à 8 km/h. Priorité systématique aux piétons.", color: "border-restev-gold" }
+    ],
+    qcm: [
+      {
+        question: "Dans la zone logistique, comment devez-vous obligatoirement vous déplacer à pied ?",
+        options: ["Au milieu des allées de circulation des chariots pour être bien vu", "Exclusivement sur les cheminements piétons matérialisés au sol", "En diagonale pour aller plus vite"],
+        answer: 1
+      },
+      {
+        question: "Pour soulever une charge lourde au sol en protégeant votre dos, quelle posture adoptez-vous ?",
+        options: ["Je plie les genoux, je garde le dos droit et je maintiens la charge près du corps", "Je garde les jambes tendues et je courbe le dos au maximum", "Je pivote le buste brusquement pendant l'effort"],
+        answer: 0
+      },
+      {
+        question: "Quelle est la règle absolue concernant la vitesse des engins (caristes) dans l'entrepôt ?",
+        options: ["Rouler le plus vite possible pour respecter les cadences", "Respecter les limitations (ex: 8 km/h) et accorder la priorité absolue aux piétons", "Klaxonner en continu sans ralentir aux intersections"],
+        answer: 1
+      },
+      {
+        question: "Avant d'entrer dans un camion à quai avec un transpalette, quelle vérification est obligatoire ?",
+        options: ["Regarder si le camion est propre", "Vérifier que le camion est immobilisé (calé), le frein tiré et que le pont de liaison est sécurisé", "Entrer directement sans vérification"],
+        answer: 1
+      },
+      {
+        question: "Une palette stockée en hauteur sur un rack présente un défaut de filmage ou penche. Que faites-vous ?",
+        options: ["Je passe en dessous rapidement", "Je balise la zone au sol, j'interdis le passage et je signale l'anomalie pour reconditionnement", "Je tape dedans avec mon chariot pour la remettre droite"],
+        answer: 1
+      }
+    ]
+  },
+  "Industrie Agroalimentaire": {
+    icon: " 🥩 ",
+    categories: ["Glissade / Sols humides", "Coupure / Machines de découpe", "Risque Biologique & Hygiène", "Froid / Chaud extrême", "Risque Chimique (Nettoyage/Désinfection)"],
+    epi: ["Bottes de sécurité montantes blanches (SRC) 🥾", "Blouse ou combinaison jetable 🧥", "Charlotte et masque d'hygiène 😷", "Gants en cotte de mailles (selon poste) 🧤", "Protections auditives 🎧"],
+    rules: [
+      { title: "Règle 1 : Hygiène & Corps Étrangers", desc: "Retrait obligatoire de tous les bijoux, montres et piercings avant d'entrer en zone de production.", color: "border-restev-blue" },
+      { title: "Règle 2 : Sécurité Machines", desc: "Interdiction absolue de neutraliser ou contourner les carters de protection et barrières immatérielles.", color: "border-red-600" }
+    ],
+    qcm: [
+      {
+        question: "Pour nettoyer votre poste de travail en fin de poste, vous devez utiliser des produits chimiques concentrés. Quelle est la règle d'or ?",
+        options: ["Mélanger les produits pour que ça décape plus vite", "Ne jamais mélanger deux produits différents (risque de dégagement de gaz toxique)", "Diluer à l'œil sans regarder les consignes"],
+        answer: 1
+      },
+      {
+        question: "Une machine de conditionnement se bloque. Quelle est votre première action ?",
+        options: ["Mettre la main dans la machine rapidement pour décoincer le produit", "Arrêter la machine, appliquer la procédure d'arrêt sécurisé (ou consignation) avant toute intervention", "Appeler un collègue pour qu'il relance la machine pendant que vous réparez"],
+        answer: 1
+      },
+      {
+        question: "Pourquoi les bijoux, montres et faux ongles sont-ils strictement interdits en zone de production agroalimentaire ?",
+        options: ["Uniquement pour éviter de les abîmer avec l'eau", "Pour éviter les risques de contamination du produit (corps étrangers) et le risque de happement par les machines", "Parce que ce n'est pas esthétique avec la blouse"],
+        answer: 1
+      },
+      {
+        question: "Les sols en agroalimentaire sont souvent humides ou gras. Comment prévenez-vous le risque de chute ?",
+        options: ["Je cours pour passer moins de temps sur les zones glissantes", "Je porte obligatoirement mes bottes/chaussures de sécurité anti-dérapantes (norme SRC) et je signale toute flaque anormale", "Je marche pieds nus"],
+        answer: 1
+      },
+      {
+        question: "Vous devez travailler dans une zone de congélation ou une chambre froide positive prolongée. Que devez-vous faire ?",
+        options: ["Y aller en t-shirt si c'est pour moins de 10 minutes", "Porter les vêtements thermiques réglementaires fournis (veste/pantalon grand froid) et limiter le temps d'exposition", "Attendre que la pièce se réchauffe"],
+        answer: 1
+      }
+    ]
+  },
+  "Métiers du Bois & Menuiserie": {
+    icon: " 🪵 ",
+    categories: ["Coupure / Amputation (Scie, toupie)", "Inhalation de Poussières de bois (Cancérogène)", "Risque Incendie / Explosion (Sciure)", "Bruit intensif", "Manutention de panneaux"],
+    epi: ["Chaussures de sécurité anti-perforation S3 🥾", "Lunettes de protection enveloppantes 🥽", "Masque de protection respiratoire FFP3 😷", "Casque anti-bruit haute atténuation 🎧"],
+    rules: [
+      { title: "Règle 1 : Risque Poussières", desc: "Aspiration centralisée connectée obligatoirement avant le démarrage de toute machine-outil.", color: "border-amber-600" },
+      { title: "Règle 2 : Machines Dangereuses", desc: "Utilisation systématique des poussoirs pour les pièces de petite taille sur scie circulaire.", color: "border-red-600" }
+    ],
+    qcm: [
+      {
+        question: "Les poussières de bois durs (chêne, hêtre...) représentent un risque grave pour la santé. Lequel ?",
+        options: ["Aucun risque particulier, c'est du matériel naturel", "Un risque de cancer des fosses nasales en cas d'inhalation prolongée", "Uniquement un risque de toux passagère"],
+        answer: 1
+      },
+      {
+        question: "Lors de l'utilisation d'une scie circulaire ou d'une toupie, quelle est la règle concernant le port des gants ?",
+        options: ["Il est obligatoire de porter des gants en cuir épais", "Il est strictement INTERDIT de porter des gants près des outils rotatifs (risque d'entraînement de la main)", "Le port des gants est optionnel"],
+        answer: 1
+      },
+      {
+        question: "Vous devez nettoyer vos vêtements couverts de sciure et de copeaux de bois en fin de journée :",
+        options: ["J'utilise la soufflette d'air comprimé directement sur mes vêtements", "J'interdis l'usage de la soufflette sur moi (risque d'embolie/lésion cutanée) et j'utilise un système d'aspiration adapté", "Je secoue mes vêtements fort dans l'atelier"],
+        answer: 1
+      },
+      {
+        question: "Pour couper une pièce de bois de petite taille à la scie sur table, que devez-vous utiliser ?",
+        options: ["Mes mains en les approchant le plus possible de la lame", "Un guide-poussoir adapté pour maintenir mes mains à distance de sécurité de la lame", "Une autre pièce de bois tenue à la va-vite"],
+        answer: 1
+      },
+      {
+        question: "Comment limite-t-on le risque d'incendie et d'explosion lié à la sciure dans l'atelier ?",
+        options: ["En laissant la sciure s'accumuler au sol", "En s'assurant du bon fonctionnement de l'aspiration et en nettoyant régulièrement l'atelier avec un aspirateur industriel ATEX", "En ouvrant simplement les fenêtres"],
+        answer: 1
+      }
+    ]
+  },
+  "Hôtellerie, Restauration & Cafés (HCR)": {
+    icon: " 🍽️ ",
+    categories: ["Coupure (Couteaux, trancheurs)", "Brûlure (Huiles, plaques, vapeur)", "Chute de plain-pied (Sols gras/mouillés)", "Manutention (Fûts, caisses de boissons)", "Stress / Coup de feu"],
+    epi: ["Chaussures de cuisine anti-dérapantes coquées 👟", "Tablier de protection thermique/chimique 🎽", "Gants anti-coupure en mailles (pour la plonge/découpe lourde) 🧤"],
+    rules: [
+      { title: "Règle 1 : Prévention des Chutes", desc: "Essuyage immédiat de toute zone de sol souillée par de l'eau ou des matières grasses en cuisine.", color: "border-restev-gold" },
+      { title: "Règle 2 : Utilisation des Trancheurs", desc: "Utilisation du chariot et du poussoir obligatoire. Nettoyage de la lame uniquement machine débranchée.", color: "border-red-500" }
+    ],
+    qcm: [
+      {
+        question: "Un liquide ou de la graisse tombe au sol en cuisine pendant le coup de feu. Que faites-vous ?",
+        options: ["Je laisse sécher et je verrai après le service", "Je jette un chiffon dessus sans nettoyer", "J'essuie immédiatement la zone ou je la balise pour éviter une glissade immédiate"],
+        answer: 2
+      },
+      {
+        question: "Quelle est la procédure correcte pour nettoyer la lame d'un trancheur à jambon ?",
+        options: ["Laisser l'appareil allumé pour aller plus vite en frottant avec une éponge", "Éteindre l'appareil, débrancher la prise électrique, régler l'épaisseur à zéro et nettoyer avec un outil adapté", "Passer un coup de chiffon rapide pendant que la lame tourne"],
+        answer: 1
+      },
+      {
+        question: "Vous devez sortir un plat lourd et brûlant d'un four à haute température :",
+        options: ["J'utilise un torchon légèrement humide", "J'utilise des gants de protection thermique adaptés et secs, en vérifiant que le passage est dégagé", "Je le prends à mains nues très rapidement"],
+        answer: 1
+      },
+      {
+        question: "Pour ouvrir une boîte de conserve au format professionnel (restauration collective), quel est le risque majeur ?",
+        options: ["Le risque d'éclaboussure", "Le risque de coupure profonde avec les bords tranchants de la boîte (nécessité d'utiliser l'ouvre-boîte conforme)", "Le risque d'abîmer l'ouvre-boîte"],
+        answer: 1
+      },
+      {
+        question: "Les livraisons de fûts de bière ou de caisses de denrées arrivent en réserve. Comment les manipuler ?",
+        options: ["Porter le maximum de caisses d'un coup pour finir vite", "Utiliser un diable ou un chariot de manutention et appliquer les gestes et postures (dos droit, genoux pliés)", "Fléchir le dos en gardant les jambes tendues"],
+        answer: 1
+      }
+    ]
+  },
+  "Agriculture, Viticulture & Espaces Verts": {
+    icon: " 🚜 ",
+    categories: ["Risque Engins / Écrasement / Retournement", "Risque Phytosanitaire (Produits chimiques)", "Outils Tranchants (Tronçonneuse, broyeur)", "Chute de hauteur (Échelles, arbres)", "Risque Biologique (Tétanos, tiques)"],
+    epi: ["Chaussures ou bottes de sécurité renforcées 🥾", "Pantalon anti-coupure (si usage de tronçonneuse) 👖", "Écran facial ou lunettes de protection 🽽", "Combinaison et masque à cartouche (pour traitements) 😷"],
+    rules: [
+      { title: "Règle 1 : Sécurité Prise de Force", desc: "Interdiction d'approcher ou de travailler près d'une prise de force de tracteur sans son protecteur en plastique.", color: "border-red-600" },
+      { title: "Règle 2 : Risque Phyto", desc: "Respect strict des Délais de Rentrée (DRE) dans les parcelles après application d'un traitement.", color: "border-green-600" }
+    ],
+    qcm: [
+      {
+        question: "Lorsque vous descendez de la cabine d'un tracteur ou d'un engin agricole, quelle méthode utilisez-vous ?",
+        options: ["Je saute directement au sol depuis la cabine", "Je descends face à la cabine en utilisant les marchepieds et les poignées (la règle des 3 points d'appui)", "Je descends à reculons sans regarder"],
+        answer: 1
+      },
+      {
+        question: "Quelle est la consigne de sécurité absolue concernant la prise de force d'un tracteur ?",
+        options: ["Elle peut être utilisée sans son capot en plastique si on fait attention", "Le protecteur en plastique (fourreau et cuvelage) doit être en parfait état et attaché pour éviter l'enroulement mortel", "On peut sauter par-dessus lorsqu'elle tourne"],
+        answer: 1
+      },
+      {
+        question: "Vous devez appliquer un produit phytosanitaire (traitement des cultures). Quels EPI portez-vous ?",
+        options: ["Mes vêtements de travail habituels suffisent", "Une combinaison étanche type 4, des gants en nitrile, des bottes et un masque équipé de filtres adaptés (A2P3)", "Un simple masque chirurgical et un short"],
+        answer: 1
+      },
+      {
+        question: "Lors de l'utilisation d'une tronçonneuse (élagage / coupe), quel équipement est obligatoire pour protéger vos jambes ?",
+        options: ["Un jean épais", "Un pantalon de protection anti-coupure homologué (classe adaptée à la vitesse de la chaîne)", "Des genouillères de chantier"],
+        answer: 1
+      },
+      {
+        question: "Après une journée de travail dans les champs ou les espaces verts, face au risque de maladie de Lyme, que devez-vous inspecter ?",
+        options: ["Si mes chaussures sont propres", "L'absence de tiques sur l'ensemble de mon corps", "Si j'ai pris des coups de soleil"],
+        answer: 1
+      }
+    ]
+  }
+    "Automobile & Moto (Mécanique / Carrosserie)": {
+    icon: " 🚗🏍️ ",
+    categories: ["Heurt / Écrasement (Pont élévateur)", "Risque Électrique (Véhicules Hybrides/Électriques)", "Risque Chimique (Huiles, solvants, batteries)", "Projections / Brûlures (Meulage, soudage)", "Chute de plain-pied (Sols gras/huiles)"],
+    epi: ["Chaussures de sécurité anti-dérapantes et anti-perforation S3 🥾", "Gants en nitrile (protection chimique) ou gants mécaniques 🧤", "Lunettes de protection d'impact (norme EN 166) 🥽", "Casque anti-bruit (selon outils utilisés) 🎧"],
+    rules: [
+      { title: "Règle 1 : Sécurité sur Pont Élévateur", desc: "Vérification systématique du positionnement des tampons de levage et enclenchement obligatoire des crans de sécurité mécaniques avant de travailler sous le véhicule.", color: "border-red-500" },
+      { title: "Règle 2 : Risque Haute Tension", desc: "Interdiction absolue de toucher ou d'intervenir sur les câbles orange d'un véhicule électrique/hybride sans habilitation électrique spécifique.", color: "border-restev-blue" }
+    ],
+    qcm: [
+      {
+        question: "Avant de monter un véhicule sur un pont élévateur et de travailler en dessous, quelle est la procédure vitale ?",
+        options: ["Vérifier le niveau de carburant", "Positionner les tampons sur les points de levage constructeur, lever légèrement pour tester la stabilité, puis enclencher la sécurité mécanique du pont", "Monter le pont au maximum le plus vite possible"],
+        answer: 1
+      },
+      {
+        question: "Sur les véhicules électriques ou hybrides, de quelle couleur sont les câbles transportant la haute tension (danger d'électrocution mortelle) ?",
+        options: ["Bleus", "Blancs", "Orange"],
+        answer: 2
+      },
+      {
+        question: "Vous devez manipuler des huiles de vidange usagées ou des solvants de nettoyage. Quelle règle appliquez-vous ?",
+        options: ["Je travaille à mains nues pour mieux ressentir les pièces", "Je porte des gants en nitrile adaptés car ces produits pénètrent la peau et sont hautement toxiques / cancérogènes", "Je mets des gants en tissu classiques"],
+        answer: 1
+      },
+      {
+        question: "De l'huile moteur ou du liquide de frein se répand accidentellement au sol dans votre baie de travail. Que faites-vous ?",
+        options: ["Je laisse le liquide s'évaporer tout seul", "Je jette immédiatement un absorbant industriel, je nettoie et je jette le résidu dans le bac spécifique aux déchets dangereux (filière de recyclage)", "Je pousse le liquide avec une raclette sous l'établi du voisin"],
+        answer: 1
+      },
+      {
+        question: "Lors de l'utilisation d'une meuleuse d'angle (disqueuse) ou d'un outil de découpe en carrosserie, comment protégez-vous vos yeux ?",
+        options: ["Je ferme légèrement les yeux pendant l'opération", "Mes lunettes de vue ou de soleil suffisent", "Je porte obligatoirement des lunettes de protection d'impact enveloppantes ou une visière complète conforme"],
+        answer: 2
+      }
+    ]
+  }
+  "Santé, Soins & Services à la Personne": {
+    icon: " 🏥 ",
+    categories: ["Accident d'Exposition au Sang (AES)", "Manutention de Patients (Lombaires)", "Risque Infectieux / Biologique", "Agression / Incivilité", "Produits chimiques (Désinfection)"],
+    epi: ["Blouse / Tunique médicale 🥼", "Chaussures de protection hospitalières 👟", "Gants en nitrile à usage unique 🧤", "Masque de protection chirurgical 😷"],
+    rules: [
+      { title: "Règle 1 : Prévention Biologique", desc: "Port des gants obligatoire lors des soins. Respect strict des protocoles de tri des DASRI.", color: "border-restev-magenta" },
+      { title: "Règle 2 : Manutention", desc: "Utilisation prioritaire des lève-personnes et draps de glisse pour mobiliser les patients.", color: "border-restev-blue" }
+    ],
+    qcm: [
+      {
+        question: "En cas d'Accident d'Exposition au Sang (AES) par piqûre avec une aiguille souillée, quelle est l'action immédiate ?",
+        options: ["Faire saigner, laver à l'eau et au savon, désinfecter (Dakin/Bétadine 5 min) et déclarer sous 48h", "Mettre un pansement simple et continuer son service sans rien dire", "Sucer la plaie pour extraire le produit"],
+        answer: 0
+      },
+      {
+        question: "Où devez-vous jeter une aiguille, un tranchant ou un piquant immédiatement après son utilisation ?",
+        options: ["Dans la poubelle classique des déchets ménagers (DAOM)", "Dans un collecteur rigide jaune spécifique aux objets perforants (boîte DASRI)", "Dans le sac à linge sale"],
+        answer: 1
+      },
+      {
+        question: "Pour mobiliser ou transférer un patient lourd du lit au fauteuil, que devez-vous faire ?",
+        options: ["Forcer seul en portant le patient à bout de bras", "Utiliser impérativement les aides techniques disponibles (lève-personne, guidon de transfert, drap de glisse)", "Demander au patient de sauter"],
+        answer: 1
+      },
+      {
+        question: "Lors de l'utilisation de produits chimiques de désinfection (détergents, désinfectants concentrés), quel est le danger ?",
+        options: ["Aucun danger, ce sont des produits de nettoyage", "Le risque de brûlure chimique cutanée ou oculaire, et l'inhalation de vapeurs toxiques (EPI obligatoires)", "Uniquement une mauvaise odeur"],
+        answer: 1
+      },
+      {
+        question: "Quelle est la règle d'or pour l'hygiène des mains afin de bloquer les risques infectieux ?",
+        options: ["Se laver les mains uniquement en arrivant le matin", "Pratiquer une friction hydro-alcoolique méthodique avant et après chaque contact avec un patient", "Porter les mêmes gants toute la journée"],
+        answer: 1
+      }
+    ]
+  },
+  "Métallurgie & Industrie Lourde": {
+    icon: " ⚙️ ",
+    categories: ["Brûlure / Projections", "Bruit excessif", "Manutention mécanique", "Inhalation Fumées / Gaz", "Machine en mouvement / Happement"],
+    epi: ["Lunettes de protection (Impact) 🥽", "Chaussures de sécurité montantes S3 🥾", "Casque anti-bruit ou bouchons moulés 🎧", "Vêtements de travail ignifugés 🧥", "Gants de manutention lourde 🧤"],
+    rules: [
+      { title: "Règle 1 : EPI Spécifiques", desc: "Bouchons d'oreilles, lunettes de protection et vêtements ignifugés exigés dans l'atelier.", color: "border-orange-600" },
+      { title: "Règle 2 : Consignation", desc: "Aucune intervention sur machine sans procédure de consignation électrique et mécanique.", color: "border-red-600" }
+    ],
+    qcm: [
+      {
+        question: "Avant de nettoyer ou de réparer une machine outil, quelle procédure d'isolement est obligatoire ?",
+        options: ["Appuyer sur le bouton stop de la machine", "Réaliser une consignation stricte (coupure des énergies électrique/pneumatique et cadenassage)", "Demander à un collègue de surveiller l'interrupteur"],
+        answer: 1
+      },
+      {
+        question: "Le port des Protections Individuelles Contre le Bruit (PICB) est obligatoire dans l'atelier :",
+        options: ["Seulement quand le niveau sonore devient insupportable pour moi", "En continu dès lors que l'on circule ou travaille dans une zone balisée 'Bruit obligatoire'", "Uniquement pour les conducteurs de machines"],
+        answer: 1
+      },
+      {
+        question: "Pour éviter les risques de happement par les organes en mouvement d'une machine, je dois :",
+        options: ["Porter des vêtements amples pour être à l'aise", "Porter des vêtements de travail ajustés, cheveux attachés, sans bijoux ni vêtements flottants", "Mettre des gants trop grands"],
+        answer: 1
+      },
+      {
+        question: "Lors d'opérations de meulage, d'ébarbage ou de soudage, quel équipement protège vos yeux des projections ?",
+        options: ["Mes lunettes de vue classiques", "Des lunettes de protection d'impact ou un écran facial adapté conformes aux normes", "Fermer les yeux à moitié pendant le travail"],
+        answer: 1
+      },
+      {
+        question: "Lorsqu'un pont roulant déplace une charge lourde dans l'atelier, quelle est la consigne ?",
+        options: ["Guider la charge à la main directement en dessous", "Interdiction absolue de stationner ou de circuler sous la charge suspendue", "Courir en dessous pour passer avant elle"],
+        answer: 1
+      }
+    ]
+  }
 };
 
 function playSafetyAlertSound() {
