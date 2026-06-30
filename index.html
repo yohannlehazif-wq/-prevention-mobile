@@ -211,6 +211,13 @@
         <h2 class="text-xl font-black text-slate-900 dark:text-white mb-2">Éditeur Personnalisé DUERP</h2>
         <p class="text-xs text-slate-400 mb-4">Cochez ou décochez les risques applicables à votre structure.</p>
         <div id="studio-rules-list" class="space-y-2.5 max-h-[500px] overflow-y-auto pr-2">
+          <div class="p-4 bg-blue-50/50 dark:bg-slate-900/50 border border-blue-100 dark:border-slate-700 rounded-2xl space-y-2">
+  <label class="block text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">
+    <i class="fa-solid fa-map-pin text-restev-magenta mr-1"></i> Pré-réglage Sectoriel Économie Vendéenne :
+  </label>
+  <select id="manager-sector-select" onchange="applySectorPreset()" class="w-full p-3 bg-white dark:bg-slate-800 border rounded-xl text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:border-restev-blue shadow-sm">
+    </select>
+</div>
           <!-- Injecté dynamiquement par JS -->
         </div>
         <div class="mt-6 grid grid-cols-2 gap-3">
@@ -465,7 +472,52 @@
       { id: '14', name: "Risques liés à l’électricité", active: true, question: "Un câble électrique est dénudé au sol. Que faites-vous ?", options: ["Je mets du scotch classique dessus", "Je n'y touche pas, j'isole la zone et je signale", "Je passe dessus sans faire attention"], answer: 1 },
       { id: '17', name: "Risques psychosociaux", active: true, question: "Si je fais face à une situation d'isolement ou de stress intense, je peux :", options: ["Garder tout pour moi", "En parler au manager, RH ou au médecin du travail", "Attendre que ça passe tout seul"], answer: 1 }
     ];
+// 1. Base des 10 secteurs de Vendée (avec ID des risques fréquents associés)
+const VENDEE_SECTORS = {
+  agro: { name: "Industrie Agroalimentaire (ex: Sodebo, Fleury Michon)", risks: ['1', '5', '6', '7'] },
+  wood: { name: "Menuiserie, Mobilier & Ossature Bois (ex: Piveteau, Liebot)", risks: ['1', '3', '5', '13'] },
+  outdoor: { name: "Hôtellerie de Plein Air & Campings Littoraux", risks: ['1', '4', '14', '17'] },
+  agri: { name: "Agriculture, Maraîchage & Élevage", risks: ['1', '5', '6', '7'] },
+  btp: { name: "Bâtiment et Travaux Publics (BTP)", risks: ['1', '2', '5', '14'] },
+  log: { name: "Transport, Logistique & Supply Chain", risks: ['3', '4', '5', '6'] },
+  metal: { name: "Métallurgie, Tôlerie & Mécanique industrielle", risks: ['3', '6', '7', '13'] },
+  retail: { name: "Grande Distribution & Commerces de détail", risks: ['1', '3', '5', '17'] },
+  health: { name: "Santé, Services à la personne & Aide à domicile", risks: ['1', '4', '5', '17'] },
+  luxury: { name: "Maroquinerie & Ateliers de Couture de Luxe", risks: ['1', '5', '7', '17'] }
+};
 
+// 2. Remplissage automatique des options du sélecteur au démarrage
+function populateSectorDropdown() {
+  const select = document.getElementById('manager-sector-select');
+  if (!select) return;
+  
+  select.innerHTML = '<option value="">-- Sélectionner un profil métier pour tout configurer d\'un coup --</option>';
+  for (const [key, sector] of Object.entries(VENDEE_SECTORS)) {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.innerText = sector.name;
+    select.appendChild(opt);
+  }
+}
+
+// 3. Application automatique des cases cochées selon le secteur choisi
+function applySectorPreset() {
+  const select = document.getElementById('manager-sector-select');
+  const sectorKey = select.value;
+  if (!sectorKey) return;
+
+  const defaultRisks = VENDEE_SECTORS[sectorKey].risks;
+
+  // Coche automatiquement les risques correspondants et décoche les autres
+  RISKS_DATABASE.forEach(risk => {
+    risk.active = defaultRisks.includes(risk.id);
+  });
+
+  // Rafraîchit l'affichage du studio et des sélecteurs
+  renderStudioRisks();
+  populateRiskSelectors();
+  showToast(`Matrice pré-remplie pour : ${VENDEE_SECTORS[sectorKey].name}`);
+}
     let currentEmployeeSession = null;
     let mapInstance = null;
     let soundMuted = false;
@@ -477,6 +529,7 @@
 
     // --- INITIALISATION DE L'APPLICATION ---
     document.addEventListener('DOMContentLoaded', () => {
+     populateSectorDropdown();
       renderStudioRisks();
       populateRiskSelectors();
       initLeafletMap();
