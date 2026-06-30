@@ -409,7 +409,54 @@
       appState.currentCompany.reports ||= [];
       appState.currentCompany.passports ||= [];
     }
+function renderRiskStudio() {
+    const container = document.getElementById('studio-rules-list');
+    container.innerHTML = ''; // Nettoyer avant rendu
 
+    RISKS_DATABASE.forEach((risk, index) => {
+       const RISKS_DATABASE = [
+    { id: 'chute_pp', label: 'Risques de chute de plain-pied', active: true },
+    { id: 'chute_h', label: 'Risques de chute de hauteur', active: true },
+    { id: 'circ_engins', label: 'Risques liés aux circulations internes', active: false }, // NON CONCERNE par défaut
+    { id: 'routier', label: 'Risques routiers en mission', active: true },
+    { id: 'charge_phy', label: 'Risques liés à la charge physique', active: true },
+    { id: 'manut_mec', label: 'Risques liés à la manutention mécanique', active: false },
+    { id: 'chimique', label: 'Risques liés aux produits chimiques/déchets', active: true },
+    { id: 'bio', label: 'Risques liés aux agents biologiques', active: true },
+    { id: 'equip_travail', label: 'Risques liés aux équipements de travail', active: true },
+    { id: 'effondre', label: 'Risques liés aux effondrements/chutes d\'objets', active: true },
+    { id: 'bruit', label: 'Risques et nuisances liés au bruit', active: true },
+    { id: 'thermique', label: 'Risques liés aux ambiances thermiques', active: true },
+    { id: 'incendie', label: 'Risques d\'incendie et d\'explosion', active: true },
+    { id: 'elec', label: 'Risques liés à l\'électricité', active: true },
+    { id: 'lumineux', label: 'Risques liés aux ambiances lumineuses', active: true },
+    { id: 'rayonnements', label: 'Risques liés aux rayonnements', active: true },
+    { id: 'rps', label: 'Risques psychosociaux', active: true },
+    { id: 'vibrations', label: 'Risques liés aux vibrations', active: false },
+    { id: 'heurt', label: 'Risques de heurt, de cognement', active: true },
+    { id: 'addictions', label: 'Risques liés aux pratiques addictives', active: true }
+];;
+        div.className = "flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700";
+        
+        div.innerHTML = `
+            <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" ${risk.active ? 'checked' : ''} onchange="toggleRisk(${index})" 
+                class="w-4 h-4 rounded border-slate-300 text-restev-blue focus:ring-restev-blue">
+                <span class="text-xs font-bold text-slate-700 dark:text-slate-300">${risk.label}</span>
+            </label>
+            <span class="text-[10px] ${risk.active ? 'text-emerald-500' : 'text-slate-400'} font-black uppercase">
+                ${risk.active ? 'Actif' : 'Désactivé'}
+            </span>
+        `;
+        container.appendChild(div);
+    });
+}
+
+// Fonction pour basculer l'état
+function toggleRisk(index) {
+    RISKS_DATABASE[index].active = !RISKS_DATABASE[index].active;
+    renderRiskStudio(); // Re-render pour mettre à jour les labels visuels
+}
     function logoutManager() { appState.currentCompany = null; appState.currentCompanyCode = ''; switchScreen('scr-home'); showToast('Déconnexion réussie.'); }
 
     async function createNewCompany() {
