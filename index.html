@@ -324,9 +324,13 @@
   </main>
 
   <script>
-    const SUPABASE_URL = "https://bcuzmjcbhriyzmmiodsi.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjdXptamNiaHJpeXptbWlvZHNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1ODU5NjIsImV4cCI6MjA5NzE2MTk2Mn0.lbYUBi-JEJCoUIdAAAVS35sdy6o0EHHGoqVs3cL1ApQ";
-    const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+   const SUPABASE_URL = "https://qahamxdomftqodziluci.supabase.co";
+
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhaGFteGRvbWZ0cW9kemlsdWNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5MDI2NDEsImV4cCI6MjA5ODQ3ODY0MX0.VUjKmNc9UsOoBSNatZoOnxGExVQji9L05BiU5SlvnOc";
+
+const supabaseClient = window.supabase
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
 
     const RISKS_DATABASE = [
       { id: '1', name: 'Risques de chute de plain-pied', active: true, question: 'Sur un sol glissant ou encombré, quelle est la bonne attitude ?', options: ['Je cours pour passer vite', 'Je contourne et je signale la zone', "J'attends que quelqu'un d'autre nettoie"], answer: 1 },
@@ -421,7 +425,24 @@
     function createNewCompany(){ const name=document.getElementById('new-company-name').value.trim(); if(!name) return showToast("Veuillez saisir un nom d'établissement"); const code='RSTV-'+name.substring(0,4).toUpperCase().replace(/[^A-Z0-9]/g,'')+'-'+Math.floor(1000+Math.random()*9000); document.getElementById('generated-code-box').classList.remove('hidden'); document.getElementById('lbl-generated-code').innerText=code; document.getElementById('manager-company-code').value=code; showToast('Code généré et inscrit dans la console !'); }
     function copyGeneratedCode(){ const code=document.getElementById('lbl-generated-code').innerText; navigator.clipboard?.writeText(code); showToast('Code copié !'); }
 
-    function handleManagerLogin(){ const code=document.getElementById('manager-company-code').value.trim().toUpperCase(); if(!code) return showToast('Veuillez saisir un code établissement'); document.getElementById('lbl-manager-comp-name').innerText=code; showToast('Identification validée.'); switchScreen('scr-manager'); startManagerPolling(); }
+    function handleManagerLogin() {
+  const code = document.getElementById('manager-company-code').value.trim().toUpperCase();
+
+  if (!code) {
+    return showToast("Veuillez saisir un code établissement");
+  }
+
+  document.getElementById('lbl-manager-comp-name').innerText = code;
+  showToast("Identification validée.");
+  switchScreen('scr-manager');
+
+  // Version économe : chargement une seule fois
+  loadManagerReports();
+}
+
+  // Économie quota : chargement manuel uniquement
+  loadManagerReports();
+}
     function quitManager(){ if(managerPollingInterval) clearInterval(managerPollingInterval); managerPollingInterval=null; switchScreen('scr-home'); }
 
     function populateSectorDropdown(){ const select=document.getElementById('manager-sector-select'); if(!select) return; select.innerHTML='<option value="">-- Sélectionner un profil métier --</option>'; Object.entries(VENDEE_SECTORS).forEach(([key,sector])=>{ const opt=document.createElement('option'); opt.value=key; opt.innerText=sector.name; select.appendChild(opt); }); }
