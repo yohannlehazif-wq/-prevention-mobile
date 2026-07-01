@@ -597,6 +597,26 @@
       <button onclick="switchScreen('scr-employee')" class="w-full text-center text-xs text-slate-400 font-bold py-2">Annuler</button>
     </section>
 
+    <!-- 12. JEU : CHASSE AUX RISQUES -->
+<section id="scr-game" class="screen max-w-md mx-auto w-full space-y-4 py-4">
+    <div class="text-center">
+        <h2 class="text-xl font-black text-slate-900 dark:text-white">Chasse aux Risques</h2>
+        <p class="text-xs text-slate-500">Cliquez sur les zones dangereuses de l'image.</p>
+    </div>
+
+    <!-- Conteneur de l'image -->
+    <div id="game-zone" class="relative w-full rounded-2xl overflow-hidden border-4 border-slate-200 dark:border-slate-700 shadow-lg">
+        <!-- Remplace l'URL par une image de ton atelier ou un chantier -->
+        <img src="https://via.placeholder.com/400x300?text=Image+Atelier+a+ajouter" alt="Scène d'atelier" class="w-full h-auto">
+        
+        <!-- Hotspots : zones cliquables (ajuste top/left en % pour ton image) -->
+        <div onclick="foundRisk(this)" id="hotspot-1" class="absolute top-[30%] left-[20%] w-12 h-12 rounded-full cursor-pointer hover:bg-red-500/30 transition"></div>
+        <div onclick="foundRisk(this)" id="hotspot-2" class="absolute top-[60%] left-[70%] w-12 h-12 rounded-full cursor-pointer hover:bg-red-500/30 transition"></div>
+    </div>
+
+    <button onclick="switchScreen('scr-employee')" class="w-full text-center text-xs text-slate-400 font-bold py-2">Retour au portail</button>
+</section>
+
   </main>
 
   <script>
@@ -1134,7 +1154,26 @@ function finalizePassportSignature() {
 
       switchScreen('scr-employee');
     }
+let risksFound = 0;
+const totalRisks = 2; // Nombre de zones créées
 
+function foundRisk(el) {
+    if (el.classList.contains('found')) return;
+    
+    el.classList.add('found', 'bg-red-500/50', 'animate-ping');
+    // Ajout d'une petite icône pour valider
+    el.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-white"></i>';
+    
+    risksFound++;
+    showToast(`Risque identifié ! (${risksFound}/${totalRisks})`);
+    
+    if (risksFound === totalRisks) {
+        setTimeout(() => {
+            alert("Bravo ! Vous avez sécurisé la zone.");
+            switchScreen('scr-employee');
+        }, 500);
+    }
+}
     // --- CHART.JS (Direction) ---
     function initChart() {
       const ctx = document.getElementById('chart-restev-risks');
