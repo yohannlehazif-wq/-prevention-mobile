@@ -46,6 +46,79 @@
     .screen.active { display: block; animation: smoothSlide 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
     @keyframes smoothSlide { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
     @media print { .no-print { display: none !important; } }
+    /* --- Lecteur TutoPrev responsive mobile --- */
+
+.tuto-frame-wrapper {
+  width: 100%;
+  height: calc(100vh - 190px);
+  min-height: 520px;
+  background: #ffffff;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 2px solid #e2e8f0;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
+}
+
+.tuto-iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: #ffffff;
+}
+
+/* Smartphone vertical */
+@media screen and (max-width: 640px) and (orientation: portrait) {
+  #scr-training {
+    max-width: 100% !important;
+    padding: 0.75rem !important;
+  }
+
+  .tuto-frame-wrapper {
+    height: calc(100dvh - 185px);
+    min-height: 560px;
+    border-radius: 14px;
+  }
+
+  .tuto-iframe {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+/* Smartphone horizontal */
+@media screen and (max-width: 900px) and (orientation: landscape) {
+  body {
+    overflow-x: hidden;
+  }
+
+  #scr-training {
+    max-width: 100% !important;
+    padding: 0.5rem !important;
+  }
+
+  #tuto-container {
+    margin-top: 0 !important;
+  }
+
+  .tuto-frame-wrapper {
+    height: calc(100dvh - 105px);
+    min-height: 320px;
+    border-radius: 12px;
+  }
+
+  #tuto-orientation-help {
+    display: none;
+  }
+}
+
+/* Petits écrans très bas */
+@media screen and (max-height: 500px) {
+  .tuto-frame-wrapper {
+    height: calc(100dvh - 90px);
+    min-height: 280px;
+  }
+}
   </style>
 </head>
 <body class="bg-gradient-to-tr from-slate-50 via-blue-50/40 to-pink-50/20 text-slate-800 antialiased min-h-screen flex flex-col dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
@@ -408,14 +481,35 @@
 </div>
 
 
-    <div id="tuto-container" class="hidden">
-        <button onclick="document.getElementById('menu-list').classList.remove('hidden'); document.getElementById('tuto-container').classList.add('hidden');" class="mb-4 text-xs text-restev-blue font-bold flex items-center gap-1">
-            <i class="fa-solid fa-chevron-left"></i> Retour aux secteurs
-        </button>
-        <div class="w-full h-[70vh] bg-white rounded-xl shadow-lg overflow-hidden border-2 border-slate-200">
-            <iframe id="tuto-viewer" class="w-full h-full border-0" src="" allowfullscreen></iframe>
-        </div>
-    </div>
+   <div id="tuto-container" class="hidden space-y-3">
+
+  <div class="flex items-center justify-between gap-2">
+    <button onclick="backToTrainingMenu()" class="text-xs text-restev-blue font-bold flex items-center gap-1 bg-white dark:bg-slate-800 border px-3 py-2 rounded-xl shadow-sm">
+      <i class="fa-solid fa-chevron-left"></i> Retour aux secteurs
+    </button>
+
+    <button onclick="openTutoFullscreen()" class="text-xs bg-restev-blue text-white font-bold flex items-center gap-1 px-3 py-2 rounded-xl shadow-sm">
+      <i class="fa-solid fa-expand"></i> Plein écran
+    </button>
+  </div>
+
+  <div class="bg-blue-50 dark:bg-slate-900 border border-blue-100 dark:border-slate-700 rounded-2xl p-3">
+    <p id="tuto-orientation-help" class="text-[11px] font-bold text-slate-600 dark:text-slate-300 leading-relaxed">
+      Astuce : pour une meilleure lisibilité, tournez votre smartphone en mode paysage si le module paraît trop petit.
+    </p>
+  </div>
+
+  <div id="tuto-frame-wrapper" class="tuto-frame-wrapper">
+    <iframe
+      id="tuto-viewer"
+      class="tuto-iframe"
+      src=""
+      allowfullscreen
+      loading="lazy">
+    </iframe>
+  </div>
+
+</div>
 </section>
     <!-- 7. PORTAIL SALARIÉ (EMPLOYEE LANDING) -->
     <section id="scr-employee" class="screen max-w-md mx-auto w-full space-y-4">
@@ -685,13 +779,78 @@ const modulesTuto = [
   { titre: "Transport routier", url: "https://ressources.inrs.fr/tutoprev/content/Transport-routier-de-marchandises/story.html" }
 ];
 
+let currentTutoUrl = "";
+
 function loadTrainingModule(url) {
-    const iframe = document.getElementById('tuto-viewer');
-    iframe.src = url;
-    // Basculer vers la vue lecteur (masquer le menu, afficher l'iframe)
-    document.getElementById('menu-list').classList.add('hidden');
-    document.getElementById('tuto-container').classList.remove('hidden');
+  currentTutoUrl = url;
+
+  const iframe = document.getElementById('tuto-viewer');
+  if (!iframe) return;
+
+  iframe.src = url;
+
+  document.getElementById('menu-list').classList.add('hidden');
+  document.getElementById('tuto-container').classList.remove('hidden');
+
+  adjustTutoViewer();
+
+  setTimeout(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, 100);
 }
+function backToTrainingMenu() {
+  const iframe = document.getElementById('tuto-viewer');
+
+  if (iframe) {
+    iframe.src = "";
+  }
+
+  currentTutoUrl = "";
+
+  document.getElementById('menu-list').classList.remove('hidden');
+  document.getElementById('tuto-container').classList.add('hidden');
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function openTutoFullscreen() {
+  const iframe = document.getElementById('tuto-viewer');
+
+  if (!currentTutoUrl) {
+    return showToast("Aucun tutoriel sélectionné.");
+  }
+
+  /*
+    Sur certains mobiles, le fullscreen iframe peut être limité.
+    Donc on tente d'abord le plein écran, sinon on ouvre dans un nouvel onglet.
+  */
+  if (iframe && iframe.requestFullscreen) {
+    iframe.requestFullscreen().catch(() => {
+      window.open(currentTutoUrl, "_blank");
+    });
+  } else {
+    window.open(currentTutoUrl, "_blank");
+  }
+}
+
+function adjustTutoViewer() {
+  const help = document.getElementById('tuto-orientation-help');
+  const wrapper = document.getElementById('tuto-frame-wrapper');
+
+  if (!help || !wrapper) return;
+
+  const isMobile = window.innerWidth <= 900;
+  const isLandscape = window.innerWidth > window.innerHeight;
+
+  if (isMobile && isLandscape) {
+    help.innerText = "Mode paysage détecté : affichage optimisé pour le module.";
+  } else if (isMobile) {
+    help.innerText = "Astuce : pour une meilleure lisibilité, tournez votre smartphone en mode paysage ou utilisez le bouton Plein écran.";
+  } else {
+    help.innerText = "Module chargé. Vous pouvez utiliser le bouton Plein écran pour plus de confort.";
+  }
+}
+    
 // 1. Base des 10 secteurs de Vendée (Correction appliquée)
 const VENDEE_SECTORS = {
   agro: { name: "Industrie Agroalimentaire (ex: Sodebo, Fleury Michon)", risks: ['1', '5', '6', '7'] },
