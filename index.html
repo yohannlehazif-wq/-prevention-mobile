@@ -375,7 +375,38 @@
       </div>
     </section>
 
-    <!-- 7. PORTAIL SALARIÉ (EMPLOYEE LANDING) -->
+    <section id="scr-training" class="screen hidden max-w-md mx-auto w-full p-4 space-y-4">
+    <div class="flex items-center justify-between mb-4">
+        <button onclick="switchScreen('scr-employee')" class="text-xs bg-white border px-4 py-2 rounded-xl font-bold flex items-center gap-1.5 shadow-sm">
+            <i class="fa-solid fa-arrow-left"></i> Retour
+        </button>
+        <h2 class="text-lg font-black text-slate-800">Formation INRS</h2>
+    </div>
+
+    <div id="menu-list" class="grid grid-cols-1 gap-3">
+        <p class="text-xs text-slate-500 italic">Sélectionnez votre secteur pour accéder au tutoriel :</p>
+        <script>
+            // On génère les boutons dynamiquement à partir de la liste JS
+            modulesTuto.forEach(mod => {
+                document.write(`
+                    <button onclick="loadTrainingModule('${mod.url}')" class="p-4 bg-white border-l-4 border-restev-blue shadow-sm rounded-lg text-left hover:bg-slate-50 transition w-full flex items-center justify-between">
+                        <span class="font-semibold text-slate-700 text-sm">${mod.titre}</span>
+                        <i class="fa-solid fa-chevron-right text-slate-300"></i>
+                    </button>
+                `);
+            });
+        </script>
+    </div>
+
+    <div id="tuto-container" class="hidden">
+        <button onclick="document.getElementById('menu-list').classList.remove('hidden'); document.getElementById('tuto-container').classList.add('hidden');" class="mb-4 text-xs text-restev-blue font-bold flex items-center gap-1">
+            <i class="fa-solid fa-chevron-left"></i> Retour aux secteurs
+        </button>
+        <div class="w-full h-[70vh] bg-white rounded-xl shadow-lg overflow-hidden border-2 border-slate-200">
+            <iframe id="tuto-viewer" class="w-full h-full border-0" src="" allowfullscreen></iframe>
+        </div>
+    </div>
+</section>
     <!-- 7. PORTAIL SALARIÉ (EMPLOYEE LANDING) -->
     <section id="scr-employee" class="screen max-w-md mx-auto w-full space-y-4">
       <div class="bg-gradient-to-br from-restev-blue via-blue-600 to-restev-magenta text-white p-6 rounded-3xl shadow-xl space-y-2 relative overflow-hidden">
@@ -644,8 +675,30 @@
       { id: '14', name: "Risques liés à l’électricité", active: true, question: "Un câble électrique est dénudé au sol. Que faites-vous ?", options: ["Je mets du scotch classique dessus", "Je n'y touche pas, j'isole la zone et je signale", "Je passe dessus sans faire attention"], answer: 1 },
       { id: '17', name: "Risques psychosociaux", active: true, question: "Si je fais face à une situation d'isolement ou de stress intense, je peux :", options: ["Garder tout pour moi", "En parler au manager, RH ou au médecin du travail", "Attendre que ça passe tout seul"], answer: 1 }
     ];
+const modulesTuto = [
+  { titre: "Aide à domicile", url: "https://ressources.inrs.fr/tutoprev/content/Aide_personne_domicile_etablissement/story.html" },
+  { titre: "BTP", url: "https://ressources.inrs.fr/tutoprev/content/BTP/story.html" },
+  { titre: "Travail de bureau", url: "https://ressources.inrs.fr/tutoprev/content/Travail-de-bureau/story.html" },
+  { titre: "Commerce", url: "https://ressources.inrs.fr/tutoprev/content/Commerce/story.html" },
+  { titre: "Hôtellerie/Restauration", url: "https://ressources.inrs.fr/tutoprev/content/Hotellerie-Restauration/story.html" },
+  { titre: "Logistique", url: "https://ressources.inrs.fr/tutoprev/content/Logistique/story.html" },
+  { titre: "Maintenance industrielle", url: "https://ressources.inrs.fr/tutoprev/content/Maintenance-industrielle/story.html" },
+  { titre: "Métiers de la beauté", url: "https://ressources.inrs.fr/tutoprev/content/Metiers-de-la-beaute/story.html" },
+  { titre: "Métiers de la propreté", url: "https://ressources.inrs.fr/tutoprev/content/Metiers-de-la-proprete/story.html" },
+  { titre: "Énergie du bâtiment", url: "https://ressources.inrs.fr/tutoprev/content/Metiers-de-l-energie-du-batiment/story.html" },
+  { titre: "Métiers du bois", url: "https://ressources.inrs.fr/tutoprev/content/Metiers-du-bois/story.html" },
+  { titre: "Métiers de bouche", url: "https://ressources.inrs.fr/tutoprev/content/Metiers-de-bouche/story.html" },
+  { titre: "Réparation automobile", url: "https://ressources.inrs.fr/tutoprev/content/Reparation-automobile/story.html" },
+  { titre: "Transport routier", url: "https://ressources.inrs.fr/tutoprev/content/Transport-routier-de-marchandises/story.html" }
+];
 
-// 1. Base des 10 secteurs de Vendée
+function loadTrainingModule(url) {
+    const iframe = document.getElementById('tuto-viewer');
+    iframe.src = url;
+    // Basculer vers la vue lecteur (masquer le menu, afficher l'iframe)
+    document.getElementById('menu-list').classList.add('hidden');
+    document.getElementById('tuto-container').classList.remove('hidden');
+}
 // 1. Base des 10 secteurs de Vendée (Correction appliquée)
 const VENDEE_SECTORS = {
   agro: { name: "Industrie Agroalimentaire (ex: Sodebo, Fleury Michon)", risks: ['1', '5', '6', '7'] },
