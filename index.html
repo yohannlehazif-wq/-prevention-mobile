@@ -1043,8 +1043,11 @@ function generateTrainingMenu() {
       const code = document.getElementById('manager-company-code').value.trim();
       if(!code) return showToast("Veuillez saisir un code établissement");
       
-      document.getElementById('lbl-manager-comp-name').innerText = code;
-      showToast("Identification validée.");
+     document.getElementById('lbl-manager-comp-name').innerText = code;
+showToast("Identification validée.");
+switchScreen('scr-manager');
+
+startManagerPolling();
       switchScreen('scr-manager');
     }
 
@@ -1454,35 +1457,136 @@ function updateCertificateEPI() {
   `;
 }
     // --- ENVOI DU SIGNALEMENT ---
-    function submitRiskReport() {
-      const category = document.getElementById('risk-category-select').value;
-      const desc = document.getElementById('risk-description').value.trim();
-      const lvl = document.getElementById('risk-level').value;
+   let managerPollingInterval = null;
 
-      if (!desc) return showToast("Veuillez saisir une description du danger.");
+function startManagerPolling() {
+  loadManagerReports();
 
-      const container = document.getElementById('manager-risk-box');
-      const emptyMsg = container.querySelector('p.italic');
-      if (emptyMsg) emptyMsg.remove();
+  if (managerPollingInterval) {
+    clearInterval(managerPollingInterval);
+  }
 
-      const reportCard = document.createElement('div');
-      reportCard.className = "p-3 bg-red-50 dark:bg-slate-900 border border-red-200 rounded-xl space-y-1 text-xs animate-pulse";
-      reportCard.innerHTML = `
-        <div class="flex justify-between font-black text-slate-900 dark:text-white">
-          <span>${category}</span>
-          <span class="text-red-600">${lvl}</span>
+  managerPollingInterval = setInterval(() => {
+    loadManagerReports();
+  }, 30000);
+}
+
+async function loadManagerReports() {
+  const companyCode = document.getElementById('lbl-manager-comp-name')?.innerText;
+
+  if (!companyCode) return;
+
+  const { data, error } = await supabaseClient
+    .from('prevention_reports')
+    .select('*')
+    .eq('company_code', companyCode)
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  if (error) {
+    console.error("Erreur chargement signalements :", error);
+    return showToast("Erreur de chargement des signalements.");
+  }
+
+  renderManagerReports(data);
+}
+
+    function renderManagerReports(reports) {
+  const container = document.getElementById('manager-risk-box');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  if (!reports || reports.length === 0) {
+    container.innerHTML = `
+      <p class="text-xs text-slate-400 italic text-center py-8">
+        Aucun danger signalé pour le moment.
+      </p>
+    `;
+    return;
+  }
+
+  reports.forEach(report => {
+    const card = document.createElement('div');
+    card.className = "p-3 bg-red-50 dark:bg-slate-900 border border-red-200 dark:border-red-800 rounded-xl space-y-2 text-xs";
+
+    card.innerHTML = `
+      <div class="flex justify-between items-start gap-2">
+        <div>
+          <p class="font-black text-slate-900 dark:text-white">${report.category || "Signalement"}</p>
+          <p class="text-[10px] text-slate-400">
+            Par ${report.employee_name} - ${new Date(report.created_at).toLocaleString('fr-FR')}
+          </p>
         </div>
-        <p class="text-slate-600 dark:text-slate-400 font-medium">${desc}</p>
-        <span class="text-[9px] text-slate-400 block pt-1">Émis par : ${currentEmployeeSession ? currentEmployeeSession.name : 'Salarié terrain'}</span>
-      `;
-      container.insertBefore(reportCard, container.firstChild);
 
-      showToast("Signalement envoyé à la console HSE !");
-      document.getElementById('risk-description').value = '';
+        <span class="text-[10px] font-black px-2 py-1 rounded bg-white dark:bg-slate-800 text-red-600">
+          ${report.level || "Non défini"}
+        </span>
+      </div>
 
-      switchScreen('scr-employee');
-    }
+      <p class="text-slate-600 dark:text-slate-300 font-medium">
+        ${report.description}
+      </p>
 
+      <div class="grid grid-cols-1 gap-2">
+        <select onchange="updateReportStatus('${report.id}', this.value)" class="w-full p-2 rounded-lg border text-xs font-bold dark:bg-slate-900 dark:text-white">
+          <option value="Nouveau" ${report.status === 'Nouveau' ? 'selected' : ''}>Nouveau</option>
+          <option value="Vu par le responsable" ${report.status === 'Vu par le responsable' ? 'selected' : ''}>Vu par le responsable</option>
+          <option value="En cours de traitement" ${report.status === 'En cours de traitement' ? 'selected' : ''}>En cours de traitement</option>
+          <option value="Traité" ${report.status === 'Traité' ? 'selected' : ''}>Traité</option>
+        </select>
+
+        <textarea id="response-${report.id}" rows="2" placeholder="Réponse au salarié..." class="w-full p-2 rounded-lg border text-xs dark:bg-slate-900 dark:text-white">${report.manager_response || ''}</textarea>
+
+        <textarea id="action-${report.id}" rows="2" placeholder="Action corrective..." class="w-full p-2 rounded-lg border text-xs dark:bg-slate-900 dark:text-white">${report.corrective_action || ''}</textarea>
+
+        <button onclick="sendManagerResponse('${report.id}')" class="w-full bg-restev-blue text-white py-2 rounded-lg text-[10px] font-black uppercase">
+          Répondre / enregistrer
+        </button>
+      </div>
+    `;
+
+    container.appendChild(card);
+  });
+}
+
+    async function sendManagerResponse(reportId) {
+  const response = document.getElementById(`response-${reportId}`).value.trim();
+  const action = document.getElementById(`action-${reportId}`).value.trim();
+
+  const { error } = await supabaseClient
+    .from('prevention_reports')
+    .update({
+      manager_response: response,
+      corrective_action: action,
+      status: "En cours de traitement"
+    })
+    .eq('id', reportId);
+
+  if (error) {
+    console.error("Erreur réponse manager :", error);
+    return showToast("Erreur lors de l'enregistrement.");
+  }
+
+  showToast("Réponse enregistrée.");
+  loadManagerReports();
+}
+
+async function updateReportStatus(reportId, newStatus) {
+  const { error } = await supabaseClient
+    .from('prevention_reports')
+    .update({
+      status: newStatus
+    })
+    .eq('id', reportId);
+
+  if (error) {
+    console.error("Erreur statut :", error);
+    return showToast("Erreur de mise à jour du statut.");
+  }
+
+  showToast("Statut mis à jour.");
+}
     // --- CHART.JS (Direction) ---
     function initChart() {
       const ctx = document.getElementById('chart-restev-risks');
