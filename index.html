@@ -778,27 +778,88 @@ function applySectorPreset() {
     }
 
     function submitQCMAnswer() {
-      const checkedOpt = document.querySelector('input[name="qcm-opt"]:checked');
-      if(!checkedOpt) return showToast("Veuillez sélectionner une réponse !");
-      
-      const selectedIndex = parseInt(checkedOpt.value);
-      const currentQ = qcmActiveQuestions[qcmCurrentIndex];
-      
-      if(selectedIndex === currentQ.answer) {
+    const checkedOpt = document.querySelector('input[name="qcm-opt"]:checked');
+    if(!checkedOpt) return showToast("Veuillez sélectionner une réponse !");
+
+    const selectedIndex = parseInt(checkedOpt.value);
+    const currentQ = qcmActiveQuestions[qcmCurrentIndex];
+
+    if(selectedIndex === currentQ.answer) {
         qcmScore++;
-      }
-      
-      qcmCurrentIndex++;
-      if(qcmCurrentIndex < qcmActiveQuestions.length) {
-        renderQCMQuestion();
-      } else {
-        // Fin du QCM -> Écran de réussite et signature
-        document.getElementById('lbl-qcm-score').innerText = `${qcmScore} / ${qcmActiveQuestions.length}`;
-        document.getElementById('chk-signature-certif').checked = false;
-        switchScreen('scr-qcm-success');
-      }
     }
 
+    qcmCurrentIndex++;
+    if(qcmCurrentIndex < qcmActiveQuestions.length) {
+        renderQCMQuestion();
+    } else {
+        // --- FIN DU QCM : GESTION DYNAMIQUE DU SUCCÈS OU DE L'ÉCHEC ---
+        const total = qcmActiveQuestions.length;
+        const titleEl = document.getElementById('qcm-result-title');
+        const iconContainer = document.getElementById('qcm-result-icon-container');
+        const iconEl = document.getElementById('qcm-result-icon');
+        const scoreLbl = document.getElementById('lbl-qcm-score');
+
+        scoreLbl.innerText = `${qcmScore} / ${total}`;
+
+        // Si 100% de bonnes réponses (Tu peux ajuster la condition si tu tolères des fautes)
+        if (qcmScore === total) {
+            titleEl.innerText = "Validation Réussie !";
+            titleEl.className = "text-xl font-black text-emerald-600 dark:text-emerald-400";
+            iconContainer.className = "w-16 h-16 bg-emerald-100 dark:bg-emerald-950 text-emerald-500 rounded-full flex items-center justify-center text-3xl mx-auto shadow-inner no-print";
+            iconEl.innerHTML = '<i class="fa-solid fa-ribbon animate-bounce"></i>';
+            scoreLbl.className = "font-bold text-lg text-emerald-500";
+        } else {
+            titleEl.innerText = "QCM Terminé (Des erreurs détectées)";
+            titleEl.className = "text-xl font-black text-amber-600 dark:text-amber-400";
+            iconContainer.className = "w-16 h-16 bg-amber-100 dark:bg-amber-950 text-amber-500 rounded-full flex items-center justify-center text-3xl mx-auto shadow-inner no-print";
+            iconEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+            scoreLbl.className = "font-bold text-lg text-amber-500";
+        }
+
+        // Réinitialisation des signatures
+        document.getElementById('chk-signature-emp').checked = false;
+        document.getElementById('chk-signature-resp').checked = false;
+        
+        switchScreen('scr-qcm-success');
+    }
+}
+
+function finalizePassportSignature() {
+    // Vérification de la DOUBLE signature
+    const empSigned = document.getElementById('chk-signature-emp').checked;
+    const respSigned = document.getElementById('chk-signature-resp').checked;
+
+    if(!empSigned || !respSigned) {
+        return showToast("⚠️ Les signatures du Salarié ET du Responsable sont obligatoires pour clôturer !");
+    }
+
+    // Ajout de l'émargement en direct dans le registre du Manager
+    const emargementTable = document.getElementById('manager-emargements-list');
+    const emptyRow = emargementTable.querySelector('td[colspan="4"]');
+    if(emptyRow) emptyRow.parentElement.remove();
+
+    const workerName = currentEmployeeSession ? currentEmployeeSession.name : "Salarié Démo";
+    const now = new Date().toLocaleString('fr-FR');
+
+    const row = document.createElement('tr');
+    row.className = "border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50/50 font-medium";
+    row.innerHTML = `
+        <td class="p-3 font-bold text-slate-800 dark:text-white">${workerName}</td>
+        <td class="p-3 text-slate-500">${now}</td>
+        <td class="p-3">
+            <span class="${qcmScore === qcmActiveQuestions.length ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'} px-2 py-0.5 rounded font-bold">
+                ${qcmScore} / ${qcmActiveQuestions.length}
+            </span>
+        </td>
+        <td class="p-3 text-emerald-500 font-extrabold text-[11px] uppercase tracking-wider">
+            ✍️ Double Signature Validée
+        </td>
+    `;
+    emargementTable.insertBefore(row, emargementTable.firstChild);
+
+    showToast("Passeport validé, signé et enregistré avec succès !");
+    switchScreen('scr-employee');
+}
     function finalizePassportSignature() {
       const signed = document.getElementById('chk-signature-certif').checked;
       if(!signed) return showToast("Vous devez cocher la case d'engagement pour signer !");
