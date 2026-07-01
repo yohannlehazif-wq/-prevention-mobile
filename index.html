@@ -504,13 +504,48 @@
 
     <!-- MANAGER --> 
 
-          <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border shadow-premium flex flex-col sm:flex-row justify-between items-center gap-4 border-l-4 border-l-restev-blue">   
-        <div class="flex items-center space-x-2.5"><div class="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div><h2 class="text-xs font-black dark:text-white uppercase tracking-wide">Console Adhérent : <span id="lbl-manager-comp-name" class="text-restev-blue font-black"></span></h2></div>   
+    <section id="scr-manager" class="screen space-y-6">   
+      <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border shadow-premium flex flex-col sm:flex-row justify-between items-center gap-4 border-l-4 border-l-restev-blue">   
+        <div class="flex items-center space-x-2.5">   
+          <div class="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>   
+          <h2 class="text-xs font-black dark:text-white uppercase tracking-wide">Console Adhérent : <span id="lbl-manager-comp-name" class="text-restev-blue font-black"></span></h2>   
+        </div>   
         <div class="flex items-center gap-2">   
           <button onclick="toggleAlertSound()" id="btn-alert-sound" class="text-xs bg-slate-100 dark:bg-slate-700 dark:text-white px-3 py-2 rounded-xl font-bold"><i class="fa-solid fa-volume-high mr-1"></i> Son ON</button>   
           <button onclick="quitManager()" class="text-xs bg-red-50 text-red-600 hover:bg-red-100 font-extrabold px-4 py-2 rounded-xl"><i class="fa-solid fa-right-from-bracket mr-1"></i> Quitter</button>   
         </div>   
-      </div> 
+      </div>   
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6"> 
+
+        <div class="space-y-6"> 
+
+          <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-premium border-t-4 border-t-restev-gold"> 
+
+            <h3 class="text-xs font-black uppercase tracking-wider dark:text-white mb-4"><i class="fa-solid fa-sliders text-restev-gold mr-1"></i> 1. Matrice des Risques</h3> 
+
+            <button onclick="openStudio()" class="w-full bg-slate-900 dark:bg-slate-700 text-white py-2.5 rounded-xl text-xs font-bold"><i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> Ajuster les risques</button> 
+
+          </div> 
+
+ 
+
+          <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-premium border-t-4 border-t-restev-magenta space-y-4"> 
+
+            <h3 class="text-xs font-black uppercase tracking-wider dark:text-white"><i class="fa-solid fa-qrcode text-restev-magenta mr-1"></i> 2. Accueil Nouvel Arrivant</h3> 
+
+            <input type="text" id="reg-emp-name" placeholder="Nom & Prénom du travailleur" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white" /> 
+
+            <button onclick="generateEmployeeAccess()" class="w-full bg-gradient-to-r from-restev-magenta to-restev-magenta-dark text-white py-3 rounded-xl text-xs font-extrabold shadow-md"><i class="fa-solid fa-bolt mr-1.5"></i> Générer le QR salarié</button> 
+
+            <div id="qr-area" class="hidden flex flex-col items-center justify-center p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-dashed space-y-3"> 
+
+              <canvas id="qr-canvas" class="mx-auto bg-white p-2 rounded-xl shadow-md border"></canvas> 
+
+              <span class="text-[10px] font-extrabold text-restev-magenta uppercase tracking-wider">Scanner pour démarrer sur mobile</span> 
+
+            </div> 
+
+          </div> 
 
  
 
@@ -1001,10 +1036,9 @@ function triggerNewReportAlert(report) {
 
   showToast(`Nouveau signalement : ${employee} - ${category}`);
 }
-
     function toggleAlertSound(){
       soundMuted = !soundMuted;
-      const btn = document.getElementById('btn-alert-sound');
+      const btn=document.getElementById('btn-alert-sound');
       if(btn){
         btn.innerHTML = soundMuted ? '<i class="fa-solid fa-volume-xmark mr-1"></i> Son OFF' : '<i class="fa-solid fa-volume-high mr-1"></i> Son ON';
       }
