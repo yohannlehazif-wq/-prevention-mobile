@@ -317,7 +317,10 @@
         <h3 class="text-sm font-black dark:text-white">Nouvel Établissement ?</h3> 
 
         <input type="text" id="new-company-name" placeholder="Raison sociale" class="w-full p-3 bg-white dark:bg-slate-800 border rounded-xl text-xs font-bold dark:text-white" /> 
-
+<button onclick="toggleAlertSound()" class="text-xs bg-slate-100 dark:bg-slate-700 dark:text-white px-3 py-2 rounded-xl font-bold">
+  <i class="fa-solid fa-volume-high mr-1"></i>
+  Son ON/OFF
+</button>
         <button onclick="createNewCompany()" class="w-full bg-slate-800 dark:bg-slate-700 text-white py-2.5 rounded-xl text-xs font-bold shadow">Générer un code d'accès</button> 
 
         <div id="generated-code-box" class="hidden mt-3 p-3 bg-amber-50 dark:bg-slate-800 border rounded-xl text-center space-y-2"> 
@@ -807,6 +810,9 @@ const supabaseClient = window.supabase
     let currentTutoUrl = ''; 
 
     let managerPollingInterval = null; 
+    let alertAudioCtx = null;
+let managerRealtimeChannel = null;
+let lastReportAlertAt = 0;
 
  
 
@@ -841,10 +847,131 @@ const supabaseClient = window.supabase
     function toggleDarkMode(){ document.documentElement.classList.toggle('dark'); } 
 
     function showToast(text){ const toast=document.getElementById('toast'); document.getElementById('toast-text').innerText=text; toast.classList.remove('translate-y-20','opacity-0'); setTimeout(()=>toast.classList.add('translate-y-20','opacity-0'),3500); } 
+function unlockAlertSound() {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
 
+    if (!alertAudioCtx) {
+      alertAudioCtx = new AudioContext();
+    }
+
+    if (alertAudioCtx.state === 'suspended') {
+      alertAudioCtx.resume();
+    }
+  } catch (e) {
+    console.warn('Son non disponible :', e);
+  }
+}
+
+function playAlertSound() {
+  try {
+    if (soundMuted) return;
+
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+
+    if (!alertAudioCtx) {
+      alertAudioCtx = new AudioContext();
+    }
+
+    if (alertAudioCtx.state === 'suspended') {
+      alertAudioCtx.resume();
+    }
+
+    const now = alertAudioCtx.currentTime;
+
+    const osc = alertAudioCtx.createOscillator();
+    const gain = alertAudioCtx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, now);
+
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.25, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+
+    osc.connect(gain);
+    gain.connect(alertAudioCtx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.38);
+  } catch (e) {
+    console.warn('Erreur alerte sonore :', e);
+  }
+}
+
+function vibrateAlert() {
+  try {
+    if ('vibrate' in navigator) {
+      navigator.vibrate([250, 120, 250, 120, 400]);
+    }
+  } catch (e) {
+    console.warn('Vibration non disponible :', e);
+  }
+}
+
+function triggerNewReportAlert(report) {
+  const now = Date.now();
+
+  // Anti-spam : évite 10 sons si plusieurs événements arrivent ensemble.
+  if (now - lastReportAlertAt < 1500) return;
+  lastReportAlertAt = now;
+
+  playAlertSound();
+  vibrateAlert();
+
+  const employee = report?.employee_name || 'Un salarié';
+  const category = report?.category || 'un danger';
+
+  showToast(`Nouveau signalement : ${employee} - ${category}`);
+}
+``
     function switchScreen(screenId){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); const t=document.getElementById(screenId); if(t){ t.classList.add('active'); window.scrollTo({top:0,behavior:'smooth'}); if(screenId==='scr-report') setTimeout(fixMapSize,250); } } 
 
- 
+ function startManagerRealtime() {
+  if (!supabaseClient) {
+    showToast('Supabase non chargé.');
+    return;
+  }
+
+  const companyCode = document.getElementById('lbl-manager-comp-name')?.innerText?.trim();
+
+  if (!companyCode) {
+    return;
+  }
+
+  // Sécurité : on coupe l'ancien abonnement s'il existe.
+  if (managerRealtimeChannel) {
+    supabaseClient.removeChannel(managerRealtimeChannel);
+    managerRealtimeChannel = null;
+  }
+
+  managerRealtimeChannel = supabaseClient
+    .channel(`prevention_reports_${companyCode}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'prevention_reports',
+        filter: `company_code=eq.${companyCode}`
+      },
+      payload => {
+        console.log('Nouveau signalement reçu en temps réel :', payload.new);
+
+        triggerNewReportAlert(payload.new);
+        loadManagerReports();
+      }
+    )
+    .subscribe(status => {
+      console.log('Realtime Supabase :', status);
+
+      if (status === 'SUBSCRIBED') {
+        showToast('Alertes temps réel activées.');
+      }
+    });
+}
 
     function checkUrlParameters(){ const p=new URLSearchParams(window.location.search); const emp=p.get('emp'); const comp=p.get('comp'); if(emp && comp){ currentEmployeeSession={name:emp, company:comp}; document.getElementById('lbl-emp-welcome').innerText=`Bonjour, ${emp}`; document.getElementById('lbl-emp-company').innerText=`Établissement : ${comp}`; switchScreen('scr-employee'); showToast('Passeport Prévention activé via QR Code !'); } } 
 
@@ -856,42 +983,26 @@ const supabaseClient = window.supabase
 
  
 
-    function handleManagerLogin() { 
+    function handleManagerLogin() {
+  const code = document.getElementById('manager-company-code').value.trim().toUpperCase();
 
-  const code = document.getElementById('manager-company-code').value.trim().toUpperCase(); 
+  if (!code) {
+    return showToast("Veuillez saisir un code établissement");
+  }
 
- 
+  // Débloque le son grâce au clic utilisateur sur le bouton de connexion.
+  unlockAlertSound();
 
-  if (!code) { 
+  document.getElementById('lbl-manager-comp-name').innerText = code;
+  showToast("Identification validée.");
+  switchScreen('scr-manager');
 
-    return showToast("Veuillez saisir un code établissement"); 
+  // Chargement initial.
+  loadManagerReports();
 
-  } 
-
- 
-
-  document.getElementById('lbl-manager-comp-name').innerText = code; 
-
-  showToast("Identification validée."); 
-
-  switchScreen('scr-manager'); 
-
- 
-
-  // Version économe : chargement une seule fois 
-
-  loadManagerReports(); 
-
-} 
-
- 
-
-  // Économie quota : chargement manuel uniquement 
-
-  loadManagerReports(); 
-
-} 
-
+  // Alertes quasi instantanées.
+  startManagerRealtime();
+}
     function quitManager(){ if(managerPollingInterval) clearInterval(managerPollingInterval); managerPollingInterval=null; switchScreen('scr-home'); } 
 
  
@@ -1940,9 +2051,20 @@ const supabaseClient = window.supabase
   // Économie quota : chargement une seule fois après connexion manager.
   loadManagerReports();
 }
-    function quitManager(){ if(managerPollingInterval) clearInterval(managerPollingInterval); managerPollingInterval=null; switchScreen('scr-home'); } 
+   function quitManager() {
+  if (managerPollingInterval) {
+    clearInterval(managerPollingInterval);
+  }
 
- 
+  managerPollingInterval = null;
+
+  if (managerRealtimeChannel && supabaseClient) {
+    supabaseClient.removeChannel(managerRealtimeChannel);
+    managerRealtimeChannel = null;
+  }
+
+  switchScreen('scr-home');
+}
 
     function populateSectorDropdown(){ const select=document.getElementById('manager-sector-select'); if(!select) return; select.innerHTML='<option value="">-- Sélectionner un profil métier --</option>'; Object.entries(VENDEE_SECTORS).forEach(([key,sector])=>{ const opt=document.createElement('option'); opt.value=key; opt.innerText=sector.name; select.appendChild(opt); }); } 
 
@@ -2102,7 +2224,10 @@ const supabaseClient = window.supabase
 
     function openEmployeeResources(){ const c=document.getElementById('resources-list'); c.innerHTML=''; const active=RISKS_DATABASE.filter(r=>r.active); if(!active.length){ c.innerHTML='<p class="text-xs text-slate-500 text-center italic py-4">Aucun risque spécifique paramétré.</p>'; } active.forEach(r=>{ const res=OFFICIAL_RESOURCES[r.id]; if(!res) return; const a=document.createElement('a'); a.href=res.link; a.target='_blank'; a.className='block bg-white dark:bg-slate-800 p-4 rounded-2xl border shadow-sm hover:shadow-md transition group'; a.innerHTML=`<div class="flex items-center justify-between gap-3"><div class="space-y-1.5 flex-1"><span class="inline-block text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${res.color} border">${res.org}</span><h4 class="text-sm font-bold dark:text-white group-hover:text-emerald-500 transition leading-tight">${escapeHtml(res.title)}</h4><p class="text-[10px] font-medium text-slate-400 italic">Lié à : ${escapeHtml(r.name)}</p></div><div class="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center text-slate-400"><i class="fa-solid fa-arrow-up-right-from-square text-sm"></i></div></div>`; c.appendChild(a); }); switchScreen('scr-resources'); } 
 
- 
+ function toggleAlertSound() {
+  soundMuted = !soundMuted;
+  showToast(soundMuted ? 'Alertes sonores désactivées.' : 'Alertes sonores activées.');
+}
 
     function initLeafletMap(){ try{ if(document.getElementById('map') && window.L && !mapInstance){ mapInstance=L.map('map',{zoomControl:false}).setView([46.670,-1.426],13); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance); if(navigator.geolocation){ navigator.geolocation.getCurrentPosition(pos=>{ const lat=pos.coords.latitude,lng=pos.coords.longitude; mapInstance.setView([lat,lng],15); L.marker([lat,lng]).addTo(mapInstance).bindPopup('Position terrain').openPopup(); document.getElementById('geo-status').innerText='📍 Coordonnées GPS verrouillées'; },()=>{ document.getElementById('geo-status').innerText='GPS non disponible'; }); } } }catch(e){ console.warn(e); } } 
 
