@@ -389,22 +389,49 @@
         </h3>
         <p class="text-[10px] text-slate-500 dark:text-slate-400">Sélectionnez le matériel remis au salarié :</p>
         <div class="grid grid-cols-2 gap-2">
-          <label class="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 p-2 rounded-lg text-[10px] font-bold dark:text-white">
-            <input type="checkbox" class="text-emerald-500"> Casque
-          </label>
-          <label class="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 p-2 rounded-lg text-[10px] font-bold dark:text-white">
-            <input type="checkbox" class="text-emerald-500"> Gants
-          </label>
-          <label class="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 p-2 rounded-lg text-[10px] font-bold dark:text-white">
-            <input type="checkbox" class="text-emerald-500"> Chaussures
-          </label>
-          <label class="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 p-2 rounded-lg text-[10px] font-bold dark:text-white">
-            <input type="checkbox" class="text-emerald-500"> Lunettes
-          </label>
-        </div>
-        <button onclick="showToast('Dotation EPI enregistrée au dossier')" class="w-full bg-emerald-500 text-white py-2 rounded-xl text-[10px] font-black uppercase">
-          Valider la remise du kit
-        </button>
+  <label class="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 p-2 rounded-lg text-[10px] font-bold dark:text-white">
+    <input type="checkbox" id="epi-casque" value="Casque de protection" class="text-emerald-500">
+    Casque
+  </label>
+
+  <label class="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 p-2 rounded-lg text-[10px] font-bold dark:text-white">
+    <input type="checkbox" id="epi-gants" value="Gants de protection" class="text-emerald-500">
+    Gants
+  </label>
+
+  <label class="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 p-2 rounded-lg text-[10px] font-bold dark:text-white">
+    <input type="checkbox" id="epi-chaussures" value="Chaussures de sécurité" class="text-emerald-500">
+    Chaussures
+  </label>
+
+  <label class="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 p-2 rounded-lg text-[10px] font-bold dark:text-white">
+    <input type="checkbox" id="epi-lunettes" value="Lunettes de protection" class="text-emerald-500">
+    Lunettes
+  </label>
+
+  <label class="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 p-2 rounded-lg text-[10px] font-bold dark:text-white">
+    <input type="checkbox" id="epi-gilet" value="Gilet haute visibilité" class="text-emerald-500">
+    Gilet HV
+  </label>
+
+  <label class="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 p-2 rounded-lg text-[10px] font-bold dark:text-white">
+    <input type="checkbox" id="epi-auditif" value="Protection auditive" class="text-emerald-500">
+    Protection auditive
+  </label>
+
+  <label class="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 p-2 rounded-lg text-[10px] font-bold dark:text-white">
+    <input type="checkbox" id="epi-masque" value="Masque / protection respiratoire" class="text-emerald-500">
+    Masque
+  </label>
+
+  <label class="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 p-2 rounded-lg text-[10px] font-bold dark:text-white">
+    <input type="checkbox" id="epi-harnais" value="Harnais antichute" class="text-emerald-500">
+    Harnais
+  </label>
+</div>
+        <button onclick="saveEPIKit()" class="w-full bg-emerald-500 text-white py-2 rounded-xl text-[10px] font-black uppercase">
+  Valider la remise du kit
+</button>
       </div>
     </div>
           <!-- Zones & Secteurs -->
@@ -634,7 +661,15 @@
                 Par la présente, les signataires attestent que l'agent a suivi avec succès son parcours d'intégration à la sécurité. Les risques spécifiques au poste de travail (DUERP) ont été présentés et compris. Les Équipements de Protection Individuelle (EPI) requis ont été remis et leurs conditions d'utilisation expliquées.
             </p>
         </div>
+<div class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 p-4 rounded-xl print:bg-transparent print:border print:border-slate-300">
+  <h4 class="text-[11px] font-black uppercase text-emerald-600 mb-2">
+    <i class="fa-solid fa-helmet-safety"></i> Équipements de Protection Individuelle remis
+  </h4>
 
+  <div id="cert-epi-list" class="text-xs text-slate-700 dark:text-slate-300 print:text-slate-800 font-bold leading-relaxed">
+    Aucun EPI renseigné.
+  </div>
+</div>
         <div class="grid grid-cols-2 gap-6">
             <div class="border rounded-xl p-4 text-center space-y-3 bg-slate-50 dark:bg-slate-900 print:bg-transparent print:border-slate-300">
                 <h4 class="text-[11px] font-black uppercase text-slate-500">Signature du Salarié</h4>
@@ -1127,7 +1162,9 @@ function generateTrainingMenu() {
             document.getElementById('cert-company').value = currentEmployeeSession.company || '';
             document.getElementById('cert-employee').value = currentEmployeeSession.name || '';
         }
-
+// Ajout des EPI remis dans le passeport prévention
+updateCertificateEPI();
+      
         // Réinitialiser les signatures
         document.getElementById('chk-sign-emp').checked = false;
         document.getElementById('chk-sign-mgr').checked = false;
@@ -1360,7 +1397,58 @@ function finalizePassportSignature() {
         reader.readAsDataURL(input.files[0]);
       }
     }
+let selectedEPIList = [];
 
+function getSelectedEPI() {
+  const epiCheckboxes = [
+    'epi-casque',
+    'epi-gants',
+    'epi-chaussures',
+    'epi-lunettes',
+    'epi-gilet',
+    'epi-auditif',
+    'epi-masque',
+    'epi-harnais'
+  ];
+
+  return epiCheckboxes
+    .map(id => document.getElementById(id))
+    .filter(input => input && input.checked)
+    .map(input => input.value);
+}
+
+function saveEPIKit() {
+  selectedEPIList = getSelectedEPI();
+
+  if (selectedEPIList.length === 0) {
+    showToast("Aucun EPI sélectionné.");
+    return;
+  }
+
+  showToast("Dotation EPI enregistrée au dossier salarié.");
+}
+
+function updateCertificateEPI() {
+  const epiBox = document.getElementById('cert-epi-list');
+  if (!epiBox) return;
+
+  selectedEPIList = getSelectedEPI();
+
+  if (selectedEPIList.length === 0) {
+    epiBox.innerHTML = `
+      <span class="italic text-slate-400">
+        Aucun EPI déclaré comme remis.
+      </span>
+    `;
+    return;
+  }
+
+  epiBox.innerHTML = `
+    <ul class="list-disc list-inside space-y-1">
+      ${selectedEPIList.map(epi => `<li>${epi}</li>`).join('')}
+    </ul>
+  `;
+}
     // --- ENVOI DU SIGNALEMENT ---
     function submitRiskReport() {
       const category = document.getElementById('risk-category-select').value;
