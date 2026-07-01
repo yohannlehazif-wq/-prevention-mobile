@@ -428,23 +428,16 @@ const supabaseClient = window.supabase
     function copyGeneratedCode(){ const code=document.getElementById('lbl-generated-code').innerText; navigator.clipboard?.writeText(code); showToast('Code copié !'); }
 
     function handleManagerLogin() {
-  const code = document.getElementById('manager-company-code').value.trim().toUpperCase();
+      const code = document.getElementById('manager-company-code').value.trim().toUpperCase();
+      if (!code) return showToast("Veuillez saisir un code établissement");
 
-  if (!code) {
-    return showToast("Veuillez saisir un code établissement");
-  }
+      document.getElementById('lbl-manager-comp-name').innerText = code;
+      showToast("Identification validée.");
+      switchScreen('scr-manager');
 
-  document.getElementById('lbl-manager-comp-name').innerText = code;
-  showToast("Identification validée.");
-  switchScreen('scr-manager');
-
-  // Version économe : chargement une seule fois
-  loadManagerReports();
-}
-
-  // Économie quota : chargement manuel uniquement
-  loadManagerReports();
-}
+      // Économie quota : chargement une seule fois après connexion manager.
+      loadManagerReports();
+    }
     function quitManager(){ if(managerPollingInterval) clearInterval(managerPollingInterval); managerPollingInterval=null; switchScreen('scr-home'); }
 
     function populateSectorDropdown(){ const select=document.getElementById('manager-sector-select'); if(!select) return; select.innerHTML='<option value="">-- Sélectionner un profil métier --</option>'; Object.entries(VENDEE_SECTORS).forEach(([key,sector])=>{ const opt=document.createElement('option'); opt.value=key; opt.innerText=sector.name; select.appendChild(opt); }); }
@@ -508,7 +501,7 @@ const supabaseClient = window.supabase
     async function sendManagerResponse(id){ const response=document.getElementById(`response-${id}`).value.trim(); const action=document.getElementById(`action-${id}`).value.trim(); const {error}=await supabaseClient.from('prevention_reports').update({manager_response:response, corrective_action:action, status:'En cours de traitement'}).eq('id',id); if(error){ console.error(error); return showToast('Erreur Supabase : '+error.message); } showToast('Réponse enregistrée.'); loadManagerReports(); }
     async function updateReportStatus(id,status){ const {error}=await supabaseClient.from('prevention_reports').update({status}).eq('id',id); if(error){ console.error(error); return showToast('Erreur Supabase : '+error.message); } showToast('Statut mis à jour.'); }
 
-    async function openEmployeeMessages(){ if(!currentEmployeeSession) return showToast('Session salarié non reconnue.'); const {data,error}=await supabaseClient.from('prevention_reports').select('*').eq('company_code',currentEmployeeSession.company).eq('employee_name',currentEmployeeSession.name).order('created_at',{ascending:false}).limit(20); if(error){ console.error(error); return showToast('Erreur Supabase : '+error.message); } renderEmployeeMessages(data||[]); switchScreen('scr-employee-messages'); }
+    async function openEmployeeMessages(){ if(!currentEmployeeSession) return showToast('Session salarié non reconnue.'); if(!supabaseClient) return showToast('Supabase non chargé. Vérifiez internet.'); const {data,error}=await supabaseClient.from('prevention_reports').select('*').eq('company_code',currentEmployeeSession.company).eq('employee_name',currentEmployeeSession.name).order('created_at',{ascending:false}).limit(20); if(error){ console.error(error); return showToast('Erreur Supabase : '+error.message); } renderEmployeeMessages(data||[]); switchScreen('scr-employee-messages'); }
     function renderEmployeeMessages(msgs){ const c=document.getElementById('employee-messages-list'); c.innerHTML=''; if(!msgs.length){ c.innerHTML='<p class="text-xs text-slate-400 italic text-center py-6">Aucun message pour le moment.</p>'; return; } msgs.forEach(m=>{ const card=document.createElement('div'); card.className='bg-white dark:bg-slate-800 p-4 rounded-2xl border shadow-sm space-y-2'; card.innerHTML=`<div class="flex justify-between items-start gap-2"><div><p class="text-xs font-black dark:text-white">${escapeHtml(m.category||'Signalement')}</p><p class="text-[10px] text-slate-400">${new Date(m.created_at).toLocaleString('fr-FR')}</p></div><span class="text-[10px] font-black px-2 py-1 rounded bg-blue-50 text-blue-600">${escapeHtml(m.status||'Nouveau')}</span></div><div class="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl"><p class="text-[10px] font-black uppercase text-slate-400 mb-1">Votre signalement</p><p class="text-xs text-slate-700 dark:text-slate-300">${escapeHtml(m.description||'')}</p></div><div class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-xl border"><p class="text-[10px] font-black uppercase text-emerald-600 mb-1">Réponse du responsable</p><p class="text-xs text-slate-700 dark:text-slate-300">${escapeHtml(m.manager_response || 'Aucune réponse pour le moment.')}</p></div><div class="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-xl border"><p class="text-[10px] font-black uppercase text-amber-600 mb-1">Action corrective</p><p class="text-xs text-slate-700 dark:text-slate-300">${escapeHtml(m.corrective_action || 'Aucune action corrective renseignée.')}</p></div>`; c.appendChild(card); }); }
 
     function startEmployeeQCM(){ qcmActiveQuestions=RISKS_DATABASE.filter(r=>r.active && r.question); if(!qcmActiveQuestions.length) return showToast('Aucun risque configuré.'); qcmCurrentIndex=0; qcmScore=0; renderQCMQuestion(); switchScreen('scr-qcm'); }
