@@ -391,26 +391,18 @@
 
     <section id="scr-training" class="screen hidden max-w-md mx-auto w-full p-4 space-y-4">
     <div class="flex items-center justify-between mb-4">
-        <button onclick="switchScreen('scr-employee')" class="text-xs bg-white border px-4 py-2 rounded-xl font-bold flex items-center gap-1.5 shadow-sm">
+       <button onclick="switchScreen('scr-home')" class="text-xs bg-white border px-4 py-2 rounded-xl font-bold flex items-center gap-1.5 shadow-sm">
             <i class="fa-solid fa-arrow-left"></i> Retour
         </button>
         <h2 class="text-lg font-black text-slate-800">Formation INRS</h2>
     </div>
 
     <div id="menu-list" class="grid grid-cols-1 gap-3">
-        <p class="text-xs text-slate-500 italic">Sélectionnez votre secteur pour accéder au tutoriel :</p>
-        <script>
-            // On génère les boutons dynamiquement à partir de la liste JS
-            modulesTuto.forEach(mod => {
-                document.write(`
-                    <button onclick="loadTrainingModule('${mod.url}')" class="p-4 bg-white border-l-4 border-restev-blue shadow-sm rounded-lg text-left hover:bg-slate-50 transition w-full flex items-center justify-between">
-                        <span class="font-semibold text-slate-700 text-sm">${mod.titre}</span>
-                        <i class="fa-solid fa-chevron-right text-slate-300"></i>
-                    </button>
-                `);
-            });
-        </script>
-    </div>
+    <p class="text-xs text-slate-500 italic">
+        Sélectionnez votre secteur pour accéder au tutoriel :
+    </p>
+</div>
+
 
     <div id="tuto-container" class="hidden">
         <button onclick="document.getElementById('menu-list').classList.remove('hidden'); document.getElementById('tuto-container').classList.add('hidden');" class="mb-4 text-xs text-restev-blue font-bold flex items-center gap-1">
@@ -777,14 +769,17 @@ function applySectorPreset() {
     let qcmScore = 0;
 
     // --- INITIALISATION DE L'APPLICATION ---
-    document.addEventListener('DOMContentLoaded', () => {
-     populateSectorDropdown();
-      renderStudioRisks();
-      populateRiskSelectors();
-      initLeafletMap();
-      initChart();
-      checkUrlParameters();
-    });
+   document.addEventListener('DOMContentLoaded', () => {
+  populateSectorDropdown();
+  renderStudioRisks();
+  populateRiskSelectors();
+  initLeafletMap();
+  initChart();
+  checkUrlParameters();
+
+  // ✅ AJOUT : génération des boutons formation
+  generateTrainingMenu();
+});
 
     // --- INTERCEPTION DU SCAN QR CODE ---
     function checkUrlParameters() {
@@ -800,7 +795,24 @@ function applySectorPreset() {
         showToast("Passeport Prévention activé via QR Code !");
       }
     }
+function generateTrainingMenu() {
+    const container = document.getElementById('menu-list');
+    if (!container) return;
 
+    modulesTuto.forEach(mod => {
+        const btn = document.createElement('button');
+        btn.className = "p-4 bg-white border-l-4 border-restev-blue shadow-sm rounded-lg text-left hover:bg-slate-50 transition w-full flex items-center justify-between";
+
+        btn.onclick = () => loadTrainingModule(mod.url);
+
+        btn.innerHTML = `
+            <span class="font-semibold text-slate-700 text-sm">${mod.titre}</span>
+            <i class="fa-solid fa-chevron-right text-slate-300"></i>
+        `;
+
+        container.appendChild(btn);
+    });
+}
     // --- NAVIGATION ET UI ---
     function switchScreen(screenId) {
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
