@@ -66,6 +66,229 @@
 
     }; 
 
+
+
+/* =========================================================
+   PATCH SYNCHRO RESTEV 85 — Registre passeports + Centre RESTEV
+   Objectif : rendre visibles les validations QCM dans le registre
+   et faire remonter les validations + signalements dans les stats.
+   ========================================================= */
+function getCleanLabel(value, fallback='Non renseigné'){
+  const v=String(value || '').trim();
+  return (!v || v === 'Non renseigné' || v === 'undefined' || v === 'null') ? fallback : v;
+}
+function getCurrentSectorLabel(){
+  const companyCode=(currentEmployeeSession?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
+  const fromSession=getCleanLabel(currentEmployeeSession?.sector, '');
+  const fromManager=getCleanLabel(managerSector, '');
+  const fromSelect=getCleanLabel(document.getElementById('manager-login-sector')?.value, '');
+  const fromStore=getCleanLabel(localStorage.getItem('restev_manager_sector_' + companyCode), '');
+  return fromSession || fromManager || fromSelect || fromStore || 'Non renseigné';
+}
+function getCurrentCompanySizeLabel(){
+  const companyCode=(currentEmployeeSession?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
+  const fromManager=getCleanLabel(managerCompanySize, '');
+  const fromSelect=getCleanLabel(document.getElementById('manager-login-size')?.value, '');
+  const fromStore=getCleanLabel(localStorage.getItem('restev_manager_size_' + companyCode), '');
+  return fromManager || fromSelect || fromStore || 'Non renseigné';
+}
+function getRegistryKey(){
+  const companyCode=(document.getElementById('lbl-manager-comp-name')?.innerText?.trim() || currentEmployeeSession?.company || 'default').trim();
+  return `restev_passport_registry_${companyCode}`;
+}
+function normalizeRegistryRow(r){
+  const created=r.created_at || r.validated_at || r.date || new Date().toISOString();
+  const scoreText = (r.score !== undefined && r.total !== undefined) ? `${r.score}/${r.total}` : (r.score || '');
+  return {
+    company_code:r.company_code || r.company || '',
+    employee_name:r.employee_name || r.employee || 'Salarié',
+    validated_at: created.includes('/') ? created : new Date(created).toLocaleString('fr-FR'),
+    score: scoreText,
+    epis: Array.isArray(r.epis) ? r.epis : [],
+    status:r.status || 'Validé et signé'
+  };
+}
+function renderPassportRegistry(entries){
+  const table=document.getElementById('manager-emargements-list');
+  if(!table) return;
+  table.innerHTML='';
+  if(!entries || !entries.length){
+    table.innerHTML='<tr><td colspan="5" class="p-4 text-center italic text-slate-400">Aucun passeport validé pour le moment. Si un test vient d’être fait sur un autre téléphone, vérifiez que la table Supabase <b>passport_registry</b> existe et que les droits INSERT/SELECT sont ouverts.</td></tr>';
+    return;
+  }
+  entries.forEach(entry=>{
+    const row=document.createElement('tr');
+    row.className='border-b border-slate-100 dark:border-slate-700';
+    const epiText=(entry.epis && entry.epis.length) ? entry.epis.join(', ') : 'Aucun EPI renseigné';
+    row.innerHTML=`<td class="p-3 font-bold dark:text-white">${escapeHtml(entry.employee_name || 'Salarié')}</td><td class="p-3 text-slate-500">${escapeHtml(entry.validated_at || '')}</td><td class="p-3"><span class="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded font-bold">${escapeHtml(entry.score || '')}</span></td><td class="p-3 text-slate-500">${escapeHtml(epiText)}</td><td class="p-3 text-emerald-500 font-extrabold text-[11px] uppercase">${escapeHtml(entry.status || 'Validé et signé')}</td>`;
+    table.appendChild(row);
+  });
+}
+async function loadPassportRegistry(){
+  const companyCode=document.getElementById('lbl-manager-comp-name')?.innerText?.trim();
+  if(!companyCode) return;
+  let localEntries=[];
+  try{ localEntries=JSON.parse(localStorage.getItem(getRegistryKey()) || '[]').map(normalizeRegistryRow); }catch(e){ localEntries=[]; }
+  renderPassportRegistry(localEntries);
+  if(!supabaseClient){
+    showToast('Registre local affiché : Supabase non chargé.');
+    return;
+  }
+  try{
+    const {data,error}=await supabaseClient
+      .from('passport_registry')
+      .select('company_code,employee_name,score,total,epis,status,created_at')
+      .eq('company_code', companyCode)
+      .order('created_at',{ascending:false})
+      .limit(100);
+    if(error){
+      console.warn('Registre Supabase non disponible :', error.message);
+      showToast('Registre Supabase non disponible : vérifiez la table passport_registry.');
+      return;
+    }
+    const rows=(data || []).map(normalizeRegistryRow);
+    renderPassportRegistry(rows.length ? rows : localEntries);
+    if(rows.length) showToast(`${rows.length} passeport(s) chargé(s) depuis Supabase.`);
+  }catch(e){
+    console.warn('Chargement registre local uniquement :', e);
+    showToast('Registre local uniquement : erreur Supabase.');
+  }
+}
+async function submitAnonymizedPreventionStat(evt){
+  if(!supabaseClient) return false;
+  try{
+    const anonymized={
+      period_month:getPeriodMonth(),
+      sector: evt.sector || getCurrentSectorLabel(),
+      company_size_range: evt.company_size_range || getCurrentCompanySizeLabel(),
+      risk_category: evt.category || evt.risk_category || 'Non renseigné',
+      risk_level: evt.level || evt.risk_level || 'Non renseigné',
+      frequency: evt.frequency || 'Non renseigné',
+      event_type: evt.event_type || 'Signalement prévention',
+      corrective_action_type: evt.corrective_action_type || 'À définir'
+    };
+    const {error}=await supabaseClient.from('prevention_stats').insert([anonymized]);
+    if(error){ console.warn('Stat anonymisée non enregistrée :', error.message); return false; }
+    return true;
+  }catch(e){ console.warn('Stat anonymisée ignorée :', e); return false; }
+}
+async function savePassportEntry(entry){
+  // 1) sauvegarde locale immédiate
+  let entries=[];
+  try{ entries=JSON.parse(localStorage.getItem(getRegistryKey()) || '[]'); }catch(e){ entries=[]; }
+  entries.unshift(entry);
+  localStorage.setItem(getRegistryKey(), JSON.stringify(entries.slice(0,100)));
+
+  // 2) sauvegarde Supabase pour visibilité manager multi-appareil
+  let cloudOK=false;
+  if(supabaseClient){
+    try{
+      const {error}=await supabaseClient.from('passport_registry').insert([{
+        company_code: entry.company_code,
+        employee_name: entry.employee_name,
+        score: qcmScore,
+        total: qcmActiveQuestions.length,
+        epis: entry.epis || [],
+        status: entry.status || 'Validé et signé',
+        signature_employee: entry.signature_employee || null,
+        signature_manager: entry.signature_manager || null
+      }]);
+      if(error){ console.warn('Sauvegarde Supabase registre impossible :', error.message); }
+      else { cloudOK=true; }
+    }catch(e){ console.warn('Sauvegarde registre locale uniquement :', e); }
+  }
+
+  // 3) alimentation Centre RESTEV : une validation QCM devient une stat agrégée
+  await submitAnonymizedPreventionStat({
+    sector: entry.sector || getCurrentSectorLabel(),
+    company_size_range: getCurrentCompanySizeLabel(),
+    category: 'Validation passeport prévention',
+    level: qcmScore === qcmActiveQuestions.length ? 'Acquis complet' : 'Points à renforcer',
+    frequency: 'Ponctuelle',
+    event_type: 'Passeport validé',
+    corrective_action_type: qcmScore === qcmActiveQuestions.length ? 'Aucune' : 'Reprise des points faibles'
+  });
+
+  if(document.getElementById('manager-emargements-list')) loadPassportRegistry();
+  showToast(cloudOK ? 'Passeport enregistré dans le registre partagé.' : 'Passeport enregistré localement. Vérifiez Supabase pour partage manager.');
+}
+async function finalizeAndClose(){
+  updateCertificateEPI();
+  if(!isSignatureDone('emp') || !isSignatureDone('mgr')) return showToast('Les deux signatures réelles sont obligatoires.');
+  const name=document.getElementById('cert-employee').value || (currentEmployeeSession?currentEmployeeSession.name:'Salarié');
+  const companyCode=(currentEmployeeSession?.company || document.getElementById('cert-company').value || document.getElementById('lbl-manager-comp-name')?.innerText || 'Établissement non renseigné').trim();
+  const now=new Date().toLocaleString('fr-FR');
+  const entry={
+    company_code: companyCode,
+    employee_name: name,
+    validated_at: now,
+    score: `${qcmScore}/${qcmActiveQuestions.length}`,
+    epis: selectedEPIList,
+    sector: getCurrentSectorLabel(),
+    status:'Validé et signé',
+    signature_employee:getSignatureData('emp'),
+    signature_manager:getSignatureData('mgr')
+  };
+  await savePassportEntry(entry);
+  switchScreen('scr-employee');
+}
+async function submitRiskReport(){
+  if(!supabaseClient) return showToast('Supabase non chargé. Vérifiez internet.');
+  const category=document.getElementById('risk-category-select').value;
+  const desc=document.getElementById('risk-description').value.trim();
+  const lvl=document.getElementById('risk-level').value;
+  const freq=document.getElementById('risk-frequency').value;
+  if(!desc) return showToast('Veuillez saisir une description du danger.');
+  const employeeName=currentEmployeeSession ? currentEmployeeSession.name : 'Salarié terrain';
+  const companyCode=currentEmployeeSession ? currentEmployeeSession.company : (document.getElementById('lbl-manager-comp-name')?.innerText || 'Établissement non renseigné');
+  const { error } = await supabaseClient.from('prevention_reports').insert([{ company_code: companyCode, employee_name: employeeName, category, level: lvl, frequency: freq, description: desc, status:'Nouveau' }]);
+  if(error){ console.error('Erreur Supabase insertion:', error); return showToast('Erreur Supabase signalement : '+error.message); }
+  await submitAnonymizedPreventionStat({category, level:lvl, frequency:freq, event_type:'Signalement prévention'});
+  document.getElementById('risk-description').value='';
+  showToast('Signalement envoyé + statistique agrégée enregistrée.');
+  switchScreen('scr-employee');
+}
+async function loadRestevStats(){
+  const totalEl=document.getElementById('stats-total');
+  if(!totalEl) return;
+  if(!supabaseClient){ showToast('Supabase non chargé : statistiques indisponibles.'); return; }
+  try{
+    let rows=[];
+    const statRes=await supabaseClient
+      .from('prevention_stats')
+      .select('period_month,sector,company_size_range,risk_category,risk_level,frequency,event_type,created_at')
+      .order('created_at',{ascending:false})
+      .limit(500);
+    if(!statRes.error && statRes.data) rows=statRes.data;
+
+    // Fallback : si prevention_stats est vide, on agrège les passeports validés pour que le Centre ne reste pas à zéro.
+    if(!rows.length){
+      const passRes=await supabaseClient
+        .from('passport_registry')
+        .select('company_code,score,total,status,created_at')
+        .order('created_at',{ascending:false})
+        .limit(500);
+      if(!passRes.error && passRes.data){
+        rows=passRes.data.map(p=>({
+          period_month:(p.created_at || new Date().toISOString()).slice(0,7),
+          sector:'Non renseigné',
+          company_size_range:'Non renseigné',
+          risk_category:'Validation passeport prévention',
+          risk_level:(Number(p.score) === Number(p.total)) ? 'Acquis complet' : 'Points à renforcer',
+          frequency:'Ponctuelle',
+          event_type:'Passeport validé',
+          created_at:p.created_at
+        }));
+      }
+    }
+    if(!rows.length && statRes.error){
+      console.error(statRes.error);
+      showToast('Statistiques non disponibles : vérifiez la table prevention_stats.');
+    }
+    renderRestevStats(rows || []);
+  }catch(e){ console.error(e); showToast('Erreur chargement statistiques.'); }
+}
+
   </script> 
 
  
@@ -552,19 +775,6 @@
           <button onclick="enableManagerNotifications()" id="btn-manager-notif" class="text-xs bg-blue-50 text-restev-blue dark:bg-slate-700 dark:text-blue-300 px-3 py-2 rounded-xl font-bold"><i class="fa-solid fa-bell mr-1"></i> Notifications</button>     <button onclick="quitManager()" class="text-xs bg-red-50 text-red-600 hover:bg-red-100 font-extrabold px-4 py-2 rounded-xl"><i class="fa-solid fa-right-from-bracket mr-1"></i> Quitter</button>   
         </div>   
       </div>   
-
-      <div id="manager-sector-summary" class="bg-gradient-to-r from-blue-50 to-emerald-50 dark:from-slate-900 dark:to-slate-800 border border-blue-100 dark:border-slate-700 p-4 rounded-2xl shadow-sm">
-        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Profil établissement</p>
-        <p class="text-sm font-black dark:text-white mt-1"><i class="fa-solid fa-industry text-restev-blue mr-1"></i> Secteur : <span id="lbl-manager-sector" class="text-restev-blue">Non renseigné</span></p>
-        <p class="text-[11px] font-bold text-slate-500 dark:text-slate-300 mt-1">QCM renforcé : 10 questions terrain par secteur + risques sélectionnés.</p>
-      </div>
-
-
-      <div class="bg-blue-50 dark:bg-blue-900/20 border p-4 rounded-xl print:bg-transparent print:border-slate-300">
-        <h4 class="text-[11px] font-black uppercase text-restev-blue mb-2"><i class="fa-solid fa-lightbulb"></i> Points à renforcer après le QCM</h4>
-        <div id="qcm-reco-list" class="text-xs text-slate-700 dark:text-slate-300 print:text-slate-800 font-medium leading-relaxed">Aucun point particulier à renforcer.</div>
-      </div>
-
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6"> 
 
         <div class="space-y-6"> 
@@ -611,8 +821,7 @@
 
               <canvas id="qr-canvas" class="mx-auto bg-white p-2 rounded-xl shadow-md border"></canvas> 
 
-              <span class="text-[10px] font-extrabold text-restev-magenta uppercase tracking-wider">Scanner pour démarrer sur mobile</span>
-              <span id="qr-sector-label" class="text-[10px] font-extrabold text-restev-blue uppercase tracking-wider"></span> 
+              <span class="text-[10px] font-extrabold text-restev-magenta uppercase tracking-wider">Scanner pour démarrer sur mobile</span> 
 
             </div> 
 
@@ -644,7 +853,7 @@
 
       <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border-t-4 border-t-emerald-500 shadow-premium space-y-3"> 
 
-        <h3 class="font-black dark:text-white text-xs uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-id-card text-emerald-500"></i> Registre des Passeports Validés</h3> 
+        <div class="flex items-center justify-between gap-2"><h3 class="font-black dark:text-white text-xs uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-id-card text-emerald-500"></i> Registre des Passeports Validés</h3><button id="btn-refresh-registry" onclick="loadPassportRegistry()" class="text-[10px] bg-slate-100 dark:bg-slate-700 dark:text-white px-3 py-2 rounded-xl font-black">Actualiser</button></div> 
 
         <div class="overflow-x-auto"> 
 
@@ -914,1100 +1123,344 @@ const supabaseClient = window.supabase
     const SECTOR_QCM_DATABASE = {
       "btp": [
             {
-                  "id": "btp-01",
-                  "theme": "Travail en hauteur",
-                  "question": "Avant un travail en hauteur, je dois :",
+                  "id": "btp-1",
+                  "sector": "BTP",
+                  "name": "BTP - Travail en hauteur",
+                  "question": "Sur un chantier, avant d’utiliser une plateforme ou un échafaudage, je dois :",
                   "options": [
-                        "monter sur ce qui est disponible si c’est rapide",
-                        "utiliser un équipement adapté, stable et avec protections collectives",
-                        "retirer le garde-corps s’il gêne"
+                        "Monter rapidement si le travail dure peu",
+                        "Vérifier la stabilité, les protections collectives et l’autorisation d’utilisation",
+                        "Retirer le garde-corps pour gagner de la place"
                   ],
-                  "answer": 1,
-                  "advice": "Revoir la préparation du travail en hauteur et les protections collectives."
+                  "answer": 1
             },
             {
-                  "id": "btp-02",
-                  "theme": "Échafaudage/PIRL",
-                  "question": "Une PIRL ou un échafaudage instable doit être :",
+                  "id": "btp-2",
+                  "sector": "BTP",
+                  "name": "BTP - Coactivité",
+                  "question": "En cas de coactivité avec une autre entreprise, la bonne attitude est :",
                   "options": [
-                        "utilisé avec prudence",
-                        "mis hors service, signalé et remplacé",
-                        "calé avec des matériaux trouvés sur place"
+                        "Improviser sur place",
+                        "Respecter les zones, le balisage et les consignes de coordination",
+                        "Passer dans la zone interdite si je fais vite"
                   ],
-                  "answer": 1,
-                  "advice": "Vérifier stabilité, montage et contrôle des équipements de hauteur."
+                  "answer": 1
             },
             {
-                  "id": "btp-03",
-                  "theme": "Coactivité",
-                  "question": "Quand plusieurs entreprises travaillent dans la même zone, je dois :",
+                  "id": "btp-3",
+                  "sector": "BTP",
+                  "name": "BTP - Électricité chantier",
+                  "question": "Un câble ou coffret électrique semble endommagé sur chantier. Je dois :",
                   "options": [
-                        "continuer comme si j’étais seul",
-                        "respecter le balisage, le phasage et les consignes de coordination",
-                        "passer dans une zone interdite si je fais vite"
+                        "Le réparer moi-même sans habilitation",
+                        "Ne pas toucher, baliser et alerter le responsable",
+                        "Continuer à travailler autour"
                   ],
-                  "answer": 1,
-                  "advice": "Renforcer la coordination et les règles de coactivité."
-            },
-            {
-                  "id": "btp-04",
-                  "theme": "Électricité chantier",
-                  "question": "Un câble ou coffret électrique abîmé doit être :",
-                  "options": [
-                        "réparé rapidement avec du ruban",
-                        "signalé, balisé et non touché sans habilitation",
-                        "utilisé tant qu’il fonctionne"
-                  ],
-                  "answer": 1,
-                  "advice": "Rappeler les limites d’intervention électrique."
-            },
-            {
-                  "id": "btp-05",
-                  "theme": "Fouille/tranchée",
-                  "question": "À proximité d’une tranchée, je dois surveiller :",
-                  "options": [
-                        "uniquement la boue",
-                        "risque d’effondrement, chute et accès sécurisé",
-                        "seulement la présence d’eau"
-                  ],
-                  "answer": 1,
-                  "advice": "Contrôler balisage, blindage, accès et stabilité des fouilles."
-            },
-            {
-                  "id": "btp-06",
-                  "theme": "Outillage",
-                  "question": "Avant d’utiliser une disqueuse ou perceuse, je dois :",
-                  "options": [
-                        "retirer le carter pour mieux voir",
-                        "vérifier l’outil, les protections et porter les EPI adaptés",
-                        "utiliser n’importe quel disque disponible"
-                  ],
-                  "answer": 1,
-                  "advice": "Revoir l’utilisation des outils électroportatifs."
-            },
-            {
-                  "id": "btp-07",
-                  "theme": "Poussières",
-                  "question": "Lors d’une découpe poussiéreuse, je dois :",
-                  "options": [
-                        "souffler la poussière vers les collègues",
-                        "limiter les poussières et porter la protection respiratoire prévue",
-                        "travailler sans masque si c’est rapide"
-                  ],
-                  "answer": 1,
-                  "advice": "Prévoir aspiration, humidification et protection respiratoire."
-            },
-            {
-                  "id": "btp-08",
-                  "theme": "Circulation chantier",
-                  "question": "Près des engins de chantier, je dois :",
-                  "options": [
-                        "passer derrière un engin en recul",
-                        "rester visible, respecter les cheminements et éviter les angles morts",
-                        "penser que le conducteur m’a forcément vu"
-                  ],
-                  "answer": 1,
-                  "advice": "Rappeler les angles morts et cheminements piétons."
-            },
-            {
-                  "id": "btp-09",
-                  "theme": "Manutention",
-                  "question": "Pour déplacer des matériaux lourds, je dois :",
-                  "options": [
-                        "forcer seul pour gagner du temps",
-                        "utiliser une aide mécanique ou organiser un port à plusieurs",
-                        "porter en torsion du dos"
-                  ],
-                  "answer": 1,
-                  "advice": "Analyser les charges et organiser la manutention."
-            },
-            {
-                  "id": "btp-10",
-                  "theme": "Danger grave",
-                  "question": "En cas de danger grave et imminent, je dois :",
-                  "options": [
-                        "continuer jusqu’à la pause",
-                        "me mettre en sécurité et alerter immédiatement",
-                        "filmer sans prévenir"
-                  ],
-                  "answer": 1,
-                  "advice": "Rappeler la procédure d’alerte et le droit de retrait."
+                  "answer": 1
             }
       ],
       "commerce": [
             {
-                  "id": "com-01",
-                  "theme": "Mise en rayon",
-                  "question": "En mise en rayon, je dois :",
+                  "id": "com-1",
+                  "sector": "Commerce",
+                  "name": "Commerce - Manutention rayon",
+                  "question": "Lors de la mise en rayon, la priorité est de :",
                   "options": [
-                        "porter le maximum en une fois",
-                        "fractionner les charges et éviter les torsions répétées",
-                        "laisser les cartons dans l’allée"
+                        "Porter le plus possible en une seule fois",
+                        "Utiliser les aides disponibles et éviter les torsions répétées",
+                        "Laisser les cartons dans les allées"
                   ],
-                  "answer": 1,
-                  "advice": "Revoir les gestes et l’organisation de mise en rayon."
+                  "answer": 1
             },
             {
-                  "id": "com-02",
-                  "theme": "Chutes",
-                  "question": "Un liquide au sol en zone client doit être :",
+                  "id": "com-2",
+                  "sector": "Commerce",
+                  "name": "Commerce - Chutes",
+                  "question": "Un carton ou un liquide encombre une allée client. Je dois :",
                   "options": [
-                        "laissé jusqu’à la fermeture",
-                        "nettoyé, balisé ou signalé immédiatement",
-                        "recouvert par un carton"
+                        "Attendre la fermeture",
+                        "Sécuriser ou signaler immédiatement la zone",
+                        "Le pousser discrètement sur le côté"
                   ],
-                  "answer": 1,
-                  "advice": "Renforcer la gestion des sols glissants."
+                  "answer": 1
             },
             {
-                  "id": "com-03",
-                  "theme": "Cutter",
-                  "question": "Avec un cutter, je dois :",
+                  "id": "com-3",
+                  "sector": "Commerce",
+                  "name": "Commerce - Agressivité client",
+                  "question": "Face à un client agressif, je dois en priorité :",
                   "options": [
-                        "couper vers moi",
-                        "couper à distance du corps avec un outil en bon état",
-                        "laisser la lame sortie"
+                        "Répondre sur le même ton",
+                        "Garder une distance, alerter et appliquer la procédure interne",
+                        "Rester seul pour régler la situation"
                   ],
-                  "answer": 1,
-                  "advice": "Rappeler l’usage des cutters de sécurité."
-            },
-            {
-                  "id": "com-04",
-                  "theme": "Réserve",
-                  "question": "Une réserve sûre doit avoir :",
-                  "options": [
-                        "des issues temporairement bloquées",
-                        "des circulations libres et des charges stables",
-                        "des piles instables mais hautes"
-                  ],
-                  "answer": 1,
-                  "advice": "Travailler le rangement et la stabilité des stockages."
-            },
-            {
-                  "id": "com-05",
-                  "theme": "Caisse",
-                  "question": "Au poste caisse, je limite les douleurs en :",
-                  "options": [
-                        "répétant le même geste vite",
-                        "variant les postures et signalant les gênes",
-                        "ignorant les douleurs"
-                  ],
-                  "answer": 1,
-                  "advice": "Adapter le poste de caisse et les rotations."
-            },
-            {
-                  "id": "com-06",
-                  "theme": "Incivilité",
-                  "question": "Face à un client agressif, je dois :",
-                  "options": [
-                        "répondre sur le même ton",
-                        "garder une distance et alerter selon la procédure",
-                        "rester seul pour gérer"
-                  ],
-                  "answer": 1,
-                  "advice": "Clarifier la conduite à tenir face aux incivilités."
-            },
-            {
-                  "id": "com-07",
-                  "theme": "Livraison",
-                  "question": "Pendant une livraison, je dois :",
-                  "options": [
-                        "décharger le plus vite possible",
-                        "sécuriser le cheminement et la stabilité des charges",
-                        "laisser les palettes en zone client"
-                  ],
-                  "answer": 1,
-                  "advice": "Organiser les livraisons pour limiter chutes et TMS."
-            },
-            {
-                  "id": "com-08",
-                  "theme": "Froid",
-                  "question": "En chambre froide, je dois :",
-                  "options": [
-                        "entrer sans protection",
-                        "porter l’équipement prévu et limiter l’exposition",
-                        "bloquer la porte ouverte"
-                  ],
-                  "answer": 1,
-                  "advice": "Adapter EPI et temps d’exposition au froid."
-            },
-            {
-                  "id": "com-09",
-                  "theme": "Produits",
-                  "question": "Avant un produit d’entretien, je dois :",
-                  "options": [
-                        "mélanger pour renforcer",
-                        "lire l’étiquette et éviter les mélanges",
-                        "transvaser sans étiquette"
-                  ],
-                  "answer": 1,
-                  "advice": "Rappeler étiquetage et interdiction des mélanges."
-            },
-            {
-                  "id": "com-10",
-                  "theme": "Affluence",
-                  "question": "En forte affluence, je dois :",
-                  "options": [
-                        "supprimer toutes les pauses",
-                        "respecter l’organisation et demander renfort si besoin",
-                        "tout gérer seul"
-                  ],
-                  "answer": 1,
-                  "advice": "Prévoir renforts, pauses et priorités."
+                  "answer": 1
             }
       ],
       "industrie": [
             {
-                  "id": "ind-01",
-                  "theme": "Machine",
-                  "question": "Avant une intervention sur machine bloquée, je dois :",
+                  "id": "ind-1",
+                  "sector": "Industrie",
+                  "name": "Industrie - Machine",
+                  "question": "Avant d’intervenir sur une machine en fonctionnement anormal, je dois :",
                   "options": [
-                        "passer la main rapidement",
-                        "arrêter, sécuriser et appliquer la consignation si nécessaire",
-                        "demander seulement à un collègue de surveiller"
+                        "Passer la main pour débloquer rapidement",
+                        "Arrêter, sécuriser et respecter la procédure de consignation si nécessaire",
+                        "Demander à un collègue de surveiller seulement"
                   ],
-                  "answer": 1,
-                  "advice": "Rappeler arrêt, consignation et interdiction d’improviser."
+                  "answer": 1
             },
             {
-                  "id": "ind-02",
-                  "theme": "Protecteurs",
-                  "question": "Un protecteur machine retiré doit conduire à :",
+                  "id": "ind-2",
+                  "sector": "Industrie",
+                  "name": "Industrie - Circulation engins",
+                  "question": "Dans une zone avec chariots ou engins, je dois :",
                   "options": [
-                        "continuer prudemment",
-                        "arrêter l’utilisation et signaler",
-                        "remplacer par un carton"
+                        "Traverser sans regarder si j’ai priorité",
+                        "Respecter les cheminements piétons et rester visible",
+                        "Marcher derrière un engin en manœuvre"
                   ],
-                  "answer": 1,
-                  "advice": "Renforcer le rôle des carters et sécurités."
+                  "answer": 1
             },
             {
-                  "id": "ind-03",
-                  "theme": "Chariot",
-                  "question": "Dans une zone de chariots, je dois :",
+                  "id": "ind-3",
+                  "sector": "Industrie",
+                  "name": "Industrie - Produits chimiques",
+                  "question": "Avant d’utiliser un produit chimique inconnu, je dois :",
                   "options": [
-                        "traverser sans regarder",
-                        "respecter les cheminements et rester visible",
-                        "passer derrière un chariot en recul"
+                        "Sentir le produit pour l’identifier",
+                        "Lire l’étiquette/FDS et appliquer les protections prévues",
+                        "Le mélanger avec un autre produit pour tester"
                   ],
-                  "answer": 1,
-                  "advice": "Rappeler règles piétons/engins."
-            },
-            {
-                  "id": "ind-04",
-                  "theme": "Chimique",
-                  "question": "Avant un produit chimique nouveau, je dois :",
-                  "options": [
-                        "sentir le produit",
-                        "lire l’étiquette/FDS et porter les protections",
-                        "le transvaser sans étiquette"
-                  ],
-                  "answer": 1,
-                  "advice": "Revoir FDS, EPI et stockage chimique."
-            },
-            {
-                  "id": "ind-05",
-                  "theme": "Bruit",
-                  "question": "En zone bruyante signalée, je dois :",
-                  "options": [
-                        "la retirer pour parler",
-                        "porter la protection auditive prévue",
-                        "la porter seulement en fin de journée"
-                  ],
-                  "answer": 1,
-                  "advice": "Rappeler le port effectif des protections auditives."
-            },
-            {
-                  "id": "ind-06",
-                  "theme": "Maintenance",
-                  "question": "Une maintenance doit se faire :",
-                  "options": [
-                        "en production pour gagner du temps",
-                        "selon une procédure avec énergies maîtrisées",
-                        "sans prévenir"
-                  ],
-                  "answer": 1,
-                  "advice": "Formaliser maintenance et consignation."
-            },
-            {
-                  "id": "ind-07",
-                  "theme": "Levage",
-                  "question": "Un équipement de levage peut être utilisé si :",
-                  "options": [
-                        "je l’ai déjà vu faire",
-                        "je suis formé/autorisé et le matériel est adapté",
-                        "un collègue me prête les clés"
-                  ],
-                  "answer": 1,
-                  "advice": "Vérifier autorisations et adéquation du matériel."
-            },
-            {
-                  "id": "ind-08",
-                  "theme": "Incendie",
-                  "question": "Les produits inflammables doivent être :",
-                  "options": [
-                        "stockés près d’une prise",
-                        "identifiés, limités et éloignés des sources d’ignition",
-                        "mélangés aux déchets"
-                  ],
-                  "answer": 1,
-                  "advice": "Revoir stockage inflammables et incendie."
-            },
-            {
-                  "id": "ind-09",
-                  "theme": "EPI",
-                  "question": "Un EPI abîmé doit être :",
-                  "options": [
-                        "gardé jusqu’à rupture",
-                        "signalé et remplacé",
-                        "prêté sans suivi"
-                  ],
-                  "answer": 1,
-                  "advice": "Organiser remplacement et suivi des EPI."
-            },
-            {
-                  "id": "ind-10",
-                  "theme": "Anomalie",
-                  "question": "Une anomalie répétée doit être :",
-                  "options": [
-                        "banalisée",
-                        "signalée et analysée avant accident",
-                        "corrigée seul sans informer"
-                  ],
-                  "answer": 1,
-                  "advice": "Développer la remontée des situations dangereuses."
+                  "answer": 1
             }
       ],
       "logistique": [
             {
-                  "id": "log-01",
-                  "theme": "Quai",
-                  "question": "Sur un quai, je surveille surtout :",
+                  "id": "log-1",
+                  "sector": "Transport / Logistique",
+                  "name": "Logistique - Quai",
+                  "question": "Sur un quai de chargement, le risque principal à surveiller est :",
                   "options": [
-                        "la couleur des palettes",
-                        "chute, écrasement, calage et circulation engins",
-                        "la météo uniquement"
+                        "La couleur des palettes",
+                        "La chute de hauteur, l’écrasement et la circulation des engins",
+                        "Le rangement administratif"
                   ],
-                  "answer": 1,
-                  "advice": "Renforcer consignes quai et calage."
+                  "answer": 1
             },
             {
-                  "id": "log-02",
-                  "theme": "Arrimage",
-                  "question": "Avant départ, je vérifie :",
+                  "id": "log-2",
+                  "sector": "Transport / Logistique",
+                  "name": "Logistique - Arrimage",
+                  "question": "Avant un départ en livraison, je dois vérifier :",
                   "options": [
-                        "uniquement le GPS",
-                        "arrimage, charge et état du véhicule",
-                        "seulement le carburant"
+                        "Uniquement le GPS",
+                        "L’arrimage, la charge et l’état du véhicule",
+                        "Seulement le niveau de carburant"
                   ],
-                  "answer": 1,
-                  "advice": "Mettre en place un contrôle départ."
+                  "answer": 1
             },
             {
-                  "id": "log-03",
-                  "theme": "Chariot",
-                  "question": "Conduire un chariot nécessite :",
+                  "id": "log-3",
+                  "sector": "Transport / Logistique",
+                  "name": "Logistique - Chariot",
+                  "question": "Puis-je conduire un chariot sans autorisation interne ?",
                   "options": [
-                        "savoir démarrer",
-                        "formation, autorisation interne et règles de circulation",
-                        "accord oral d’un collègue"
+                        "Oui si je sais conduire",
+                        "Non, une autorisation et une formation adaptées sont nécessaires",
+                        "Oui en dépannage uniquement"
                   ],
-                  "answer": 1,
-                  "advice": "Vérifier autorisations de conduite."
-            },
-            {
-                  "id": "log-04",
-                  "theme": "Palette",
-                  "question": "Une palette abîmée doit être :",
-                  "options": [
-                        "placée en bas de pile",
-                        "écartée ou reconditionnée",
-                        "utilisée si légère"
-                  ],
-                  "answer": 1,
-                  "advice": "Contrôler palettes et stabilité."
-            },
-            {
-                  "id": "log-05",
-                  "theme": "Picking",
-                  "question": "Pour une commande lourde, je dois :",
-                  "options": [
-                        "porter seul vite",
-                        "utiliser les aides et respecter les limites",
-                        "empiler au-dessus de la vue"
-                  ],
-                  "answer": 1,
-                  "advice": "Limiter port manuel et mauvaises hauteurs."
-            },
-            {
-                  "id": "log-06",
-                  "theme": "Piétons",
-                  "question": "À pied en entrepôt, je dois :",
-                  "options": [
-                        "couper par les allées engins",
-                        "utiliser les zones piétonnes",
-                        "passer derrière un engin"
-                  ],
-                  "answer": 1,
-                  "advice": "Séparer flux piétons/engins."
-            },
-            {
-                  "id": "log-07",
-                  "theme": "Hayon",
-                  "question": "Avec un hayon, le risque prioritaire est :",
-                  "options": [
-                        "le bruit",
-                        "chute, coincement et stabilité de charge",
-                        "la couleur du camion"
-                  ],
-                  "answer": 1,
-                  "advice": "Former à l’usage du hayon."
-            },
-            {
-                  "id": "log-08",
-                  "theme": "Fatigue",
-                  "question": "En conduite avec fatigue, je dois :",
-                  "options": [
-                        "accélérer",
-                        "m’arrêter en sécurité et prévenir",
-                        "continuer avec café"
-                  ],
-                  "answer": 1,
-                  "advice": "Rappeler pauses et fatigue routière."
-            },
-            {
-                  "id": "log-09",
-                  "theme": "Gerbage",
-                  "question": "Une charge gerbée doit être :",
-                  "options": [
-                        "posée au hasard",
-                        "stable, compatible et limitée en hauteur",
-                        "contre une issue"
-                  ],
-                  "answer": 1,
-                  "advice": "Revoir gerbage et racks."
-            },
-            {
-                  "id": "log-10",
-                  "theme": "Quasi-accident",
-                  "question": "Un quasi-accident chariot doit être :",
-                  "options": [
-                        "ignoré si personne blessé",
-                        "signalé et analysé",
-                        "réglé entre collègues"
-                  ],
-                  "answer": 1,
-                  "advice": "Traiter les signaux faibles."
+                  "answer": 1
             }
       ],
       "sante": [
             {
-                  "id": "san-01",
-                  "theme": "Transfert",
-                  "question": "Avant un transfert de personne, je dois :",
+                  "id": "san-1",
+                  "sector": "Aide à domicile / Santé",
+                  "name": "Santé - Manutention personne",
+                  "question": "Lors de l’aide au transfert d’une personne, je dois :",
                   "options": [
-                        "forcer avec le dos",
-                        "évaluer, utiliser les aides et demander appui",
-                        "agir seul coûte que coûte"
+                        "Forcer avec le dos",
+                        "Utiliser les aides techniques et demander de l’aide si besoin",
+                        "Agir seul même si la situation est instable"
                   ],
-                  "answer": 1,
-                  "advice": "Renforcer aides techniques et transferts."
+                  "answer": 1
             },
             {
-                  "id": "san-02",
-                  "theme": "Biologique",
-                  "question": "En risque biologique, je dois :",
+                  "id": "san-2",
+                  "sector": "Aide à domicile / Santé",
+                  "name": "Santé - Risque biologique",
+                  "question": "En présence d’un risque de contact avec du sang ou des liquides biologiques, je dois :",
                   "options": [
-                        "continuer sans gant",
-                        "porter les protections et appliquer l’hygiène des mains",
-                        "nettoyer à l’eau uniquement"
+                        "Mettre les protections prévues et respecter l’hygiène des mains",
+                        "Continuer sans gant si c’est rapide",
+                        "Nettoyer uniquement à l’eau"
                   ],
-                  "answer": 1,
-                  "advice": "Rappeler précautions standard."
+                  "answer": 0
             },
             {
-                  "id": "san-03",
-                  "theme": "Isolement",
-                  "question": "En intervention isolée, je dois :",
+                  "id": "san-3",
+                  "sector": "Aide à domicile / Santé",
+                  "name": "Santé - Isolement",
+                  "question": "En intervention isolée chez un bénéficiaire, je dois :",
                   "options": [
-                        "ne prévenir personne",
-                        "respecter les procédures de contact/alerte",
-                        "improviser"
+                        "Ne prévenir personne de mon planning",
+                        "Respecter les procédures de contact/alerte prévues",
+                        "Improviser en cas de difficulté"
                   ],
-                  "answer": 1,
-                  "advice": "Vérifier moyens d’alerte travail isolé."
-            },
-            {
-                  "id": "san-04",
-                  "theme": "Agressivité",
-                  "question": "Face à une agressivité, je dois :",
-                  "options": [
-                        "finir malgré le danger",
-                        "me protéger, prendre du recul et alerter",
-                        "répondre vivement"
-                  ],
-                  "answer": 1,
-                  "advice": "Formaliser conduite à tenir."
-            },
-            {
-                  "id": "san-05",
-                  "theme": "Domicile",
-                  "question": "Un domicile encombré doit conduire à :",
-                  "options": [
-                        "continuer malgré tout",
-                        "adapter l’intervention et signaler",
-                        "tout déplacer seul"
-                  ],
-                  "answer": 1,
-                  "advice": "Analyser l’environnement de travail."
-            },
-            {
-                  "id": "san-06",
-                  "theme": "Produits",
-                  "question": "Avec produits ménagers, je dois :",
-                  "options": [
-                        "mélanger pour renforcer",
-                        "lire l’étiquette et éviter les mélanges",
-                        "mettre dans bouteille alimentaire"
-                  ],
-                  "answer": 1,
-                  "advice": "Rappeler risque chimique domestique."
-            },
-            {
-                  "id": "san-07",
-                  "theme": "Routier",
-                  "question": "En tournée, je dois :",
-                  "options": [
-                        "régler GPS en roulant",
-                        "préparer l’itinéraire et éviter téléphone au volant",
-                        "enchaîner sans pause"
-                  ],
-                  "answer": 1,
-                  "advice": "Renforcer risque routier mission."
-            },
-            {
-                  "id": "san-08",
-                  "theme": "Émotionnel",
-                  "question": "Après une situation difficile, je peux :",
-                  "options": [
-                        "tout garder",
-                        "demander appui et utiliser les canaux prévus",
-                        "attendre seul"
-                  ],
-                  "answer": 1,
-                  "advice": "Prévoir soutien/débriefing."
-            },
-            {
-                  "id": "san-09",
-                  "theme": "Piquant",
-                  "question": "Un objet piquant suspect doit être :",
-                  "options": [
-                        "ramassé à main nue",
-                        "géré avec procédure et contenant adapté",
-                        "mis en poubelle classique"
-                  ],
-                  "answer": 1,
-                  "advice": "Rappeler déchets à risques."
-            },
-            {
-                  "id": "san-10",
-                  "theme": "Alerte",
-                  "question": "Une situation préoccupante doit être :",
-                  "options": [
-                        "gardée sans trace",
-                        "signalée selon procédure",
-                        "réglée seul"
-                  ],
-                  "answer": 1,
-                  "advice": "Clarifier circuits d’alerte."
+                  "answer": 1
             }
       ],
       "agriculture": [
             {
-                  "id": "agr-01",
-                  "theme": "Machine",
-                  "question": "Avant intervention machine, je dois :",
+                  "id": "agr-1",
+                  "sector": "Agriculture",
+                  "name": "Agriculture - Machines",
+                  "question": "Avant d’intervenir sur une machine agricole, je dois :",
                   "options": [
-                        "laisser tourner",
-                        "arrêter, sécuriser et éviter remise en marche",
-                        "passer la main dans l’organe"
+                        "Laisser le moteur tourner au ralenti",
+                        "Arrêter, sécuriser et éviter toute remise en marche intempestive",
+                        "Passer rapidement la main dans l’organe mobile"
                   ],
-                  "answer": 1,
-                  "advice": "Rappeler arrêt moteur et protections."
+                  "answer": 1
             },
             {
-                  "id": "agr-02",
-                  "theme": "Prise de force",
-                  "question": "La prise de force doit avoir :",
+                  "id": "agr-2",
+                  "sector": "Agriculture",
+                  "name": "Agriculture - Produits phytosanitaires",
+                  "question": "Avant d’utiliser un produit phytosanitaire, je dois :",
                   "options": [
-                        "une protection retirée",
-                        "une protection présente et en bon état",
-                        "un ruban de réparation"
+                        "Lire l’étiquette et porter les protections prévues",
+                        "Me fier uniquement à l’habitude",
+                        "Mélanger les produits sans consigne"
                   ],
-                  "answer": 1,
-                  "advice": "Contrôler organes en mouvement."
+                  "answer": 0
             },
             {
-                  "id": "agr-03",
-                  "theme": "Phyto",
-                  "question": "Avant un phytosanitaire, je dois :",
+                  "id": "agr-3",
+                  "sector": "Agriculture",
+                  "name": "Agriculture - Chaleur",
+                  "question": "En période de forte chaleur, je dois :",
                   "options": [
-                        "me fier à l’habitude",
-                        "lire l’étiquette et porter les EPI",
-                        "mélanger sans consigne"
+                        "Attendre d’avoir très soif",
+                        "M’hydrater, adapter le rythme et signaler tout malaise",
+                        "Travailler plus vite pour finir tôt"
                   ],
-                  "answer": 1,
-                  "advice": "Renforcer lecture étiquette/EPI."
-            },
-            {
-                  "id": "agr-04",
-                  "theme": "Chaleur",
-                  "question": "Par forte chaleur, je dois :",
-                  "options": [
-                        "attendre d’avoir très soif",
-                        "m’hydrater et adapter le rythme",
-                        "travailler plus vite"
-                  ],
-                  "answer": 1,
-                  "advice": "Prévoir eau, pauses, horaires."
-            },
-            {
-                  "id": "agr-05",
-                  "theme": "Animaux",
-                  "question": "Avec animaux, je dois :",
-                  "options": [
-                        "me placer sans issue",
-                        "garder une zone de retrait",
-                        "travailler seul toujours"
-                  ],
-                  "answer": 1,
-                  "advice": "Rappeler contention et zones de retrait."
-            },
-            {
-                  "id": "agr-06",
-                  "theme": "Terrain",
-                  "question": "Sur sol irrégulier, je dois :",
-                  "options": [
-                        "courir",
-                        "adapter le déplacement et les chaussures",
-                        "ignorer"
-                  ],
-                  "answer": 1,
-                  "advice": "Prévenir chutes extérieures."
-            },
-            {
-                  "id": "agr-07",
-                  "theme": "Bruit",
-                  "question": "Avec matériel bruyant, je dois :",
-                  "options": [
-                        "ignorer",
-                        "porter protections et limiter exposition",
-                        "retirer protections"
-                  ],
-                  "answer": 1,
-                  "advice": "Prévenir bruit/vibrations."
-            },
-            {
-                  "id": "agr-08",
-                  "theme": "Stockage",
-                  "question": "Un stockage de ballots doit être :",
-                  "options": [
-                        "grimpé comme échelle",
-                        "stable et sécurisé",
-                        "empilé sans limite"
-                  ],
-                  "answer": 1,
-                  "advice": "Vérifier stabilité."
-            },
-            {
-                  "id": "agr-09",
-                  "theme": "Isolé",
-                  "question": "En travail isolé, je dois :",
-                  "options": [
-                        "ne prévenir personne",
-                        "prévoir moyen d’alerte",
-                        "compter sur la chance"
-                  ],
-                  "answer": 1,
-                  "advice": "Mettre procédure travail isolé."
-            },
-            {
-                  "id": "agr-10",
-                  "theme": "Dépannage",
-                  "question": "Un dépannage improvisé est :",
-                  "options": [
-                        "normal en saison",
-                        "à éviter sans sécurisation et compétence",
-                        "moins risqué si rapide"
-                  ],
-                  "answer": 1,
-                  "advice": "Encadrer maintenance/dépannage."
+                  "answer": 1
             }
       ],
       "tertiaire": [
             {
-                  "id": "ter-01",
-                  "theme": "Écran",
-                  "question": "Pour limiter les douleurs écran, je dois :",
+                  "id": "ter-1",
+                  "sector": "Tertiaire",
+                  "name": "Tertiaire - Écran",
+                  "question": "Pour limiter les troubles liés au travail sur écran, je dois :",
                   "options": [
-                        "tenir toujours la même posture",
-                        "régler le poste et varier les postures",
-                        "travailler dans le noir"
+                        "Garder toujours la même posture",
+                        "Régler mon poste, varier les postures et faire des pauses visuelles",
+                        "Travailler dans le noir pour mieux voir l’écran"
                   ],
-                  "answer": 1,
-                  "advice": "Revoir ergonomie écran."
+                  "answer": 1
             },
             {
-                  "id": "ter-02",
-                  "theme": "RPS",
-                  "question": "En surcharge durable, je peux :",
+                  "id": "ter-2",
+                  "sector": "Tertiaire",
+                  "name": "Tertiaire - RPS",
+                  "question": "En cas de surcharge ou de stress durable, je peux :",
                   "options": [
-                        "garder pour moi",
-                        "en parler via les canaux prévus",
-                        "attendre des mois"
+                        "Garder la situation pour moi",
+                        "En parler au manager/RH/médecin du travail ou utiliser les canaux d’alerte",
+                        "Attendre que cela passe plusieurs mois"
                   ],
-                  "answer": 1,
-                  "advice": "Clarifier ressources internes."
+                  "answer": 1
             },
             {
-                  "id": "ter-03",
-                  "theme": "Chutes",
-                  "question": "Au bureau, je réduis les chutes en :",
+                  "id": "ter-3",
+                  "sector": "Tertiaire",
+                  "name": "Tertiaire - Chutes",
+                  "question": "Dans un bureau, le risque de chute peut être réduit en :",
                   "options": [
-                        "laissant câbles au sol",
-                        "rangeant câbles et passages",
-                        "courant dans escaliers"
+                        "Laissant les câbles au sol",
+                        "Rangeant les passages et signalant les obstacles",
+                        "Courant dans les escaliers"
                   ],
-                  "answer": 1,
-                  "advice": "Dégager circulations."
-            },
-            {
-                  "id": "ter-04",
-                  "theme": "Électricité",
-                  "question": "Une multiprise abîmée doit être :",
-                  "options": [
-                        "cachée",
-                        "signalée et remplacée",
-                        "utilisée tant qu’elle marche"
-                  ],
-                  "answer": 1,
-                  "advice": "Contrôler multiprises."
-            },
-            {
-                  "id": "ter-05",
-                  "theme": "Télétravail",
-                  "question": "En télétravail, je dois :",
-                  "options": [
-                        "travailler sur canapé toute la journée",
-                        "organiser un poste stable",
-                        "supprimer les pauses"
-                  ],
-                  "answer": 1,
-                  "advice": "Sensibiliser ergonomie télétravail."
-            },
-            {
-                  "id": "ter-06",
-                  "theme": "Priorités",
-                  "question": "Si les priorités changent sans arrêt, je dois :",
-                  "options": [
-                        "tout accepter",
-                        "demander clarification et signaler l’impact",
-                        "travailler plus tard toujours"
-                  ],
-                  "answer": 1,
-                  "advice": "Réguler charge et priorités."
-            },
-            {
-                  "id": "ter-07",
-                  "theme": "Isolement",
-                  "question": "En isolement professionnel, je peux :",
-                  "options": [
-                        "me taire",
-                        "solliciter manager/RH/collectif",
-                        "couper les échanges"
-                  ],
-                  "answer": 1,
-                  "advice": "Maintenir les échanges."
-            },
-            {
-                  "id": "ter-08",
-                  "theme": "Accueil",
-                  "question": "Face à une personne agressive à l’accueil, je dois :",
-                  "options": [
-                        "répondre plus fort",
-                        "garder distance et alerter",
-                        "sortir seul"
-                  ],
-                  "answer": 1,
-                  "advice": "Formaliser gestion incivilités."
-            },
-            {
-                  "id": "ter-09",
-                  "theme": "Manutention",
-                  "question": "Même pour cartons de bureau, je dois :",
-                  "options": [
-                        "tout porter",
-                        "fractionner et demander aide",
-                        "empiler devant issue"
-                  ],
-                  "answer": 1,
-                  "advice": "Prévenir manutentions ponctuelles."
-            },
-            {
-                  "id": "ter-10",
-                  "theme": "Signalement",
-                  "question": "Une situation dangereuse répétée doit être :",
-                  "options": [
-                        "ignorée",
-                        "signalée avant accident",
-                        "corrigée sans prévenir"
-                  ],
-                  "answer": 1,
-                  "advice": "Renforcer signalement."
+                  "answer": 1
             }
       ],
       "hotellerie": [
             {
-                  "id": "hot-01",
-                  "theme": "Coupure",
-                  "question": "En cuisine, je limite les coupures en :",
+                  "id": "hot-1",
+                  "sector": "Hôtellerie / Restauration",
+                  "name": "Hôtellerie - Coupure",
+                  "question": "En cuisine, pour limiter les coupures, je dois :",
                   "options": [
-                        "utilisant couteau abîmé",
-                        "utilisant l’outil adapté et rangé",
-                        "coupant vers la main"
+                        "Utiliser un couteau abîmé",
+                        "Utiliser l’outil adapté, stable et rangé après usage",
+                        "Couper en direction de la main"
                   ],
-                  "answer": 1,
-                  "advice": "Rappeler outils et rangement."
+                  "answer": 1
             },
             {
-                  "id": "hot-02",
-                  "theme": "Brûlure",
-                  "question": "Avec plats chauds, je dois :",
+                  "id": "hot-2",
+                  "sector": "Hôtellerie / Restauration",
+                  "name": "Hôtellerie - Brûlure",
+                  "question": "Face au risque de brûlure, je dois :",
                   "options": [
-                        "manipuler sans protection",
-                        "utiliser protections et annoncer les déplacements",
-                        "poser au bord"
+                        "Manipuler les plats chauds sans protection",
+                        "Utiliser les protections et annoncer les déplacements avec éléments chauds",
+                        "Poser les plats chauds au bord des plans"
                   ],
-                  "answer": 1,
-                  "advice": "Prévenir brûlures."
+                  "answer": 1
             },
             {
-                  "id": "hot-03",
-                  "theme": "Sol",
-                  "question": "Un sol mouillé doit être :",
+                  "id": "hot-3",
+                  "sector": "Hôtellerie / Restauration",
+                  "name": "Hôtellerie - Sol glissant",
+                  "question": "Un sol mouillé en salle ou cuisine doit être :",
                   "options": [
-                        "ignoré",
-                        "signalé, nettoyé ou balisé",
-                        "recouvert carton"
+                        "Ignoré si le service est chargé",
+                        "Signalé, nettoyé ou balisé immédiatement",
+                        "Recouvert avec un carton"
                   ],
-                  "answer": 1,
-                  "advice": "Traiter glissades immédiatement."
-            },
-            {
-                  "id": "hot-04",
-                  "theme": "Verre cassé",
-                  "question": "Un verre cassé doit être :",
-                  "options": [
-                        "pris à main nue",
-                        "ramassé avec moyen adapté",
-                        "mis en sac souple"
-                  ],
-                  "answer": 1,
-                  "advice": "Gérer objets coupants."
-            },
-            {
-                  "id": "hot-05",
-                  "theme": "Nettoyage",
-                  "question": "Avec produits nettoyage, je dois :",
-                  "options": [
-                        "mélanger javel/détartrant",
-                        "lire l’étiquette et doser",
-                        "transvaser sans étiquette"
-                  ],
-                  "answer": 1,
-                  "advice": "Prévenir chimique nettoyage."
-            },
-            {
-                  "id": "hot-06",
-                  "theme": "Charges",
-                  "question": "Pour caisses/fûts/linge, je dois :",
-                  "options": [
-                        "tout porter seul",
-                        "fractionner et utiliser aides",
-                        "porter loin du corps"
-                  ],
-                  "answer": 1,
-                  "advice": "Prévenir TMS."
-            },
-            {
-                  "id": "hot-07",
-                  "theme": "Rush",
-                  "question": "En forte affluence, je dois :",
-                  "options": [
-                        "supprimer pauses",
-                        "respecter organisation et demander renfort",
-                        "courir partout"
-                  ],
-                  "answer": 1,
-                  "advice": "Organiser rush et pauses."
-            },
-            {
-                  "id": "hot-08",
-                  "theme": "Froid",
-                  "question": "En chambre froide, je dois :",
-                  "options": [
-                        "aucune précaution",
-                        "porter équipements et rester vigilant au sol",
-                        "bloquer porte"
-                  ],
-                  "answer": 1,
-                  "advice": "Prévenir froid/glissade."
-            },
-            {
-                  "id": "hot-09",
-                  "theme": "Électricité",
-                  "question": "Un appareil électrique en zone humide doit être :",
-                  "options": [
-                        "branché avec rallonge abîmée",
-                        "conforme et en bon état",
-                        "nettoyé sous tension"
-                  ],
-                  "answer": 1,
-                  "advice": "Rappeler risque électrique."
-            },
-            {
-                  "id": "hot-10",
-                  "theme": "Client agressif",
-                  "question": "Face à client alcoolisé/agressif, je dois :",
-                  "options": [
-                        "gérer physiquement seul",
-                        "alerter sans m’exposer",
-                        "provoquer"
-                  ],
-                  "answer": 1,
-                  "advice": "Mettre procédure incivilités."
+                  "answer": 1
             }
       ],
       "autre": [
             {
-                  "id": "aut-01",
-                  "theme": "Signalement",
-                  "question": "Si je constate un danger, je dois :",
+                  "id": "aut-1",
+                  "sector": "Autre",
+                  "name": "Général - Signalement",
+                  "question": "Si je constate une situation dangereuse, je dois :",
                   "options": [
-                        "garder pour moi",
-                        "signaler rapidement",
-                        "attendre accident"
+                        "La garder pour moi",
+                        "La signaler rapidement par le canal prévu",
+                        "Attendre un accident pour agir"
                   ],
-                  "answer": 1,
-                  "advice": "Rappeler canaux de signalement."
+                  "answer": 1
             },
             {
-                  "id": "aut-02",
-                  "theme": "Consignes",
-                  "question": "Une consigne non comprise doit être :",
+                  "id": "aut-2",
+                  "sector": "Autre",
+                  "name": "Général - Consignes",
+                  "question": "Une consigne de sécurité que je ne comprends pas doit être :",
                   "options": [
-                        "ignorée",
-                        "clarifiée avant d’agir",
-                        "remplacée par habitude"
+                        "Ignorée",
+                        "Clarifiée auprès du responsable avant d’agir",
+                        "Remplacée par mon habitude"
                   ],
-                  "answer": 1,
-                  "advice": "Vérifier compréhension."
+                  "answer": 1
             },
             {
-                  "id": "aut-03",
-                  "theme": "EPI",
+                  "id": "aut-3",
+                  "sector": "Autre",
+                  "name": "Général - EPI",
                   "question": "Les EPI remis doivent être :",
                   "options": [
-                        "portés en visite seulement",
-                        "utilisés et signalés si abîmés",
-                        "échangés sans prévenir"
+                        "Portés uniquement lors des visites",
+                        "Utilisés selon les consignes et signalés s’ils sont abîmés",
+                        "Échangés sans prévenir"
                   ],
-                  "answer": 1,
-                  "advice": "Rappeler usage EPI."
-            },
-            {
-                  "id": "aut-04",
-                  "theme": "Chutes",
-                  "question": "Un passage encombré doit être :",
-                  "options": [
-                        "ignoré",
-                        "rangé ou signalé",
-                        "franchi vite"
-                  ],
-                  "answer": 1,
-                  "advice": "Dégager circulations."
-            },
-            {
-                  "id": "aut-05",
-                  "theme": "Produit",
-                  "question": "Un produit inconnu doit être :",
-                  "options": [
-                        "senti",
-                        "identifié avant utilisation",
-                        "mélangé"
-                  ],
-                  "answer": 1,
-                  "advice": "Identifier produits."
-            },
-            {
-                  "id": "aut-06",
-                  "theme": "Électricité",
-                  "question": "Un câble abîmé doit être :",
-                  "options": [
-                        "réparé au scotch",
-                        "signalé et non utilisé",
-                        "utilisé en urgence"
-                  ],
-                  "answer": 1,
-                  "advice": "Rappeler risque électrique."
-            },
-            {
-                  "id": "aut-07",
-                  "theme": "Manutention",
-                  "question": "Pour une charge lourde, je dois :",
-                  "options": [
-                        "forcer seul",
-                        "utiliser aide ou appui",
-                        "tourner le dos"
-                  ],
-                  "answer": 1,
-                  "advice": "Prévenir TMS."
-            },
-            {
-                  "id": "aut-08",
-                  "theme": "Incendie",
-                  "question": "En alarme incendie, je dois :",
-                  "options": [
-                        "finir activité",
-                        "évacuer au point de rassemblement",
-                        "prendre ascenseur"
-                  ],
-                  "answer": 1,
-                  "advice": "Rappeler évacuation."
-            },
-            {
-                  "id": "aut-09",
-                  "theme": "RPS",
-                  "question": "En stress durable, je peux :",
-                  "options": [
-                        "tout garder",
-                        "alerter manager/RH/médecin du travail",
-                        "attendre"
-                  ],
-                  "answer": 1,
-                  "advice": "Orienter vers ressources."
-            },
-            {
-                  "id": "aut-10",
-                  "theme": "Quasi-accident",
-                  "question": "Un quasi-accident doit être :",
-                  "options": [
-                        "ignoré",
-                        "signalé et analysé",
-                        "caché"
-                  ],
-                  "answer": 1,
-                  "advice": "Exploiter signaux faibles."
+                  "answer": 1
             }
       ]
 };
@@ -2104,7 +1557,6 @@ let managerNotificationsEnabled = false;
 let restevStatsChart = null;
 let managerSector = 'Non renseigné';
 let managerCompanySize = 'Non renseigné';
-let qcmWrongAnswers = [];
 
  
 
@@ -2317,12 +1769,6 @@ function triggerNewReportAlert(report) {
 
  
 
-
-    function updateManagerSectorDisplay(){
-      const sectorEl=document.getElementById('lbl-manager-sector');
-      if(sectorEl) sectorEl.innerText = managerSector || 'Non renseigné';
-    }
-
     function handleManagerLogin() {
   const code = document.getElementById('manager-company-code').value.trim().toUpperCase();
 
@@ -2332,13 +1778,9 @@ function triggerNewReportAlert(report) {
 
   // Débloque le son grâce au clic utilisateur sur le bouton de connexion.
   unlockAlertSound();
-  managerSector = document.getElementById('manager-login-sector')?.value || 'Non renseigné';
-  managerCompanySize = document.getElementById('manager-login-size')?.value || 'Non renseigné';
-  localStorage.setItem('restev_manager_sector_' + code, managerSector);
-  localStorage.setItem('restev_manager_size_' + code, managerCompanySize);
+
   document.getElementById('lbl-manager-comp-name').innerText = code;
-  updateManagerSectorDisplay();
-  showToast(`Identification validée - secteur : ${managerSector}`);
+  showToast("Identification validée.");
   switchScreen('scr-manager');
 
   // Chargement initial.
@@ -2401,12 +1843,11 @@ function triggerNewReportAlert(report) {
       selectedEPIList=getSelectedEPI();
       const baseUrl=window.location.origin+window.location.pathname;
       const episParam=encodeURIComponent(JSON.stringify(selectedEPIList));
-      const sectorLabel = document.getElementById('manager-login-sector')?.value || managerSector || 'Autre';
-      managerSector = sectorLabel;
+      const sectorLabel = managerSector || document.getElementById('manager-login-sector')?.value || 'Autre';
       const url=`${baseUrl}?emp=${encodeURIComponent(name)}&comp=${encodeURIComponent(code)}&epis=${episParam}&sector=${encodeURIComponent(sectorLabel)}`;
       QRCode.toCanvas(document.getElementById('qr-canvas'), url, {width:180, margin:2, color:{dark:'#245ca6', light:'#ffffff'}}, err=>{
         if(err){ console.error(err); showToast('Erreur QR Code.'); }
-        else { document.getElementById('qr-area').classList.remove('hidden'); const qs=document.getElementById('qr-sector-label'); if(qs) qs.innerText='Secteur transmis : '+sectorLabel; showToast(`QR salarié généré - secteur : ${sectorLabel}`); }
+        else { document.getElementById('qr-area').classList.remove('hidden'); showToast(selectedEPIList.length ? 'QR salarié généré avec les EPI.' : 'QR salarié généré sans EPI.'); }
       });
     } 
 
@@ -2534,9 +1975,8 @@ function triggerNewReportAlert(report) {
     }
 
     function buildSectorAdaptedQCM(){
-      const key=getSectorKey(getCurrentQCMSectorLabel());
-      const sectorQuestions=(SECTOR_QCM_DATABASE[key] || SECTOR_QCM_DATABASE.autre || []).slice(0,10);
-      const activeRiskQuestions=RISKS_DATABASE.filter(r=>r.active && r.question).slice(0,4);
+      const sectorQuestions=getSectorQuestionsForCurrentSession();
+      const activeRiskQuestions=RISKS_DATABASE.filter(r=>r.active && r.question);
       const used=new Set();
       const finalQuestions=[];
       [...sectorQuestions, ...activeRiskQuestions].forEach(q=>{
@@ -2546,7 +1986,7 @@ function triggerNewReportAlert(report) {
           finalQuestions.push(q);
         }
       });
-      return finalQuestions.slice(0,14);
+      return finalQuestions.slice(0, 12);
     }
 
     function startEmployeeQCM(){
@@ -2554,65 +1994,18 @@ function triggerNewReportAlert(report) {
       if(!qcmActiveQuestions.length) return showToast('Aucun questionnaire configuré.');
       qcmCurrentIndex=0;
       qcmScore=0;
-      qcmWrongAnswers=[];
       const sectorLabel=getCurrentQCMSectorLabel();
-      showToast(`QCM renforcé : ${sectorLabel}`);
+      showToast(`Questionnaire adapté au secteur : ${sectorLabel}`);
       renderQCMQuestion();
       switchScreen('scr-qcm');
     } 
 
-    function renderQCMQuestion(){
-      const q=qcmActiveQuestions[qcmCurrentIndex];
-      document.getElementById('qcm-progress').innerText=`Question ${qcmCurrentIndex+1} / ${qcmActiveQuestions.length}`;
-      const theme=q.theme ? `<span class="inline-block mb-2 text-[10px] uppercase tracking-widest bg-blue-50 text-restev-blue px-2 py-1 rounded-lg">${escapeHtml(q.theme)}</span><br>` : '';
-      document.getElementById('qcm-question-text').innerHTML=theme + escapeHtml(q.question);
-      const box=document.getElementById('qcm-options-box');
-      box.innerHTML='';
-      q.options.forEach((opt,i)=>{
-        const div=document.createElement('div');
-        div.className='flex items-center p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl hover:bg-blue-50/50';
-        div.innerHTML=`<label class="flex items-center gap-3 w-full cursor-pointer text-xs font-semibold dark:text-slate-300"><input type="radio" name="qcm-opt" value="${i}" class="w-4 h-4 text-restev-blue"><span>${escapeHtml(opt)}</span></label>`;
-        box.appendChild(div);
-      });
-    }
-    function submitQCMAnswer(){
-      const checked=document.querySelector('input[name="qcm-opt"]:checked');
-      if(!checked) return showToast('Veuillez sélectionner une réponse !');
-      const q=qcmActiveQuestions[qcmCurrentIndex];
-      const selected=parseInt(checked.value,10);
-      if(selected===q.answer){ qcmScore++; }
-      else { qcmWrongAnswers.push({theme:q.theme || 'Prévention', advice:q.advice || 'Revoir la consigne avec le responsable.'}); }
-      qcmCurrentIndex++;
-      if(qcmCurrentIndex<qcmActiveQuestions.length) return renderQCMQuestion();
-      const total=qcmActiveQuestions.length;
-      document.getElementById('lbl-qcm-score-final').innerText=`${qcmScore} / ${total}`;
-      const now=new Date();
-      document.getElementById('lbl-cert-date').innerText='- '+now.toLocaleDateString('fr-FR')+' à '+now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-      if(currentEmployeeSession){ document.getElementById('cert-company').value=currentEmployeeSession.company; document.getElementById('cert-employee').value=currentEmployeeSession.name; }
-      updateCertificateEPI();
-      updateQCMRecommendations();
-      clearSignature('emp'); clearSignature('mgr');
-      const title=document.getElementById('qcm-result-title');
-      title.innerText=qcmScore===total?'Attestation de Formation Sécurité':'Attestation de Suivi (Avec Points à Renforcer)';
-      title.className=qcmScore===total?'text-2xl font-black text-emerald-600 print:text-slate-900':'text-2xl font-black text-amber-600 print:text-slate-900';
-      switchScreen('scr-qcm-success');
-    } 
+    function renderQCMQuestion(){ const q=qcmActiveQuestions[qcmCurrentIndex]; document.getElementById('qcm-progress').innerText=`Question ${qcmCurrentIndex+1} / ${qcmActiveQuestions.length}`; document.getElementById('qcm-question-text').innerText=q.question; const box=document.getElementById('qcm-options-box'); box.innerHTML=''; q.options.forEach((opt,i)=>{ const div=document.createElement('div'); div.className='flex items-center p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl hover:bg-blue-50/50'; div.innerHTML=`<label class="flex items-center gap-3 w-full cursor-pointer text-xs font-semibold dark:text-slate-300"><input type="radio" name="qcm-opt" value="${i}" class="w-4 h-4 text-restev-blue"><span>${escapeHtml(opt)}</span></label>`; box.appendChild(div); }); } 
+
+    function submitQCMAnswer(){ const checked=document.querySelector('input[name="qcm-opt"]:checked'); if(!checked) return showToast('Veuillez sélectionner une réponse !'); const q=qcmActiveQuestions[qcmCurrentIndex]; if(parseInt(checked.value,10)===q.answer) qcmScore++; qcmCurrentIndex++; if(qcmCurrentIndex<qcmActiveQuestions.length) return renderQCMQuestion(); const total=qcmActiveQuestions.length; document.getElementById('lbl-qcm-score-final').innerText=`${qcmScore} / ${total}`; const now=new Date(); document.getElementById('lbl-cert-date').innerText='- '+now.toLocaleDateString('fr-FR')+' à '+now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); if(currentEmployeeSession){ document.getElementById('cert-company').value=currentEmployeeSession.company; document.getElementById('cert-employee').value=currentEmployeeSession.name; } updateCertificateEPI(); clearSignature('emp'); clearSignature('mgr'); const title=document.getElementById('qcm-result-title'); title.innerText=qcmScore===total?'Attestation de Formation Sécurité':'Attestation de Suivi (Avec Réserves)'; title.className=qcmScore===total?'text-2xl font-black text-emerald-600 print:text-slate-900':'text-2xl font-black text-amber-600 print:text-slate-900'; switchScreen('scr-qcm-success'); } 
 
     function updateSignStatus(type){ const checked=document.getElementById(`chk-sign-${type}`).checked; const box=document.getElementById(`sign-box-${type}`); if(checked){ box.innerHTML=`<div class="text-center p-2"><p class="font-black text-lg ${type==='mgr'?'text-emerald-600':'text-restev-blue'}" style="font-family: 'Brush Script MT', cursive; transform: rotate(-3deg);">Validé</p><p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">Le ${new Date().toLocaleDateString('fr-FR')}</p></div>`; } else { box.innerHTML='<span class="text-xs italic text-slate-400 print:hidden">En attente...</span>'; } } 
 
-
-
-    function updateQCMRecommendations(){
-      const box=document.getElementById('qcm-reco-list');
-      if(!box) return;
-      if(!qcmWrongAnswers.length){
-        box.innerHTML='<span class="text-emerald-600 font-bold">Aucun point particulier : toutes les réponses sont correctes.</span>';
-        return;
-      }
-      const unique=[]; const seen=new Set();
-      qcmWrongAnswers.forEach(w=>{ const key=w.theme+'|'+w.advice; if(!seen.has(key)){ seen.add(key); unique.push(w); } });
-      box.innerHTML='<ul class="list-disc list-inside space-y-1">'+unique.slice(0,6).map(w=>`<li><b>${escapeHtml(w.theme)} :</b> ${escapeHtml(w.advice)}</li>`).join('')+'</ul>';
-    }
 
     function enableManagerNotifications(){
       if(!('Notification' in window)) return showToast('Notifications navigateur non compatibles.');
