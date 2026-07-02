@@ -28,9 +28,31 @@
 
  
 
-  <script> 
+  <script>
+/* =========================================================
+   SAFE STORAGE — compatible iframe sandbox / about:srcdoc
+   Évite : SecurityError localStorage sans allow-same-origin.
+   ========================================================= */
+const safeStorage = (() => {
+  const memory = {};
+  try {
+    const testKey = '__restev_storage_test__';
+    window.localStorage.setItem(testKey, '1');
+    window.localStorage.removeItem(testKey);
+    return window.localStorage;
+  } catch (e) {
+    console.warn('localStorage indisponible, stockage mémoire temporaire utilisé :', e?.message || e);
+    return {
+      getItem: key => Object.prototype.hasOwnProperty.call(memory, key) ? memory[key] : null,
+      setItem: (key, value) => { memory[key] = String(value); },
+      removeItem: key => { delete memory[key]; },
+      clear: () => { Object.keys(memory).forEach(k => delete memory[k]); }
+    };
+  }
+})();
+ 
 
-    tailwind.config = { 
+    if (window.tailwind) { tailwind.config = { 
 
       darkMode: 'class', 
 
@@ -63,11 +85,8 @@
         } 
 
       } 
-
-    }; 
-
-
-
+    };
+}
 /* =========================================================
    PATCH SYNCHRO RESTEV 85 — Registre passeports + Centre RESTEV
    Objectif : rendre visibles les validations QCM dans le registre
@@ -82,14 +101,14 @@ function getCurrentSectorLabel(){
   const fromSession=getCleanLabel(currentEmployeeSession?.sector, '');
   const fromManager=getCleanLabel(managerSector, '');
   const fromSelect=getCleanLabel(document.getElementById('manager-login-sector')?.value, '');
-  const fromStore=getCleanLabel(localStorage.getItem('restev_manager_sector_' + companyCode), '');
+  const fromStore=getCleanLabel(safeStorage.getItem('restev_manager_sector_' + companyCode), '');
   return fromSession || fromManager || fromSelect || fromStore || 'Non renseigné';
 }
 function getCurrentCompanySizeLabel(){
   const companyCode=(currentEmployeeSession?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
   const fromManager=getCleanLabel(managerCompanySize, '');
   const fromSelect=getCleanLabel(document.getElementById('manager-login-size')?.value, '');
-  const fromStore=getCleanLabel(localStorage.getItem('restev_manager_size_' + companyCode), '');
+  const fromStore=getCleanLabel(safeStorage.getItem('restev_manager_size_' + companyCode), '');
   return fromManager || fromSelect || fromStore || 'Non renseigné';
 }
 function getRegistryKey(){
@@ -128,7 +147,7 @@ async function loadPassportRegistry(){
   const companyCode=document.getElementById('lbl-manager-comp-name')?.innerText?.trim();
   if(!companyCode) return;
   let localEntries=[];
-  try{ localEntries=JSON.parse(localStorage.getItem(getRegistryKey()) || '[]').map(normalizeRegistryRow); }catch(e){ localEntries=[]; }
+  try{ localEntries=JSON.parse(safeStorage.getItem(getRegistryKey()) || '[]').map(normalizeRegistryRow); }catch(e){ localEntries=[]; }
   renderPassportRegistry(localEntries);
   if(!supabaseClient){
     showToast('Registre local affiché : Supabase non chargé.');
@@ -175,9 +194,9 @@ async function submitAnonymizedPreventionStat(evt){
 async function savePassportEntry(entry){
   // 1) sauvegarde locale immédiate
   let entries=[];
-  try{ entries=JSON.parse(localStorage.getItem(getRegistryKey()) || '[]'); }catch(e){ entries=[]; }
+  try{ entries=JSON.parse(safeStorage.getItem(getRegistryKey()) || '[]'); }catch(e){ entries=[]; }
   entries.unshift(entry);
-  localStorage.setItem(getRegistryKey(), JSON.stringify(entries.slice(0,100)));
+  safeStorage.setItem(getRegistryKey(), JSON.stringify(entries.slice(0,100)));
 
   // 2) sauvegarde Supabase pour visibilité manager multi-appareil
   let cloudOK=false;
@@ -355,56 +374,9 @@ async function loadRestevStats(){
   
 
 /* =========================================================
-   RESTEV 85 — UI STABLE TYPE APPLICATION
-   Ajout non destructif : navigation basse, header app, alertes, carte.
+   FALLBACK CSS si Tailwind CDN est bloqué par un aperçu sandbox
    ========================================================= */
-:root{
-  --app-blue:#3a7bd5; --app-blue-dark:#245ca6; --app-magenta:#e0248a;
-  --app-magenta-dark:#b31269; --app-teal:#4ec3b1; --app-gold:#ffb007;
-  --bottom-nav-height:82px;
-}
-body{
-  padding-bottom:calc(var(--bottom-nav-height) + env(safe-area-inset-bottom,0px));
-  -webkit-tap-highlight-color:transparent;
-}
-#app-mobile-header{
-  position:fixed; inset:0 0 auto 0; z-index:60;
-  padding:calc(10px + env(safe-area-inset-top,0px)) 14px 10px;
-  background:rgba(255,255,255,.88); backdrop-filter:blur(18px);
-  border-bottom:1px solid rgba(148,163,184,.25); box-shadow:0 10px 28px rgba(15,23,42,.08);
-}
-.dark #app-mobile-header{background:rgba(15,23,42,.9); border-bottom-color:#334155;}
-.app-header-inner{max-width:540px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;}
-.app-brand{display:flex;align-items:center;gap:10px;min-width:0;}
-.app-logo-dot{width:42px;height:42px;border-radius:16px;background:linear-gradient(135deg,var(--app-blue-dark),var(--app-blue),var(--app-magenta));color:white;display:flex;align-items:center;justify-content:center;font-weight:1000;box-shadow:0 14px 25px rgba(58,123,213,.28);}
-#app-title{font-size:14px;font-weight:1000;line-height:1.05;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.dark #app-title{color:#fff;}
-#app-subtitle{font-size:10px;font-weight:800;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px;}
-.app-icon-btn{width:40px;height:40px;border-radius:15px;background:#fff;border:1px solid rgba(148,163,184,.3);display:flex;align-items:center;justify-content:center;color:var(--app-blue-dark);box-shadow:0 8px 18px rgba(15,23,42,.06);}
-.dark .app-icon-btn{background:#0f172a;color:#e2e8f0;border-color:#334155;}
-#app-back-btn[disabled]{opacity:.32;pointer-events:none;}
-#app-bottom-nav{position:fixed;z-index:70;left:0;right:0;bottom:0;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));background:rgba(255,255,255,.9);backdrop-filter:blur(22px);border-top:1px solid rgba(148,163,184,.25);box-shadow:0 -14px 38px rgba(15,23,42,.12);}
-.dark #app-bottom-nav{background:rgba(15,23,42,.93);border-top-color:#334155;}
-.app-nav-inner{max-width:540px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
-.app-tab{height:58px;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#64748b;font-size:9px;font-weight:1000;text-transform:uppercase;letter-spacing:.02em;transition:.22s ease;border:1px solid transparent;background:transparent;}
-.app-tab i{font-size:17px;}
-.app-tab.active{color:#fff;background:linear-gradient(135deg,var(--app-blue-dark),var(--app-blue),var(--app-magenta));box-shadow:0 12px 22px rgba(58,123,213,.22);transform:translateY(-3px);}
-main{padding-top:88px !important;padding-bottom:calc(var(--bottom-nav-height) + 18px) !important;}
-@media(max-width:640px){main{max-width:540px !important;width:100% !important;padding-left:14px !important;padding-right:14px !important;}}
-#toast{bottom:calc(var(--bottom-nav-height) + 18px) !important;}
-#manager-alert-overlay{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;padding:22px;background:rgba(2,6,23,.72);backdrop-filter:blur(12px);}
-#manager-alert-overlay.show{display:flex;animation:alertFadeIn .18s ease-out;}
-@keyframes alertFadeIn{from{opacity:0}to{opacity:1}}
-.manager-alert-card{width:min(440px,100%);border-radius:34px;background:#fff;overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,.45);animation:alertPop .28s cubic-bezier(.2,.9,.2,1.2);}
-.dark .manager-alert-card{background:#0f172a;color:#fff;border:1px solid #334155;}
-@keyframes alertPop{from{transform:scale(.86) translateY(18px);opacity:.2}to{transform:scale(1) translateY(0);opacity:1}}
-.manager-alert-top{background:linear-gradient(135deg,#e0248a,#ef4444,#ffb007);color:white;padding:22px;display:flex;gap:14px;align-items:center;}
-.manager-alert-icon{width:58px;height:58px;border-radius:22px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:28px;animation:alertPulse 1s infinite;}
-@keyframes alertPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
-.manager-alert-body{padding:20px;}.manager-alert-title{font-size:18px;font-weight:1000;line-height:1.15;margin:0}.manager-alert-sub{font-size:12px;font-weight:800;opacity:.9;margin-top:4px}.manager-alert-detail{font-size:13px;line-height:1.45;color:#475569;margin-top:12px;font-weight:700}.dark .manager-alert-detail{color:#cbd5e1}.manager-alert-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}.manager-alert-btn{border:0;border-radius:18px;padding:13px 14px;font-size:12px;font-weight:1000}.manager-alert-btn.primary{background:linear-gradient(135deg,#245ca6,#3a7bd5);color:#fff}.manager-alert-btn.secondary{background:#f1f5f9;color:#334155}.dark .manager-alert-btn.secondary{background:#1e293b;color:#e2e8f0}
-.manager-alert-flash{animation:screenFlash .85s ease-out 2;}@keyframes screenFlash{0%{box-shadow:inset 0 0 0 0 rgba(239,68,68,0)}35%{box-shadow:inset 0 0 0 9999px rgba(239,68,68,.22)}100%{box-shadow:inset 0 0 0 0 rgba(239,68,68,0)}}
-#map.map-error{display:flex;align-items:center;justify-content:center;text-align:center;padding:18px;color:#475569;font-size:12px;font-weight:900;line-height:1.45;}
-#sync-diagnostic-box,#btn-diagnostic-sync{display:none !important;}
+.hidden{display:none!important}.block{display:block}.flex{display:flex}.grid{display:grid}.items-center{align-items:center}.justify-between{justify-content:space-between}.text-center{text-align:center}.w-full{width:100%}.mx-auto{margin-left:auto;margin-right:auto}.space-y-4>*+*{margin-top:1rem}.space-y-6>*+*{margin-top:1.5rem}.p-3{padding:.75rem}.p-4{padding:1rem}.p-5{padding:1.25rem}.p-6{padding:1.5rem}.py-6{padding-top:1.5rem;padding-bottom:1.5rem}.mb-4{margin-bottom:1rem}.mt-1{margin-top:.25rem}.rounded-xl{border-radius:.75rem}.rounded-2xl{border-radius:1rem}.rounded-3xl{border-radius:1.5rem}.border{border:1px solid #e2e8f0}.shadow-premium,.shadow-lg,.shadow-xl,.shadow-md,.shadow-sm{box-shadow:0 12px 30px rgba(15,23,42,.12)}.bg-white{background:#fff}.text-white{color:#fff}.font-bold{font-weight:700}.font-black{font-weight:900}.text-xs{font-size:.75rem}.text-sm{font-size:.875rem}.text-xl{font-size:1.25rem}.text-2xl{font-size:1.5rem}.max-w-md{max-width:28rem}.max-w-xl{max-width:36rem}.max-w-2xl{max-width:42rem}.max-w-4xl{max-width:56rem}.gap-2{gap:.5rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}button{cursor:pointer}input,select,textarea{max-width:100%;box-sizing:border-box}
 
 </style> 
 
@@ -2149,12 +2121,12 @@ function triggerNewReportAlert(report) {
     }
 
     function getLocalPassportRegistry(){
-      try{return JSON.parse(localStorage.getItem(getRegistryKey()) || '[]');}
+      try{return JSON.parse(safeStorage.getItem(getRegistryKey()) || '[]');}
       catch(e){return [];}
     }
 
     function saveLocalPassportRegistry(entries){
-      localStorage.setItem(getRegistryKey(), JSON.stringify(entries));
+      safeStorage.setItem(getRegistryKey(), JSON.stringify(entries));
     }
 
     function renderPassportRegistry(entries){
@@ -2260,12 +2232,12 @@ function triggerNewReportAlert(report) {
 
     function getCurrentSectorLabel(){
       const companyCode = (currentEmployeeSession?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
-      return managerSector || localStorage.getItem('restev_manager_sector_' + companyCode) || 'Non renseigné';
+      return managerSector || safeStorage.getItem('restev_manager_sector_' + companyCode) || 'Non renseigné';
     }
 
     function getCurrentCompanySizeLabel(){
       const companyCode = (currentEmployeeSession?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
-      return managerCompanySize || localStorage.getItem('restev_manager_size_' + companyCode) || 'Non renseigné';
+      return managerCompanySize || safeStorage.getItem('restev_manager_size_' + companyCode) || 'Non renseigné';
     }
 
     function getPeriodMonth(){
@@ -2357,227 +2329,348 @@ function triggerNewReportAlert(report) {
 
   
 
-
-
 /* =========================================================
-   PATCH FINAL STABLE RESTEV 85 — restauration globale app
-   Objectif : réparer navigation, manager, alertes, carte, stats.
+   PATCH ALERTES MANAGER + CARTE
+   - Son plus long + vibration répétée
+   - Pop-up visuel très visible
+   - Notifications navigateur mieux déclenchées
+   - Carte Leaflet initialisée quand l'écran est visible
    ========================================================= */
-window.restevApp = window.restevApp || { stack: [], scroll: {}, current: 'scr-home', internal: false, alertPolling: null, lastReportId: localStorage.getItem('restev_last_report_id') || '', passportChart: null };
+let managerAlertsUnlocked = false;
+let managerLastSeenReportId = safeStorage.getItem('restev_last_report_id') || '';
+let managerAlertPolling = null;
+let managerAlertOscillators = [];
 
-function appScreenTitle(screenId){
-  const map={
-    'scr-home':['Passeport Prévention','Accueil RESTEV'],
-    'scr-about':['Découvrir la démarche','Prévention dès le premier jour'],
-    'scr-auth':['Connexion manager','Espace management'],
-    'scr-manager':['Espace management','Console adhérent'],
-    'scr-studio':['Matrice des risques','Éditeur DUERP'],
-    'scr-direction':['Centre RESTEV','Tendances anonymisées'],
-    'scr-training':['Modules INRS','Formations métiers'],
-    'scr-employee':['Portail salarié','Session passeport'],
-    'scr-qcm':['Validation des acquis','Questionnaire prévention'],
-    'scr-qcm-success':['Attestation sécurité','Signature et clôture'],
-    'scr-report':['Signalement terrain','Situation dangereuse'],
-    'scr-resources':['Fiches prévention','Ressources utiles'],
-    'scr-employee-messages':['Messages responsable','Suivi des signalements']
-  };
-  return map[screenId] || ['RESTEV','Passeport Prévention'];
-}
-function setupAppShell(){
-  if(!document.getElementById('app-mobile-header')){
-    const header=document.createElement('div');
-    header.id='app-mobile-header';
-    header.className='no-print';
-    header.innerHTML=`<div class="app-header-inner"><button id="app-back-btn" class="app-icon-btn" onclick="appGoBack()" disabled aria-label="Retour"><i class="fa-solid fa-chevron-left"></i></button><div class="app-brand"><div class="app-logo-dot">R</div><div><div id="app-title">Passeport Prévention</div><div id="app-subtitle">Accueil RESTEV</div></div></div><button class="app-icon-btn" onclick="toggleDarkMode()" aria-label="Mode sombre"><i class="fa-solid fa-moon"></i></button></div>`;
-    document.body.prepend(header);
-  }
-  if(!document.getElementById('app-bottom-nav')){
-    const nav=document.createElement('nav');
-    nav.id='app-bottom-nav';
-    nav.className='no-print';
-    nav.innerHTML=`<div class="app-nav-inner"><button class="app-tab" data-tab="scr-home" onclick="appNavigate('scr-home', true)"><i class="fa-solid fa-house"></i><span>Accueil</span></button><button class="app-tab" data-tab="manager" onclick="appOpenManager()"><i class="fa-solid fa-user-tie"></i><span>Manager</span></button><button class="app-tab" data-tab="employee" onclick="appOpenEmployee()"><i class="fa-solid fa-id-card"></i><span>Salarié</span></button><button class="app-tab" data-tab="scr-direction" onclick="appNavigate('scr-direction', true)"><i class="fa-solid fa-chart-line"></i><span>Centre</span></button><button class="app-tab" data-tab="scr-training" onclick="appNavigate('scr-training', true)"><i class="fa-solid fa-graduation-cap"></i><span>INRS</span></button></div>`;
-    document.body.appendChild(nav);
-  }
-  enhanceBackButtons();
-  updateAppChrome(document.querySelector('.screen.active')?.id || window.restevApp.current || 'scr-home');
-}
-function updateAppChrome(screenId){
-  const [title,subtitle]=appScreenTitle(screenId);
-  const titleEl=document.getElementById('app-title'), subEl=document.getElementById('app-subtitle'), back=document.getElementById('app-back-btn');
-  if(titleEl) titleEl.innerText=title;
-  if(subEl) subEl.innerText=subtitle;
-  if(back) back.disabled = !window.restevApp.stack.length;
-  document.querySelectorAll('.app-tab').forEach(t=>t.classList.remove('active'));
-  let tab=screenId;
-  if(['scr-auth','scr-manager','scr-studio'].includes(screenId)) tab='manager';
-  if(['scr-employee','scr-qcm','scr-qcm-success','scr-report','scr-resources','scr-employee-messages'].includes(screenId)) tab='employee';
-  document.querySelector(`.app-tab[data-tab="${tab}"]`)?.classList.add('active');
-}
-function enhanceBackButtons(){
-  document.querySelectorAll('button').forEach(btn=>{
-    const txt=(btn.innerText||'').trim().toLowerCase();
-    const raw=btn.getAttribute('onclick')||'';
-    if((txt.startsWith('retour') || txt==='annuler') && !btn.dataset.appBackEnhanced && !raw.includes('quitManager')){
-      btn.onclick=(e)=>{ e.preventDefault(); appGoBack(); };
-      btn.dataset.appBackEnhanced='1';
-    }
-  });
-}
-function removeDiagnosticSync(){
-  document.getElementById('sync-diagnostic-box')?.closest('.bg-white, .dark\\:bg-slate-800, div')?.remove();
-  document.getElementById('btn-diagnostic-sync')?.closest('.bg-white, .dark\\:bg-slate-800, div')?.remove();
-  document.querySelectorAll('h3,button,p,div').forEach(el=>{
-    const txt=(el.innerText||'').trim().toLowerCase();
-    if(txt.includes('diagnostic synchronisation') || txt.includes('tester supabase')){
-      const panel=el.closest('.bg-white, .dark\\:bg-slate-800');
-      if(panel) panel.remove();
-    }
-  });
-}
-function appNavigate(screenId, remember=true, restoreScroll=false){
-  const app=window.restevApp;
-  const current=document.querySelector('.screen.active')?.id || app.current || 'scr-home';
-  if(current) app.scroll[current]=window.scrollY || 0;
-  if(remember && !app.internal && current && current!==screenId) app.stack.push(current);
-  document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.style.display='none';});
-  const target=document.getElementById(screenId);
-  if(!target){ console.warn('Écran introuvable :', screenId); showToast('Écran introuvable : '+screenId); return; }
-  target.classList.add('active'); target.style.display='block'; app.current=screenId;
-  setTimeout(()=>{
-    window.scrollTo({top: restoreScroll ? (app.scroll[screenId] || 0) : 0, behavior:'smooth'});
-    if(screenId==='scr-report') setTimeout(()=>{ initLeafletMap(); fixMapSize(); },350);
-    if(screenId==='scr-qcm-success') setTimeout(initSignaturePads,250);
-    if(screenId==='scr-direction') setTimeout(loadRestevStats,250);
-    removeDiagnosticSync(); enhanceBackButtons(); updateAppChrome(screenId);
-  },20);
-}
-function switchScreen(screenId){ appNavigate(screenId, true, false); }
-function appGoBack(){
-  const app=window.restevApp;
-  if(!app.stack.length){ appNavigate('scr-home', false, true); return; }
-  const prev=app.stack.pop(); app.internal=true; appNavigate(prev,false,true); app.internal=false;
-}
-function appOpenManager(){
-  const code=document.getElementById('lbl-manager-comp-name')?.innerText?.trim();
-  appNavigate(code ? 'scr-manager' : 'scr-auth', true, false);
-}
-function appOpenEmployee(){
-  if(currentEmployeeSession) appNavigate('scr-employee', true, false);
-  else { showToast('Aucune session salarié active. Scannez un QR salarié.'); appNavigate('scr-home', true, false); }
-}
-function handleManagerLogin(){
-  const code=(document.getElementById('manager-company-code')?.value || '').trim().toUpperCase();
-  if(!code) return showToast('Veuillez saisir un code établissement');
-  try{ unlockAlertSound(); }catch(e){}
-  try{ unlockManagerAlerts(); }catch(e){}
-  managerSector=document.getElementById('manager-login-sector')?.value || 'Non renseigné';
-  managerCompanySize=document.getElementById('manager-login-size')?.value || 'Non renseigné';
-  localStorage.setItem('restev_manager_sector_'+code, managerSector);
-  localStorage.setItem('restev_manager_size_'+code, managerCompanySize);
-  const lbl=document.getElementById('lbl-manager-comp-name'); if(lbl) lbl.innerText=code;
-  showToast('Identification validée. Ouverture de l’espace manager...');
-  appNavigate('scr-manager', true, false);
-  setTimeout(()=>{ try{loadManagerReports();}catch(e){console.warn(e)} try{startManagerRealtime();}catch(e){console.warn(e)} try{loadPassportRegistry();}catch(e){console.warn(e)} try{startManagerAlertPolling();}catch(e){console.warn(e)} },250);
-}
-function quitManager(){
-  if(managerPollingInterval) clearInterval(managerPollingInterval); managerPollingInterval=null;
-  if(window.restevApp?.alertPolling) clearInterval(window.restevApp.alertPolling); window.restevApp.alertPolling=null;
-  if(managerRealtimeChannel && supabaseClient){ supabaseClient.removeChannel(managerRealtimeChannel); managerRealtimeChannel=null; }
-  appNavigate('scr-home', false, false);
-}
 function setupManagerAlertOverlay(){
   if(document.getElementById('manager-alert-overlay')) return;
-  const overlay=document.createElement('div'); overlay.id='manager-alert-overlay';
-  overlay.innerHTML=`<div class="manager-alert-card"><div class="manager-alert-top"><div class="manager-alert-icon"><i class="fa-solid fa-triangle-exclamation"></i></div><div><p class="manager-alert-title">Nouveau signalement prévention</p><p id="manager-alert-sub" class="manager-alert-sub">Une situation dangereuse vient d’être déclarée.</p></div></div><div class="manager-alert-body"><div id="manager-alert-detail" class="manager-alert-detail">Chargement du détail...</div><div class="manager-alert-actions"><button class="manager-alert-btn secondary" onclick="stopManagerAlertEffects();hideManagerAlertOverlay()">Fermer</button><button class="manager-alert-btn primary" onclick="stopManagerAlertEffects();hideManagerAlertOverlay();appNavigate('scr-manager', true);loadManagerReports();">Voir</button></div></div></div>`;
+  const overlay=document.createElement('div');
+  overlay.id='manager-alert-overlay';
+  overlay.innerHTML=`
+    <div class="manager-alert-card">
+      <div class="manager-alert-top">
+        <div class="manager-alert-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div>
+          <p class="manager-alert-title">Nouveau signalement prévention</p>
+          <p id="manager-alert-sub" class="manager-alert-sub">Une situation dangereuse vient d’être déclarée.</p>
+        </div>
+      </div>
+      <div class="manager-alert-body">
+        <div id="manager-alert-detail" class="manager-alert-detail">Chargement du détail...</div>
+        <div id="manager-alert-permission">Pour recevoir les notifications hors écran, cliquez sur “Activer notifications”.</div>
+        <div class="manager-alert-actions">
+          <button class="manager-alert-btn secondary" onclick="stopManagerAlertEffects();hideManagerAlertOverlay()">Fermer</button>
+          <button class="manager-alert-btn primary" onclick="stopManagerAlertEffects();hideManagerAlertOverlay();appNavigate('scr-manager', true);loadManagerReports();">Voir le signalement</button>
+        </div>
+      </div>
+    </div>`;
   document.body.appendChild(overlay);
 }
-function hideManagerAlertOverlay(){ document.getElementById('manager-alert-overlay')?.classList.remove('show'); document.body.classList.remove('manager-alert-flash'); }
-function unlockManagerAlerts(){ unlockAlertSound(); }
-function stopManagerAlertEffects(){ try{ (window.restevApp.alertOscillators||[]).forEach(o=>{try{o.stop()}catch(e){}}); window.restevApp.alertOscillators=[]; }catch(e){} }
+function hideManagerAlertOverlay(){
+  document.getElementById('manager-alert-overlay')?.classList.remove('show');
+  document.body.classList.remove('manager-alert-flash');
+}
+function unlockManagerAlerts(){
+  managerAlertsUnlocked = true;
+  unlockAlertSound();
+  try{
+    if('Notification' in window && Notification.permission === 'default'){
+      Notification.requestPermission().then(permission=>{
+        managerNotificationsEnabled = permission === 'granted';
+        const btn=document.getElementById('btn-manager-notif');
+        if(btn) btn.innerHTML = managerNotificationsEnabled ? '<i class="fa-solid fa-bell mr-1"></i> Notifications ON' : '<i class="fa-solid fa-bell-slash mr-1"></i> Refusées';
+      });
+    }
+  }catch(e){console.warn('Permission notifications impossible', e);}
+}
+function stopManagerAlertEffects(){
+  try{ managerAlertOscillators.forEach(o=>{try{o.stop()}catch(e){}}); managerAlertOscillators=[]; }catch(e){}
+}
 function playManagerAlertSound(){
   try{
-    if(soundMuted) return; const AudioContext=window.AudioContext||window.webkitAudioContext; if(!AudioContext) return;
-    if(!alertAudioCtx) alertAudioCtx=new AudioContext(); if(alertAudioCtx.state==='suspended') alertAudioCtx.resume();
-    window.restevApp.alertOscillators=[]; [880,660,990,660,1040,780].forEach((freq,i)=>{const start=alertAudioCtx.currentTime+i*.22; const osc=alertAudioCtx.createOscillator(); const gain=alertAudioCtx.createGain(); osc.type='sine'; osc.frequency.setValueAtTime(freq,start); gain.gain.setValueAtTime(.0001,start); gain.gain.exponentialRampToValueAtTime(.35,start+.03); gain.gain.exponentialRampToValueAtTime(.0001,start+.18); osc.connect(gain); gain.connect(alertAudioCtx.destination); osc.start(start); osc.stop(start+.2); window.restevApp.alertOscillators.push(osc);});
-  }catch(e){console.warn('Son alerte impossible',e)}
+    if(soundMuted) return;
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if(!AudioContext) return;
+    if(!alertAudioCtx) alertAudioCtx = new AudioContext();
+    if(alertAudioCtx.state === 'suspended') alertAudioCtx.resume();
+    const pattern=[880,660,990,660,1040,780];
+    pattern.forEach((freq,i)=>{
+      const start=alertAudioCtx.currentTime + i*0.22;
+      const osc=alertAudioCtx.createOscillator();
+      const gain=alertAudioCtx.createGain();
+      osc.type='sine';
+      osc.frequency.setValueAtTime(freq,start);
+      gain.gain.setValueAtTime(0.0001,start);
+      gain.gain.exponentialRampToValueAtTime(0.35,start+0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001,start+0.18);
+      osc.connect(gain); gain.connect(alertAudioCtx.destination);
+      osc.start(start); osc.stop(start+0.2);
+      managerAlertOscillators.push(osc);
+    });
+  }catch(e){ console.warn('Erreur son alerte manager', e); }
 }
-function vibrateManagerAlert(){ try{ if('vibrate' in navigator) navigator.vibrate([450,160,450,160,750,220,450]); }catch(e){} }
+function vibrateManagerAlert(){
+  try{
+    if('vibrate' in navigator) navigator.vibrate([450,160,450,160,750,220,450]);
+  }catch(e){ console.warn('Vibration indisponible', e); }
+}
 function showManagerAlertOverlay(report){
   setupManagerAlertOverlay();
-  const employee=report?.employee_name || 'Un salarié', category=report?.category || 'Danger signalé', level=report?.level || 'Niveau non précisé', desc=report?.description || 'Aucun commentaire.';
-  const sub=document.getElementById('manager-alert-sub'), detail=document.getElementById('manager-alert-detail');
+  const employee=report?.employee_name || 'Un salarié';
+  const category=report?.category || 'Danger signalé';
+  const level=report?.level || 'Niveau non précisé';
+  const desc=report?.description || 'Aucun commentaire.';
+  const sub=document.getElementById('manager-alert-sub');
+  const detail=document.getElementById('manager-alert-detail');
   if(sub) sub.innerText=`${employee} — ${category}`;
   if(detail) detail.innerHTML=`<b>${escapeHtml(level)}</b><br>${escapeHtml(desc)}`;
-  document.getElementById('manager-alert-overlay')?.classList.add('show'); document.body.classList.add('manager-alert-flash'); setTimeout(()=>document.body.classList.remove('manager-alert-flash'),2200);
+  const perm=document.getElementById('manager-alert-permission');
+  if(perm) perm.classList.toggle('show', !('Notification' in window) || Notification.permission !== 'granted');
+  document.getElementById('manager-alert-overlay')?.classList.add('show');
+  document.body.classList.add('manager-alert-flash');
+  setTimeout(()=>document.body.classList.remove('manager-alert-flash'), 2200);
 }
 function showBrowserNotification(report){
-  if(!('Notification' in window) || Notification.permission!=='granted') return;
-  try{ const n=new Notification('🚨 Nouveau signalement prévention',{body:`${report?.employee_name||'Un salarié'} — ${report?.category||'Danger signalé'}`, icon:'logo.png', badge:'logo.png', requireInteraction:true}); n.onclick=()=>{window.focus(); appNavigate('scr-manager',true); loadManagerReports(); n.close();}; }catch(e){console.warn(e)}
+  if(!('Notification' in window)) return;
+  if(Notification.permission !== 'granted') return;
+  try{
+    const title='🚨 Nouveau signalement prévention';
+    const body=`${report?.employee_name || 'Un salarié'} — ${report?.category || 'Danger signalé'}${report?.level ? ' — '+report.level : ''}`;
+    const n=new Notification(title,{body, icon:'logo.png', badge:'logo.png', requireInteraction:true, silent:false});
+    n.onclick=()=>{ window.focus(); appNavigate('scr-manager', true); loadManagerReports(); n.close(); };
+  }catch(e){ console.warn('Notification navigateur impossible :', e); }
+}
+function triggerNewReportAlert(report){
+  const now=Date.now();
+  if(now - lastReportAlertAt < 1200) return;
+  lastReportAlertAt=now;
+  playManagerAlertSound();
+  vibrateManagerAlert();
+  showManagerAlertOverlay(report);
+  showBrowserNotification(report);
+  const employee=report?.employee_name || 'Un salarié';
+  const category=report?.category || 'un danger';
+  showToast(`🚨 Nouveau signalement : ${employee} - ${category}`);
 }
 function enableManagerNotifications(){
   unlockManagerAlerts();
   if(!('Notification' in window)) return showToast('Notifications navigateur non compatibles.');
-  Notification.requestPermission().then(permission=>{managerNotificationsEnabled=permission==='granted'; const btn=document.getElementById('btn-manager-notif'); if(btn) btn.innerHTML=managerNotificationsEnabled?'<i class="fa-solid fa-bell mr-1"></i> Notifications ON':'<i class="fa-solid fa-bell-slash mr-1"></i> Refusées'; showToast(managerNotificationsEnabled?'Notifications activées.':'Notifications refusées par le navigateur.');});
+  Notification.requestPermission().then(permission=>{
+    managerNotificationsEnabled = permission === 'granted';
+    const btn=document.getElementById('btn-manager-notif');
+    if(btn) btn.innerHTML = managerNotificationsEnabled ? '<i class="fa-solid fa-bell mr-1"></i> Notifications ON' : '<i class="fa-solid fa-bell-slash mr-1"></i> Refusées';
+    showToast(managerNotificationsEnabled ? 'Notifications activées. Gardez l’application ouverte pour les alertes.' : 'Notifications refusées par le navigateur.');
+  });
 }
-function triggerNewReportAlert(report){
-  const now=Date.now(); if(now-lastReportAlertAt<1200) return; lastReportAlertAt=now;
-  playManagerAlertSound(); vibrateManagerAlert(); showManagerAlertOverlay(report); showBrowserNotification(report);
-  showToast(`🚨 Nouveau signalement : ${report?.employee_name||'Un salarié'} - ${report?.category||'un danger'}`);
+// Renforce le login manager : déverrouille audio, notifs, realtime + polling secours
+const previousHandleManagerLogin = handleManagerLogin;
+function handleManagerLogin(){
+  previousHandleManagerLogin();
+  unlockManagerAlerts();
+  startManagerAlertPolling();
 }
 function startManagerAlertPolling(){
-  if(window.restevApp.alertPolling) clearInterval(window.restevApp.alertPolling);
-  pollLatestManagerReport(true); window.restevApp.alertPolling=setInterval(()=>pollLatestManagerReport(false),12000);
+  if(managerAlertPolling) clearInterval(managerAlertPolling);
+  pollLatestManagerReport(true);
+  managerAlertPolling=setInterval(()=>pollLatestManagerReport(false), 12000);
 }
 async function pollLatestManagerReport(initial=false){
-  if(!supabaseClient) return; const companyCode=document.getElementById('lbl-manager-comp-name')?.innerText?.trim(); if(!companyCode) return;
-  try{ const {data,error}=await supabaseClient.from('prevention_reports').select('id,employee_name,category,level,description,created_at,status').eq('company_code',companyCode).order('created_at',{ascending:false}).limit(1); if(error||!data?.length) return; const latest=data[0]; if(initial){window.restevApp.lastReportId=latest.id; localStorage.setItem('restev_last_report_id',latest.id); return;} if(latest.id && latest.id!==window.restevApp.lastReportId){window.restevApp.lastReportId=latest.id; localStorage.setItem('restev_last_report_id',latest.id); triggerNewReportAlert(latest); loadManagerReports();} }catch(e){console.warn('Polling alertes impossible',e)}
+  if(!supabaseClient) return;
+  const companyCode=document.getElementById('lbl-manager-comp-name')?.innerText?.trim();
+  if(!companyCode) return;
+  try{
+    const {data,error}=await supabaseClient.from('prevention_reports')
+      .select('id,employee_name,category,level,description,created_at,status')
+      .eq('company_code', companyCode)
+      .neq('category','Validation passeport prévention')
+      .order('created_at',{ascending:false})
+      .limit(1);
+    if(error || !data || !data.length) return;
+    const latest=data[0];
+    if(initial){ managerLastSeenReportId=latest.id; safeStorage.setItem('restev_last_report_id', latest.id); return; }
+    if(latest.id && latest.id !== managerLastSeenReportId){
+      managerLastSeenReportId=latest.id;
+      safeStorage.setItem('restev_last_report_id', latest.id);
+      triggerNewReportAlert(latest);
+      loadManagerReports();
+    }
+  }catch(e){ console.warn('Polling alertes impossible', e); }
 }
+
+/* Carte : initialisation fiable quand la page Signalement devient visible */
 function initLeafletMap(){
-  const mapEl=document.getElementById('map'); if(!mapEl) return;
-  if(!window.L){ mapEl.classList.add('map-error'); mapEl.innerHTML='Carte indisponible : Leaflet n’est pas chargé. Vérifiez la connexion internet.'; return; }
+  const mapEl=document.getElementById('map');
+  if(!mapEl) return;
+  if(!window.L){
+    mapEl.classList.add('map-error');
+    mapEl.innerHTML='Carte indisponible : Leaflet n’est pas chargé. Vérifiez la connexion internet.';
+    return;
+  }
   try{
     if(mapInstance){ setTimeout(()=>mapInstance.invalidateSize(),200); return; }
     mapInstance=L.map('map',{zoomControl:true}).setView([46.670,-1.426],13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19, attribution:'© OpenStreetMap'}).addTo(mapInstance);
-    L.marker([46.670,-1.426]).addTo(mapInstance).bindPopup('Vendée — position par défaut'); setTimeout(()=>mapInstance.invalidateSize(),300);
+    L.marker([46.670,-1.426]).addTo(mapInstance).bindPopup('Vendée — position par défaut');
+    setTimeout(()=>mapInstance.invalidateSize(),300);
     const geo=document.getElementById('geo-status');
-    if(!window.isSecureContext && location.hostname!=='localhost'){ if(geo) geo.innerText='GPS bloqué : ouvrez l’application en HTTPS.'; return; }
-    if(navigator.geolocation){ if(geo) geo.innerText='Recherche GPS...'; navigator.geolocation.getCurrentPosition(pos=>{const lat=pos.coords.latitude,lng=pos.coords.longitude; mapInstance.setView([lat,lng],16); L.marker([lat,lng]).addTo(mapInstance).bindPopup('Position terrain').openPopup(); if(geo) geo.innerText='📍 Coordonnées GPS verrouillées'; setTimeout(()=>mapInstance.invalidateSize(),200);},()=>{if(geo) geo.innerText='GPS non autorisé ou indisponible. La carte reste utilisable.';},{enableHighAccuracy:true,timeout:10000,maximumAge:60000}); }
-  }catch(e){ console.warn('Erreur carte',e); mapEl.classList.add('map-error'); mapEl.innerHTML='Carte indisponible : rechargez la page ou vérifiez la connexion internet.'; }
+    if(!window.isSecureContext && location.hostname !== 'localhost'){
+      if(geo) geo.innerText='GPS bloqué : ouvrez l’application en HTTPS pour autoriser la géolocalisation.';
+      return;
+    }
+    if(navigator.geolocation){
+      if(geo) geo.innerText='Recherche GPS...';
+      navigator.geolocation.getCurrentPosition(pos=>{
+        const lat=pos.coords.latitude, lng=pos.coords.longitude;
+        mapInstance.setView([lat,lng],16);
+        L.marker([lat,lng]).addTo(mapInstance).bindPopup('Position terrain').openPopup();
+        if(geo) geo.innerText='📍 Coordonnées GPS verrouillées';
+        setTimeout(()=>mapInstance.invalidateSize(),200);
+      },err=>{
+        if(geo) geo.innerText='GPS non autorisé ou indisponible. La carte reste utilisable.';
+        console.warn('GPS indisponible', err);
+      },{enableHighAccuracy:true,timeout:10000,maximumAge:60000});
+    }
+  }catch(e){
+    console.warn('Erreur carte', e);
+    mapEl.classList.add('map-error');
+    mapEl.innerHTML='Carte indisponible : rechargez la page ou vérifiez la connexion internet.';
+  }
 }
-function fixMapSize(){ if(!mapInstance) initLeafletMap(); else setTimeout(()=>mapInstance.invalidateSize(),250); }
-function isPassportStat(row){const e=String(row?.event_type||'').toLowerCase(), r=String(row?.risk_category||row?.category||'').toLowerCase(); return e.includes('passeport')||r.includes('validation passeport')||r.includes('passeport prévention')||r.includes('passeport prevention');}
-function isDiagnosticStat(row){const e=String(row?.event_type||'').toLowerCase(), r=String(row?.risk_category||row?.category||'').toLowerCase(); return e.includes('diagnostic')||r.includes('diagnostic');}
-function countBySafe(list,key){return (list||[]).reduce((acc,item)=>{const v=item[key]||'Non renseigné'; acc[v]=(acc[v]||0)+1; return acc;},{});}
-function topEntriesSafe(obj,limit=5){return Object.entries(obj||{}).sort((a,b)=>b[1]-a[1]).slice(0,limit);}
-function ensureSeparatedCentreUI(){
-  const totalEl=document.getElementById('stats-total'), topRiskEl=document.getElementById('stats-top-risk'), sectorEl=document.getElementById('stats-sector-count');
-  if(totalEl){const label=totalEl.parentElement?.querySelector('p'); if(label) label.innerText='Signalements de risques';}
-  if(topRiskEl){const label=topRiskEl.parentElement?.querySelector('p'); if(label) label.innerText='Risque signalé dominant';}
-  if(sectorEl){const label=sectorEl.parentElement?.querySelector('p'); if(label) label.innerText='Secteurs avec signalements';}
-  const statsGrid=totalEl?.closest('.grid'); if(statsGrid && !document.getElementById('stats-passports')){statsGrid.className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'; const card=document.createElement('div'); card.className='bg-white dark:bg-slate-800 p-5 rounded-2xl border shadow-premium'; card.innerHTML='<p class="text-[10px] font-black uppercase text-slate-400">Passeports validés</p><p id="stats-passports" class="text-3xl font-black text-emerald-500 mt-1">0</p><p class="text-[10px] text-slate-400 mt-1 font-bold">Traçabilité séparée</p>'; statsGrid.insertBefore(card, topRiskEl?.parentElement || null);}
+function fixMapSize(){
+  if(!mapInstance) initLeafletMap();
+  else setTimeout(()=>mapInstance.invalidateSize(),250);
 }
-function renderRestevStats(rows){
-  ensureSeparatedCentreUI(); const clean=(rows||[]).filter(r=>!isDiagnosticStat(r)); const passports=clean.filter(isPassportStat); const signals=clean.filter(r=>!isPassportStat(r));
-  const riskCounts=countBySafe(signals,'risk_category'), sectorCounts=countBySafe(signals,'sector'), passportCounts=countBySafe(passports,'risk_level'); const topRisks=topEntriesSafe(riskCounts,6), passEntries=topEntriesSafe(passportCounts,6);
-  const set=(id,val)=>{const el=document.getElementById(id); if(el) el.innerText=String(val)}; set('stats-total',signals.length); set('stats-passports',passports.length); set('stats-top-risk',topEntriesSafe(riskCounts,1)[0]?.[0]||'—'); set('stats-sector-count',Object.keys(sectorCounts).filter(s=>s!=='Non renseigné').length||Object.keys(sectorCounts).length||0);
-  const riskCtx=document.getElementById('chart-restev-risks'); if(riskCtx&&window.Chart){ if(restevStatsChart) restevStatsChart.destroy(); restevStatsChart=new Chart(riskCtx,{type:'doughnut',data:{labels:topRisks.length?topRisks.map(e=>e[0]):['Aucun signalement'],datasets:[{data:topRisks.length?topRisks.map(e=>e[1]):[1],backgroundColor:['#e0248a','#3a7bd5','#ffb007','#4ec3b1','#245ca6','#b31269']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}}); }
-  const actionBox=document.getElementById('stats-actions-list'); if(actionBox){actionBox.innerHTML=topRisks.length?topRisks.map(([risk,count],idx)=>`<div class="p-3 rounded-2xl border bg-slate-50 dark:bg-slate-900"><div class="flex justify-between gap-2"><p class="text-xs font-black dark:text-white">${idx+1}. ${escapeHtml(risk)}</p><span class="text-[10px] font-black text-restev-blue bg-blue-50 px-2 py-1 rounded-lg">${count}</span></div><p class="text-[11px] text-slate-500 dark:text-slate-300 mt-1 leading-relaxed">${escapeHtml(getPreventionSuggestion(risk))}</p></div>`).join(''):'<p class="text-xs text-slate-400 italic">Aucun signalement de risque disponible.</p>';}
+// Ré-init map quand on ouvre l'écran signalement via le shell app
+const previousAppNavigateForMap = appNavigate;
+function appNavigate(screenId, remember=true, restoreScroll=false){
+  previousAppNavigateForMap(screenId, remember, restoreScroll);
+  if(screenId==='scr-report') setTimeout(()=>{ initLeafletMap(); fixMapSize(); },450);
 }
-async function loadRestevStats(){
-  if(!document.getElementById('stats-total')) return; if(!supabaseClient) return showToast('Supabase non chargé : statistiques indisponibles.');
-  try{let rows=[]; const statRes=await supabaseClient.from('prevention_stats').select('period_month,sector,company_size_range,risk_category,risk_level,frequency,event_type,created_at').order('created_at',{ascending:false}).limit(500); if(!statRes.error&&statRes.data) rows=statRes.data;
-    if(!rows.some(isPassportStat)){const passRes=await supabaseClient.from('passport_registry').select('score,total,status,created_at').order('created_at',{ascending:false}).limit(500); if(!passRes.error&&passRes.data) rows=rows.concat(passRes.data.map(p=>({period_month:(p.created_at||new Date().toISOString()).slice(0,7),sector:'Non renseigné',company_size_range:'Non renseigné',risk_category:'Validation passeport prévention',risk_level:(Number(p.score)===Number(p.total))?'Acquis complet':'Points à renforcer',frequency:'Ponctuelle',event_type:'Passeport validé',created_at:p.created_at})));}
-    renderRestevStats(rows||[]); showToast('Centre RESTEV actualisé.'); }catch(e){console.error(e); showToast('Erreur chargement statistiques.');}
+
+
+
+/* =========================================================
+   PATCH FINAL ACCÈS MANAGER — navigation stable sans récursion
+   À conserver en DERNIER dans le dernier <script>.
+   Corrige le blocage du bouton "Accéder à l'Espace".
+   ========================================================= */
+function appNavigate(screenId, remember = true, restoreScroll = false) {
+  const current = document.querySelector('.screen.active')?.id || appCurrentScreen || 'scr-home';
+
+  if (current) {
+    appScrollMemory[current] = window.scrollY || 0;
+  }
+
+  if (remember && !appNavInternal && current && current !== screenId) {
+    appScreenStack.push(current);
+  }
+
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('active');
+    s.style.display = 'none';
+  });
+
+  const target = document.getElementById(screenId);
+
+  if (!target) {
+    console.warn('Écran introuvable :', screenId);
+    showToast('Écran introuvable : ' + screenId);
+    return;
+  }
+
+  target.classList.add('active');
+  target.style.display = 'block';
+  appCurrentScreen = screenId;
+
+  setTimeout(() => {
+    const y = restoreScroll ? (appScrollMemory[screenId] || 0) : 0;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+
+    if (screenId === 'scr-report') {
+      setTimeout(() => {
+        try {
+          initLeafletMap();
+          fixMapSize();
+        } catch (e) {
+          console.warn('Carte non initialisée :', e);
+        }
+      }, 350);
+    }
+
+    if (screenId === 'scr-qcm-success') {
+      setTimeout(initSignaturePads, 250);
+    }
+
+    if (screenId === 'scr-direction') {
+      setTimeout(loadRestevStats, 250);
+    }
+
+    try { removeDiagnosticSync(); } catch (e) {}
+    try { enhanceBackButtons(); } catch (e) {}
+    try { updateAppChrome(screenId); } catch (e) {}
+  }, 20);
 }
-async function submitAnonymizedPreventionStat(evt){
-  if(!supabaseClient) return false; try{const anonymized={period_month:getPeriodMonth(),sector:evt.sector||getCurrentSectorLabel(),company_size_range:evt.company_size_range||getCurrentCompanySizeLabel(),risk_category:evt.category||evt.risk_category||'Non renseigné',risk_level:evt.level||evt.risk_level||'Non renseigné',frequency:evt.frequency||'Non renseigné',event_type:evt.event_type||'Signalement prévention',corrective_action_type:evt.corrective_action_type||'À définir'}; const {error}=await supabaseClient.from('prevention_stats').insert([anonymized]); if(error){console.warn('Stat anonymisée non enregistrée :',error.message); return false;} return true;}catch(e){console.warn('Stat anonymisée ignorée :',e); return false;}
+
+function switchScreen(screenId) {
+  appNavigate(screenId, true, false);
 }
-async function submitRiskReport(){
-  if(!supabaseClient) return showToast('Supabase non chargé. Vérifiez internet.'); const category=document.getElementById('risk-category-select').value, desc=document.getElementById('risk-description').value.trim(), lvl=document.getElementById('risk-level').value, freq=document.getElementById('risk-frequency').value; if(!desc) return showToast('Veuillez saisir une description du danger.'); const employeeName=currentEmployeeSession?currentEmployeeSession.name:'Salarié terrain', companyCode=currentEmployeeSession?currentEmployeeSession.company:(document.getElementById('lbl-manager-comp-name')?.innerText||'Établissement non renseigné'); const {error}=await supabaseClient.from('prevention_reports').insert([{company_code:companyCode,employee_name:employeeName,category,level:lvl,frequency:freq,description:desc,status:'Nouveau'}]); if(error){console.error(error); return showToast('Erreur Supabase signalement : '+error.message);} await submitAnonymizedPreventionStat({category,level:lvl,frequency:freq,event_type:'Signalement prévention'}); document.getElementById('risk-description').value=''; showToast('Signalement envoyé.'); appNavigate('scr-employee',true,false);
+
+function handleManagerLogin() {
+  const input = document.getElementById('manager-company-code');
+  const code = (input?.value || '').trim().toUpperCase();
+
+  if (!code) {
+    return showToast('Veuillez saisir un code établissement');
+  }
+
+  try { unlockAlertSound(); } catch (e) {}
+  try { unlockManagerAlerts(); } catch (e) {}
+
+  const sectorSelect = document.getElementById('manager-login-sector');
+  const sizeSelect = document.getElementById('manager-login-size');
+
+  managerSector = sectorSelect?.value || 'Non renseigné';
+  managerCompanySize = sizeSelect?.value || 'Non renseigné';
+
+  safeStorage.setItem('restev_manager_sector_' + code, managerSector);
+  safeStorage.setItem('restev_manager_size_' + code, managerCompanySize);
+
+  const lbl = document.getElementById('lbl-manager-comp-name');
+  if (lbl) lbl.innerText = code;
+
+  showToast('Identification validée. Ouverture de l’espace manager...');
+
+  appNavigate('scr-manager', true, false);
+
+  setTimeout(() => {
+    try { loadManagerReports(); } catch (e) { console.warn(e); }
+    try { startManagerRealtime(); } catch (e) { console.warn(e); }
+    try { loadPassportRegistry(); } catch (e) { console.warn(e); }
+    try { startManagerAlertPolling(); } catch (e) { console.warn(e); }
+  }, 250);
 }
-setTimeout(()=>{ try{setupAppShell();}catch(e){console.warn(e)} try{removeDiagnosticSync();}catch(e){console.warn(e)} },80);
-document.addEventListener('DOMContentLoaded',()=>{ try{setupAppShell();}catch(e){console.warn(e)} });
+
+function appOpenManager() {
+  const code = document.getElementById('lbl-manager-comp-name')?.innerText?.trim();
+  appNavigate(code ? 'scr-manager' : 'scr-auth', true, false);
+}
+
+function appGoBack() {
+  if (!appScreenStack.length) {
+    appNavigate('scr-home', false, true);
+    return;
+  }
+
+  const prev = appScreenStack.pop();
+  appNavInternal = true;
+  appNavigate(prev, false, true);
+  appNavInternal = false;
+}
+
+// Sécurise le lancement du shell app et la suppression de l'ancien diagnostic.
+setTimeout(() => {
+  try { setupAppShell(); } catch (e) { console.warn(e); }
+  try { removeDiagnosticSync(); } catch (e) { console.warn(e); }
+}, 80);
 
 </script> 
 
