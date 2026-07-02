@@ -28,31 +28,9 @@
 
  
 
-  <script>
-/* =========================================================
-   SAFE STORAGE — compatible iframe sandbox / about:srcdoc
-   Évite : SecurityError localStorage sans allow-same-origin.
-   ========================================================= */
-const safeStorage = (() => {
-  const memory = {};
-  try {
-    const testKey = '__restev_storage_test__';
-    window.localStorage.setItem(testKey, '1');
-    window.localStorage.removeItem(testKey);
-    return window.localStorage;
-  } catch (e) {
-    console.warn('localStorage indisponible, stockage mémoire temporaire utilisé :', e?.message || e);
-    return {
-      getItem: key => Object.prototype.hasOwnProperty.call(memory, key) ? memory[key] : null,
-      setItem: (key, value) => { memory[key] = String(value); },
-      removeItem: key => { delete memory[key]; },
-      clear: () => { Object.keys(memory).forEach(k => delete memory[k]); }
-    };
-  }
-})();
- 
+  <script> 
 
-    if (window.tailwind) { tailwind.config = { 
+    tailwind.config = { 
 
       darkMode: 'class', 
 
@@ -85,8 +63,11 @@ const safeStorage = (() => {
         } 
 
       } 
-    };
-}
+
+    }; 
+
+
+
 /* =========================================================
    PATCH SYNCHRO RESTEV 85 — Registre passeports + Centre RESTEV
    Objectif : rendre visibles les validations QCM dans le registre
@@ -101,14 +82,14 @@ function getCurrentSectorLabel(){
   const fromSession=getCleanLabel(currentEmployeeSession?.sector, '');
   const fromManager=getCleanLabel(managerSector, '');
   const fromSelect=getCleanLabel(document.getElementById('manager-login-sector')?.value, '');
-  const fromStore=getCleanLabel(safeStorage.getItem('restev_manager_sector_' + companyCode), '');
+  const fromStore=getCleanLabel(localStorage.getItem('restev_manager_sector_' + companyCode), '');
   return fromSession || fromManager || fromSelect || fromStore || 'Non renseigné';
 }
 function getCurrentCompanySizeLabel(){
   const companyCode=(currentEmployeeSession?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
   const fromManager=getCleanLabel(managerCompanySize, '');
   const fromSelect=getCleanLabel(document.getElementById('manager-login-size')?.value, '');
-  const fromStore=getCleanLabel(safeStorage.getItem('restev_manager_size_' + companyCode), '');
+  const fromStore=getCleanLabel(localStorage.getItem('restev_manager_size_' + companyCode), '');
   return fromManager || fromSelect || fromStore || 'Non renseigné';
 }
 function getRegistryKey(){
@@ -147,7 +128,7 @@ async function loadPassportRegistry(){
   const companyCode=document.getElementById('lbl-manager-comp-name')?.innerText?.trim();
   if(!companyCode) return;
   let localEntries=[];
-  try{ localEntries=JSON.parse(safeStorage.getItem(getRegistryKey()) || '[]').map(normalizeRegistryRow); }catch(e){ localEntries=[]; }
+  try{ localEntries=JSON.parse(localStorage.getItem(getRegistryKey()) || '[]').map(normalizeRegistryRow); }catch(e){ localEntries=[]; }
   renderPassportRegistry(localEntries);
   if(!supabaseClient){
     showToast('Registre local affiché : Supabase non chargé.');
@@ -194,9 +175,9 @@ async function submitAnonymizedPreventionStat(evt){
 async function savePassportEntry(entry){
   // 1) sauvegarde locale immédiate
   let entries=[];
-  try{ entries=JSON.parse(safeStorage.getItem(getRegistryKey()) || '[]'); }catch(e){ entries=[]; }
+  try{ entries=JSON.parse(localStorage.getItem(getRegistryKey()) || '[]'); }catch(e){ entries=[]; }
   entries.unshift(entry);
-  safeStorage.setItem(getRegistryKey(), JSON.stringify(entries.slice(0,100)));
+  localStorage.setItem(getRegistryKey(), JSON.stringify(entries.slice(0,100)));
 
   // 2) sauvegarde Supabase pour visibilité manager multi-appareil
   let cloudOK=false;
@@ -374,9 +355,23 @@ async function loadRestevStats(){
   
 
 /* =========================================================
-   FALLBACK CSS si Tailwind CDN est bloqué par un aperçu sandbox
+   VERROUILLAGE ESPACE SALARIÉ + ALERTES SALARIÉ
    ========================================================= */
-.hidden{display:none!important}.block{display:block}.flex{display:flex}.grid{display:grid}.items-center{align-items:center}.justify-between{justify-content:space-between}.text-center{text-align:center}.w-full{width:100%}.mx-auto{margin-left:auto;margin-right:auto}.space-y-4>*+*{margin-top:1rem}.space-y-6>*+*{margin-top:1.5rem}.p-3{padding:.75rem}.p-4{padding:1rem}.p-5{padding:1.25rem}.p-6{padding:1.5rem}.py-6{padding-top:1.5rem;padding-bottom:1.5rem}.mb-4{margin-bottom:1rem}.mt-1{margin-top:.25rem}.rounded-xl{border-radius:.75rem}.rounded-2xl{border-radius:1rem}.rounded-3xl{border-radius:1.5rem}.border{border:1px solid #e2e8f0}.shadow-premium,.shadow-lg,.shadow-xl,.shadow-md,.shadow-sm{box-shadow:0 12px 30px rgba(15,23,42,.12)}.bg-white{background:#fff}.text-white{color:#fff}.font-bold{font-weight:700}.font-black{font-weight:900}.text-xs{font-size:.75rem}.text-sm{font-size:.875rem}.text-xl{font-size:1.25rem}.text-2xl{font-size:1.5rem}.max-w-md{max-width:28rem}.max-w-xl{max-width:36rem}.max-w-2xl{max-width:42rem}.max-w-4xl{max-width:56rem}.gap-2{gap:.5rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}button{cursor:pointer}input,select,textarea{max-width:100%;box-sizing:border-box}
+.employee-locked #app-bottom-nav .app-tab[data-tab="scr-home"],
+.employee-locked #app-bottom-nav .app-tab[data-tab="manager"],
+.employee-locked #app-bottom-nav .app-tab[data-tab="scr-direction"]{display:none!important;}
+.employee-locked #app-bottom-nav .app-nav-inner{grid-template-columns:repeat(2,1fr)!important;}
+.employee-lock-banner{border-radius:20px;padding:11px 13px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:11px;font-weight:900;line-height:1.35;display:flex;align-items:flex-start;gap:8px;}
+.dark .employee-lock-banner{background:rgba(154,52,18,.18);border-color:#9a3412;color:#fed7aa;}
+#employee-alert-overlay{position:fixed;inset:0;z-index:125;display:none;align-items:center;justify-content:center;padding:22px;background:rgba(2,6,23,.72);backdrop-filter:blur(12px);}
+#employee-alert-overlay.show{display:flex;animation:employeeAlertIn .18s ease-out;}@keyframes employeeAlertIn{from{opacity:0}to{opacity:1}}
+.employee-alert-card{width:min(430px,100%);border-radius:32px;background:#fff;overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,.45);animation:employeeAlertPop .25s cubic-bezier(.2,.9,.2,1.15);}
+.dark .employee-alert-card{background:#0f172a;color:#fff;border:1px solid #334155;}@keyframes employeeAlertPop{from{transform:scale(.88) translateY(18px);opacity:.2}to{transform:scale(1) translateY(0);opacity:1}}
+.employee-alert-top{background:linear-gradient(135deg,#245ca6,#3a7bd5,#4ec3b1);color:#fff;padding:22px;display:flex;align-items:center;gap:14px;}
+.employee-alert-icon{width:58px;height:58px;border-radius:22px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:28px;animation:employeeAlertPulse 1s infinite;}@keyframes employeeAlertPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+.employee-alert-body{padding:20px;}.employee-alert-title{font-size:18px;font-weight:1000;margin:0;line-height:1.15}.employee-alert-sub{font-size:12px;font-weight:800;opacity:.9;margin-top:4px}.employee-alert-detail{font-size:13px;line-height:1.45;color:#475569;margin-top:12px;font-weight:700;white-space:pre-wrap}.dark .employee-alert-detail{color:#cbd5e1}.employee-alert-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}.employee-alert-btn{border:0;border-radius:18px;padding:13px 14px;font-size:12px;font-weight:1000}.employee-alert-btn.primary{background:linear-gradient(135deg,#245ca6,#3a7bd5);color:#fff}.employee-alert-btn.secondary{background:#f1f5f9;color:#334155}.dark .employee-alert-btn.secondary{background:#1e293b;color:#e2e8f0}
+.employee-alert-flash{animation:employeeScreenFlash .85s ease-out 2;}@keyframes employeeScreenFlash{0%{box-shadow:inset 0 0 0 0 rgba(58,123,213,0)}35%{box-shadow:inset 0 0 0 9999px rgba(58,123,213,.22)}100%{box-shadow:inset 0 0 0 0 rgba(58,123,213,0)}}
+.manager-important-box{display:flex;align-items:center;gap:8px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:12px;padding:8px;font-size:10px;font-weight:900;margin:.35rem 0;}
 
 </style> 
 
@@ -2121,12 +2116,12 @@ function triggerNewReportAlert(report) {
     }
 
     function getLocalPassportRegistry(){
-      try{return JSON.parse(safeStorage.getItem(getRegistryKey()) || '[]');}
+      try{return JSON.parse(localStorage.getItem(getRegistryKey()) || '[]');}
       catch(e){return [];}
     }
 
     function saveLocalPassportRegistry(entries){
-      safeStorage.setItem(getRegistryKey(), JSON.stringify(entries));
+      localStorage.setItem(getRegistryKey(), JSON.stringify(entries));
     }
 
     function renderPassportRegistry(entries){
@@ -2232,12 +2227,12 @@ function triggerNewReportAlert(report) {
 
     function getCurrentSectorLabel(){
       const companyCode = (currentEmployeeSession?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
-      return managerSector || safeStorage.getItem('restev_manager_sector_' + companyCode) || 'Non renseigné';
+      return managerSector || localStorage.getItem('restev_manager_sector_' + companyCode) || 'Non renseigné';
     }
 
     function getCurrentCompanySizeLabel(){
       const companyCode = (currentEmployeeSession?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
-      return managerCompanySize || safeStorage.getItem('restev_manager_size_' + companyCode) || 'Non renseigné';
+      return managerCompanySize || localStorage.getItem('restev_manager_size_' + companyCode) || 'Non renseigné';
     }
 
     function getPeriodMonth(){
@@ -2337,7 +2332,7 @@ function triggerNewReportAlert(report) {
    - Carte Leaflet initialisée quand l'écran est visible
    ========================================================= */
 let managerAlertsUnlocked = false;
-let managerLastSeenReportId = safeStorage.getItem('restev_last_report_id') || '';
+let managerLastSeenReportId = localStorage.getItem('restev_last_report_id') || '';
 let managerAlertPolling = null;
 let managerAlertOscillators = [];
 
@@ -2486,10 +2481,10 @@ async function pollLatestManagerReport(initial=false){
       .limit(1);
     if(error || !data || !data.length) return;
     const latest=data[0];
-    if(initial){ managerLastSeenReportId=latest.id; safeStorage.setItem('restev_last_report_id', latest.id); return; }
+    if(initial){ managerLastSeenReportId=latest.id; localStorage.setItem('restev_last_report_id', latest.id); return; }
     if(latest.id && latest.id !== managerLastSeenReportId){
       managerLastSeenReportId=latest.id;
-      safeStorage.setItem('restev_last_report_id', latest.id);
+      localStorage.setItem('restev_last_report_id', latest.id);
       triggerNewReportAlert(latest);
       loadManagerReports();
     }
@@ -2631,8 +2626,8 @@ function handleManagerLogin() {
   managerSector = sectorSelect?.value || 'Non renseigné';
   managerCompanySize = sizeSelect?.value || 'Non renseigné';
 
-  safeStorage.setItem('restev_manager_sector_' + code, managerSector);
-  safeStorage.setItem('restev_manager_size_' + code, managerCompanySize);
+  localStorage.setItem('restev_manager_sector_' + code, managerSector);
+  localStorage.setItem('restev_manager_size_' + code, managerCompanySize);
 
   const lbl = document.getElementById('lbl-manager-comp-name');
   if (lbl) lbl.innerText = code;
@@ -2673,6 +2668,207 @@ setTimeout(() => {
 }, 80);
 
 </script> 
+
+
+
+<script>
+(function(){
+  if(window.__restevEmployeeLockPatch) return;
+  window.__restevEmployeeLockPatch = true;
+
+  let employeeMessagePolling = null;
+  let employeeAlertAudioOscillators = [];
+  const storage = (() => {
+    try { if (typeof safeStorage !== 'undefined') return safeStorage; } catch(e) {}
+    try { const k='__t'; localStorage.setItem(k,'1'); localStorage.removeItem(k); return localStorage; } catch(e) {
+      const mem={}; return {getItem:k=>mem[k]||null,setItem:(k,v)=>{mem[k]=String(v)},removeItem:k=>delete mem[k]};
+    }
+  })();
+
+  function isEmployeeLocked(){ return !!window.currentEmployeeSession; }
+  function employeeAllowedScreen(screenId){
+    return ['scr-employee','scr-qcm','scr-qcm-success','scr-report','scr-resources','scr-employee-messages','scr-training'].includes(screenId);
+  }
+  function addEmployeeLockBanner(){
+    const employeeScreen=document.getElementById('scr-employee');
+    if(!employeeScreen || document.getElementById('employee-lock-banner')) return;
+    const banner=document.createElement('div');
+    banner.id='employee-lock-banner';
+    banner.className='employee-lock-banner';
+    banner.innerHTML='<i class="fa-solid fa-lock mt-0.5"></i><span>Espace salarié sécurisé : seuls le parcours prévention, les signalements, les messages et les ressources sont accessibles depuis ce QR Code. L’accueil, le centre RESTEV et l’espace manager sont réservés.</span>';
+    const firstCard=employeeScreen.querySelector('.bg-gradient-to-br');
+    if(firstCard) firstCard.insertAdjacentElement('afterend', banner); else employeeScreen.prepend(banner);
+  }
+  function stopEmployeeMessagePolling(){ if(employeeMessagePolling) clearInterval(employeeMessagePolling); employeeMessagePolling=null; }
+  function lockEmployeeSpace(){
+    if(isEmployeeLocked()){
+      document.body.classList.add('employee-locked');
+      addEmployeeLockBanner();
+      startEmployeeMessagePolling();
+      const back=document.getElementById('app-back-btn');
+      const active=document.querySelector('.screen.active')?.id;
+      if(back && active==='scr-employee') back.disabled=true;
+    } else {
+      document.body.classList.remove('employee-locked');
+      stopEmployeeMessagePolling();
+    }
+  }
+
+  const oldAppNavigate = window.appNavigate;
+  window.appNavigate = function(screenId, remember=true, restoreScroll=false){
+    if(isEmployeeLocked() && !employeeAllowedScreen(screenId)){
+      if(typeof window.showToast==='function') window.showToast('Accès réservé au manager ou à RESTEV. Votre espace salarié reste sécurisé.');
+      screenId='scr-employee';
+    }
+    if(typeof oldAppNavigate==='function') oldAppNavigate(screenId, remember, restoreScroll);
+    else basicSwitch(screenId);
+    setTimeout(lockEmployeeSpace, 40);
+  };
+
+  const oldSwitchScreen = window.switchScreen;
+  window.switchScreen = function(screenId){
+    if(isEmployeeLocked() && !employeeAllowedScreen(screenId)){
+      if(typeof window.showToast==='function') window.showToast('Accès réservé au manager ou à RESTEV.');
+      screenId='scr-employee';
+    }
+    if(typeof oldSwitchScreen==='function') oldSwitchScreen(screenId);
+    else basicSwitch(screenId);
+    setTimeout(lockEmployeeSpace, 40);
+  };
+
+  function basicSwitch(screenId){
+    document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.style.display='none';});
+    const t=document.getElementById(screenId); if(t){t.classList.add('active');t.style.display='block';}
+  }
+
+  const oldAppGoBack = window.appGoBack;
+  window.appGoBack = function(){
+    if(isEmployeeLocked()){
+      const current=document.querySelector('.screen.active')?.id;
+      if(current && current !== 'scr-employee') return window.appNavigate('scr-employee', false, true);
+      if(typeof window.showToast==='function') window.showToast('Espace salarié sécurisé : retour accueil désactivé.');
+      return;
+    }
+    if(typeof oldAppGoBack==='function') oldAppGoBack();
+  };
+
+  const oldUpdateAppChrome = window.updateAppChrome;
+  window.updateAppChrome = function(screenId){
+    if(typeof oldUpdateAppChrome==='function') oldUpdateAppChrome(screenId);
+    if(isEmployeeLocked()){
+      document.body.classList.add('employee-locked');
+      const back=document.getElementById('app-back-btn');
+      if(back && screenId==='scr-employee') back.disabled=true;
+    }
+  };
+
+  const oldCheckUrlParameters = window.checkUrlParameters;
+  window.checkUrlParameters = function(){
+    if(typeof oldCheckUrlParameters==='function') oldCheckUrlParameters();
+    if(isEmployeeLocked()){
+      lockEmployeeSpace();
+      setTimeout(()=>window.appNavigate('scr-employee', false, false), 80);
+    }
+  };
+
+  function setupEmployeeAlertOverlay(){
+    if(document.getElementById('employee-alert-overlay')) return;
+    const overlay=document.createElement('div');
+    overlay.id='employee-alert-overlay';
+    overlay.innerHTML='<div class="employee-alert-card"><div class="employee-alert-top"><div class="employee-alert-icon"><i class="fa-solid fa-comment-dots"></i></div><div><p class="employee-alert-title">Message du responsable</p><p id="employee-alert-sub" class="employee-alert-sub">Une information importante vient d’être envoyée.</p></div></div><div class="employee-alert-body"><div id="employee-alert-detail" class="employee-alert-detail">Message reçu.</div><div class="employee-alert-actions"><button class="employee-alert-btn secondary" onclick="window.stopEmployeeAlertEffects();window.hideEmployeeAlertOverlay()">Plus tard</button><button class="employee-alert-btn primary" onclick="window.stopEmployeeAlertEffects();window.hideEmployeeAlertOverlay();openEmployeeMessages();">Voir le message</button></div></div></div>';
+    document.body.appendChild(overlay);
+  }
+  window.hideEmployeeAlertOverlay = function(){ document.getElementById('employee-alert-overlay')?.classList.remove('show'); document.body.classList.remove('employee-alert-flash'); };
+  window.stopEmployeeAlertEffects = function(){ try{ employeeAlertAudioOscillators.forEach(o=>{try{o.stop()}catch(e){}}); employeeAlertAudioOscillators=[]; }catch(e){} };
+  function playEmployeeAlertSound(){
+    try{
+      if(window.soundMuted) return;
+      const AudioContext=window.AudioContext||window.webkitAudioContext; if(!AudioContext) return;
+      if(!window.alertAudioCtx) window.alertAudioCtx=new AudioContext();
+      if(window.alertAudioCtx.state==='suspended') window.alertAudioCtx.resume();
+      [740,920,740,1040].forEach((freq,i)=>{
+        const start=window.alertAudioCtx.currentTime+i*.24;
+        const osc=window.alertAudioCtx.createOscillator(); const gain=window.alertAudioCtx.createGain();
+        osc.type='sine'; osc.frequency.setValueAtTime(freq,start);
+        gain.gain.setValueAtTime(.0001,start); gain.gain.exponentialRampToValueAtTime(.32,start+.03); gain.gain.exponentialRampToValueAtTime(.0001,start+.2);
+        osc.connect(gain); gain.connect(window.alertAudioCtx.destination); osc.start(start); osc.stop(start+.22); employeeAlertAudioOscillators.push(osc);
+      });
+    }catch(e){ console.warn('Son alerte salarié impossible', e); }
+  }
+  function vibrateEmployeeAlert(){ try{ if('vibrate' in navigator) navigator.vibrate([500,180,500,180,800]); }catch(e){} }
+  function showEmployeeAlert(report){
+    setupEmployeeAlertOverlay();
+    const category=report?.category || 'Message prévention';
+    const response=report?.manager_response || report?.corrective_action || 'Un message a été envoyé par le responsable.';
+    const sub=document.getElementById('employee-alert-sub'); const detail=document.getElementById('employee-alert-detail');
+    if(sub) sub.innerText=category;
+    if(detail) detail.innerText=response;
+    document.getElementById('employee-alert-overlay')?.classList.add('show');
+    document.body.classList.add('employee-alert-flash');
+    setTimeout(()=>document.body.classList.remove('employee-alert-flash'),2200);
+  }
+  function triggerEmployeeMessageAlert(report){
+    playEmployeeAlertSound(); vibrateEmployeeAlert(); showEmployeeAlert(report);
+    if(typeof window.showToast==='function') window.showToast('📩 Nouveau message du responsable');
+  }
+  function employeeMessageFingerprint(report){ return `${report.id||''}|${report.manager_response||''}|${report.corrective_action||''}|${report.status||''}`; }
+  function getEmployeeMessageStorageKey(){
+    const name=window.currentEmployeeSession?.name || 'salarie';
+    const company=window.currentEmployeeSession?.company || 'entreprise';
+    return `restev_employee_last_message_${company}_${name}`;
+  }
+  function startEmployeeMessagePolling(){
+    if(!window.currentEmployeeSession || !window.supabaseClient) return;
+    if(employeeMessagePolling) clearInterval(employeeMessagePolling);
+    pollEmployeeMessages(true);
+    employeeMessagePolling=setInterval(()=>pollEmployeeMessages(false),12000);
+  }
+  async function pollEmployeeMessages(initial=false){
+    if(!window.currentEmployeeSession || !window.supabaseClient) return;
+    try{
+      const {data,error}=await window.supabaseClient.from('prevention_reports')
+        .select('id,category,status,manager_response,corrective_action,created_at')
+        .eq('company_code', window.currentEmployeeSession.company)
+        .eq('employee_name', window.currentEmployeeSession.name)
+        .order('created_at',{ascending:false})
+        .limit(10);
+      if(error || !data) return;
+      const actionable=data.find(r=>(r.manager_response&&r.manager_response.trim())||(r.corrective_action&&r.corrective_action.trim())||String(r.status||'').toLowerCase().includes('important'));
+      if(!actionable) return;
+      const fp=employeeMessageFingerprint(actionable), key=getEmployeeMessageStorageKey(), last=storage.getItem(key);
+      if(initial){ storage.setItem(key, fp); return; }
+      if(fp && fp!==last){ storage.setItem(key, fp); triggerEmployeeMessageAlert(actionable); }
+    }catch(e){ console.warn('Polling messages salarié impossible', e); }
+  }
+
+  const oldRenderManagerReports = window.renderManagerReports;
+  window.renderManagerReports = function(reports){
+    if(typeof oldRenderManagerReports==='function') oldRenderManagerReports(reports);
+    setTimeout(()=>{
+      (reports||[]).forEach(r=>{
+        const response=document.getElementById(`response-${r.id}`);
+        if(response && !document.getElementById(`important-${r.id}`)){
+          const box=document.createElement('label');
+          box.id=`important-${r.id}`;
+          box.className='manager-important-box';
+          box.innerHTML=`<input type="checkbox" onchange="window.toggleImportantPrefix('${r.id}', this.checked)"> <span><i class="fa-solid fa-bullhorn mr-1"></i> Message important : déclenche une alerte salarié lors de l’enregistrement</span>`;
+          response.insertAdjacentElement('beforebegin', box);
+        }
+      });
+    },40);
+  };
+  window.toggleImportantPrefix = function(id, checked){
+    const textarea=document.getElementById(`response-${id}`); if(!textarea) return;
+    const prefix='[IMPORTANT] ';
+    if(checked && !textarea.value.startsWith(prefix)) textarea.value=prefix+textarea.value;
+    if(!checked && textarea.value.startsWith(prefix)) textarea.value=textarea.value.slice(prefix.length);
+  };
+
+  document.addEventListener('click', ()=>{ if(isEmployeeLocked() && typeof window.unlockAlertSound==='function') { try{window.unlockAlertSound();}catch(e){} } }, {once:false});
+  document.addEventListener('DOMContentLoaded', ()=>setTimeout(lockEmployeeSpace, 200));
+  setTimeout(lockEmployeeSpace, 300);
+})();
+</script>
 
 </body> 
 
