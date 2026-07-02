@@ -851,6 +851,15 @@ async function loadRestevStats(){
 
  
 
+
+      <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border-t-4 border-t-blue-500 shadow-premium space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <h3 class="font-black dark:text-white text-xs uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-stethoscope text-blue-500"></i> Diagnostic synchronisation</h3>
+          <button id="btn-diagnostic-sync" onclick="runSyncDiagnostic()" class="text-[10px] bg-blue-50 text-restev-blue dark:bg-slate-700 dark:text-blue-300 px-3 py-2 rounded-xl font-black">Tester Supabase</button>
+        </div>
+        <div id="sync-diagnostic-box" class="text-[11px] text-slate-500 dark:text-slate-300 leading-relaxed">Cliquez sur “Tester Supabase” si le registre ou le Centre RESTEV restent vides.</div>
+      </div>
+
       <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border-t-4 border-t-emerald-500 shadow-premium space-y-3"> 
 
         <div class="flex items-center justify-between gap-2"><h3 class="font-black dark:text-white text-xs uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-id-card text-emerald-500"></i> Registre des Passeports Validés</h3><button id="btn-refresh-registry" onclick="loadPassportRegistry()" class="text-[10px] bg-slate-100 dark:bg-slate-700 dark:text-white px-3 py-2 rounded-xl font-black">Actualiser</button></div> 
@@ -2301,7 +2310,272 @@ function triggerNewReportAlert(report) {
 
     function escapeHtml(str){ return String(str ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); } 
 
-  </script> 
+  
+
+/* =========================================================
+   PATCH FINAL RESTEV 85 — ORDRE DE CHARGEMENT CORRIGÉ
+   Important : ce bloc est volontairement placé à la fin du script
+   pour écraser les anciennes fonctions déclarées plus haut.
+   ========================================================= */
+function syncLog(message, ok=true){
+  const box=document.getElementById('sync-diagnostic-box');
+  if(box){
+    const color=ok ? 'text-emerald-600' : 'text-red-600';
+    box.innerHTML += `<div class="${color} font-bold">${escapeHtml(message)}</div>`;
+  }
+  console.log(message);
+}
+function syncReset(){
+  const box=document.getElementById('sync-diagnostic-box');
+  if(box) box.innerHTML='';
+}
+function getCleanLabel(value, fallback='Non renseigné'){
+  const v=String(value || '').trim();
+  return (!v || v === 'Non renseigné' || v === 'undefined' || v === 'null') ? fallback : v;
+}
+function getCurrentSectorLabel(){
+  const companyCode=(currentEmployeeSession?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
+  const fromSession=getCleanLabel(currentEmployeeSession?.sector, '');
+  const fromManager=getCleanLabel(managerSector, '');
+  const fromSelect=getCleanLabel(document.getElementById('manager-login-sector')?.value, '');
+  const fromStore=getCleanLabel(localStorage.getItem('restev_manager_sector_' + companyCode), '');
+  return fromSession || fromManager || fromSelect || fromStore || 'Non renseigné';
+}
+function getCurrentCompanySizeLabel(){
+  const companyCode=(currentEmployeeSession?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
+  const fromManager=getCleanLabel(managerCompanySize, '');
+  const fromSelect=getCleanLabel(document.getElementById('manager-login-size')?.value, '');
+  const fromStore=getCleanLabel(localStorage.getItem('restev_manager_size_' + companyCode), '');
+  return fromManager || fromSelect || fromStore || 'Non renseigné';
+}
+function getRegistryKey(){
+  const companyCode=(document.getElementById('lbl-manager-comp-name')?.innerText?.trim() || currentEmployeeSession?.company || 'default').trim();
+  return `restev_passport_registry_${companyCode}`;
+}
+function normalizeRegistryRow(r){
+  const created=r.created_at || r.validated_at || r.date || new Date().toISOString();
+  const scoreText=(r.score !== undefined && r.total !== undefined) ? `${r.score}/${r.total}` : (r.score || r.level || '');
+  let epis=[];
+  try{ epis=Array.isArray(r.epis) ? r.epis : (r.epis ? JSON.parse(r.epis) : []); }catch(e){ epis=[]; }
+  return {
+    company_code:r.company_code || r.company || '',
+    employee_name:r.employee_name || r.employee || 'Salarié',
+    validated_at: String(created).includes('/') ? created : new Date(created).toLocaleString('fr-FR'),
+    score: scoreText,
+    epis,
+    status:r.status || 'Validé et signé'
+  };
+}
+function renderPassportRegistry(entries){
+  const table=document.getElementById('manager-emargements-list');
+  if(!table) return;
+  table.innerHTML='';
+  if(!entries || !entries.length){
+    table.innerHTML='<tr><td colspan="5" class="p-4 text-center italic text-slate-400">Aucun passeport validé visible. Lancez le diagnostic Supabase puis refaites un test QCM complet avec “Clôturer & Quitter”.</td></tr>';
+    return;
+  }
+  entries.forEach(entry=>{
+    const row=document.createElement('tr');
+    row.className='border-b border-slate-100 dark:border-slate-700';
+    const epiText=(entry.epis && entry.epis.length) ? entry.epis.join(', ') : 'Aucun EPI renseigné';
+    row.innerHTML=`<td class="p-3 font-bold dark:text-white">${escapeHtml(entry.employee_name || 'Salarié')}</td><td class="p-3 text-slate-500">${escapeHtml(entry.validated_at || '')}</td><td class="p-3"><span class="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded font-bold">${escapeHtml(entry.score || '')}</span></td><td class="p-3 text-slate-500">${escapeHtml(epiText)}</td><td class="p-3 text-emerald-500 font-extrabold text-[11px] uppercase">${escapeHtml(entry.status || 'Validé et signé')}</td>`;
+    table.appendChild(row);
+  });
+}
+async function cloudInsertPassport(entry){
+  if(!supabaseClient) return {ok:false, reason:'Supabase non chargé'};
+  let ok=false, errors=[];
+  // Table dédiée registre
+  try{
+    const {error}=await supabaseClient.from('passport_registry').insert([{
+      company_code: entry.company_code,
+      employee_name: entry.employee_name,
+      score: qcmScore,
+      total: qcmActiveQuestions.length,
+      epis: entry.epis || [],
+      status: entry.status || 'Validé et signé',
+      signature_employee: entry.signature_employee || null,
+      signature_manager: entry.signature_manager || null
+    }]);
+    if(error) errors.push('passport_registry: '+error.message); else ok=true;
+  }catch(e){ errors.push('passport_registry: '+e.message); }
+
+  // Fallback dans prevention_reports, souvent déjà existante pour les signalements
+  try{
+    const {error}=await supabaseClient.from('prevention_reports').insert([{
+      company_code: entry.company_code,
+      employee_name: entry.employee_name,
+      category: 'Validation passeport prévention',
+      level: `${qcmScore}/${qcmActiveQuestions.length}`,
+      frequency: 'Ponctuelle',
+      description: 'Passeport prévention validé et signé',
+      status: 'Validé'
+    }]);
+    if(error) errors.push('prevention_reports fallback: '+error.message); else ok=true;
+  }catch(e){ errors.push('prevention_reports fallback: '+e.message); }
+  return {ok, reason:errors.join(' | ')};
+}
+async function submitAnonymizedPreventionStat(evt){
+  if(!supabaseClient) return false;
+  try{
+    const anonymized={
+      period_month:getPeriodMonth(),
+      sector: evt.sector || getCurrentSectorLabel(),
+      company_size_range: evt.company_size_range || getCurrentCompanySizeLabel(),
+      risk_category: evt.category || evt.risk_category || 'Non renseigné',
+      risk_level: evt.level || evt.risk_level || 'Non renseigné',
+      frequency: evt.frequency || 'Non renseigné',
+      event_type: evt.event_type || 'Signalement prévention',
+      corrective_action_type: evt.corrective_action_type || 'À définir'
+    };
+    const {error}=await supabaseClient.from('prevention_stats').insert([anonymized]);
+    if(error){ console.warn('Stat anonymisée non enregistrée :', error.message); return false; }
+    return true;
+  }catch(e){ console.warn('Stat anonymisée ignorée :', e); return false; }
+}
+async function savePassportEntry(entry){
+  // Local immédiat
+  let entries=[];
+  try{ entries=JSON.parse(localStorage.getItem(getRegistryKey()) || '[]'); }catch(e){ entries=[]; }
+  entries.unshift(entry);
+  localStorage.setItem(getRegistryKey(), JSON.stringify(entries.slice(0,100)));
+
+  // Cloud robuste : passport_registry + fallback prevention_reports
+  const cloud=await cloudInsertPassport(entry);
+
+  // Centre RESTEV : stats anonymisées
+  const statOK=await submitAnonymizedPreventionStat({
+    sector: entry.sector || getCurrentSectorLabel(),
+    company_size_range: getCurrentCompanySizeLabel(),
+    category: 'Validation passeport prévention',
+    level: qcmScore === qcmActiveQuestions.length ? 'Acquis complet' : 'Points à renforcer',
+    frequency: 'Ponctuelle',
+    event_type: 'Passeport validé',
+    corrective_action_type: qcmScore === qcmActiveQuestions.length ? 'Aucune' : 'Reprise des points faibles'
+  });
+
+  if(document.getElementById('manager-emargements-list')) loadPassportRegistry();
+  if(cloud.ok && statOK) showToast('Passeport enregistré + Centre RESTEV alimenté.');
+  else showToast('Passeport local OK, cloud partiel : lancez le diagnostic Supabase.');
+  if(!cloud.ok) console.warn('Cloud passport non OK:', cloud.reason);
+}
+async function finalizeAndClose(){
+  updateCertificateEPI();
+  if(!isSignatureDone('emp') || !isSignatureDone('mgr')) return showToast('Les deux signatures réelles sont obligatoires.');
+  const name=document.getElementById('cert-employee').value || (currentEmployeeSession?currentEmployeeSession.name:'Salarié');
+  const companyCode=(currentEmployeeSession?.company || document.getElementById('cert-company').value || document.getElementById('lbl-manager-comp-name')?.innerText || 'Établissement non renseigné').trim();
+  const now=new Date().toLocaleString('fr-FR');
+  const entry={
+    company_code: companyCode,
+    employee_name: name,
+    validated_at: now,
+    score: `${qcmScore}/${qcmActiveQuestions.length}`,
+    epis: selectedEPIList,
+    sector: getCurrentSectorLabel(),
+    status:'Validé et signé',
+    signature_employee:getSignatureData('emp'),
+    signature_manager:getSignatureData('mgr')
+  };
+  await savePassportEntry(entry);
+  switchScreen('scr-employee');
+}
+async function loadPassportRegistry(){
+  const companyCode=document.getElementById('lbl-manager-comp-name')?.innerText?.trim();
+  if(!companyCode) return;
+  let localEntries=[];
+  try{ localEntries=JSON.parse(localStorage.getItem(getRegistryKey()) || '[]').map(normalizeRegistryRow); }catch(e){ localEntries=[]; }
+  renderPassportRegistry(localEntries);
+  if(!supabaseClient){ showToast('Registre local affiché : Supabase non chargé.'); return; }
+  let cloudRows=[];
+  let errors=[];
+  // 1. Table registre
+  try{
+    const {data,error}=await supabaseClient.from('passport_registry').select('company_code,employee_name,score,total,epis,status,created_at').eq('company_code',companyCode).order('created_at',{ascending:false}).limit(100);
+    if(error) errors.push('passport_registry: '+error.message);
+    else cloudRows=cloudRows.concat((data||[]).map(normalizeRegistryRow));
+  }catch(e){ errors.push('passport_registry: '+e.message); }
+  // 2. Fallback depuis prevention_reports
+  try{
+    const {data,error}=await supabaseClient.from('prevention_reports').select('company_code,employee_name,category,level,frequency,description,status,created_at').eq('company_code',companyCode).eq('category','Validation passeport prévention').order('created_at',{ascending:false}).limit(100);
+    if(error) errors.push('prevention_reports fallback: '+error.message);
+    else cloudRows=cloudRows.concat((data||[]).map(r=>normalizeRegistryRow({company_code:r.company_code, employee_name:r.employee_name, score:r.level, epis:[], status:r.status || 'Validé', created_at:r.created_at})));
+  }catch(e){ errors.push('prevention_reports fallback: '+e.message); }
+  // Déduplication simple
+  const seen=new Set();
+  const all=[...cloudRows, ...localEntries].filter(r=>{
+    const key=(r.employee_name||'')+'|'+(r.validated_at||'')+'|'+(r.score||'');
+    if(seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  renderPassportRegistry(all);
+  if(all.length) showToast(`${all.length} passeport(s) visible(s).`);
+  else if(errors.length) showToast('Registre vide - erreurs Supabase visibles en console/diagnostic.');
+}
+async function submitRiskReport(){
+  if(!supabaseClient) return showToast('Supabase non chargé. Vérifiez internet.');
+  const category=document.getElementById('risk-category-select').value;
+  const desc=document.getElementById('risk-description').value.trim();
+  const lvl=document.getElementById('risk-level').value;
+  const freq=document.getElementById('risk-frequency').value;
+  if(!desc) return showToast('Veuillez saisir une description du danger.');
+  const employeeName=currentEmployeeSession ? currentEmployeeSession.name : 'Salarié terrain';
+  const companyCode=currentEmployeeSession ? currentEmployeeSession.company : (document.getElementById('lbl-manager-comp-name')?.innerText || 'Établissement non renseigné');
+  const { error } = await supabaseClient.from('prevention_reports').insert([{ company_code: companyCode, employee_name: employeeName, category, level: lvl, frequency: freq, description: desc, status:'Nouveau' }]);
+  if(error){ console.error('Erreur Supabase insertion:', error); return showToast('Erreur Supabase signalement : '+error.message); }
+  const statOK=await submitAnonymizedPreventionStat({category, level:lvl, frequency:freq, event_type:'Signalement prévention'});
+  document.getElementById('risk-description').value='';
+  showToast(statOK ? 'Signalement envoyé + Centre RESTEV alimenté.' : 'Signalement envoyé, mais stats non alimentées.');
+  switchScreen('scr-employee');
+}
+async function loadRestevStats(){
+  const totalEl=document.getElementById('stats-total');
+  if(!totalEl) return;
+  if(!supabaseClient){ showToast('Supabase non chargé : statistiques indisponibles.'); return; }
+  try{
+    let rows=[];
+    const statRes=await supabaseClient.from('prevention_stats').select('period_month,sector,company_size_range,risk_category,risk_level,frequency,event_type,created_at').order('created_at',{ascending:false}).limit(500);
+    if(!statRes.error && statRes.data) rows=statRes.data;
+    // Fallback : validations depuis prevention_reports
+    const reportRes=await supabaseClient.from('prevention_reports').select('category,level,frequency,created_at').order('created_at',{ascending:false}).limit(500);
+    if(!reportRes.error && reportRes.data){
+      const fallbackRows=reportRes.data.map(r=>({
+        period_month:(r.created_at || new Date().toISOString()).slice(0,7),
+        sector:'Non renseigné',
+        company_size_range:'Non renseigné',
+        risk_category:r.category || 'Signalement',
+        risk_level:r.level || 'Non renseigné',
+        frequency:r.frequency || 'Ponctuelle',
+        event_type:(r.category==='Validation passeport prévention') ? 'Passeport validé' : 'Signalement prévention',
+        created_at:r.created_at
+      }));
+      // Ajoute seulement si stats vide ou pour compléter
+      if(!rows.length) rows=fallbackRows;
+    }
+    renderRestevStats(rows || []);
+  }catch(e){ console.error(e); showToast('Erreur chargement statistiques.'); }
+}
+async function runSyncDiagnostic(){
+  syncReset();
+  if(!supabaseClient){ syncLog('❌ Supabase non chargé : vérifier la connexion internet/CDN.', false); return; }
+  syncLog('✅ Client Supabase chargé.');
+  const companyCode=document.getElementById('lbl-manager-comp-name')?.innerText?.trim() || 'DIAG';
+  const tests=[
+    {table:'prevention_reports', row:{company_code:companyCode, employee_name:'TEST DIAG', category:'Diagnostic synchronisation', level:'Test', frequency:'Ponctuelle', description:'test automatique', status:'Test'}},
+    {table:'prevention_stats', row:{period_month:getPeriodMonth(), sector:'Diagnostic', company_size_range:'Test', risk_category:'Diagnostic synchronisation', risk_level:'Test', frequency:'Ponctuelle', event_type:'Diagnostic', corrective_action_type:'Test'}},
+    {table:'passport_registry', row:{company_code:companyCode, employee_name:'TEST DIAG', score:1, total:1, epis:[], status:'Test'}}
+  ];
+  for(const t of tests){
+    try{
+      const {error}=await supabaseClient.from(t.table).insert([t.row]);
+      if(error) syncLog(`❌ ${t.table} INSERT bloqué : ${error.message}`, false);
+      else syncLog(`✅ ${t.table} INSERT OK.`);
+    }catch(e){ syncLog(`❌ ${t.table} erreur : ${e.message}`, false); }
+  }
+  syncLog('Diagnostic terminé. Si une table est bloquée, exécuter le script SQL fourni dans Supabase.');
+}
+
+</script> 
 
 </body> 
 
