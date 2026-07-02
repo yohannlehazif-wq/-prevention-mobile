@@ -552,6 +552,18 @@
           <button onclick="enableManagerNotifications()" id="btn-manager-notif" class="text-xs bg-blue-50 text-restev-blue dark:bg-slate-700 dark:text-blue-300 px-3 py-2 rounded-xl font-bold"><i class="fa-solid fa-bell mr-1"></i> Notifications</button>     <button onclick="quitManager()" class="text-xs bg-red-50 text-red-600 hover:bg-red-100 font-extrabold px-4 py-2 rounded-xl"><i class="fa-solid fa-right-from-bracket mr-1"></i> Quitter</button>   
         </div>   
       </div>   
+
+      <div id="manager-sector-summary" class="bg-gradient-to-r from-blue-50 to-emerald-50 dark:from-slate-900 dark:to-slate-800 border border-blue-100 dark:border-slate-700 p-4 rounded-2xl shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Profil établissement</p>
+          <p class="text-sm font-black dark:text-white mt-1"><i class="fa-solid fa-industry text-restev-blue mr-1"></i> Secteur : <span id="lbl-manager-sector" class="text-restev-blue">Non renseigné</span></p>
+          <p class="text-[11px] font-bold text-slate-500 dark:text-slate-300 mt-0.5"><i class="fa-solid fa-users mr-1"></i> Taille : <span id="lbl-manager-size">Non renseigné</span></p>
+        </div>
+        <div class="bg-white/80 dark:bg-slate-900 border rounded-xl px-3 py-2 text-[10px] font-bold text-slate-500 dark:text-slate-300">
+          Le QCM salarié sera adapté à ce secteur.
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6"> 
 
         <div class="space-y-6"> 
@@ -598,7 +610,8 @@
 
               <canvas id="qr-canvas" class="mx-auto bg-white p-2 rounded-xl shadow-md border"></canvas> 
 
-              <span class="text-[10px] font-extrabold text-restev-magenta uppercase tracking-wider">Scanner pour démarrer sur mobile</span> 
+              <span class="text-[10px] font-extrabold text-restev-magenta uppercase tracking-wider">Scanner pour démarrer sur mobile</span>
+              <span id="qr-sector-label" class="text-[10px] font-extrabold text-restev-blue uppercase tracking-wider"></span> 
 
             </div> 
 
@@ -700,7 +713,7 @@
 
       <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border shadow-premium space-y-3"> 
 
-        <button onclick="startEmployeeQCM()" class="w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-restev-blue p-4 rounded-xl text-left flex items-center justify-between group shadow-sm"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-restev-blue/10 text-restev-blue rounded-xl flex items-center justify-center"><i class="fa-solid fa-book-open-reader"></i></div><div><p class="text-xs font-black dark:text-white">1. Validation des Acquis</p><p class="text-[10px] text-slate-400 mt-0.5">Vérification interactive des connaissances HSE.</p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i></button> 
+        <button onclick="startEmployeeQCM()" class="w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-restev-blue p-4 rounded-xl text-left flex items-center justify-between group shadow-sm"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-restev-blue/10 text-restev-blue rounded-xl flex items-center justify-center"><i class="fa-solid fa-book-open-reader"></i></div><div><p class="text-xs font-black dark:text-white">1. Validation des Acquis</p><p class="text-[10px] text-slate-400 mt-0.5">Vérification interactive des connaissances HSE.</p><p id="lbl-emp-sector-qcm" class="text-[10px] text-restev-blue font-black mt-1"></p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i></button> 
 
         <button onclick="switchScreen('scr-report')" class="w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-restev-magenta p-4 rounded-xl text-left flex items-center justify-between group shadow-sm"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-restev-magenta/10 text-restev-magenta rounded-xl flex items-center justify-center"><i class="fa-solid fa-triangle-exclamation"></i></div><div><p class="text-xs font-black dark:text-white">2. Signaler une Situation</p><p class="text-[10px] text-slate-400 mt-0.5">Remonter immédiatement un risque terrain.</p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i></button> 
 
@@ -1533,6 +1546,7 @@ function triggerNewReportAlert(report) {
         currentEmployeeSession={name:emp, company:comp, epis:selectedEPIList, sector: sector || 'Autre'};
         document.getElementById('lbl-emp-welcome').innerText=`Bonjour, ${emp}`;
         document.getElementById('lbl-emp-company').innerText=`Établissement : ${comp}${sector ? ' | Secteur : '+sector : ''}`;
+        const empSectorQcm=document.getElementById('lbl-emp-sector-qcm'); if(empSectorQcm) empSectorQcm.innerText='Secteur QCM : '+(sector || 'Autre');
         switchScreen('scr-employee');
         showToast('Passeport Prévention activé via QR Code !');
       }
@@ -1546,6 +1560,14 @@ function triggerNewReportAlert(report) {
 
  
 
+
+    function updateManagerSectorDisplay(){
+      const sectorEl=document.getElementById('lbl-manager-sector');
+      const sizeEl=document.getElementById('lbl-manager-size');
+      if(sectorEl) sectorEl.innerText = managerSector || 'Non renseigné';
+      if(sizeEl) sizeEl.innerText = managerCompanySize || 'Non renseigné';
+    }
+
     function handleManagerLogin() {
   const code = document.getElementById('manager-company-code').value.trim().toUpperCase();
 
@@ -1555,9 +1577,13 @@ function triggerNewReportAlert(report) {
 
   // Débloque le son grâce au clic utilisateur sur le bouton de connexion.
   unlockAlertSound();
-
+  managerSector = document.getElementById('manager-login-sector')?.value || 'Non renseigné';
+  managerCompanySize = document.getElementById('manager-login-size')?.value || 'Non renseigné';
+  localStorage.setItem('restev_manager_sector_' + code, managerSector);
+  localStorage.setItem('restev_manager_size_' + code, managerCompanySize);
   document.getElementById('lbl-manager-comp-name').innerText = code;
-  showToast("Identification validée.");
+  updateManagerSectorDisplay();
+  showToast(`Identification validée - secteur : ${managerSector}`);
   switchScreen('scr-manager');
 
   // Chargement initial.
@@ -1620,11 +1646,12 @@ function triggerNewReportAlert(report) {
       selectedEPIList=getSelectedEPI();
       const baseUrl=window.location.origin+window.location.pathname;
       const episParam=encodeURIComponent(JSON.stringify(selectedEPIList));
-      const sectorLabel = managerSector || document.getElementById('manager-login-sector')?.value || 'Autre';
+      const sectorLabel = document.getElementById('manager-login-sector')?.value || managerSector || 'Autre';
+      managerSector = sectorLabel;
       const url=`${baseUrl}?emp=${encodeURIComponent(name)}&comp=${encodeURIComponent(code)}&epis=${episParam}&sector=${encodeURIComponent(sectorLabel)}`;
       QRCode.toCanvas(document.getElementById('qr-canvas'), url, {width:180, margin:2, color:{dark:'#245ca6', light:'#ffffff'}}, err=>{
         if(err){ console.error(err); showToast('Erreur QR Code.'); }
-        else { document.getElementById('qr-area').classList.remove('hidden'); showToast(selectedEPIList.length ? 'QR salarié généré avec les EPI.' : 'QR salarié généré sans EPI.'); }
+        else { document.getElementById('qr-area').classList.remove('hidden'); const qs=document.getElementById('qr-sector-label'); if(qs) qs.innerText='Secteur transmis : '+sectorLabel; showToast(`QR salarié généré - secteur : ${sectorLabel}`); }
       });
     } 
 
