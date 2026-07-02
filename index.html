@@ -2520,6 +2520,132 @@ function appNavigate(screenId, remember=true, restoreScroll=false){
   if(screenId==='scr-report') setTimeout(()=>{ initLeafletMap(); fixMapSize(); },450);
 }
 
+
+
+/* =========================================================
+   PATCH FINAL ACCÈS MANAGER — navigation stable sans récursion
+   À conserver en DERNIER dans le dernier <script>.
+   Corrige le blocage du bouton "Accéder à l'Espace".
+   ========================================================= */
+function appNavigate(screenId, remember = true, restoreScroll = false) {
+  const current = document.querySelector('.screen.active')?.id || appCurrentScreen || 'scr-home';
+
+  if (current) {
+    appScrollMemory[current] = window.scrollY || 0;
+  }
+
+  if (remember && !appNavInternal && current && current !== screenId) {
+    appScreenStack.push(current);
+  }
+
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('active');
+    s.style.display = 'none';
+  });
+
+  const target = document.getElementById(screenId);
+
+  if (!target) {
+    console.warn('Écran introuvable :', screenId);
+    showToast('Écran introuvable : ' + screenId);
+    return;
+  }
+
+  target.classList.add('active');
+  target.style.display = 'block';
+  appCurrentScreen = screenId;
+
+  setTimeout(() => {
+    const y = restoreScroll ? (appScrollMemory[screenId] || 0) : 0;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+
+    if (screenId === 'scr-report') {
+      setTimeout(() => {
+        try {
+          initLeafletMap();
+          fixMapSize();
+        } catch (e) {
+          console.warn('Carte non initialisée :', e);
+        }
+      }, 350);
+    }
+
+    if (screenId === 'scr-qcm-success') {
+      setTimeout(initSignaturePads, 250);
+    }
+
+    if (screenId === 'scr-direction') {
+      setTimeout(loadRestevStats, 250);
+    }
+
+    try { removeDiagnosticSync(); } catch (e) {}
+    try { enhanceBackButtons(); } catch (e) {}
+    try { updateAppChrome(screenId); } catch (e) {}
+  }, 20);
+}
+
+function switchScreen(screenId) {
+  appNavigate(screenId, true, false);
+}
+
+function handleManagerLogin() {
+  const input = document.getElementById('manager-company-code');
+  const code = (input?.value || '').trim().toUpperCase();
+
+  if (!code) {
+    return showToast('Veuillez saisir un code établissement');
+  }
+
+  try { unlockAlertSound(); } catch (e) {}
+  try { unlockManagerAlerts(); } catch (e) {}
+
+  const sectorSelect = document.getElementById('manager-login-sector');
+  const sizeSelect = document.getElementById('manager-login-size');
+
+  managerSector = sectorSelect?.value || 'Non renseigné';
+  managerCompanySize = sizeSelect?.value || 'Non renseigné';
+
+  localStorage.setItem('restev_manager_sector_' + code, managerSector);
+  localStorage.setItem('restev_manager_size_' + code, managerCompanySize);
+
+  const lbl = document.getElementById('lbl-manager-comp-name');
+  if (lbl) lbl.innerText = code;
+
+  showToast('Identification validée. Ouverture de l’espace manager...');
+
+  appNavigate('scr-manager', true, false);
+
+  setTimeout(() => {
+    try { loadManagerReports(); } catch (e) { console.warn(e); }
+    try { startManagerRealtime(); } catch (e) { console.warn(e); }
+    try { loadPassportRegistry(); } catch (e) { console.warn(e); }
+    try { startManagerAlertPolling(); } catch (e) { console.warn(e); }
+  }, 250);
+}
+
+function appOpenManager() {
+  const code = document.getElementById('lbl-manager-comp-name')?.innerText?.trim();
+  appNavigate(code ? 'scr-manager' : 'scr-auth', true, false);
+}
+
+function appGoBack() {
+  if (!appScreenStack.length) {
+    appNavigate('scr-home', false, true);
+    return;
+  }
+
+  const prev = appScreenStack.pop();
+  appNavInternal = true;
+  appNavigate(prev, false, true);
+  appNavInternal = false;
+}
+
+// Sécurise le lancement du shell app et la suppression de l'ancien diagnostic.
+setTimeout(() => {
+  try { setupAppShell(); } catch (e) { console.warn(e); }
+  try { removeDiagnosticSync(); } catch (e) { console.warn(e); }
+}, 80);
+
 </script> 
 
 </body> 
