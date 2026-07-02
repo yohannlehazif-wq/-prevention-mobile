@@ -720,7 +720,7 @@
 
     <section id="scr-qcm" class="screen max-w-md mx-auto w-full bg-white dark:bg-slate-800 p-5 rounded-3xl border shadow-premium space-y-4"> 
 
-      <div class="flex justify-between items-center border-b pb-3"><h3 class="text-sm font-black dark:text-white flex items-center gap-2"><i class="fa-solid fa-graduation-cap text-restev-blue"></i> Validation des Connaissances</h3><span id="qcm-progress" class="text-[10px] bg-blue-50 text-restev-blue font-black px-2.5 py-1 rounded-lg uppercase tracking-wider">Question 1</span></div> 
+      <div class="flex justify-between items-center border-b pb-3"><h3 class="text-sm font-black dark:text-white flex items-center gap-2"><i class="fa-solid fa-graduation-cap text-restev-blue"></i> Validation des Acquis adaptée au secteur</h3><span id="qcm-progress" class="text-[10px] bg-blue-50 text-restev-blue font-black px-2.5 py-1 rounded-lg uppercase tracking-wider">Question 1</span></div> 
 
       <div class="space-y-4 py-2"><div id="qcm-question-text" class="text-xs font-bold dark:text-white bg-slate-50 dark:bg-slate-900 p-3.5 rounded-xl border"></div><div id="qcm-options-box" class="space-y-2"></div></div> 
 
@@ -897,6 +897,350 @@ const supabaseClient = window.supabase
 
  
 
+    const SECTOR_QCM_DATABASE = {
+      "btp": [
+            {
+                  "id": "btp-1",
+                  "sector": "BTP",
+                  "name": "BTP - Travail en hauteur",
+                  "question": "Sur un chantier, avant d’utiliser une plateforme ou un échafaudage, je dois :",
+                  "options": [
+                        "Monter rapidement si le travail dure peu",
+                        "Vérifier la stabilité, les protections collectives et l’autorisation d’utilisation",
+                        "Retirer le garde-corps pour gagner de la place"
+                  ],
+                  "answer": 1
+            },
+            {
+                  "id": "btp-2",
+                  "sector": "BTP",
+                  "name": "BTP - Coactivité",
+                  "question": "En cas de coactivité avec une autre entreprise, la bonne attitude est :",
+                  "options": [
+                        "Improviser sur place",
+                        "Respecter les zones, le balisage et les consignes de coordination",
+                        "Passer dans la zone interdite si je fais vite"
+                  ],
+                  "answer": 1
+            },
+            {
+                  "id": "btp-3",
+                  "sector": "BTP",
+                  "name": "BTP - Électricité chantier",
+                  "question": "Un câble ou coffret électrique semble endommagé sur chantier. Je dois :",
+                  "options": [
+                        "Le réparer moi-même sans habilitation",
+                        "Ne pas toucher, baliser et alerter le responsable",
+                        "Continuer à travailler autour"
+                  ],
+                  "answer": 1
+            }
+      ],
+      "commerce": [
+            {
+                  "id": "com-1",
+                  "sector": "Commerce",
+                  "name": "Commerce - Manutention rayon",
+                  "question": "Lors de la mise en rayon, la priorité est de :",
+                  "options": [
+                        "Porter le plus possible en une seule fois",
+                        "Utiliser les aides disponibles et éviter les torsions répétées",
+                        "Laisser les cartons dans les allées"
+                  ],
+                  "answer": 1
+            },
+            {
+                  "id": "com-2",
+                  "sector": "Commerce",
+                  "name": "Commerce - Chutes",
+                  "question": "Un carton ou un liquide encombre une allée client. Je dois :",
+                  "options": [
+                        "Attendre la fermeture",
+                        "Sécuriser ou signaler immédiatement la zone",
+                        "Le pousser discrètement sur le côté"
+                  ],
+                  "answer": 1
+            },
+            {
+                  "id": "com-3",
+                  "sector": "Commerce",
+                  "name": "Commerce - Agressivité client",
+                  "question": "Face à un client agressif, je dois en priorité :",
+                  "options": [
+                        "Répondre sur le même ton",
+                        "Garder une distance, alerter et appliquer la procédure interne",
+                        "Rester seul pour régler la situation"
+                  ],
+                  "answer": 1
+            }
+      ],
+      "industrie": [
+            {
+                  "id": "ind-1",
+                  "sector": "Industrie",
+                  "name": "Industrie - Machine",
+                  "question": "Avant d’intervenir sur une machine en fonctionnement anormal, je dois :",
+                  "options": [
+                        "Passer la main pour débloquer rapidement",
+                        "Arrêter, sécuriser et respecter la procédure de consignation si nécessaire",
+                        "Demander à un collègue de surveiller seulement"
+                  ],
+                  "answer": 1
+            },
+            {
+                  "id": "ind-2",
+                  "sector": "Industrie",
+                  "name": "Industrie - Circulation engins",
+                  "question": "Dans une zone avec chariots ou engins, je dois :",
+                  "options": [
+                        "Traverser sans regarder si j’ai priorité",
+                        "Respecter les cheminements piétons et rester visible",
+                        "Marcher derrière un engin en manœuvre"
+                  ],
+                  "answer": 1
+            },
+            {
+                  "id": "ind-3",
+                  "sector": "Industrie",
+                  "name": "Industrie - Produits chimiques",
+                  "question": "Avant d’utiliser un produit chimique inconnu, je dois :",
+                  "options": [
+                        "Sentir le produit pour l’identifier",
+                        "Lire l’étiquette/FDS et appliquer les protections prévues",
+                        "Le mélanger avec un autre produit pour tester"
+                  ],
+                  "answer": 1
+            }
+      ],
+      "logistique": [
+            {
+                  "id": "log-1",
+                  "sector": "Transport / Logistique",
+                  "name": "Logistique - Quai",
+                  "question": "Sur un quai de chargement, le risque principal à surveiller est :",
+                  "options": [
+                        "La couleur des palettes",
+                        "La chute de hauteur, l’écrasement et la circulation des engins",
+                        "Le rangement administratif"
+                  ],
+                  "answer": 1
+            },
+            {
+                  "id": "log-2",
+                  "sector": "Transport / Logistique",
+                  "name": "Logistique - Arrimage",
+                  "question": "Avant un départ en livraison, je dois vérifier :",
+                  "options": [
+                        "Uniquement le GPS",
+                        "L’arrimage, la charge et l’état du véhicule",
+                        "Seulement le niveau de carburant"
+                  ],
+                  "answer": 1
+            },
+            {
+                  "id": "log-3",
+                  "sector": "Transport / Logistique",
+                  "name": "Logistique - Chariot",
+                  "question": "Puis-je conduire un chariot sans autorisation interne ?",
+                  "options": [
+                        "Oui si je sais conduire",
+                        "Non, une autorisation et une formation adaptées sont nécessaires",
+                        "Oui en dépannage uniquement"
+                  ],
+                  "answer": 1
+            }
+      ],
+      "sante": [
+            {
+                  "id": "san-1",
+                  "sector": "Aide à domicile / Santé",
+                  "name": "Santé - Manutention personne",
+                  "question": "Lors de l’aide au transfert d’une personne, je dois :",
+                  "options": [
+                        "Forcer avec le dos",
+                        "Utiliser les aides techniques et demander de l’aide si besoin",
+                        "Agir seul même si la situation est instable"
+                  ],
+                  "answer": 1
+            },
+            {
+                  "id": "san-2",
+                  "sector": "Aide à domicile / Santé",
+                  "name": "Santé - Risque biologique",
+                  "question": "En présence d’un risque de contact avec du sang ou des liquides biologiques, je dois :",
+                  "options": [
+                        "Mettre les protections prévues et respecter l’hygiène des mains",
+                        "Continuer sans gant si c’est rapide",
+                        "Nettoyer uniquement à l’eau"
+                  ],
+                  "answer": 0
+            },
+            {
+                  "id": "san-3",
+                  "sector": "Aide à domicile / Santé",
+                  "name": "Santé - Isolement",
+                  "question": "En intervention isolée chez un bénéficiaire, je dois :",
+                  "options": [
+                        "Ne prévenir personne de mon planning",
+                        "Respecter les procédures de contact/alerte prévues",
+                        "Improviser en cas de difficulté"
+                  ],
+                  "answer": 1
+            }
+      ],
+      "agriculture": [
+            {
+                  "id": "agr-1",
+                  "sector": "Agriculture",
+                  "name": "Agriculture - Machines",
+                  "question": "Avant d’intervenir sur une machine agricole, je dois :",
+                  "options": [
+                        "Laisser le moteur tourner au ralenti",
+                        "Arrêter, sécuriser et éviter toute remise en marche intempestive",
+                        "Passer rapidement la main dans l’organe mobile"
+                  ],
+                  "answer": 1
+            },
+            {
+                  "id": "agr-2",
+                  "sector": "Agriculture",
+                  "name": "Agriculture - Produits phytosanitaires",
+                  "question": "Avant d’utiliser un produit phytosanitaire, je dois :",
+                  "options": [
+                        "Lire l’étiquette et porter les protections prévues",
+                        "Me fier uniquement à l’habitude",
+                        "Mélanger les produits sans consigne"
+                  ],
+                  "answer": 0
+            },
+            {
+                  "id": "agr-3",
+                  "sector": "Agriculture",
+                  "name": "Agriculture - Chaleur",
+                  "question": "En période de forte chaleur, je dois :",
+                  "options": [
+                        "Attendre d’avoir très soif",
+                        "M’hydrater, adapter le rythme et signaler tout malaise",
+                        "Travailler plus vite pour finir tôt"
+                  ],
+                  "answer": 1
+            }
+      ],
+      "tertiaire": [
+            {
+                  "id": "ter-1",
+                  "sector": "Tertiaire",
+                  "name": "Tertiaire - Écran",
+                  "question": "Pour limiter les troubles liés au travail sur écran, je dois :",
+                  "options": [
+                        "Garder toujours la même posture",
+                        "Régler mon poste, varier les postures et faire des pauses visuelles",
+                        "Travailler dans le noir pour mieux voir l’écran"
+                  ],
+                  "answer": 1
+            },
+            {
+                  "id": "ter-2",
+                  "sector": "Tertiaire",
+                  "name": "Tertiaire - RPS",
+                  "question": "En cas de surcharge ou de stress durable, je peux :",
+                  "options": [
+                        "Garder la situation pour moi",
+                        "En parler au manager/RH/médecin du travail ou utiliser les canaux d’alerte",
+                        "Attendre que cela passe plusieurs mois"
+                  ],
+                  "answer": 1
+            },
+            {
+                  "id": "ter-3",
+                  "sector": "Tertiaire",
+                  "name": "Tertiaire - Chutes",
+                  "question": "Dans un bureau, le risque de chute peut être réduit en :",
+                  "options": [
+                        "Laissant les câbles au sol",
+                        "Rangeant les passages et signalant les obstacles",
+                        "Courant dans les escaliers"
+                  ],
+                  "answer": 1
+            }
+      ],
+      "hotellerie": [
+            {
+                  "id": "hot-1",
+                  "sector": "Hôtellerie / Restauration",
+                  "name": "Hôtellerie - Coupure",
+                  "question": "En cuisine, pour limiter les coupures, je dois :",
+                  "options": [
+                        "Utiliser un couteau abîmé",
+                        "Utiliser l’outil adapté, stable et rangé après usage",
+                        "Couper en direction de la main"
+                  ],
+                  "answer": 1
+            },
+            {
+                  "id": "hot-2",
+                  "sector": "Hôtellerie / Restauration",
+                  "name": "Hôtellerie - Brûlure",
+                  "question": "Face au risque de brûlure, je dois :",
+                  "options": [
+                        "Manipuler les plats chauds sans protection",
+                        "Utiliser les protections et annoncer les déplacements avec éléments chauds",
+                        "Poser les plats chauds au bord des plans"
+                  ],
+                  "answer": 1
+            },
+            {
+                  "id": "hot-3",
+                  "sector": "Hôtellerie / Restauration",
+                  "name": "Hôtellerie - Sol glissant",
+                  "question": "Un sol mouillé en salle ou cuisine doit être :",
+                  "options": [
+                        "Ignoré si le service est chargé",
+                        "Signalé, nettoyé ou balisé immédiatement",
+                        "Recouvert avec un carton"
+                  ],
+                  "answer": 1
+            }
+      ],
+      "autre": [
+            {
+                  "id": "aut-1",
+                  "sector": "Autre",
+                  "name": "Général - Signalement",
+                  "question": "Si je constate une situation dangereuse, je dois :",
+                  "options": [
+                        "La garder pour moi",
+                        "La signaler rapidement par le canal prévu",
+                        "Attendre un accident pour agir"
+                  ],
+                  "answer": 1
+            },
+            {
+                  "id": "aut-2",
+                  "sector": "Autre",
+                  "name": "Général - Consignes",
+                  "question": "Une consigne de sécurité que je ne comprends pas doit être :",
+                  "options": [
+                        "Ignorée",
+                        "Clarifiée auprès du responsable avant d’agir",
+                        "Remplacée par mon habitude"
+                  ],
+                  "answer": 1
+            },
+            {
+                  "id": "aut-3",
+                  "sector": "Autre",
+                  "name": "Général - EPI",
+                  "question": "Les EPI remis doivent être :",
+                  "options": [
+                        "Portés uniquement lors des visites",
+                        "Utilisés selon les consignes et signalés s’ils sont abîmés",
+                        "Échangés sans prévenir"
+                  ],
+                  "answer": 1
+            }
+      ]
+};
     const modulesTuto = [ 
 
       { titre: 'Aide à domicile', url: 'https://ressources.inrs.fr/tutoprev/content/Aide_personne_domicile_etablissement/story.html' }, 
@@ -1180,14 +1524,15 @@ function triggerNewReportAlert(report) {
       const emp=p.get('emp');
       const comp=p.get('comp');
       const epis=p.get('epis');
+      const sector=p.get('sector') || p.get('secteur');
       if(epis){
         try{ selectedEPIList=JSON.parse(decodeURIComponent(epis)); if(!Array.isArray(selectedEPIList)) selectedEPIList=[]; }
         catch(e){ console.warn('EPI non lisibles depuis le QR Code :', e); selectedEPIList=[]; }
       }
       if(emp && comp){
-        currentEmployeeSession={name:emp, company:comp, epis:selectedEPIList};
+        currentEmployeeSession={name:emp, company:comp, epis:selectedEPIList, sector: sector || 'Autre'};
         document.getElementById('lbl-emp-welcome').innerText=`Bonjour, ${emp}`;
-        document.getElementById('lbl-emp-company').innerText=`Établissement : ${comp}`;
+        document.getElementById('lbl-emp-company').innerText=`Établissement : ${comp}${sector ? ' | Secteur : '+sector : ''}`;
         switchScreen('scr-employee');
         showToast('Passeport Prévention activé via QR Code !');
       }
@@ -1275,7 +1620,8 @@ function triggerNewReportAlert(report) {
       selectedEPIList=getSelectedEPI();
       const baseUrl=window.location.origin+window.location.pathname;
       const episParam=encodeURIComponent(JSON.stringify(selectedEPIList));
-      const url=`${baseUrl}?emp=${encodeURIComponent(name)}&comp=${encodeURIComponent(code)}&epis=${episParam}`;
+      const sectorLabel = managerSector || document.getElementById('manager-login-sector')?.value || 'Autre';
+      const url=`${baseUrl}?emp=${encodeURIComponent(name)}&comp=${encodeURIComponent(code)}&epis=${episParam}&sector=${encodeURIComponent(sectorLabel)}`;
       QRCode.toCanvas(document.getElementById('qr-canvas'), url, {width:180, margin:2, color:{dark:'#245ca6', light:'#ffffff'}}, err=>{
         if(err){ console.error(err); showToast('Erreur QR Code.'); }
         else { document.getElementById('qr-area').classList.remove('hidden'); showToast(selectedEPIList.length ? 'QR salarié généré avec les EPI.' : 'QR salarié généré sans EPI.'); }
@@ -1382,7 +1728,54 @@ function triggerNewReportAlert(report) {
 
  
 
-    function startEmployeeQCM(){ qcmActiveQuestions=RISKS_DATABASE.filter(r=>r.active && r.question); if(!qcmActiveQuestions.length) return showToast('Aucun risque configuré.'); qcmCurrentIndex=0; qcmScore=0; renderQCMQuestion(); switchScreen('scr-qcm'); } 
+
+    function getSectorKey(label){
+      const s=String(label || '').toLowerCase();
+      if(s.includes('btp') || s.includes('bâtiment') || s.includes('batiment')) return 'btp';
+      if(s.includes('commerce') || s.includes('distribution')) return 'commerce';
+      if(s.includes('transport') || s.includes('logistique')) return 'logistique';
+      if(s.includes('aide') || s.includes('santé') || s.includes('sante')) return 'sante';
+      if(s.includes('agri') || s.includes('maraîchage') || s.includes('maraichage') || s.includes('élevage') || s.includes('elevage')) return 'agriculture';
+      if(s.includes('tertiaire') || s.includes('bureau')) return 'tertiaire';
+      if(s.includes('hôtel') || s.includes('hotel') || s.includes('restauration') || s.includes('camping')) return 'hotellerie';
+      if(s.includes('industrie') || s.includes('métallurgie') || s.includes('metallurgie') || s.includes('maintenance')) return 'industrie';
+      return 'autre';
+    }
+
+    function getCurrentQCMSectorLabel(){
+      return currentEmployeeSession?.sector || managerSector || document.getElementById('manager-login-sector')?.value || 'Autre';
+    }
+
+    function getSectorQuestionsForCurrentSession(){
+      const key=getSectorKey(getCurrentQCMSectorLabel());
+      return SECTOR_QCM_DATABASE[key] || SECTOR_QCM_DATABASE.autre || [];
+    }
+
+    function buildSectorAdaptedQCM(){
+      const sectorQuestions=getSectorQuestionsForCurrentSession();
+      const activeRiskQuestions=RISKS_DATABASE.filter(r=>r.active && r.question);
+      const used=new Set();
+      const finalQuestions=[];
+      [...sectorQuestions, ...activeRiskQuestions].forEach(q=>{
+        const qKey=q.id || q.question;
+        if(!used.has(qKey)){
+          used.add(qKey);
+          finalQuestions.push(q);
+        }
+      });
+      return finalQuestions.slice(0, 12);
+    }
+
+    function startEmployeeQCM(){
+      qcmActiveQuestions=buildSectorAdaptedQCM();
+      if(!qcmActiveQuestions.length) return showToast('Aucun questionnaire configuré.');
+      qcmCurrentIndex=0;
+      qcmScore=0;
+      const sectorLabel=getCurrentQCMSectorLabel();
+      showToast(`Questionnaire adapté au secteur : ${sectorLabel}`);
+      renderQCMQuestion();
+      switchScreen('scr-qcm');
+    } 
 
     function renderQCMQuestion(){ const q=qcmActiveQuestions[qcmCurrentIndex]; document.getElementById('qcm-progress').innerText=`Question ${qcmCurrentIndex+1} / ${qcmActiveQuestions.length}`; document.getElementById('qcm-question-text').innerText=q.question; const box=document.getElementById('qcm-options-box'); box.innerHTML=''; q.options.forEach((opt,i)=>{ const div=document.createElement('div'); div.className='flex items-center p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl hover:bg-blue-50/50'; div.innerHTML=`<label class="flex items-center gap-3 w-full cursor-pointer text-xs font-semibold dark:text-slate-300"><input type="radio" name="qcm-opt" value="${i}" class="w-4 h-4 text-restev-blue"><span>${escapeHtml(opt)}</span></label>`; box.appendChild(div); }); } 
 
