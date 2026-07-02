@@ -406,6 +406,24 @@
     </div>
   </div>
 
+
+  <div class="bg-gradient-to-br from-blue-50 to-emerald-50/60 dark:from-slate-900 dark:to-slate-800 p-5 rounded-2xl border-2 border-blue-100 dark:border-slate-700 shadow-sm space-y-3">
+    <h3 class="font-black dark:text-white text-sm flex items-center gap-2">
+      <i class="fa-solid fa-user-shield text-restev-blue"></i>
+      Charte de confiance : prévenir sans surveiller
+    </h3>
+    <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed text-justify">
+      Les signalements détaillés restent destinés à l’entreprise pour traiter ses propres situations dangereuses.
+      RESTEV 85 exploite uniquement des données agrégées et anonymisées pour identifier les risques fréquents par secteur
+      et proposer des actions de prévention adaptées. Aucun classement nominatif des entreprises n’est réalisé.
+    </p>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+      <div class="bg-white/80 dark:bg-slate-900 border rounded-xl p-3 text-[10px] font-bold text-slate-600 dark:text-slate-300"><i class="fa-solid fa-eye-slash text-emerald-500 mr-1"></i> Pas de surveillance individuelle</div>
+      <div class="bg-white/80 dark:bg-slate-900 border rounded-xl p-3 text-[10px] font-bold text-slate-600 dark:text-slate-300"><i class="fa-solid fa-chart-pie text-restev-blue mr-1"></i> Données collectives uniquement</div>
+      <div class="bg-white/80 dark:bg-slate-900 border rounded-xl p-3 text-[10px] font-bold text-slate-600 dark:text-slate-300"><i class="fa-solid fa-handshake-angle text-restev-magenta mr-1"></i> Actions de prévention ciblées</div>
+    </div>
+  </div>
+
   <button onclick="switchScreen('scr-home')" class="w-full bg-gradient-to-r from-restev-magenta to-restev-magenta-dark text-white p-4 rounded-xl text-sm font-extrabold shadow-md">
     J’ai compris
   </button>
@@ -424,7 +442,17 @@
 
         <p class="text-xs text-slate-500 dark:text-slate-400">Saisissez votre code établissement pour accéder à la console.</p> 
 
-        <input type="text" id="manager-company-code" placeholder="Ex: RSTV-DEMO-1234" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-sm font-bold uppercase dark:text-white" /> 
+        <input type="text" id="manager-company-code" placeholder="Ex: RSTV-DEMO-1234" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-sm font-bold uppercase dark:text-white" />
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <select id="manager-login-sector" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white">
+            <option value="Non renseigné">Secteur d’activité</option>
+            <option>BTP</option><option>Commerce</option><option>Industrie</option><option>Transport / Logistique</option><option>Aide à domicile / Santé</option><option>Agriculture</option><option>Tertiaire</option><option>Hôtellerie / Restauration</option><option>Autre</option>
+          </select>
+          <select id="manager-login-size" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white">
+            <option value="Non renseigné">Taille établissement</option>
+            <option>1-10 salariés</option><option>11-49 salariés</option><option>50-199 salariés</option><option>200 salariés et +</option>
+          </select>
+        </div> 
 
         <button onclick="handleManagerLogin()" class="w-full bg-restev-blue text-white py-3 rounded-xl text-sm font-extrabold shadow-md">Accéder à l'Espace</button> 
 
@@ -455,22 +483,32 @@
 
     <!-- DIRECTION --> 
 
-    <section id="scr-direction" class="screen max-w-2xl mx-auto w-full space-y-6 py-6"> 
-
-      <button onclick="switchScreen('scr-home')" class="text-xs bg-white dark:bg-slate-800 border px-4 py-2 rounded-xl font-bold flex items-center gap-1.5"><i class="fa-solid fa-arrow-left"></i> Retour</button> 
-
-      <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-premium border-t-4 border-t-restev-gold"> 
-
-        <h2 class="text-xl font-black dark:text-white mb-4">Tableau de Bord - Direction</h2> 
-
-        <div class="relative h-64 w-full"><canvas id="chart-restev-risks"></canvas></div> 
-
-      </div> 
-
-    </section> 
-
- 
-
+    <section id="scr-direction" class="screen max-w-4xl mx-auto w-full space-y-6 py-6">
+      <button onclick="switchScreen('scr-home')" class="text-xs bg-white dark:bg-slate-800 border px-4 py-2 rounded-xl font-bold flex items-center gap-1.5"><i class="fa-solid fa-arrow-left"></i> Retour</button>
+      <div class="bg-gradient-to-br from-slate-900 via-restev-blue-dark to-restev-magenta p-6 rounded-3xl text-white shadow-xl space-y-3">
+        <span class="inline-flex items-center gap-2 bg-white/15 border border-white/20 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest"><i class="fa-solid fa-chart-simple"></i> Veille prévention collective</span>
+        <h2 class="text-2xl md:text-3xl font-black">Centre RESTEV — Tendances anonymisées</h2>
+        <p class="text-xs md:text-sm text-blue-50 leading-relaxed max-w-2xl">Tableau de bord conçu pour repérer les risques fréquents par secteur, sans classement nominatif des entreprises et sans commentaire individuel.</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border shadow-premium"><p class="text-[10px] font-black uppercase text-slate-400">Signalements agrégés</p><p id="stats-total" class="text-3xl font-black text-restev-blue mt-1">0</p></div>
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border shadow-premium"><p class="text-[10px] font-black uppercase text-slate-400">Risque dominant</p><p id="stats-top-risk" class="text-lg font-black dark:text-white mt-1">—</p></div>
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border shadow-premium"><p class="text-[10px] font-black uppercase text-slate-400">Secteurs représentés</p><p id="stats-sector-count" class="text-3xl font-black text-restev-magenta mt-1">0</p></div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-premium border-t-4 border-t-restev-gold">
+          <div class="flex justify-between items-center mb-4"><h3 class="text-sm font-black dark:text-white"><i class="fa-solid fa-chart-pie text-restev-gold mr-1"></i> Top risques signalés</h3><button onclick="loadRestevStats()" class="text-[10px] bg-slate-100 dark:bg-slate-700 dark:text-white px-3 py-2 rounded-xl font-black">Actualiser</button></div>
+          <div class="relative h-72 w-full"><canvas id="chart-restev-risks"></canvas></div>
+        </div>
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-premium border-t-4 border-t-restev-blue">
+          <h3 class="text-sm font-black dark:text-white mb-4"><i class="fa-solid fa-list-check text-restev-blue mr-1"></i> Priorités d’intervention proposées</h3>
+          <div id="stats-actions-list" class="space-y-3"><p class="text-xs text-slate-400 italic">Chargez les données pour afficher les priorités.</p></div>
+        </div>
+      </div>
+      <div class="bg-blue-50 dark:bg-slate-900 border border-blue-100 dark:border-slate-700 p-4 rounded-2xl">
+        <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed"><b>Principe de confiance :</b> ce tableau affiche des tendances agrégées. Les noms de salariés, commentaires détaillés, géolocalisations précises et noms d'entreprises ne sont pas utilisés dans cette vue collective.</p>
+      </div>
+    </section>
     <!-- STUDIO --> 
 
     <section id="scr-studio" class="screen max-w-2xl mx-auto w-full space-y-6 py-6"> 
@@ -765,6 +803,7 @@
 
       <div><label class="block text-xs font-black text-slate-700 dark:text-slate-300">Commentaires :</label><textarea id="risk-description" rows="3" placeholder="Décrivez la situation..." class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white"></textarea></div> 
 
+      <div class="bg-blue-50 dark:bg-slate-900 border border-blue-100 dark:border-slate-700 p-3 rounded-xl"><p class="text-[10px] text-slate-600 dark:text-slate-300 leading-relaxed"><i class="fa-solid fa-user-shield text-restev-blue mr-1"></i>Ce signalement sert d’abord à traiter une situation terrain. Une copie anonymisée alimente uniquement les tendances collectives RESTEV.</p></div>
       <button onclick="submitRiskReport()" class="w-full bg-gradient-to-r from-red-600 to-pink-600 text-white py-3.5 rounded-xl text-sm font-extrabold shadow-lg">Envoyer le Signalement</button> 
 
       <button onclick="switchScreen('scr-employee')" class="w-full text-center text-xs text-slate-400 font-bold py-2">Annuler</button> 
@@ -953,6 +992,9 @@ let managerRealtimeChannel = null;
 let lastReportAlertAt = 0;
 let signaturePads = {};
 let managerNotificationsEnabled = false;
+let restevStatsChart = null;
+let managerSector = 'Non renseigné';
+let managerCompanySize = 'Non renseigné';
 
  
 
@@ -1089,6 +1131,7 @@ function triggerNewReportAlert(report) {
         window.scrollTo({top:0,behavior:'smooth'});
         if(screenId==='scr-report') setTimeout(fixMapSize,250);
         if(screenId==='scr-qcm-success') setTimeout(initSignaturePads,250);
+        if(screenId==='scr-direction') setTimeout(loadRestevStats,250);
       }
     } 
 
@@ -1548,6 +1591,100 @@ function triggerNewReportAlert(report) {
     function initLeafletMap(){ try{ if(document.getElementById('map') && window.L && !mapInstance){ mapInstance=L.map('map',{zoomControl:false}).setView([46.670,-1.426],13); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance); if(navigator.geolocation){ navigator.geolocation.getCurrentPosition(pos=>{ const lat=pos.coords.latitude,lng=pos.coords.longitude; mapInstance.setView([lat,lng],15); L.marker([lat,lng]).addTo(mapInstance).bindPopup('Position terrain').openPopup(); document.getElementById('geo-status').innerText='📍 Coordonnées GPS verrouillées'; },()=>{ document.getElementById('geo-status').innerText='GPS non disponible'; }); } } }catch(e){ console.warn(e); } } 
 
     function fixMapSize(){ if(mapInstance) mapInstance.invalidateSize(); } 
+
+
+    function getCurrentSectorLabel(){
+      const companyCode = (currentEmployeeSession?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
+      return managerSector || localStorage.getItem('restev_manager_sector_' + companyCode) || 'Non renseigné';
+    }
+
+    function getCurrentCompanySizeLabel(){
+      const companyCode = (currentEmployeeSession?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
+      return managerCompanySize || localStorage.getItem('restev_manager_size_' + companyCode) || 'Non renseigné';
+    }
+
+    function getPeriodMonth(){
+      return new Date().toISOString().slice(0,7);
+    }
+
+    async function submitAnonymizedPreventionStat(evt){
+      if(!supabaseClient) return;
+      try{
+        const anonymized = {
+          period_month: getPeriodMonth(),
+          sector: getCurrentSectorLabel(),
+          company_size_range: getCurrentCompanySizeLabel(),
+          risk_category: evt.category || 'Non renseigné',
+          risk_level: evt.level || 'Non renseigné',
+          frequency: evt.frequency || 'Non renseigné',
+          event_type: 'Signalement prévention',
+          corrective_action_type: 'À définir'
+        };
+        const { error } = await supabaseClient.from('prevention_stats').insert([anonymized]);
+        if(error) console.warn('Stat anonymisée non enregistrée :', error.message);
+      }catch(e){ console.warn('Stat anonymisée ignorée :', e); }
+    }
+
+    function countBy(list, key){
+      return list.reduce((acc,item)=>{ const v=item[key] || 'Non renseigné'; acc[v]=(acc[v]||0)+1; return acc; },{});
+    }
+
+    function topEntries(obj, limit=5){
+      return Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,limit);
+    }
+
+    async function loadRestevStats(){
+      const totalEl=document.getElementById('stats-total');
+      if(!totalEl) return;
+      if(!supabaseClient){ showToast('Supabase non chargé : statistiques indisponibles.'); return; }
+      try{
+        const { data, error } = await supabaseClient
+          .from('prevention_stats')
+          .select('period_month,sector,company_size_range,risk_category,risk_level,frequency,event_type,created_at')
+          .order('created_at',{ascending:false})
+          .limit(500);
+        if(error){ console.error(error); showToast('Statistiques non disponibles : '+error.message); return; }
+        renderRestevStats(data || []);
+      }catch(e){ console.error(e); showToast('Erreur chargement statistiques.'); }
+    }
+
+    function renderRestevStats(rows){
+      const total=rows.length;
+      const riskCounts=countBy(rows,'risk_category');
+      const sectorCounts=countBy(rows,'sector');
+      const topRisk=topEntries(riskCounts,1)[0]?.[0] || '—';
+      document.getElementById('stats-total').innerText=String(total);
+      document.getElementById('stats-top-risk').innerText=topRisk;
+      document.getElementById('stats-sector-count').innerText=String(Object.keys(sectorCounts).filter(s=>s!=='Non renseigné').length || Object.keys(sectorCounts).length);
+
+      const topRisks=topEntries(riskCounts,6);
+      const labels=topRisks.map(e=>e[0]);
+      const values=topRisks.map(e=>e[1]);
+      const ctx=document.getElementById('chart-restev-risks');
+      if(ctx && window.Chart){
+        if(restevStatsChart) restevStatsChart.destroy();
+        restevStatsChart=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data:values,backgroundColor:['#3a7bd5','#e0248a','#ffb007','#4ec3b1','#245ca6','#b31269']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+      }
+
+      const actionBox=document.getElementById('stats-actions-list');
+      if(!actionBox) return;
+      if(!topRisks.length){ actionBox.innerHTML='<p class="text-xs text-slate-400 italic">Aucune donnée anonymisée disponible.</p>'; return; }
+      actionBox.innerHTML=topRisks.map(([risk,count],idx)=>{
+        const suggestion = getPreventionSuggestion(risk);
+        return `<div class="p-3 rounded-2xl border bg-slate-50 dark:bg-slate-900"><div class="flex justify-between gap-2"><p class="text-xs font-black dark:text-white">${idx+1}. ${escapeHtml(risk)}</p><span class="text-[10px] font-black text-restev-blue bg-blue-50 px-2 py-1 rounded-lg">${count}</span></div><p class="text-[11px] text-slate-500 dark:text-slate-300 mt-1 leading-relaxed">${escapeHtml(suggestion)}</p></div>`;
+      }).join('');
+    }
+
+    function getPreventionSuggestion(risk){
+      const r=String(risk||'').toLowerCase();
+      if(r.includes('chute')) return 'Proposer une action ciblée sur les chutes : ordre/propreté, circulation, travail en hauteur, choix des équipements.';
+      if(r.includes('charge') || r.includes('manutention') || r.includes('tms')) return 'Proposer un atelier TMS/manutention : analyse des postes, aides techniques, organisation des flux.';
+      if(r.includes('routier')) return 'Proposer une campagne risque routier : préparation mission, téléphone, fatigue, arrimage, entretien véhicule.';
+      if(r.includes('chimique')) return 'Proposer un appui produits chimiques : FDS, étiquetage, stockage, substitution, EPI adaptés.';
+      if(r.includes('psycho') || r.includes('rps')) return 'Proposer un accompagnement RPS : charge, isolement, alerte précoce, dialogue du travail.';
+      if(r.includes('élect') || r.includes('elect')) return 'Proposer une vérification ciblée : habilitations, consignation, câbles, signalement des anomalies.';
+      return 'Proposer un contact prévention pour analyser les causes récurrentes et prioriser des actions simples.';
+    }
 
     function initChart(){ const ctx=document.getElementById('chart-restev-risks'); if(!ctx || !window.Chart) return; new Chart(ctx,{type:'doughnut',data:{labels:['Chutes','Manutention','RPS'],datasets:[{data:[45,30,25],backgroundColor:['#3a7bd5','#e0248a','#ffb007']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}}); } 
 
