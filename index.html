@@ -352,7 +352,128 @@ async function loadRestevStats(){
   
     .signature-pad { min-height: 128px; }
     @media print { .signature-pad { border: 1px solid #94a3b8 !important; } }
-  </style> 
+  
+
+/* =========================================================
+   RESTEV APP UI — design type Play Store / App Store
+   Palette conservée depuis l'application : bleu, magenta, teal, or.
+   ========================================================= */
+:root{
+  --app-blue:#3a7bd5;
+  --app-blue-dark:#245ca6;
+  --app-magenta:#e0248a;
+  --app-magenta-dark:#b31269;
+  --app-teal:#4ec3b1;
+  --app-gold:#ffb007;
+  --app-bg:#f4f8ff;
+  --app-card:#ffffff;
+  --app-text:#102033;
+  --app-muted:#64748b;
+  --app-radius:26px;
+  --bottom-nav-height:82px;
+}
+html{scroll-behavior:smooth;}
+body{
+  background:
+    radial-gradient(circle at top left, rgba(58,123,213,.18), transparent 34%),
+    radial-gradient(circle at top right, rgba(224,36,138,.12), transparent 32%),
+    linear-gradient(180deg,#f7fbff 0%,#eef6ff 45%,#f9fbff 100%) !important;
+  color:var(--app-text);
+  padding-bottom:calc(var(--bottom-nav-height) + env(safe-area-inset-bottom,0px));
+  -webkit-tap-highlight-color:transparent;
+}
+.dark body{background:linear-gradient(180deg,#020617 0%,#0f172a 100%) !important;}
+header.no-print, body > header{
+  display:none !important;
+}
+main{
+  width:100% !important;
+  max-width:520px !important;
+  padding:88px 14px calc(var(--bottom-nav-height) + 18px) !important;
+  margin:0 auto !important;
+}
+#app-mobile-header{
+  position:fixed;
+  z-index:60;
+  left:0;right:0;top:0;
+  padding:calc(10px + env(safe-area-inset-top,0px)) 14px 10px;
+  background:rgba(255,255,255,.84);
+  backdrop-filter:blur(18px);
+  border-bottom:1px solid rgba(148,163,184,.22);
+  box-shadow:0 10px 28px rgba(15,23,42,.08);
+}
+.dark #app-mobile-header{background:rgba(15,23,42,.86);border-bottom-color:rgba(51,65,85,.75);}
+.app-header-inner{
+  max-width:520px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
+.app-brand{display:flex;align-items:center;gap:10px;min-width:0;}
+.app-logo-dot{
+  width:42px;height:42px;border-radius:16px;
+  background:linear-gradient(135deg,var(--app-blue-dark),var(--app-blue),var(--app-magenta));
+  color:#fff;display:flex;align-items:center;justify-content:center;font-weight:1000;letter-spacing:-.04em;
+  box-shadow:0 14px 25px rgba(58,123,213,.28);
+}
+.app-title-wrap{min-width:0;}
+#app-title{font-size:14px;font-weight:1000;line-height:1.05;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dark #app-title{color:#fff;}
+#app-subtitle{font-size:10px;font-weight:800;color:var(--app-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:270px;}
+.app-icon-btn{
+  width:40px;height:40px;border-radius:15px;background:#fff;border:1px solid rgba(148,163,184,.28);
+  display:flex;align-items:center;justify-content:center;color:var(--app-blue-dark);font-weight:900;
+  box-shadow:0 8px 18px rgba(15,23,42,.06);
+}
+.dark .app-icon-btn{background:#0f172a;color:#e2e8f0;border-color:#334155;}
+#app-back-btn[disabled]{opacity:.32;pointer-events:none;}
+#app-bottom-nav{
+  position:fixed;z-index:70;left:0;right:0;bottom:0;
+  padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));
+  background:rgba(255,255,255,.88);backdrop-filter:blur(22px);
+  border-top:1px solid rgba(148,163,184,.25);
+  box-shadow:0 -14px 38px rgba(15,23,42,.12);
+}
+.dark #app-bottom-nav{background:rgba(15,23,42,.9);border-top-color:#334155;}
+.app-nav-inner{max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
+.app-tab{
+  height:58px;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  color:#64748b;font-size:9px;font-weight:1000;text-transform:uppercase;letter-spacing:.02em;transition:.22s ease;border:1px solid transparent;
+}
+.app-tab i{font-size:17px;}
+.app-tab.active{
+  color:#fff;background:linear-gradient(135deg,var(--app-blue-dark),var(--app-blue),var(--app-magenta));
+  box-shadow:0 12px 22px rgba(58,123,213,.22);transform:translateY(-3px);
+}
+.screen.active{animation:appScreenIn .28s cubic-bezier(.22,.61,.36,1) !important;}
+@keyframes appScreenIn{from{opacity:0;transform:translateY(14px) scale(.985);}to{opacity:1;transform:translateY(0) scale(1);}}
+.bg-white, .dark .dark\:bg-slate-800{
+  border-radius:var(--app-radius) !important;
+}
+.shadow-premium, .shadow-lg, .shadow-xl, .shadow-sm, .shadow-md{
+  box-shadow:0 18px 42px rgba(30,64,175,.10),0 5px 16px rgba(15,23,42,.05) !important;
+}
+button, input, select, textarea{font-size:16px;}
+button{touch-action:manipulation;}
+input, select, textarea{
+  border-radius:18px !important;
+  border-color:rgba(148,163,184,.38) !important;
+}
+#scr-home .text-center img{height:74px !important;}
+#scr-home h1{font-size:34px !important;line-height:1.02;}
+#scr-home button, #scr-employee button, #scr-manager button, #scr-auth button{
+  border-radius:24px !important;
+}
+#scr-manager{padding-bottom:10px;}
+#scr-manager > .bg-white:first-child{
+  position:sticky;top:82px;z-index:20;border-radius:24px !important;
+}
+#manager-risk-box, #studio-rules-list{scrollbar-width:thin;}
+#scr-qcm, #scr-report, #scr-auth > div, #scr-qcm-success, #scr-direction > div{
+  border-radius:30px !important;
+}
+#scr-qcm-success{padding:20px !important;}
+#toast{bottom:calc(var(--bottom-nav-height) + 18px) !important;left:14px;right:14px;max-width:520px;margin:0 auto;border-radius:22px !important;}
+#sync-diagnostic-box, #btn-diagnostic-sync{display:none !important;}
+
+</style> 
 
 </head> 
 
@@ -850,15 +971,6 @@ async function loadRestevStats(){
       </div> 
 
  
-
-
-      <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border-t-4 border-t-blue-500 shadow-premium space-y-3">
-        <div class="flex items-center justify-between gap-2">
-          <h3 class="font-black dark:text-white text-xs uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-stethoscope text-blue-500"></i> Diagnostic synchronisation</h3>
-          <button id="btn-diagnostic-sync" onclick="runSyncDiagnostic()" class="text-[10px] bg-blue-50 text-restev-blue dark:bg-slate-700 dark:text-blue-300 px-3 py-2 rounded-xl font-black">Tester Supabase</button>
-        </div>
-        <div id="sync-diagnostic-box" class="text-[11px] text-slate-500 dark:text-slate-300 leading-relaxed">Cliquez sur “Tester Supabase” si le registre ou le Centre RESTEV restent vides.</div>
-      </div>
 
       <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border-t-4 border-t-emerald-500 shadow-premium space-y-3"> 
 
@@ -2313,108 +2425,248 @@ function triggerNewReportAlert(report) {
   
 
 /* =========================================================
-   PATCH FINAL RESTEV 85 — ORDRE DE CHARGEMENT CORRIGÉ
-   Important : ce bloc est volontairement placé à la fin du script
-   pour écraser les anciennes fonctions déclarées plus haut.
+   RESTEV APP UX — navigation type application + centre séparé
    ========================================================= */
-function syncLog(message, ok=true){
-  const box=document.getElementById('sync-diagnostic-box');
-  if(box){
-    const color=ok ? 'text-emerald-600' : 'text-red-600';
-    box.innerHTML += `<div class="${color} font-bold">${escapeHtml(message)}</div>`;
-  }
-  console.log(message);
-}
-function syncReset(){
-  const box=document.getElementById('sync-diagnostic-box');
-  if(box) box.innerHTML='';
-}
-function getCleanLabel(value, fallback='Non renseigné'){
-  const v=String(value || '').trim();
-  return (!v || v === 'Non renseigné' || v === 'undefined' || v === 'null') ? fallback : v;
-}
-function getCurrentSectorLabel(){
-  const companyCode=(currentEmployeeSession?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
-  const fromSession=getCleanLabel(currentEmployeeSession?.sector, '');
-  const fromManager=getCleanLabel(managerSector, '');
-  const fromSelect=getCleanLabel(document.getElementById('manager-login-sector')?.value, '');
-  const fromStore=getCleanLabel(localStorage.getItem('restev_manager_sector_' + companyCode), '');
-  return fromSession || fromManager || fromSelect || fromStore || 'Non renseigné';
-}
-function getCurrentCompanySizeLabel(){
-  const companyCode=(currentEmployeeSession?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
-  const fromManager=getCleanLabel(managerCompanySize, '');
-  const fromSelect=getCleanLabel(document.getElementById('manager-login-size')?.value, '');
-  const fromStore=getCleanLabel(localStorage.getItem('restev_manager_size_' + companyCode), '');
-  return fromManager || fromSelect || fromStore || 'Non renseigné';
-}
-function getRegistryKey(){
-  const companyCode=(document.getElementById('lbl-manager-comp-name')?.innerText?.trim() || currentEmployeeSession?.company || 'default').trim();
-  return `restev_passport_registry_${companyCode}`;
-}
-function normalizeRegistryRow(r){
-  const created=r.created_at || r.validated_at || r.date || new Date().toISOString();
-  const scoreText=(r.score !== undefined && r.total !== undefined) ? `${r.score}/${r.total}` : (r.score || r.level || '');
-  let epis=[];
-  try{ epis=Array.isArray(r.epis) ? r.epis : (r.epis ? JSON.parse(r.epis) : []); }catch(e){ epis=[]; }
-  return {
-    company_code:r.company_code || r.company || '',
-    employee_name:r.employee_name || r.employee || 'Salarié',
-    validated_at: String(created).includes('/') ? created : new Date(created).toLocaleString('fr-FR'),
-    score: scoreText,
-    epis,
-    status:r.status || 'Validé et signé'
+let appScreenStack = [];
+let appScrollMemory = {};
+let appCurrentScreen = 'scr-home';
+let appNavInternal = false;
+let restevPassportChart = null;
+
+function appScreenTitle(screenId){
+  const map={
+    'scr-home':['Passeport Prévention','Accueil RESTEV'],
+    'scr-about':['Découvrir la démarche','Prévention dès le premier jour'],
+    'scr-auth':['Connexion manager','Espace management'],
+    'scr-manager':['Espace management','Console adhérent'],
+    'scr-studio':['Matrice des risques','Éditeur DUERP'],
+    'scr-direction':['Centre RESTEV','Tendances séparées'],
+    'scr-training':['Modules INRS','Formations métiers'],
+    'scr-employee':['Portail salarié','Session passeport'],
+    'scr-qcm':['Validation des acquis','Questionnaire prévention'],
+    'scr-qcm-success':['Attestation sécurité','Signature et clôture'],
+    'scr-report':['Signalement terrain','Situation dangereuse'],
+    'scr-resources':['Fiches prévention','Ressources utiles'],
+    'scr-employee-messages':['Messages responsable','Suivi des signalements']
   };
+  return map[screenId] || ['RESTEV','Passeport Prévention'];
 }
-function renderPassportRegistry(entries){
-  const table=document.getElementById('manager-emargements-list');
-  if(!table) return;
-  table.innerHTML='';
-  if(!entries || !entries.length){
-    table.innerHTML='<tr><td colspan="5" class="p-4 text-center italic text-slate-400">Aucun passeport validé visible. Lancez le diagnostic Supabase puis refaites un test QCM complet avec “Clôturer & Quitter”.</td></tr>';
-    return;
-  }
-  entries.forEach(entry=>{
-    const row=document.createElement('tr');
-    row.className='border-b border-slate-100 dark:border-slate-700';
-    const epiText=(entry.epis && entry.epis.length) ? entry.epis.join(', ') : 'Aucun EPI renseigné';
-    row.innerHTML=`<td class="p-3 font-bold dark:text-white">${escapeHtml(entry.employee_name || 'Salarié')}</td><td class="p-3 text-slate-500">${escapeHtml(entry.validated_at || '')}</td><td class="p-3"><span class="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded font-bold">${escapeHtml(entry.score || '')}</span></td><td class="p-3 text-slate-500">${escapeHtml(epiText)}</td><td class="p-3 text-emerald-500 font-extrabold text-[11px] uppercase">${escapeHtml(entry.status || 'Validé et signé')}</td>`;
-    table.appendChild(row);
+function removeDiagnosticSync(){
+  document.getElementById('btn-diagnostic-sync')?.closest('.bg-white, .dark\\:bg-slate-800, div')?.remove();
+  document.getElementById('sync-diagnostic-box')?.closest('.bg-white, .dark\\:bg-slate-800, div')?.remove();
+  document.querySelectorAll('h3,div,button,p').forEach(el=>{
+    const txt=(el.innerText||'').trim().toLowerCase();
+    if(txt.includes('diagnostic synchronisation') || txt.includes('tester supabase')){
+      const panel=el.closest('.bg-white, .dark\\:bg-slate-800');
+      if(panel) panel.remove();
+    }
   });
 }
-async function cloudInsertPassport(entry){
-  if(!supabaseClient) return {ok:false, reason:'Supabase non chargé'};
-  let ok=false, errors=[];
-  // Table dédiée registre
-  try{
-    const {error}=await supabaseClient.from('passport_registry').insert([{
-      company_code: entry.company_code,
-      employee_name: entry.employee_name,
-      score: qcmScore,
-      total: qcmActiveQuestions.length,
-      epis: entry.epis || [],
-      status: entry.status || 'Validé et signé',
-      signature_employee: entry.signature_employee || null,
-      signature_manager: entry.signature_manager || null
-    }]);
-    if(error) errors.push('passport_registry: '+error.message); else ok=true;
-  }catch(e){ errors.push('passport_registry: '+e.message); }
-
-  // Fallback dans prevention_reports, souvent déjà existante pour les signalements
-  try{
-    const {error}=await supabaseClient.from('prevention_reports').insert([{
-      company_code: entry.company_code,
-      employee_name: entry.employee_name,
-      category: 'Validation passeport prévention',
-      level: `${qcmScore}/${qcmActiveQuestions.length}`,
-      frequency: 'Ponctuelle',
-      description: 'Passeport prévention validé et signé',
-      status: 'Validé'
-    }]);
-    if(error) errors.push('prevention_reports fallback: '+error.message); else ok=true;
-  }catch(e){ errors.push('prevention_reports fallback: '+e.message); }
-  return {ok, reason:errors.join(' | ')};
+function setupAppShell(){
+  removeDiagnosticSync();
+  if(!document.getElementById('app-mobile-header')){
+    const header=document.createElement('div');
+    header.id='app-mobile-header';
+    header.className='no-print';
+    header.innerHTML=`
+      <div class="app-header-inner">
+        <button id="app-back-btn" class="app-icon-btn" onclick="appGoBack()" disabled aria-label="Retour"><i class="fa-solid fa-chevron-left"></i></button>
+        <div class="app-brand">
+          <div class="app-logo-dot">R</div>
+          <div class="app-title-wrap"><div id="app-title">Passeport Prévention</div><div id="app-subtitle">Accueil RESTEV</div></div>
+        </div>
+        <button class="app-icon-btn" onclick="toggleDarkMode()" aria-label="Mode sombre"><i class="fa-solid fa-moon"></i></button>
+      </div>`;
+    document.body.prepend(header);
+  }
+  if(!document.getElementById('app-bottom-nav')){
+    const nav=document.createElement('nav');
+    nav.id='app-bottom-nav';
+    nav.className='no-print';
+    nav.innerHTML=`
+      <div class="app-nav-inner">
+        <button class="app-tab" data-tab="scr-home" onclick="appNavigate('scr-home', true)"><i class="fa-solid fa-house"></i><span>Accueil</span></button>
+        <button class="app-tab" data-tab="manager" onclick="appOpenManager()"><i class="fa-solid fa-user-tie"></i><span>Manager</span></button>
+        <button class="app-tab" data-tab="employee" onclick="appOpenEmployee()"><i class="fa-solid fa-id-card"></i><span>Salarié</span></button>
+        <button class="app-tab" data-tab="scr-direction" onclick="appNavigate('scr-direction', true)"><i class="fa-solid fa-chart-line"></i><span>Centre</span></button>
+        <button class="app-tab" data-tab="scr-training" onclick="appNavigate('scr-training', true)"><i class="fa-solid fa-graduation-cap"></i><span>INRS</span></button>
+      </div>`;
+    document.body.appendChild(nav);
+  }
+  enhanceBackButtons();
+  updateAppChrome(appCurrentScreen);
 }
+function enhanceBackButtons(){
+  document.querySelectorAll('button').forEach(btn=>{
+    const text=(btn.innerText||'').trim().toLowerCase();
+    const raw=btn.getAttribute('onclick')||'';
+    if((text.startsWith('retour') || text==='annuler') && !btn.dataset.appBackEnhanced){
+      if(!raw.includes('quitManager') && !raw.includes('copyGeneratedCode')){
+        btn.onclick=(e)=>{ e.preventDefault(); appGoBack(); };
+        btn.dataset.appBackEnhanced='1';
+      }
+    }
+  });
+}
+function updateAppChrome(screenId){
+  const [title,subtitle]=appScreenTitle(screenId);
+  const titleEl=document.getElementById('app-title');
+  const subEl=document.getElementById('app-subtitle');
+  if(titleEl) titleEl.innerText=title;
+  if(subEl) subEl.innerText=subtitle;
+  const back=document.getElementById('app-back-btn');
+  if(back) back.disabled = appScreenStack.length === 0;
+  document.querySelectorAll('.app-tab').forEach(t=>t.classList.remove('active'));
+  let tab=screenId;
+  if(screenId==='scr-auth' || screenId==='scr-manager' || screenId==='scr-studio') tab='manager';
+  if(screenId==='scr-employee' || screenId==='scr-qcm' || screenId==='scr-qcm-success' || screenId==='scr-report' || screenId==='scr-resources' || screenId==='scr-employee-messages') tab='employee';
+  document.querySelector(`.app-tab[data-tab="${tab}"]`)?.classList.add('active');
+}
+const originalSwitchScreen = window.switchScreen;
+function switchScreen(screenId){
+  appNavigate(screenId, true);
+}
+function appNavigate(screenId, remember=true, restoreScroll=false){
+  const current=document.querySelector('.screen.active')?.id || appCurrentScreen || 'scr-home';
+  if(current){ appScrollMemory[current]=window.scrollY || 0; }
+  if(remember && !appNavInternal && current && current!==screenId){ appScreenStack.push(current); }
+  document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.style.display='none';});
+  const target=document.getElementById(screenId);
+  if(target){
+    target.classList.add('active');
+    target.style.display='block';
+    appCurrentScreen=screenId;
+    setTimeout(()=>{
+      const y=restoreScroll ? (appScrollMemory[screenId]||0) : 0;
+      window.scrollTo({top:y, behavior:'smooth'});
+      if(screenId==='scr-report') setTimeout(fixMapSize,250);
+      if(screenId==='scr-qcm-success') setTimeout(initSignaturePads,250);
+      if(screenId==='scr-direction') setTimeout(loadRestevStats,250);
+      removeDiagnosticSync();
+      enhanceBackButtons();
+      updateAppChrome(screenId);
+    },20);
+  }
+}
+function appGoBack(){
+  if(!appScreenStack.length){ appNavigate('scr-home', false, true); return; }
+  const prev=appScreenStack.pop();
+  appNavInternal=true;
+  appNavigate(prev, false, true);
+  appNavInternal=false;
+}
+function appOpenManager(){
+  const code=document.getElementById('lbl-manager-comp-name')?.innerText?.trim();
+  appNavigate(code ? 'scr-manager' : 'scr-auth', true);
+}
+function appOpenEmployee(){
+  if(currentEmployeeSession) appNavigate('scr-employee', true);
+  else { showToast('Aucune session salarié active. Scannez un QR salarié.'); appNavigate('scr-home', true); }
+}
+
+/* Centre RESTEV : séparation stricte passeports / signalements */
+function isPassportStat(row){
+  const eventType=String(row?.event_type || '').toLowerCase();
+  const risk=String(row?.risk_category || row?.category || '').toLowerCase();
+  return eventType.includes('passeport') || risk.includes('validation passeport') || risk.includes('passeport prévention') || risk.includes('passeport prevention');
+}
+function isDiagnosticStat(row){
+  const risk=String(row?.risk_category || row?.category || '').toLowerCase();
+  const eventType=String(row?.event_type || '').toLowerCase();
+  return risk.includes('diagnostic') || eventType.includes('diagnostic');
+}
+function countBySafe(list,key){return (list||[]).reduce((acc,item)=>{const v=item[key]||'Non renseigné';acc[v]=(acc[v]||0)+1;return acc;},{});}
+function topEntriesSafe(obj,limit=5){return Object.entries(obj||{}).sort((a,b)=>b[1]-a[1]).slice(0,limit);}
+function ensureSeparatedCentreUI(){
+  const totalEl=document.getElementById('stats-total'), topRiskEl=document.getElementById('stats-top-risk'), sectorEl=document.getElementById('stats-sector-count');
+  if(totalEl){const label=totalEl.parentElement?.querySelector('p'); if(label) label.innerText='Signalements de risques';}
+  if(topRiskEl){const label=topRiskEl.parentElement?.querySelector('p'); if(label) label.innerText='Risque signalé dominant';}
+  if(sectorEl){const label=sectorEl.parentElement?.querySelector('p'); if(label) label.innerText='Secteurs avec signalements';}
+  const statsGrid=totalEl?.closest('.grid');
+  if(statsGrid){
+    statsGrid.className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4';
+    if(!document.getElementById('stats-passports')){
+      const card=document.createElement('div');
+      card.className='bg-white dark:bg-slate-800 p-5 rounded-2xl border shadow-premium';
+      card.innerHTML='<p class="text-[10px] font-black uppercase text-slate-400">Passeports validés</p><p id="stats-passports" class="text-3xl font-black text-emerald-500 mt-1">0</p><p class="text-[10px] text-slate-400 mt-1 font-bold">Traçabilité séparée</p>';
+      statsGrid.insertBefore(card, topRiskEl?.parentElement || null);
+    }
+  }
+  const riskCanvas=document.getElementById('chart-restev-risks');
+  if(riskCanvas){const title=riskCanvas.closest('.bg-white, .dark\\:bg-slate-800')?.querySelector('h3'); if(title) title.innerHTML='<i class="fa-solid fa-triangle-exclamation text-red-500 mr-1"></i> Risques signalés uniquement';}
+  const chartsGrid=riskCanvas?.closest('.grid');
+  if(chartsGrid && !document.getElementById('chart-restev-passports')){
+    chartsGrid.className='grid grid-cols-1 lg:grid-cols-3 gap-6';
+    const panel=document.createElement('div');
+    panel.className='bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-premium border-t-4 border-t-emerald-500';
+    panel.innerHTML='<h3 class="text-sm font-black dark:text-white mb-4"><i class="fa-solid fa-id-card text-emerald-500 mr-1"></i> Validations Passeport</h3><div class="relative h-72 w-full"><canvas id="chart-restev-passports"></canvas></div><div id="stats-passport-list" class="space-y-2 mt-4"></div>';
+    const priorities=document.getElementById('stats-actions-list')?.closest('.bg-white, .dark\\:bg-slate-800');
+    chartsGrid.insertBefore(panel, priorities || null);
+  }
+}
+function renderRestevStats(rows){
+  ensureSeparatedCentreUI();
+  const cleanRows=(rows||[]).filter(r=>!isDiagnosticStat(r));
+  const passportRows=cleanRows.filter(isPassportStat);
+  const signalRows=cleanRows.filter(r=>!isPassportStat(r));
+  const riskCounts=countBySafe(signalRows,'risk_category');
+  const sectorCounts=countBySafe(signalRows,'sector');
+  const passportCounts=countBySafe(passportRows,'risk_level');
+  const totalEl=document.getElementById('stats-total'), passEl=document.getElementById('stats-passports'), topEl=document.getElementById('stats-top-risk'), sectorEl=document.getElementById('stats-sector-count');
+  if(totalEl) totalEl.innerText=String(signalRows.length);
+  if(passEl) passEl.innerText=String(passportRows.length);
+  if(topEl) topEl.innerText=topEntriesSafe(riskCounts,1)[0]?.[0] || '—';
+  if(sectorEl) sectorEl.innerText=String(Object.keys(sectorCounts).filter(s=>s!=='Non renseigné').length || Object.keys(sectorCounts).length || 0);
+  const topRisks=topEntriesSafe(riskCounts,6);
+  const riskCtx=document.getElementById('chart-restev-risks');
+  if(riskCtx && window.Chart){
+    if(restevStatsChart) restevStatsChart.destroy();
+    restevStatsChart=new Chart(riskCtx,{type:'doughnut',data:{labels:topRisks.length?topRisks.map(e=>e[0]):['Aucun signalement'],datasets:[{data:topRisks.length?topRisks.map(e=>e[1]):[1],backgroundColor:['#e0248a','#3a7bd5','#ffb007','#4ec3b1','#245ca6','#b31269']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+  }
+  const passEntries=topEntriesSafe(passportCounts,6);
+  const passCtx=document.getElementById('chart-restev-passports');
+  if(passCtx && window.Chart){
+    if(restevPassportChart) restevPassportChart.destroy();
+    restevPassportChart=new Chart(passCtx,{type:'doughnut',data:{labels:passEntries.length?passEntries.map(e=>e[0]):['Aucune validation'],datasets:[{data:passEntries.length?passEntries.map(e=>e[1]):[1],backgroundColor:['#10b981','#ffb007','#3a7bd5','#e0248a','#4ec3b1','#245ca6']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+  }
+  const actionBox=document.getElementById('stats-actions-list');
+  if(actionBox){
+    actionBox.innerHTML=topRisks.length ? topRisks.map(([risk,count],idx)=>`<div class="p-3 rounded-2xl border bg-slate-50 dark:bg-slate-900"><div class="flex justify-between gap-2"><p class="text-xs font-black dark:text-white">${idx+1}. ${escapeHtml(risk)}</p><span class="text-[10px] font-black text-restev-blue bg-blue-50 px-2 py-1 rounded-lg">${count}</span></div><p class="text-[11px] text-slate-500 dark:text-slate-300 mt-1 leading-relaxed">${escapeHtml(getPreventionSuggestion(risk))}</p></div>`).join('') : '<p class="text-xs text-slate-400 italic">Aucun signalement de risque disponible. Les validations passeport sont affichées séparément.</p>';
+  }
+  const passBox=document.getElementById('stats-passport-list');
+  if(passBox){
+    passBox.innerHTML=passportRows.length ? passEntries.map(([label,count])=>`<div class="p-3 rounded-2xl border bg-emerald-50/50 dark:bg-slate-900"><div class="flex justify-between gap-2"><p class="text-xs font-black dark:text-white">${escapeHtml(label)}</p><span class="text-[10px] font-black text-emerald-600 bg-white px-2 py-1 rounded-lg">${count}</span></div><p class="text-[11px] text-slate-500 dark:text-slate-300 mt-1">Indicateur de traçabilité, séparé des risques signalés.</p></div>`).join('') : '<p class="text-xs text-slate-400 italic">Aucune validation passeport enregistrée.</p>';
+  }
+}
+async function loadRestevStats(){
+  const totalEl=document.getElementById('stats-total');
+  if(!totalEl) return;
+  if(!supabaseClient){ showToast('Supabase non chargé : statistiques indisponibles.'); return; }
+  try{
+    let rows=[];
+    const statRes=await supabaseClient.from('prevention_stats').select('period_month,sector,company_size_range,risk_category,risk_level,frequency,event_type,created_at').order('created_at',{ascending:false}).limit(500);
+    if(!statRes.error && statRes.data) rows=statRes.data;
+    const hasPassport=rows.some(isPassportStat), hasSignal=rows.some(r=>!isPassportStat(r) && !isDiagnosticStat(r));
+    const reportRes=await supabaseClient.from('prevention_reports').select('category,level,frequency,created_at').order('created_at',{ascending:false}).limit(500);
+    if(!reportRes.error && reportRes.data){
+      const reportRows=reportRes.data.filter(r=>String(r.category||'').toLowerCase()!=='diagnostic synchronisation').map(r=>({period_month:(r.created_at||new Date().toISOString()).slice(0,7),sector:'Non renseigné',company_size_range:'Non renseigné',risk_category:r.category||'Signalement',risk_level:r.level||'Non renseigné',frequency:r.frequency||'Ponctuelle',event_type:String(r.category||'')==='Validation passeport prévention'?'Passeport validé':'Signalement prévention',created_at:r.created_at}));
+      if(!hasPassport) rows=rows.concat(reportRows.filter(isPassportStat));
+      if(!hasSignal) rows=rows.concat(reportRows.filter(r=>!isPassportStat(r)));
+    }
+    renderRestevStats(rows||[]);
+    showToast('Centre RESTEV actualisé : données séparées.');
+  }catch(e){ console.error(e); showToast('Erreur chargement statistiques.'); }
+}
+
+// Démarrage shell app
+setTimeout(setupAppShell, 50);
+document.addEventListener('DOMContentLoaded', setupAppShell);
+
+
+
+/* =========================================================
+   PATCH DONNÉES FINAL — conserve fonctionnement registre + centre
+   ========================================================= */
 async function submitAnonymizedPreventionStat(evt){
   if(!supabaseClient) return false;
   try{
@@ -2434,30 +2686,37 @@ async function submitAnonymizedPreventionStat(evt){
   }catch(e){ console.warn('Stat anonymisée ignorée :', e); return false; }
 }
 async function savePassportEntry(entry){
-  // Local immédiat
   let entries=[];
   try{ entries=JSON.parse(localStorage.getItem(getRegistryKey()) || '[]'); }catch(e){ entries=[]; }
   entries.unshift(entry);
   localStorage.setItem(getRegistryKey(), JSON.stringify(entries.slice(0,100)));
-
-  // Cloud robuste : passport_registry + fallback prevention_reports
-  const cloud=await cloudInsertPassport(entry);
-
-  // Centre RESTEV : stats anonymisées
+  let cloudOK=false;
+  if(supabaseClient){
+    try{
+      const {error}=await supabaseClient.from('passport_registry').insert([{
+        company_code: entry.company_code,
+        employee_name: entry.employee_name,
+        score: qcmScore,
+        total: qcmActiveQuestions.length,
+        epis: entry.epis || [],
+        status: entry.status || 'Validé et signé',
+        signature_employee: entry.signature_employee || null,
+        signature_manager: entry.signature_manager || null
+      }]);
+      if(error) console.warn('Sauvegarde Supabase registre impossible :', error.message); else cloudOK=true;
+    }catch(e){ console.warn('Sauvegarde registre locale uniquement :', e); }
+  }
   const statOK=await submitAnonymizedPreventionStat({
     sector: entry.sector || getCurrentSectorLabel(),
     company_size_range: getCurrentCompanySizeLabel(),
-    category: 'Validation passeport prévention',
-    level: qcmScore === qcmActiveQuestions.length ? 'Acquis complet' : 'Points à renforcer',
-    frequency: 'Ponctuelle',
-    event_type: 'Passeport validé',
-    corrective_action_type: qcmScore === qcmActiveQuestions.length ? 'Aucune' : 'Reprise des points faibles'
+    category:'Validation passeport prévention',
+    level:qcmScore === qcmActiveQuestions.length ? 'Acquis complet' : 'Points à renforcer',
+    frequency:'Ponctuelle',
+    event_type:'Passeport validé',
+    corrective_action_type:qcmScore === qcmActiveQuestions.length ? 'Aucune' : 'Reprise des points faibles'
   });
-
   if(document.getElementById('manager-emargements-list')) loadPassportRegistry();
-  if(cloud.ok && statOK) showToast('Passeport enregistré + Centre RESTEV alimenté.');
-  else showToast('Passeport local OK, cloud partiel : lancez le diagnostic Supabase.');
-  if(!cloud.ok) console.warn('Cloud passport non OK:', cloud.reason);
+  showToast(cloudOK && statOK ? 'Passeport enregistré et Centre RESTEV alimenté.' : 'Passeport enregistré. Vérifiez Supabase si le partage tarde.');
 }
 async function finalizeAndClose(){
   updateCertificateEPI();
@@ -2465,52 +2724,9 @@ async function finalizeAndClose(){
   const name=document.getElementById('cert-employee').value || (currentEmployeeSession?currentEmployeeSession.name:'Salarié');
   const companyCode=(currentEmployeeSession?.company || document.getElementById('cert-company').value || document.getElementById('lbl-manager-comp-name')?.innerText || 'Établissement non renseigné').trim();
   const now=new Date().toLocaleString('fr-FR');
-  const entry={
-    company_code: companyCode,
-    employee_name: name,
-    validated_at: now,
-    score: `${qcmScore}/${qcmActiveQuestions.length}`,
-    epis: selectedEPIList,
-    sector: getCurrentSectorLabel(),
-    status:'Validé et signé',
-    signature_employee:getSignatureData('emp'),
-    signature_manager:getSignatureData('mgr')
-  };
+  const entry={company_code:companyCode,employee_name:name,validated_at:now,score:`${qcmScore}/${qcmActiveQuestions.length}`,epis:selectedEPIList,sector:getCurrentSectorLabel(),status:'Validé et signé',signature_employee:getSignatureData('emp'),signature_manager:getSignatureData('mgr')};
   await savePassportEntry(entry);
-  switchScreen('scr-employee');
-}
-async function loadPassportRegistry(){
-  const companyCode=document.getElementById('lbl-manager-comp-name')?.innerText?.trim();
-  if(!companyCode) return;
-  let localEntries=[];
-  try{ localEntries=JSON.parse(localStorage.getItem(getRegistryKey()) || '[]').map(normalizeRegistryRow); }catch(e){ localEntries=[]; }
-  renderPassportRegistry(localEntries);
-  if(!supabaseClient){ showToast('Registre local affiché : Supabase non chargé.'); return; }
-  let cloudRows=[];
-  let errors=[];
-  // 1. Table registre
-  try{
-    const {data,error}=await supabaseClient.from('passport_registry').select('company_code,employee_name,score,total,epis,status,created_at').eq('company_code',companyCode).order('created_at',{ascending:false}).limit(100);
-    if(error) errors.push('passport_registry: '+error.message);
-    else cloudRows=cloudRows.concat((data||[]).map(normalizeRegistryRow));
-  }catch(e){ errors.push('passport_registry: '+e.message); }
-  // 2. Fallback depuis prevention_reports
-  try{
-    const {data,error}=await supabaseClient.from('prevention_reports').select('company_code,employee_name,category,level,frequency,description,status,created_at').eq('company_code',companyCode).eq('category','Validation passeport prévention').order('created_at',{ascending:false}).limit(100);
-    if(error) errors.push('prevention_reports fallback: '+error.message);
-    else cloudRows=cloudRows.concat((data||[]).map(r=>normalizeRegistryRow({company_code:r.company_code, employee_name:r.employee_name, score:r.level, epis:[], status:r.status || 'Validé', created_at:r.created_at})));
-  }catch(e){ errors.push('prevention_reports fallback: '+e.message); }
-  // Déduplication simple
-  const seen=new Set();
-  const all=[...cloudRows, ...localEntries].filter(r=>{
-    const key=(r.employee_name||'')+'|'+(r.validated_at||'')+'|'+(r.score||'');
-    if(seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-  renderPassportRegistry(all);
-  if(all.length) showToast(`${all.length} passeport(s) visible(s).`);
-  else if(errors.length) showToast('Registre vide - erreurs Supabase visibles en console/diagnostic.');
+  appNavigate('scr-employee', true);
 }
 async function submitRiskReport(){
   if(!supabaseClient) return showToast('Supabase non chargé. Vérifiez internet.');
@@ -2521,12 +2737,12 @@ async function submitRiskReport(){
   if(!desc) return showToast('Veuillez saisir une description du danger.');
   const employeeName=currentEmployeeSession ? currentEmployeeSession.name : 'Salarié terrain';
   const companyCode=currentEmployeeSession ? currentEmployeeSession.company : (document.getElementById('lbl-manager-comp-name')?.innerText || 'Établissement non renseigné');
-  const { error } = await supabaseClient.from('prevention_reports').insert([{ company_code: companyCode, employee_name: employeeName, category, level: lvl, frequency: freq, description: desc, status:'Nouveau' }]);
+  const {error}=await supabaseClient.from('prevention_reports').insert([{company_code:companyCode, employee_name:employeeName, category, level:lvl, frequency:freq, description:desc, status:'Nouveau'}]);
   if(error){ console.error('Erreur Supabase insertion:', error); return showToast('Erreur Supabase signalement : '+error.message); }
-  const statOK=await submitAnonymizedPreventionStat({category, level:lvl, frequency:freq, event_type:'Signalement prévention'});
+  await submitAnonymizedPreventionStat({category, level:lvl, frequency:freq, event_type:'Signalement prévention'});
   document.getElementById('risk-description').value='';
-  showToast(statOK ? 'Signalement envoyé + Centre RESTEV alimenté.' : 'Signalement envoyé, mais stats non alimentées.');
-  switchScreen('scr-employee');
+  showToast('Signalement envoyé et Centre RESTEV alimenté.');
+  appNavigate('scr-employee', true);
 }
 async function loadRestevStats(){
   const totalEl=document.getElementById('stats-total');
@@ -2536,43 +2752,22 @@ async function loadRestevStats(){
     let rows=[];
     const statRes=await supabaseClient.from('prevention_stats').select('period_month,sector,company_size_range,risk_category,risk_level,frequency,event_type,created_at').order('created_at',{ascending:false}).limit(500);
     if(!statRes.error && statRes.data) rows=statRes.data;
-    // Fallback : validations depuis prevention_reports
-    const reportRes=await supabaseClient.from('prevention_reports').select('category,level,frequency,created_at').order('created_at',{ascending:false}).limit(500);
-    if(!reportRes.error && reportRes.data){
-      const fallbackRows=reportRes.data.map(r=>({
-        period_month:(r.created_at || new Date().toISOString()).slice(0,7),
-        sector:'Non renseigné',
-        company_size_range:'Non renseigné',
-        risk_category:r.category || 'Signalement',
-        risk_level:r.level || 'Non renseigné',
-        frequency:r.frequency || 'Ponctuelle',
-        event_type:(r.category==='Validation passeport prévention') ? 'Passeport validé' : 'Signalement prévention',
-        created_at:r.created_at
-      }));
-      // Ajoute seulement si stats vide ou pour compléter
-      if(!rows.length) rows=fallbackRows;
+    const hasPassport=rows.some(isPassportStat), hasSignal=rows.some(r=>!isPassportStat(r) && !isDiagnosticStat(r));
+    if(!hasPassport){
+      const passRes=await supabaseClient.from('passport_registry').select('score,total,status,created_at').order('created_at',{ascending:false}).limit(500);
+      if(!passRes.error && passRes.data){
+        rows=rows.concat(passRes.data.map(p=>({period_month:(p.created_at||new Date().toISOString()).slice(0,7),sector:'Non renseigné',company_size_range:'Non renseigné',risk_category:'Validation passeport prévention',risk_level:(Number(p.score)===Number(p.total))?'Acquis complet':'Points à renforcer',frequency:'Ponctuelle',event_type:'Passeport validé',created_at:p.created_at})));
+      }
     }
-    renderRestevStats(rows || []);
+    if(!hasSignal){
+      const reportRes=await supabaseClient.from('prevention_reports').select('category,level,frequency,created_at').order('created_at',{ascending:false}).limit(500);
+      if(!reportRes.error && reportRes.data){
+        rows=rows.concat(reportRes.data.filter(r=>String(r.category||'').toLowerCase()!=='diagnostic synchronisation').map(r=>({period_month:(r.created_at||new Date().toISOString()).slice(0,7),sector:'Non renseigné',company_size_range:'Non renseigné',risk_category:r.category||'Signalement',risk_level:r.level||'Non renseigné',frequency:r.frequency||'Ponctuelle',event_type:String(r.category||'')==='Validation passeport prévention'?'Passeport validé':'Signalement prévention',created_at:r.created_at})));
+      }
+    }
+    renderRestevStats(rows||[]);
+    showToast('Centre RESTEV actualisé : données séparées.');
   }catch(e){ console.error(e); showToast('Erreur chargement statistiques.'); }
-}
-async function runSyncDiagnostic(){
-  syncReset();
-  if(!supabaseClient){ syncLog('❌ Supabase non chargé : vérifier la connexion internet/CDN.', false); return; }
-  syncLog('✅ Client Supabase chargé.');
-  const companyCode=document.getElementById('lbl-manager-comp-name')?.innerText?.trim() || 'DIAG';
-  const tests=[
-    {table:'prevention_reports', row:{company_code:companyCode, employee_name:'TEST DIAG', category:'Diagnostic synchronisation', level:'Test', frequency:'Ponctuelle', description:'test automatique', status:'Test'}},
-    {table:'prevention_stats', row:{period_month:getPeriodMonth(), sector:'Diagnostic', company_size_range:'Test', risk_category:'Diagnostic synchronisation', risk_level:'Test', frequency:'Ponctuelle', event_type:'Diagnostic', corrective_action_type:'Test'}},
-    {table:'passport_registry', row:{company_code:companyCode, employee_name:'TEST DIAG', score:1, total:1, epis:[], status:'Test'}}
-  ];
-  for(const t of tests){
-    try{
-      const {error}=await supabaseClient.from(t.table).insert([t.row]);
-      if(error) syncLog(`❌ ${t.table} INSERT bloqué : ${error.message}`, false);
-      else syncLog(`✅ ${t.table} INSERT OK.`);
-    }catch(e){ syncLog(`❌ ${t.table} erreur : ${e.message}`, false); }
-  }
-  syncLog('Diagnostic terminé. Si une table est bloquée, exécuter le script SQL fourni dans Supabase.');
 }
 
 </script> 
