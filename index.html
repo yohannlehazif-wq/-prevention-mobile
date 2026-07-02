@@ -76,9 +76,9 @@
 
     body { font-family: 'Plus Jakarta Sans', sans-serif; } 
 
-    .screen { display: none; } 
+    .screen { display: none !important; } 
 
-    .screen.active { display: block; animation: smoothSlide .35s ease; } 
+    .screen.active { display: block !important; animation: smoothSlide .35s ease; } 
 
     @keyframes smoothSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } } 
 
@@ -1092,7 +1092,28 @@ function triggerNewReportAlert(report) {
     });
 }
 
-    function checkUrlParameters(){ const p=new URLSearchParams(window.location.search); const emp=p.get('emp'); const comp=p.get('comp'); if(emp && comp){ currentEmployeeSession={name:emp, company:comp}; document.getElementById('lbl-emp-welcome').innerText=`Bonjour, ${emp}`; document.getElementById('lbl-emp-company').innerText=`Établissement : ${comp}`; switchScreen('scr-employee'); showToast('Passeport Prévention activé via QR Code !'); } } 
+    function checkUrlParameters(){
+      const p=new URLSearchParams(window.location.search);
+      const emp=p.get('emp');
+      const comp=p.get('comp');
+      const epis=p.get('epis');
+      if(epis){
+        try{
+          selectedEPIList = JSON.parse(decodeURIComponent(epis));
+          if(!Array.isArray(selectedEPIList)) selectedEPIList=[];
+        }catch(e){
+          console.warn('EPI non lisibles depuis le QR Code :', e);
+          selectedEPIList=[];
+        }
+      }
+      if(emp && comp){
+        currentEmployeeSession={name:emp, company:comp, epis:selectedEPIList};
+        document.getElementById('lbl-emp-welcome').innerText=`Bonjour, ${emp}`;
+        document.getElementById('lbl-emp-company').innerText=`Établissement : ${comp}`;
+        switchScreen('scr-employee');
+        showToast('Passeport Prévention activé via QR Code !');
+      }
+    } 
 
  
 
@@ -1156,11 +1177,51 @@ function triggerNewReportAlert(report) {
 
     function saveEPIKit(){ selectedEPIList=getSelectedEPI(); showToast(selectedEPIList.length ? 'Dotation EPI enregistrée au dossier salarié.' : 'Aucun EPI sélectionné.'); } 
 
-    function updateCertificateEPI(){ const box=document.getElementById('cert-epi-list'); if(!box) return; selectedEPIList=getSelectedEPI(); box.innerHTML = selectedEPIList.length ? `<ul class="list-disc list-inside space-y-1">${selectedEPIList.map(e=>`<li>${escapeHtml(e)}</li>`).join('')}</ul>` : '<span class="italic text-slate-400">Aucun EPI déclaré comme remis.</span>'; } 
+    function updateCertificateEPI(){
+      const box=document.getElementById('cert-epi-list');
+      if(!box) return;
+
+      const checkedEPI = getSelectedEPI();
+      if(checkedEPI.length){
+        selectedEPIList = checkedEPI;
+      } else if(currentEmployeeSession && Array.isArray(currentEmployeeSession.epis) && currentEmployeeSession.epis.length){
+        selectedEPIList = currentEmployeeSession.epis;
+      }
+
+      box.innerHTML = selectedEPIList.length
+        ? `<ul class="list-disc list-inside space-y-1">${selectedEPIList.map(e=>`<li>${escapeHtml(e)}</li>`).join('')}</ul>`
+        : '<span class="italic text-slate-400">Aucun EPI déclaré comme remis.</span>';
+    } 
 
  
 
-    function generateEmployeeAccess(){ const name=document.getElementById('reg-emp-name').value.trim(); const code=document.getElementById('lbl-manager-comp-name').innerText.trim(); if(!name) return showToast('Veuillez saisir un nom et un prénom !'); if(!code) return showToast('Code établissement manquant.'); const baseUrl=window.location.origin+window.location.pathname; const url=`${baseUrl}?emp=${encodeURIComponent(name)}&comp=${encodeURIComponent(code)}`; QRCode.toCanvas(document.getElementById('qr-canvas'), url, {width:180, margin:2, color:{dark:'#245ca6', light:'#ffffff'}}, err=>{ if(err){ console.error(err); showToast('Erreur QR Code.'); } else { document.getElementById('qr-area').classList.remove('hidden'); showToast('QR salarié généré.'); } }); } 
+    function generateEmployeeAccess(){
+      const name=document.getElementById('reg-emp-name').value.trim();
+      const code=document.getElementById('lbl-manager-comp-name').innerText.trim();
+      if(!name) return showToast('Veuillez saisir un nom et un prénom !');
+      if(!code) return showToast('Code établissement manquant.');
+
+      // Important : les EPI sélectionnés par le manager sont intégrés au QR Code.
+      // Ainsi, ils apparaissent aussi sur l'attestation lorsque le salarié ouvre le passeport sur son téléphone.
+      selectedEPIList = getSelectedEPI();
+      if(!selectedEPIList.length){
+        showToast('Attention : aucun EPI sélectionné pour ce salarié.');
+      }
+
+      const baseUrl=window.location.origin+window.location.pathname;
+      const episParam=encodeURIComponent(JSON.stringify(selectedEPIList));
+      const url=`${baseUrl}?emp=${encodeURIComponent(name)}&comp=${encodeURIComponent(code)}&epis=${episParam}`;
+
+      QRCode.toCanvas(document.getElementById('qr-canvas'), url, {width:180, margin:2, color:{dark:'#245ca6', light:'#ffffff'}}, err=>{
+        if(err){
+          console.error(err);
+          showToast('Erreur QR Code.');
+        } else {
+          document.getElementById('qr-area').classList.remove('hidden');
+          showToast(selectedEPIList.length ? 'QR salarié généré avec les EPI.' : 'QR salarié généré sans EPI.');
+        }
+      });
+    } 
 
  
 
@@ -1272,7 +1333,22 @@ function triggerNewReportAlert(report) {
 
     function prepareAndPrint(){ window.print(); } 
 
-    function finalizeAndClose(){ if(!document.getElementById('chk-sign-emp').checked || !document.getElementById('chk-sign-mgr').checked) return showToast('Vous devez cocher les deux signatures.'); const table=document.getElementById('manager-emargements-list'); const empty=table.querySelector('td[colspan="4"]'); if(empty) empty.parentElement.remove(); const name=document.getElementById('cert-employee').value || (currentEmployeeSession?currentEmployeeSession.name:'Salarié'); const now=new Date().toLocaleString('fr-FR'); const row=document.createElement('tr'); row.className='border-b border-slate-100 dark:border-slate-700'; row.innerHTML=`<td class="p-3 font-bold dark:text-white">${escapeHtml(name)}</td><td class="p-3 text-slate-500">${now}</td><td class="p-3"><span class="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded font-bold">${qcmScore} / ${qcmActiveQuestions.length}</span></td><td class="p-3 text-emerald-500 font-extrabold text-[11px] uppercase">Validé et signé</td>`; table.insertBefore(row, table.firstChild); showToast('Passeport clôturé.'); switchScreen('scr-employee'); } 
+    function finalizeAndClose(){
+      if(!document.getElementById('chk-sign-emp').checked || !document.getElementById('chk-sign-mgr').checked) return showToast('Vous devez cocher les deux signatures.');
+      updateCertificateEPI();
+      const table=document.getElementById('manager-emargements-list');
+      const empty=table.querySelector('td[colspan="4"]');
+      if(empty) empty.parentElement.remove();
+      const name=document.getElementById('cert-employee').value || (currentEmployeeSession?currentEmployeeSession.name:'Salarié');
+      const now=new Date().toLocaleString('fr-FR');
+      const epiText = selectedEPIList.length ? selectedEPIList.join(', ') : 'Aucun EPI renseigné';
+      const row=document.createElement('tr');
+      row.className='border-b border-slate-100 dark:border-slate-700';
+      row.innerHTML=`<td class="p-3 font-bold dark:text-white">${escapeHtml(name)}<div class="text-[10px] text-slate-400 font-medium mt-1"><i class="fa-solid fa-helmet-safety mr-1"></i>EPI : ${escapeHtml(epiText)}</div></td><td class="p-3 text-slate-500">${now}</td><td class="p-3"><span class="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded font-bold">${qcmScore} / ${qcmActiveQuestions.length}</span></td><td class="p-3 text-emerald-500 font-extrabold text-[11px] uppercase">Validé et signé</td>`;
+      table.insertBefore(row, table.firstChild);
+      showToast('Passeport clôturé avec EPI enregistrés.');
+      switchScreen('scr-employee');
+    } 
 
  
 
