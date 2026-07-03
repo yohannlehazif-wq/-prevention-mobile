@@ -1,57 +1,1275 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>RESTEV 85 - Passeport Prévention</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script><script src="https://cdn.jsdelivr.net/npm/chart.js"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<style>
-:root{--blue:#2f73d9;--blue2:#1f5faf;--pink:#df2b86;--green:#1fae72;--cyan:#2bbdd0;--orange:#f59e0b;--red:#e34444;--bg:#f5f9ff;--card:#fff;--text:#142033;--muted:#64748b;--line:#dbe7f5;--shadow:0 16px 44px rgba(20,32,51,.13);--nav:82px}.dark{--bg:#07111f;--card:#0f1c2d;--text:#f8fafc;--muted:#a8b4c8;--line:#263a55;--shadow:0 16px 44px rgba(0,0,0,.34)}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top left,rgba(47,115,217,.24),transparent 34%),radial-gradient(circle at top right,rgba(223,43,134,.16),transparent 30%),var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;padding-bottom:calc(var(--nav) + env(safe-area-inset-bottom))}button,input,select,textarea{font:inherit}button{cursor:pointer}.screen{display:none}.screen.active{display:block;animation:f .22s ease}@keyframes f{from{opacity:.2;transform:translateY(8px)}to{opacity:1;transform:none}}.header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.86);backdrop-filter:blur(18px);border-bottom:1px solid var(--line)}.dark .header{background:rgba(15,28,45,.9)}.hi{max-width:1050px;margin:auto;padding:12px 15px;display:flex;justify-content:space-between;gap:10px;align-items:center}.brand{display:flex;gap:10px;align-items:center}.logo{width:44px;height:44px;border-radius:17px;background:linear-gradient(135deg,var(--blue2),var(--blue),var(--pink));color:#fff;display:grid;place-items:center;font-weight:1000;box-shadow:0 12px 28px rgba(47,115,217,.28)}.iconbtn{width:42px;height:42px;border-radius:15px;border:1px solid var(--line);background:var(--card);color:var(--blue);box-shadow:0 8px 20px rgba(20,32,51,.08)}.main{max-width:1050px;margin:auto;padding:18px 15px 110px}.hero{border-radius:30px;padding:26px;background:linear-gradient(135deg,var(--blue2),var(--blue),var(--pink));color:#fff;box-shadow:0 20px 55px rgba(47,115,217,.25);position:relative;overflow:hidden}.hero:after{content:"";position:absolute;right:-45px;top:-45px;width:180px;height:180px;border-radius:900px;background:rgba(255,255,255,.12)}.hero>*{position:relative}.hero p{color:#eef6ff}.pill{display:inline-flex;gap:7px;align-items:center;border-radius:999px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.24);padding:6px 10px;font-size:10px;font-weight:1000;text-transform:uppercase}.card{background:var(--card);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);padding:19px}.grid{display:grid;gap:15px}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}@media(max-width:820px){.g2,.g3{grid-template-columns:1fr}}.menu{width:100%;display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);background:var(--card);border-radius:24px;padding:16px;box-shadow:0 10px 28px rgba(20,32,51,.08);text-align:left}.menu:hover{transform:translateY(-2px)}.tile{width:50px;height:50px;border-radius:19px;display:grid;place-items:center;font-size:21px;flex:0 0 auto}.b{background:#eaf3ff;color:var(--blue)}.p{background:#fff0f7;color:var(--pink)}.g{background:#eafaf3;color:var(--green)}.o{background:#fff7e6;color:var(--orange)}.r{background:#fff1f1;color:var(--red)}.c{background:#e7fbff;color:var(--cyan)}h1{font-size:clamp(34px,6vw,54px);line-height:.95;margin:8px 0 10px}h2{margin:0 0 10px;font-size:24px}h3{margin:0 0 8px;font-size:15px}p{color:var(--muted);line-height:1.55}.small{font-size:12px}.tiny{font-size:10px}.field{width:100%;border:1px solid var(--line);background:rgba(248,251,255,.92);color:var(--text);border-radius:16px;padding:13px;font-weight:800;outline:none}.dark .field{background:#0a1525}.btn{border:0;border-radius:16px;padding:12px 14px;font-weight:1000;background:#e8eef8;color:var(--text);display:inline-flex;gap:8px;align-items:center;justify-content:center}.btn.full{width:100%}.btn.primary{background:linear-gradient(135deg,var(--blue2),var(--blue));color:#fff}.btn.pink{background:linear-gradient(135deg,var(--pink),#b51666);color:#fff}.btn.green{background:linear-gradient(135deg,var(--green),#29c89a);color:#fff}.btn.red{background:linear-gradient(135deg,#ef4444,var(--pink));color:#fff}.badge{display:inline-flex;gap:6px;align-items:center;border-radius:999px;padding:4px 9px;font-size:10px;font-weight:1000;background:#eaf3ff;color:var(--blue2);border:1px solid #cfe2ff}.badge.ok{background:#eafaf3;color:#15835a;border-color:#bbf7d0}.badge.warn{background:#fff7ed;color:#c2410c;border-color:#fed7aa}.notice{border-radius:19px;padding:13px;border:1px solid #bfdbfe;background:linear-gradient(135deg,#eff6ff,#f0fdfa);font-size:12px;color:#334155;font-weight:750;line-height:1.55}.dark .notice{background:#0a1525;color:#cbd5e1;border-color:#263a55}.notice.warn{border-color:#fed7aa;background:#fff7ed;color:#9a3412}.nav{position:fixed;left:0;right:0;bottom:0;z-index:80;padding:9px 10px calc(9px + env(safe-area-inset-bottom));background:rgba(255,255,255,.92);backdrop-filter:blur(20px);border-top:1px solid var(--line);box-shadow:0 -16px 42px rgba(20,32,51,.14)}.dark .nav{background:rgba(15,28,45,.94)}.ni{max-width:560px;margin:auto;display:grid;grid-template-columns:repeat(5,1fr);gap:7px}.tab{border:0;background:transparent;color:var(--muted);border-radius:17px;padding:9px 4px;font-size:9px;font-weight:1000;text-transform:uppercase;display:flex;flex-direction:column;gap:3px;align-items:center}.tab i{font-size:17px}.tab.active{background:linear-gradient(135deg,var(--blue2),var(--blue),var(--pink));color:white;transform:translateY(-2px)}body.lock .tab[data-go=home],body.lock .tab[data-go=manager],body.lock .tab[data-go=center]{display:none}body.lock .ni{grid-template-columns:repeat(2,1fr)}.toast{position:fixed;right:18px;bottom:calc(var(--nav) + 20px);z-index:120;background:#0f172a;color:#fff;padding:13px 16px;border-radius:18px;box-shadow:0 20px 55px rgba(0,0,0,.28);font-size:12px;font-weight:900;opacity:0;transform:translateY(20px);transition:.25s;max-width:min(420px,calc(100vw - 36px))}.toast.show{opacity:1;transform:none}table{border-collapse:collapse;width:100%;font-size:12px}td,th{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}th{text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase}.report{border:1px solid #fecaca;background:#fff5f5;border-radius:18px;padding:13px}.dark .report{background:rgba(127,29,29,.16);border-color:#7f1d1d}.map{height:220px;border-radius:22px;border:1px solid var(--line);background:#edf3fb;overflow:hidden;display:grid;place-items:center;color:var(--muted);font-size:12px;font-weight:900;text-align:center;padding:12px}.overlay{display:none;position:fixed;inset:0;background:rgba(2,6,23,.72);backdrop-filter:blur(14px);z-index:130;align-items:center;justify-content:center;padding:20px}.overlay.show{display:flex}.alert{width:min(440px,100%);border-radius:30px;background:var(--card);overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,.45)}.alerthead{padding:21px;color:white;background:linear-gradient(135deg,var(--blue2),var(--blue),var(--cyan));display:flex;gap:14px;align-items:center}.sig{height:140px;width:100%;background:white;border:2px dashed #cbd5e1;border-radius:18px;touch-action:none}@media print{.nav,.header,.toast,.noprint{display:none!important}body{background:#fff;padding:0}.main{padding:0}.card{box-shadow:none}}
-</style></head><body><header class="header noprint"><div class="hi"><div class="brand"><button id="back" class="iconbtn"><i class="fa-solid fa-chevron-left"></i></button><div class="logo">R</div><div><b id="title">Passeport Prévention</b><br><small id="subtitle" style="color:var(--muted);font-weight:800">Application RESTEV 85</small></div></div><button id="dark" class="iconbtn"><i class="fa-solid fa-moon"></i></button></div></header><div id="toast" class="toast"></div><main class="main">
-<section id="home" class="screen active"><div class="hero"><span class="pill"><i class="fa-solid fa-shield-heart"></i>Prévention · PST 2026-2030</span><h1>Passeport Prévention</h1><p>Application propre, colorée et stable pour l’accueil sécurité, les EPI, les QCM, les signalements et les alertes salariés.</p></div><div class="grid g2" style="margin-top:18px"><button class="menu" data-nav="about"><span style="display:flex;gap:14px;align-items:center"><span class="tile b"><i class="fa-solid fa-compass"></i></span><span><b>Découvrir la démarche</b><br><small>Cadre, objectifs, confiance</small></span></span><i class="fa-solid fa-arrow-right"></i></button><button class="menu" data-nav="train"><span style="display:flex;gap:14px;align-items:center"><span class="tile g"><i class="fa-solid fa-graduation-cap"></i></span><span><b>Modules INRS</b><br><small>Ressources métiers</small></span></span><i class="fa-solid fa-arrow-right"></i></button><button class="menu" data-nav="auth"><span style="display:flex;gap:14px;align-items:center"><span class="tile p"><i class="fa-solid fa-user-tie"></i></span><span><b>Espace Management</b><br><small>QR, EPI, registre, signalements</small></span></span><i class="fa-solid fa-arrow-right"></i></button><button class="menu" data-nav="center"><span style="display:flex;gap:14px;align-items:center"><span class="tile o"><i class="fa-solid fa-chart-line"></i></span><span><b>Centre RESTEV</b><br><small>Tendances anonymisées</small></span></span><i class="fa-solid fa-arrow-right"></i></button></div></section>
-<section id="about" class="screen"><div class="hero"><span class="pill">Cadre prévention</span><h2>La prévention dès le premier jour</h2><p>Une application pour accueillir, tracer et remonter les situations dangereuses avec une logique simple et professionnelle.</p></div><div class="grid g3" style="margin-top:16px"><div class="card"><span class="tile g"><i class="fa-solid fa-user-check"></i></span><h3>Accueillir</h3><p class="small">Règles essentielles, risques du poste et consignes internes.</p></div><div class="card"><span class="tile p"><i class="fa-solid fa-clipboard-check"></i></span><h3>Tracer</h3><p class="small">QCM, EPI, signatures et registre des passeports.</p></div><div class="card"><span class="tile o"><i class="fa-solid fa-triangle-exclamation"></i></span><h3>Remonter</h3><p class="small">Signalements et réponses du responsable.</p></div></div><div class="notice" style="margin-top:16px"><b>Art. L4141-2 :</b> formation pratique et appropriée à la sécurité pour les travailleurs embauchés, les changements de poste et les salariés temporaires.</div></section>
-<section id="auth" class="screen"><div class="card" style="max-width:520px;margin:auto"><h2>Connexion Manager</h2><input id="mCode" class="field" placeholder="Code établissement" style="text-transform:uppercase"><div class="grid g2" style="margin-top:10px"><select id="mSector" class="field"></select><select id="mSize" class="field"><option>Non renseigné</option><option>1-10 salariés</option><option>11-49 salariés</option><option>50-199 salariés</option><option>200 salariés et +</option></select></div><button id="login" class="btn primary full" style="margin-top:12px">Accéder à l’espace</button></div><div class="card" style="max-width:520px;margin:16px auto 0"><h3>Nouvel établissement</h3><input id="newCo" class="field" placeholder="Raison sociale"><button id="genCode" class="btn full" style="margin-top:10px">Générer un code</button><div id="codeBox" class="notice warn" style="display:none;margin-top:10px"></div></div></section>
-<section id="manager" class="screen"><div class="card"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><span class="badge ok">Console</span><h2>Établissement : <span id="mLabel"></span></h2></div><div><button id="sound" class="btn">Son ON</button><button id="quit" class="btn red">Quitter</button></div></div></div><div class="grid g2" style="margin-top:15px"><div class="grid"><div class="card"><h3>Matrice des risques</h3><select id="preset" class="field"></select><div id="matrix"></div><button id="saveRisks" class="btn primary full">Enregistrer</button></div><div class="card"><h3>Dotation EPI</h3><div id="epis" class="grid g2"></div><button id="saveEpi" class="btn green full">Valider les EPI</button></div><div class="card"><h3>Accueil nouvel arrivant</h3><input id="empName" class="field" placeholder="Nom & prénom"><select id="contract" class="field" style="margin-top:8px"><option>Non renseigné</option><option>CDI</option><option>CDD</option><option>Intérimaire</option><option>Saisonnier</option><option>Apprenti / stagiaire</option><option>Jeune travailleur</option><option>Autre</option></select><button id="qrBtn" class="btn pink full" style="margin-top:8px">Générer le QR salarié</button><div id="qrBox" class="notice" style="display:none;margin-top:10px;text-align:center"><canvas id="qr"></canvas><div id="qrText" class="tiny" style="word-break:break-all"></div></div></div></div><div class="grid"><div class="card"><h3>Signalements dangers <button id="refreshRep" class="btn">Actualiser</button></h3><div id="repBox"></div></div><div class="card"><h3>Registre passeports <button id="refreshReg" class="btn">Actualiser</button></h3><div style="overflow:auto"><table><thead><tr><th>Travailleur</th><th>Date</th><th>Score</th><th>EPI</th><th>Statut</th></tr></thead><tbody id="regBody"></tbody></table></div></div></div></div></section>
-<section id="employee" class="screen"><div class="hero"><span class="pill"><i class="fa-solid fa-lock"></i>Session sécurisée</span><h2 id="eWelcome">Bonjour</h2><p id="eCompany"></p></div><div class="notice warn" style="margin-top:12px"><b>Espace salarié restreint :</b> accès manager, accueil et centre RESTEV désactivés depuis ce QR Code.</div><div class="notice" style="margin-top:12px"><b>Art. L4141-2 :</b> accueil sécurité adapté. Vigilance jeunes, CDD, intérimaires et saisonniers. <span id="contractBadge" class="badge"></span></div><div class="grid" style="margin-top:15px"><button class="menu" data-nav="qcm"><span><b>1. Validation des acquis</b><br><small>QCM prévention adapté</small></span><i class="fa-solid fa-arrow-right"></i></button><button class="menu" data-nav="report"><span><b>2. Signaler une situation</b><br><small>Danger ou anomalie terrain</small></span><i class="fa-solid fa-arrow-right"></i></button><button class="menu" data-nav="resources"><span><b>3. Fiches prévention</b><br><small>Ressources utiles</small></span><i class="fa-solid fa-arrow-right"></i></button><button class="menu" data-nav="messages"><span><b>4. Messages du responsable</b><br><small>Réponses et actions</small></span><i class="fa-solid fa-arrow-right"></i></button></div></section>
-<section id="qcm" class="screen"><div class="card" style="max-width:650px;margin:auto"><h2>Validation des acquis <span id="qProg" class="badge"></span></h2><div id="qText" class="notice"></div><div id="qOpts" class="grid" style="margin-top:10px"></div><button id="qSubmit" class="btn primary full" style="margin-top:10px">Valider</button></div></section>
-<section id="cert" class="screen"><div class="card" style="max-width:760px;margin:auto"><h2 id="certTitle">Attestation</h2><div class="grid g2"><input id="cCo" class="field"><input id="cEmp" class="field"><input id="cMgr" class="field" placeholder="Manager"><div class="notice"><b>Score :</b> <span id="cScore"></span><br><span id="cDate"></span></div></div><div class="notice" style="margin-top:10px"><b>EPI :</b> <span id="cEpi"></span></div><div class="grid g2" style="margin-top:12px"><div><h3>Signature salarié</h3><canvas id="sigE" class="sig"></canvas></div><div><h3>Signature manager</h3><canvas id="sigM" class="sig"></canvas></div></div><div class="grid g2" style="margin-top:12px"><button id="print" class="btn">PDF / Impression</button><button id="close" class="btn green">Clôturer</button></div></div></section>
-<section id="report" class="screen"><div class="card" style="max-width:650px;margin:auto"><h2>Signalement prévention</h2><div id="geo" class="notice">GPS possible en HTTPS. Sinon saisissez le lieu ou cliquez sur la carte.</div><div id="map" class="map" style="margin-top:8px">Carte en chargement</div><input id="lat" type="hidden"><input id="lng" type="hidden"><input id="place" class="field" style="margin-top:8px" placeholder="Lieu : atelier, quai, parking..."><div class="grid g2" style="margin-top:8px"><button id="gps" class="btn primary">Utiliser ma position</button><button id="pick" class="btn">Pointer sur carte</button></div><select id="rCat" class="field" style="margin-top:8px"></select><div class="grid g2" style="margin-top:8px"><select id="rLev" class="field"><option>Critique</option><option>Modéré</option><option>Faible</option></select><select id="rFreq" class="field"><option>Ponctuelle</option><option>Régulière</option><option>Permanente</option></select></div><textarea id="rDesc" class="field" rows="4" style="margin-top:8px" placeholder="Décrivez la situation..."></textarea><button id="send" class="btn red full" style="margin-top:10px">Envoyer</button></div></section>
-<section id="messages" class="screen"><div class="hero"><h2>Messages du responsable</h2><p>Réponses et actions correctives.</p></div><div id="msgList" class="grid" style="margin-top:15px"></div></section>
-<section id="resources" class="screen"><div class="hero" style="background:linear-gradient(135deg,var(--green),var(--cyan))"><h2>Fiches prévention</h2><p>Ressources selon les risques actifs.</p></div><div id="resList" class="grid" style="margin-top:15px"></div></section>
-<section id="train" class="screen"><div class="card"><h2>Modules INRS</h2><div id="trainList" class="grid"></div><div id="viewer" style="display:none"><button id="backTrain" class="btn">Retour secteurs</button><iframe id="frame" style="width:100%;height:70vh;border:1px solid var(--line);border-radius:20px;margin-top:10px;background:white"></iframe></div></div></section>
-<section id="center" class="screen"><div class="hero"><h2>Centre RESTEV</h2><p>Données anonymisées et tendances prévention.</p></div><div class="grid g3" style="margin-top:15px"><div class="card"><span class="badge">Signalements</span><h1 id="sRep">0</h1></div><div class="card"><span class="badge ok">Passeports</span><h1 id="sPass">0</h1></div><div class="card"><span class="badge warn">Risque dominant</span><h2 id="sTop">—</h2></div></div><div class="grid g2" style="margin-top:15px"><div class="card"><canvas id="chart"></canvas></div><div class="card"><h3>Priorités</h3><div id="actions"></div></div></div><button id="stats" class="btn primary full" style="margin-top:12px">Actualiser</button></section>
-</main><nav class="nav noprint"><div class="ni"><button class="tab active" data-go="home"><i class="fa-solid fa-house"></i>Accueil</button><button class="tab" data-go="manager"><i class="fa-solid fa-user-tie"></i>Manager</button><button class="tab" data-go="employee"><i class="fa-solid fa-id-card"></i>Salarié</button><button class="tab" data-go="center"><i class="fa-solid fa-chart-line"></i>Centre</button><button class="tab" data-go="train"><i class="fa-solid fa-graduation-cap"></i>INRS</button></div></nav><div id="alert" class="overlay"><div class="alert"><div class="alerthead"><span class="tile c"><i class="fa-solid fa-comment-dots"></i></span><div><h2 id="aTitle" style="margin:0">Message</h2><p id="aSub" style="color:#eef6ff;margin:4px 0 0"></p></div></div><div style="padding:18px"><p id="aBody"></p><div class="grid g2"><button id="later" class="btn">Plus tard</button><button id="openMsg" class="btn primary">Voir</button></div></div></div></div>
-<script>
-'use strict';
-const SUPABASE_URL="https://qahamxdomftqodziluci.supabase.co", SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhaGFteGRvbWZ0cW9kemlsdWNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5MDI2NDEsImV4cCI6MjA5ODQ3ODY0MX0.VUjKmNc9UsOoBSNatZoOnxGExVQji9L05BiU5SlvnOc";
-const supabaseClient=window.supabase&&SUPABASE_ANON_KEY?window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY):null;
-const safeStorage=(()=>{const m={};try{const k='__t';localStorage.setItem(k,'1');localStorage.removeItem(k);return localStorage}catch(e){return{getItem:k=>m[k]||null,setItem:(k,v)=>m[k]=String(v),removeItem:k=>delete m[k]}}})();
-const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)], esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
-let st={screen:'home',stack:[],emp:null,mCode:'',mSector:'Non renseigné',mSize:'Non renseigné',epi:[],q:[],qi:0,score:0,map:null,chart:null,poll:null,sound:false,audio:null,sig:{e:false,m:false}};
-const risks=[['1','Chute de plain-pied',1,'Sur un sol glissant, je dois :',['Courir','Contourner et signaler','Ignorer'],1],['2','Chute de hauteur',1,'En hauteur, j’utilise :',['Une chaise','Une échelle non fixée','Une plateforme adaptée'],2],['3','Circulation interne',0,'Zone d’engins :',['Traverser vite','Rester visible et sur cheminement','Marcher derrière l’engin'],1],['4','Risque routier',1,'Avant mission routière :',['Téléphoner','Vérifier véhicule, trajet, arrimage','Régler GPS en roulant'],1],['5','Manutention / TMS',1,'Soulever une charge :',['Dos droit et genoux fléchis','Dos rond','Forcer'],0],['7','Produits chimiques',1,'Produit inconnu :',['Sentir','Lire étiquette/FDS','Mélanger'],1],['13','Incendie explosion',1,'Alarme incendie :',['Finir','Évacuer','Ascenseur'],1],['14','Électricité',1,'Câble dénudé :',['Scotch','Ne pas toucher, isoler, signaler','Passer dessus'],1],['17','RPS / stress',1,'Stress durable :',['Garder pour soi','En parler aux relais','Attendre'],1]].map(x=>({id:x[0],name:x[1],active:!!x[2],question:x[3],options:x[4],answer:x[5]}));
-const sectors=['Non renseigné','BTP','Commerce','Industrie','Transport / Logistique','Aide à domicile / Santé','Agriculture','Tertiaire','Hôtellerie / Restauration','Autre'];
-const presets={'-- Pré-réglage métier --':[],'BTP':['1','2','5','14'],'Commerce':['1','3','5','17'],'Industrie':['3','7','13','14'],'Transport / Logistique':['3','4','5'],'Aide à domicile / Santé':['1','4','5','17'],'Agriculture':['1','4','5','7'],'Tertiaire':['1','5','17'],'Hôtellerie / Restauration':['1','5','7','13'],'Autre':['1','4','5','13','17']};
-const epis=['Casque','Gants','Chaussures sécurité','Lunettes','Gilet HV','Protection auditive','Protection respiratoire','Harnais'];
-const train=[['Aide à domicile','https://ressources.inrs.fr/tutoprev/content/Aide_personne_domicile_etablissement/story.html'],['BTP','https://ressources.inrs.fr/tutoprev/content/BTP/story.html'],['Travail de bureau','https://ressources.inrs.fr/tutoprev/content/Travail-de-bureau/story.html'],['Commerce','https://ressources.inrs.fr/tutoprev/content/Commerce/story.html'],['Logistique','https://ressources.inrs.fr/tutoprev/content/Logistique/story.html']];
-const links={'1':['INRS','Chutes de plain-pied','https://www.inrs.fr/risques/chutes-de-plain-pied/ce-qu-il-faut-retenir.html'],'4':['CARSAT','Risque routier','https://www.carsat-pl.fr/entreprises/prevenir-vos-risques-professionnels.html'],'5':['AMELI','TMS','https://www.ameli.fr/entreprise/sante-travail/risques/troubles-musculosquelettiques-tms'],'7':['INRS','Produits chimiques','https://www.inrs.fr/risques/chimiques/ce-qu-il-faut-retenir.html'],'13':['INRS','Incendie','https://www.inrs.fr/risques/incendie-lieu-travail/ce-qu-il-faut-retenir.html'],'14':['INRS','Électricité','https://www.inrs.fr/risques/electriques/ce-qu-il-faut-retenir.html'],'17':['INRS','RPS','https://www.inrs.fr/risques/psychosociaux/ce-qu-il-faut-retenir.html']};
-function toast(t){$('#toast').textContent=t;$('#toast').classList.add('show');setTimeout(()=>$('#toast').classList.remove('show'),3300)}
-function title(id){return {home:['Passeport Prévention','Application RESTEV 85'],auth:['Connexion manager','Espace établissement'],manager:['Espace management','Console adhérent'],employee:['Portail salarié','Session sécurisée'],qcm:['Validation des acquis','Questionnaire'],report:['Signalement','Situation dangereuse'],messages:['Messages','Responsable'],center:['Centre RESTEV','Données anonymisées'],train:['Modules INRS','Ressources métiers']}[id]||['RESTEV','Prévention']}
-function nav(id,push=true){if(st.emp&&!['employee','qcm','cert','report','resources','messages','train'].includes(id)){toast('Accès réservé au manager ou à RESTEV.');id='employee'} if(push&&st.screen!==id)st.stack.push(st.screen);$$('.screen').forEach(s=>s.classList.remove('active'));$('#'+id)?.classList.add('active');st.screen=id;let [t,s]=title(id);$('#title').textContent=t;$('#subtitle').textContent=s;document.body.classList.toggle('lock',!!st.emp);$$('.tab').forEach(x=>x.classList.toggle('active',x.dataset.go===({home:'home',auth:'manager',manager:'manager',employee:'employee',qcm:'employee',cert:'employee',report:'employee',messages:'employee',resources:'employee',center:'center',train:'train'}[id]||'home')));$('#back').disabled=!!st.emp&&id==='employee';if(id==='report')setTimeout(initMap,250);if(id==='center')loadStats();if(id==='cert')setTimeout(initSig,200);scrollTo({top:0,behavior:'smooth'}) }
-function back(){if(st.emp){if(st.screen!=='employee')nav('employee',false);else toast('Espace salarié sécurisé.');return}nav(st.stack.pop()||'home',false)}
-function keyReg(){return 'reg_'+(st.mCode||st.emp?.company||'default')} function keyRep(c){return 'rep_'+(c||st.mCode||st.emp?.company||'default')}
-function render(){mSector.innerHTML=sectors.map(s=>`<option>${s}</option>`).join('');preset.innerHTML=Object.keys(presets).map(s=>`<option>${s}</option>`).join('');matrix.innerHTML=risks.map(r=>`<label class="notice" style="display:flex;justify-content:space-between;margin:6px 0"><span>${esc(r.name)}</span><input data-risk="${r.id}" type="checkbox" ${r.active?'checked':''}></label>`).join('');episDiv();rCat.innerHTML=risks.filter(r=>r.active).map(r=>`<option>${esc(r.name)}</option>`).join('');trainList.innerHTML=train.map(([t,u])=>`<button class="menu" data-training="${u}"><b>${esc(t)}</b><i class="fa-solid fa-arrow-right"></i></button>`).join('');resList.innerHTML=risks.filter(r=>r.active&&links[r.id]).map(r=>{let l=links[r.id];return`<a class="menu" target="_blank" href="${l[2]}"><span><span class="badge">${l[0]}</span><br><b>${esc(l[1])}</b><br><small>${esc(r.name)}</small></span><i class="fa-solid fa-arrow-up-right-from-square"></i></a>`}).join('')||'<div class="card">Aucune ressource.</div>'}
-function episDiv(){episEl.innerHTML=epis.map((e,i)=>`<label class="notice"><input type="checkbox" data-epi="${esc(e)}"> ${esc(e)}</label>`).join('')}
-function loginFn(){let c=mCode.value.trim().toUpperCase();if(!c)return toast('Code établissement obligatoire.');st.mCode=c;st.mSector=mSector.value;st.mSize=mSize.value;safeStorage.setItem('last_manager',c);mLabel.textContent=c;nav('manager');loadReports();loadReg();toast('Espace manager ouvert.')}
-function saveRisksFn(){risks.forEach(r=>r.active=!!$(`[data-risk="${r.id}"]`)?.checked);rCat.innerHTML=risks.filter(r=>r.active).map(r=>`<option>${esc(r.name)}</option>`).join('');render();toast('Matrice enregistrée.')}
-function genQR(){let n=empName.value.trim();if(!n)return toast('Nom du salarié obligatoire.');if(!st.mCode)return toast('Connectez le manager.');st.epi=$$('[data-epi]:checked').map(x=>x.dataset.epi);let contract=$('#contract').value,url=`${location.origin}${location.pathname}?emp=${encodeURIComponent(n)}&comp=${encodeURIComponent(st.mCode)}&sector=${encodeURIComponent(st.mSector)}&contract=${encodeURIComponent(contract)}&epis=${encodeURIComponent(JSON.stringify(st.epi))}`;qrBox.style.display='block';qrText.textContent=url;if(window.QRCode)QRCode.toCanvas(qr,url,{width:190});toast('QR salarié généré.')}
-function checkUrl(){let p=new URLSearchParams(location.search);if(p.get('emp')&&p.get('comp')){let ep=[];try{ep=JSON.parse(decodeURIComponent(p.get('epis')||'[]'))}catch(e){}st.emp={name:p.get('emp'),company:p.get('comp'),sector:p.get('sector')||'Autre',contract:p.get('contract')||'Non renseigné',epis:ep};eWelcome.textContent='Bonjour, '+st.emp.name;eCompany.textContent=`Établissement : ${st.emp.company} · Secteur : ${st.emp.sector} · Contrat : ${st.emp.contract}`;contractBadge.textContent='Contrat : '+st.emp.contract;contractBadge.className='badge '+(/CDD|intér|inter|saisonn|jeune|apprenti|stagiaire/i.test(st.emp.contract)?'warn':'');nav('employee',false);startPoll()}}
-function startQ(){st.q=[...risks.filter(r=>r.active)];st.qi=0;st.score=0;showQ();nav('qcm')}function showQ(){let q=st.q[st.qi];qProg.textContent=`Question ${st.qi+1}/${st.q.length}`;qText.textContent=q.question;qOpts.innerHTML=q.options.map((o,i)=>`<label class="notice"><input name="q" type="radio" value="${i}"> ${esc(o)}</label>`).join('')}function subQ(){let v=$('input[name=q]:checked');if(!v)return toast('Choisissez une réponse.');if(+v.value===st.q[st.qi].answer)st.score++;st.qi++;if(st.qi<st.q.length)showQ();else cert()}function cert(){cScore.textContent=`${st.score}/${st.q.length}`;cDate.textContent=new Date().toLocaleString('fr-FR');cCo.value=st.emp?.company||st.mCode;cEmp.value=st.emp?.name||'';cEpi.innerHTML=(st.epi.length?st.epi:st.emp?.epis||[]).map(e=>`<span class="badge ok">${esc(e)}</span>`).join(' ')||'Aucun EPI';certTitle.textContent=st.score===st.q.length?'Attestation de formation sécurité':'Attestation avec points à renforcer';nav('cert')}
-function initSig(){[['sigE','e'],['sigM','m']].forEach(([id,t])=>{let c=$('#'+id);if(!c||c.dataset.ok)return;let r=c.getBoundingClientRect(),ratio=devicePixelRatio||1;c.width=r.width*ratio;c.height=r.height*ratio;let ctx=c.getContext('2d');ctx.scale(ratio,ratio);ctx.lineWidth=2;ctx.lineCap='round';let draw=false,pos=e=>{let rr=c.getBoundingClientRect();return{x:e.clientX-rr.left,y:e.clientY-rr.top}};c.addEventListener('pointerdown',e=>{draw=true;let p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y)});c.addEventListener('pointermove',e=>{if(!draw)return;let p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke();st.sig[t]=true});c.addEventListener('pointerup',()=>draw=false);c.dataset.ok=1})}
-function closeP(){if(!st.sig.e||!st.sig.m)return toast('Deux signatures obligatoires.');let e={employee_name:cEmp.value,validated_at:new Date().toLocaleString('fr-FR'),score:cScore.textContent,epis:st.epi.length?st.epi:st.emp?.epis||[],contract:st.emp?.contract||contract.value,status:'Validé'};let a=JSON.parse(safeStorage.getItem(keyReg())||'[]');a.unshift(e);safeStorage.setItem(keyReg(),JSON.stringify(a));loadReg();savePassCloud(e);toast('Passeport enregistré.');nav('employee')}async function savePassCloud(e){if(!supabaseClient)return;try{await supabaseClient.from('passport_registry').insert([{company_code:st.emp?.company||st.mCode,employee_name:e.employee_name,score:st.score,total:st.q.length,epis:e.epis,status:e.status}]);await stat({category:'Validation passeport prévention',level:st.score===st.q.length?'Acquis complet':'Points à renforcer',event_type:'Passeport validé',frequency:'Ponctuelle'})}catch(err){console.warn(err)}}
-function loadReg(){let a=JSON.parse(safeStorage.getItem(keyReg())||'[]');regBody.innerHTML=a.length?a.map(e=>`<tr><td><b>${esc(e.employee_name)}</b><br><span class="badge">${esc(e.contract||'')}</span></td><td>${esc(e.validated_at)}</td><td>${esc(e.score)}</td><td>${esc((e.epis||[]).join(', '))}</td><td><span class="badge ok">${esc(e.status)}</span></td></tr>`).join(''):'<tr><td colspan="5">Aucun passeport.</td></tr>'}
-async function sendReport(){let d=rDesc.value.trim();if(!d)return toast('Décrivez la situation.');let loc=[];if(place.value)loc.push('Lieu : '+place.value);if(lat.value&&lng.value)loc.push(`Coordonnées : ${(+lat.value).toFixed(5)}, ${(+lng.value).toFixed(5)}`);if(loc.length)d+='\n\n[Localisation] '+loc.join(' | ');let row={company_code:st.emp?.company||st.mCode,employee_name:st.emp?.name||'Salarié terrain',category:rCat.value,level:rLev.value,frequency:rFreq.value,description:d,status:'Nouveau',created_at:new Date().toISOString()};let a=JSON.parse(safeStorage.getItem(keyRep(row.company_code))||'[]');a.unshift({...row,id:'local-'+Date.now()});safeStorage.setItem(keyRep(row.company_code),JSON.stringify(a));if(supabaseClient)try{await supabaseClient.from('prevention_reports').insert([row]);await stat(row)}catch(e){toast('Signalement local, Supabase indisponible.')}rDesc.value='';toast('Signalement envoyé.');nav('employee')}
-async function stat(e){if(!supabaseClient)return;try{await supabaseClient.from('prevention_stats').insert([{period_month:new Date().toISOString().slice(0,7),sector:st.emp?.sector||st.mSector,company_size_range:st.mSize,risk_category:e.category||'Non renseigné',risk_level:e.level||'Non renseigné',frequency:e.frequency||'Non renseigné',event_type:e.event_type||'Signalement prévention',corrective_action_type:'À définir'}])}catch(err){console.warn(err)}}
-async function loadReports(){let reps=JSON.parse(safeStorage.getItem(keyRep(st.mCode))||'[]');if(supabaseClient)try{let {data,error}=await supabaseClient.from('prevention_reports').select('*').eq('company_code',st.mCode).order('created_at',{ascending:false}).limit(30);if(!error&&data)reps=data}catch(e){}repBox.innerHTML=reps.length?reps.map(r=>`<div class="report" style="margin-top:10px"><b>${esc(r.category)}</b> <span class="badge warn">${esc(r.level)}</span><p class="small">Par ${esc(r.employee_name)} · ${new Date(r.created_at).toLocaleString('fr-FR')}</p><p class="small">${esc(r.description)}</p><label class="notice warn"><input data-important="${r.id}" type="checkbox"> Message important salarié</label><textarea class="field" data-resp="${r.id}" rows="2" placeholder="Réponse...">${esc(r.manager_response||'')}</textarea><textarea class="field" data-act="${r.id}" rows="2" style="margin-top:6px" placeholder="Action corrective...">${esc(r.corrective_action||'')}</textarea><button class="btn primary full" data-reply="${r.id}" style="margin-top:8px">Répondre / enregistrer</button></div>`).join(''):'<p>Aucun signalement.</p>'}
-async function reply(id){let resp=$(`[data-resp="${id}"]`).value.trim(),act=$(`[data-act="${id}"]`).value.trim(),imp=$(`[data-important="${id}"]`)?.checked;if(imp&&!resp.startsWith('[IMPORTANT] '))resp='[IMPORTANT] '+resp;if(supabaseClient&&!String(id).startsWith('local-'))try{await supabaseClient.from('prevention_reports').update({manager_response:resp,corrective_action:act,status:imp?'Important':'En cours de traitement'}).eq('id',id);toast('Réponse envoyée.')}catch(e){toast('Erreur réponse Supabase.')}else toast('Réponse locale enregistrée.');loadReports()}
-async function openMessages(){if(!st.emp)return toast('Session non reconnue.');let rows=JSON.parse(safeStorage.getItem(keyRep(st.emp.company))||'[]').filter(r=>r.employee_name===st.emp.name);if(supabaseClient)try{let {data,error}=await supabaseClient.from('prevention_reports').select('*').eq('company_code',st.emp.company).eq('employee_name',st.emp.name).order('created_at',{ascending:false}).limit(30);if(!error&&data)rows=data}catch(e){}msgList.innerHTML=rows.length?rows.map(r=>`<div class="card"><b>${esc(r.category)}</b> <span class="badge">${esc(r.status||'Nouveau')}</span><div class="notice" style="margin-top:8px"><b>Signalement</b><br>${esc(r.description)}</div><div class="notice" style="margin-top:8px"><b>Réponse</b><br>${esc(r.manager_response||'Aucune réponse')}</div><div class="notice" style="margin-top:8px"><b>Action</b><br>${esc(r.corrective_action||'Aucune action')}</div></div>`).join(''):'<div class="card">Aucun message.</div>';nav('messages')}
-function startPoll(){clearInterval(st.poll);pollMsg(true);st.poll=setInterval(()=>pollMsg(false),12000)}async function pollMsg(init=false){if(!st.emp||!supabaseClient)return;try{let {data}=await supabaseClient.from('prevention_reports').select('id,category,status,manager_response,corrective_action').eq('company_code',st.emp.company).eq('employee_name',st.emp.name).order('created_at',{ascending:false}).limit(10);let r=(data||[]).find(x=>(x.manager_response||x.corrective_action||'').trim()||String(x.status).toLowerCase().includes('important'));if(!r)return;let fp=`${r.id}|${r.manager_response||''}|${r.corrective_action||''}|${r.status||''}`,k='msg_'+st.emp.company+'_'+st.emp.name,old=safeStorage.getItem(k);if(init){safeStorage.setItem(k,fp);return}if(fp!==old){safeStorage.setItem(k,fp);alertEmp(r)}}catch(e){}}
-function ctx(){try{if(!st.audio)st.audio=new (AudioContext||webkitAudioContext)();if(st.audio.state==='suspended')st.audio.resume();return st.audio}catch(e){return null}}function beep(){if(st.sound)return;let c=ctx();if(!c)return;[740,920,740].forEach((f,i)=>{let s=c.currentTime+i*.22,o=c.createOscillator(),g=c.createGain();o.frequency.setValueAtTime(f,s);g.gain.setValueAtTime(.001,s);g.gain.exponentialRampToValueAtTime(.28,s+.03);g.gain.exponentialRampToValueAtTime(.001,s+.18);o.connect(g);g.connect(c.destination);o.start(s);o.stop(s+.2)})}function alertEmp(r){beep();try{navigator.vibrate?.([500,180,500,180,800])}catch(e){}aSub.textContent=r.category||'Message';aBody.textContent=r.manager_response||r.corrective_action||'Message reçu.';alert.classList.add('show');toast('📩 Nouveau message du responsable')}
-function initMap(){if(!window.L){map.textContent='Carte indisponible : utilisez le champ lieu.';return}if(st.map){setTimeout(()=>st.map.invalidateSize(),200);return}st.map=L.map('map').setView([46.67,-1.426],13);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(st.map);st.map.on('click',e=>coords(e.latlng.lat,e.latlng.lng,'Point carte'));setTimeout(()=>st.map.invalidateSize(),300)}function coords(a,b,src){lat.value=a;lng.value=b;geo.textContent=`📍 ${src} : ${(+a).toFixed(5)}, ${(+b).toFixed(5)}`;if(st.map)L.marker([a,b]).addTo(st.map).bindPopup('Danger signalé ici').openPopup()}function gpsFn(){if(!navigator.geolocation)return toast('GPS non compatible.');if(!isSecureContext&&location.hostname!=='localhost')return toast('GPS bloqué hors HTTPS. Cliquez sur la carte ou renseignez le lieu.');navigator.geolocation.getCurrentPosition(p=>coords(p.coords.latitude,p.coords.longitude,'GPS'),()=>toast('GPS refusé ou indisponible.'),{enableHighAccuracy:true,timeout:10000})}
-async function loadStats(){let rows=[];if(supabaseClient)try{let {data}=await supabaseClient.from('prevention_stats').select('*').limit(500);rows=data||[]}catch(e){}let rep=rows.filter(r=>!String(r.event_type||'').toLowerCase().includes('passeport')),pass=rows.length-rep.length;sRep.textContent=rep.length;sPass.textContent=pass;let c={};rep.forEach(r=>c[r.risk_category||'Non renseigné']=(c[r.risk_category||'Non renseigné']||0)+1);let top=Object.entries(c).sort((a,b)=>b[1]-a[1]);sTop.textContent=top[0]?.[0]||'—';actions.innerHTML=top.slice(0,5).map(([k,v],i)=>`<div class="notice" style="margin:8px 0"><b>${i+1}. ${esc(k)} (${v})</b><br>Analyser les causes et définir une action simple ciblée.</div>`).join('')||'<p>Aucune donnée.</p>';if(window.Chart&&chart){if(st.chart)st.chart.destroy();st.chart=new Chart(chart,{type:'doughnut',data:{labels:top.map(x=>x[0]),datasets:[{data:top.map(x=>x[1]),backgroundColor:['#2f73d9','#df2b86','#f59e0b','#1fae72','#2bbdd0']}]},options:{plugins:{legend:{position:'bottom'}}}})}}
-function init(){mSector.innerHTML=sectors.map(s=>`<option>${s}</option>`).join('');render();back.disabled=true;let last=safeStorage.getItem('last_manager');if(last)mCode.value=last;checkUrl()}document.addEventListener('click',e=>{ctx();let b=e.target.closest('button,[data-nav],[data-go],[data-training],[data-reply]');if(!b)return;if(b.dataset.nav){if(b.dataset.nav==='qcm')return startQ();if(b.dataset.nav==='messages')return openMessages();return nav(b.dataset.nav)}if(b.dataset.go){let m={home:'home',manager:st.mCode?'manager':'auth',employee:st.emp?'employee':'home',center:'center',train:'train'};if(b.dataset.go==='employee'&&!st.emp)return toast('Scannez un QR salarié.');return nav(m[b.dataset.go])}if(b.dataset.training){trainList.style.display='none';viewer.style.display='block';frame.src=b.dataset.training}if(b.dataset.reply)return reply(b.dataset.reply)});back.onclick=back;dark.onclick=()=>document.body.classList.toggle('dark');login.onclick=loginFn;genCode.onclick=()=>{let n=newCo.value.trim();if(!n)return toast('Raison sociale obligatoire.');let c='RSTV-'+(n.substring(0,4).toUpperCase().replace(/[^A-Z0-9]/g,'')||'ETAB')+'-'+Math.floor(1000+Math.random()*9000);mCode.value=c;codeBox.style.display='block';codeBox.innerHTML='<b>Code unique :</b><br>'+c};preset.onchange=()=>{let ids=presets[preset.value]||[];if(ids.length){risks.forEach(r=>r.active=ids.includes(r.id));render()}};saveRisks.onclick=saveRisksFn;saveEpi.onclick=()=>{st.epi=$$('[data-epi]:checked').map(x=>x.dataset.epi);toast(st.epi.length?'EPI enregistrés.':'Aucun EPI sélectionné.')};qrBtn.onclick=genQR;refreshRep.onclick=loadReports;refreshReg.onclick=loadReg;sound.onclick=()=>{st.sound=!st.sound;sound.textContent=st.sound?'Son OFF':'Son ON'};quit.onclick=()=>{st.mCode='';nav('home',false)};qSubmit.onclick=subQ;print.onclick=()=>window.print();close.onclick=closeP;send.onclick=sendReport;gps.onclick=gpsFn;pick.onclick=()=>toast('Cliquez sur la carte pour placer le danger.');stats.onclick=loadStats;backTrain.onclick=()=>{frame.src='';viewer.style.display='none';trainList.style.display='grid'};later.onclick=()=>alert.classList.remove('show');openMsg.onclick=()=>{alert.classList.remove('show');openMessages()};document.addEventListener('DOMContentLoaded',init);
-</script></body></html>
+<!DOCTYPE html> 
+
+<html lang="fr"> 
+
+<head> 
+
+  <meta charset="UTF-8" /> 
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" /> 
+
+  <title>RESTEV 85 - Passeport Prévention Connecté</title> 
+
+ 
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> 
+
+  <script src="https://cdn.tailwindcss.com"></script> 
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script> 
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" /> 
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" /> 
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script> 
+
+ 
+
+  <script> 
+
+    tailwind.config = { 
+
+      darkMode: 'class', 
+
+      theme: { 
+
+        extend: { 
+
+          colors: { 
+
+            'restev-blue': '#3a7bd5', 
+
+            'restev-blue-dark': '#245ca6', 
+
+            'restev-magenta': '#e0248a', 
+
+            'restev-magenta-dark': '#b31269', 
+
+            'restev-teal': '#4ec3b1', 
+
+            'restev-gold': '#ffb007' 
+
+          }, 
+
+          boxShadow: { 
+
+            'premium': '0 10px 30px -5px rgba(58, 123, 213, 0.12), 0 4px 12px -2px rgba(0, 0, 0, 0.02)' 
+
+          } 
+
+        } 
+
+      } 
+
+    }; 
+
+  </script> 
+
+ 
+
+  <style> 
+
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap'); 
+
+    body { font-family: 'Plus Jakarta Sans', sans-serif; } 
+
+    .screen { display: none; } 
+
+    .screen.active { display: block; animation: smoothSlide .35s ease; } 
+
+    @keyframes smoothSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } } 
+
+    @media print { .no-print { display: none !important; } body { background: white !important; } } 
+
+ 
+
+    .tuto-frame-wrapper { 
+
+      width: 100%; 
+
+      height: calc(100vh - 190px); 
+
+      min-height: 520px; 
+
+      background: #fff; 
+
+      border-radius: 18px; 
+
+      overflow: hidden; 
+
+      border: 2px solid #e2e8f0; 
+
+      box-shadow: 0 10px 25px rgba(15,23,42,.12); 
+
+    } 
+
+    .tuto-iframe { width: 100%; height: 100%; border: 0; display: block; background: #fff; } 
+
+    @media screen and (max-width: 640px) and (orientation: portrait) { 
+
+      #scr-training { max-width: 100% !important; padding: .75rem !important; } 
+
+      .tuto-frame-wrapper { height: calc(100dvh - 185px); min-height: 560px; border-radius: 14px; } 
+
+    } 
+
+    @media screen and (max-width: 900px) and (orientation: landscape) { 
+
+      #scr-training { max-width: 100% !important; padding: .5rem !important; } 
+
+      .tuto-frame-wrapper { height: calc(100dvh - 105px); min-height: 320px; border-radius: 12px; } 
+
+      #tuto-orientation-help { display: none; } 
+
+    } 
+
+  </style> 
+
+</head> 
+
+ 
+
+<body class="bg-gradient-to-tr from-slate-50 via-blue-50/40 to-pink-50/20 text-slate-800 antialiased min-h-screen flex flex-col dark:from-slate-950 dark:via-slate-900 dark:to-slate-950"> 
+
+ 
+
+  <!-- EN-TÊTE : pas de logo ici --> 
+
+  <header class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-blue-100/80 dark:border-slate-800 py-3 px-4 sticky top-0 z-40 shadow-sm no-print"> 
+
+    <div class="max-w-5xl mx-auto flex justify-between items-center"> 
+
+      <button onclick="switchScreen('scr-home')" class="text-xs font-black text-restev-blue flex items-center gap-2"> 
+
+        <i class="fa-solid fa-shield-halved"></i> RESTEV 85 
+
+      </button> 
+
+      <div class="flex items-center gap-3"> 
+
+        <button onclick="toggleDarkMode()" class="p-2.5 bg-slate-100 hover:bg-blue-100/50 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-slate-600 dark:text-yellow-400 transition"> 
+
+          <i class="fa-solid fa-moon"></i> 
+
+        </button> 
+
+        <span id="cloud-sync-badge" class="bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 px-3 py-1.5 rounded-full uppercase text-[10px] font-extrabold tracking-wider border shadow-sm flex items-center gap-1.5"> 
+
+          <i class="fa-solid fa-check"></i> Synchronisé 
+
+        </span> 
+
+      </div> 
+
+    </div> 
+
+  </header> 
+
+ 
+
+  <div id="toast" class="fixed bottom-6 right-6 bg-gradient-to-r from-slate-900 to-slate-800 text-white text-xs font-bold py-3.5 px-5 rounded-2xl shadow-xl z-50 transition-all duration-300 transform translate-y-20 opacity-0 flex items-center space-x-3 border border-slate-700/50 no-print"> 
+
+    <div class="w-2.5 h-2.5 bg-restev-magenta rounded-full animate-pulse"></div> 
+
+    <span id="toast-text">Notification</span> 
+
+  </div> 
+
+ 
+
+  <main class="max-w-5xl mx-auto p-4 md:p-6 flex-1 w-full"> 
+
+ 
+
+    <!-- ACCUEIL --> 
+
+    <section id="scr-home" class="screen active max-w-xl mx-auto w-full space-y-8 py-6"> 
+
+      <div class="text-center space-y-4"> 
+
+        <img src="logo.png" alt="Logo RESTEV 85" class="mx-auto h-20 md:h-24 w-auto object-contain mb-2" onerror="this.style.display='none'"> 
+
+        <div class="inline-block bg-gradient-to-r from-emerald-400 to-teal-500 text-white text-[11px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-md">PST 2026-2030</div> 
+
+        <h1 class="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-restev-blue-dark via-restev-blue to-restev-magenta tracking-tight pb-1">Passeport Prévention</h1> 
+
+        <p class="text-sm font-medium text-slate-500 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">Bienvenue ! Sélectionnez votre espace réglementaire pour une intégration simple, sécurisée et dynamique.</p> 
+
+      </div> 
+
+ 
+
+      <div class="space-y-5 pt-4"> 
+
+        <button onclick="switchScreen('scr-about')" class="w-full bg-white dark:bg-slate-800 p-5 rounded-3xl text-left flex items-center justify-between border-2 border-transparent hover:border-restev-blue-dark shadow-lg group"> 
+
+          <div class="flex items-center space-x-4"> 
+
+            <div class="w-14 h-14 bg-blue-50 dark:bg-slate-700 rounded-2xl flex items-center justify-center text-2xl text-restev-blue"><i class="fa-solid fa-shield-heart"></i></div> 
+
+            <div><h3 class="font-black text-base dark:text-white">Découvrir la démarche</h3><p class="text-xs text-slate-500 mt-1 font-medium">L'application, les enjeux et les objectifs.</p></div> 
+
+          </div><i class="fa-solid fa-arrow-right text-slate-400"></i> 
+
+        </button> 
+
+ 
+
+        <button onclick="switchScreen('scr-training')" class="w-full bg-white dark:bg-slate-800 p-5 rounded-3xl text-left flex items-center justify-between border-2 border-transparent hover:border-emerald-500 shadow-lg group"> 
+
+          <div class="flex items-center space-x-4"> 
+
+            <div class="w-14 h-14 bg-emerald-50 dark:bg-slate-700 rounded-2xl flex items-center justify-center text-2xl text-emerald-600"><i class="fa-solid fa-graduation-cap"></i></div> 
+
+            <div><h3 class="font-black text-base dark:text-white">Modules INRS</h3><p class="text-xs text-slate-500 mt-1 font-medium">Formations métiers TutoPrev.</p></div> 
+
+          </div><i class="fa-solid fa-arrow-right text-slate-400"></i> 
+
+        </button> 
+
+ 
+
+        <div class="bg-gradient-to-br from-blue-50 to-pink-50/50 dark:from-slate-900 dark:to-slate-900/80 border-2 border-blue-100/50 dark:border-slate-800 p-5 rounded-3xl shadow-sm"> 
+
+          <span class="text-[11px] font-black text-restev-blue dark:text-blue-400 uppercase tracking-widest flex items-center gap-2 mb-4"><i class="fa-solid fa-industry"></i> Parcours Entreprises</span> 
+
+          <button onclick="switchScreen('scr-auth')" class="w-full bg-white dark:bg-slate-800 border-l-4 border-l-restev-blue p-4 rounded-2xl text-left flex items-center space-x-4 shadow-sm hover:shadow-md"> 
+
+            <div class="p-3 bg-blue-50 dark:bg-slate-700 text-restev-blue rounded-xl text-xl"><i class="fa-solid fa-user-tie"></i></div> 
+
+            <div><h3 class="font-black dark:text-white text-sm">Espace Management</h3><p class="text-xs text-slate-500 mt-0.5 font-medium">Gestion des sessions, DUERP, signalements.</p></div> 
+
+          </button> 
+
+        </div> 
+
+ 
+
+        <button onclick="switchScreen('scr-direction')" class="w-full bg-white dark:bg-slate-800 p-5 rounded-3xl text-left flex items-center justify-between border-2 border-transparent hover:border-restev-gold shadow-lg group"> 
+
+          <div class="flex items-center space-x-4"> 
+
+            <div class="w-14 h-14 bg-amber-50 dark:bg-slate-700 rounded-2xl flex items-center justify-center text-2xl text-restev-gold"><i class="fa-solid fa-chart-line"></i></div> 
+
+            <div><h3 class="font-black text-base dark:text-white">Centre RESTEV</h3><p class="text-xs text-slate-500 mt-1 font-medium">Tableau de bord prévention.</p></div> 
+
+          </div><i class="fa-solid fa-arrow-right text-slate-400"></i> 
+
+        </button> 
+
+      </div> 
+
+    </section> 
+
+ 
+
+    <!-- ABOUT --> 
+
+    <!-- ABOUT -->
+<section id="scr-about" class="screen max-w-2xl mx-auto w-full space-y-6 py-4">
+  <button onclick="switchScreen('scr-home')" class="text-xs bg-white dark:bg-slate-800 border px-4 py-2 rounded-xl font-bold flex items-center gap-1.5">
+    <i class="fa-solid fa-arrow-left"></i> Retour
+  </button>
+
+  <div class="bg-gradient-to-br from-restev-blue via-blue-600 to-restev-magenta p-6 md:p-8 rounded-3xl text-white shadow-xl relative overflow-hidden">
+    <div class="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full"></div>
+    <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full"></div>
+
+    <div class="relative z-10 space-y-4">
+      <div class="w-16 h-16 bg-white/15 border border-white/20 rounded-2xl flex items-center justify-center text-3xl shadow-lg">
+        <i class="fa-solid fa-shield-heart"></i>
+      </div>
+
+      <div>
+        <span class="inline-flex items-center gap-2 bg-white/15 border border-white/20 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest mb-3">
+          <i class="fa-solid fa-compass"></i>
+          Parcours prévention
+        </span>
+
+        <h2 class="text-2xl md:text-3xl font-black tracking-tight mb-3">
+          La prévention dès le premier jour
+        </h2>
+
+        <p class="text-blue-50 text-sm leading-relaxed font-medium">
+          Le Passeport Prévention RESTEV 85 accompagne l’accueil sécurité des nouveaux arrivants,
+          facilite la transmission des consignes essentielles et permet de tracer les actions réalisées.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-premium border border-blue-100 dark:border-slate-700">
+      <div class="w-11 h-11 bg-blue-50 dark:bg-slate-700 text-restev-blue rounded-xl flex items-center justify-center text-xl mb-3">
+        <i class="fa-solid fa-user-check"></i>
+      </div>
+      <h3 class="font-black text-sm dark:text-white mb-2">Accueillir</h3>
+      <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+        Présenter au salarié les règles essentielles, les risques du poste, les consignes internes
+        et les bonnes pratiques à appliquer dès son arrivée.
+      </p>
+    </div>
+
+    <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-premium border border-pink-100 dark:border-slate-700">
+      <div class="w-11 h-11 bg-pink-50 dark:bg-slate-700 text-restev-magenta rounded-xl flex items-center justify-center text-xl mb-3">
+        <i class="fa-solid fa-clipboard-check"></i>
+      </div>
+      <h3 class="font-black text-sm dark:text-white mb-2">Tracer</h3>
+      <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+        Conserver une preuve claire du parcours réalisé : QCM, attestation, validation manager,
+        remise des EPI et consultation des ressources prévention.
+      </p>
+    </div>
+
+    <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-premium border border-emerald-100 dark:border-slate-700">
+      <div class="w-11 h-11 bg-emerald-50 dark:bg-slate-700 text-emerald-500 rounded-xl flex items-center justify-center text-xl mb-3">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <h3 class="font-black text-sm dark:text-white mb-2">Remonter</h3>
+      <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+        Permettre au salarié de signaler rapidement une situation dangereuse afin que le responsable
+        puisse analyser, répondre et suivre les actions correctives.
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-premium border-l-4 border-l-restev-blue space-y-3">
+    <h3 class="font-black dark:text-white text-sm flex items-center gap-2">
+      <i class="fa-solid fa-scale-balanced text-restev-blue"></i>
+      L’engagement de l’employeur
+    </h3>
+
+    <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed text-justify">
+      Lors de l’embauche ou de l’arrivée sur un nouveau poste, l’employeur doit organiser une information
+      et une formation pratique adaptées à la sécurité. Cette démarche permet au salarié d’identifier les
+      risques auxquels il peut être exposé, de connaître les consignes applicables et d’utiliser correctement
+      les moyens de prévention mis à sa disposition.
+    </p>
+
+    <div class="bg-blue-50 dark:bg-slate-900/70 border border-blue-100 dark:border-slate-700 p-4 rounded-xl">
+      <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+        Le Passeport Prévention ne remplace pas l’évaluation des risques ni les obligations réglementaires
+        de l’entreprise. Il sert de support opérationnel pour structurer l’accueil sécurité, renforcer la culture
+        prévention et conserver une traçabilité simple des actions réalisées.
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-gradient-to-br from-slate-50 to-amber-50/40 dark:from-slate-900 dark:to-slate-800 p-5 rounded-2xl border shadow-sm space-y-4">
+    <h3 class="font-black dark:text-white text-sm flex items-center gap-2">
+      <i class="fa-solid fa-list-check text-restev-gold"></i>
+      Ce que permet l’application
+    </h3>
+
+    <div class="space-y-3">
+      <div class="flex items-start gap-3">
+        <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs mt-0.5">
+          <i class="fa-solid fa-check"></i>
+        </div>
+        <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+          Générer un accès salarié par QR Code pour lancer un parcours d’accueil individualisé.
+        </p>
+      </div>
+
+      <div class="flex items-start gap-3">
+        <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs mt-0.5">
+          <i class="fa-solid fa-check"></i>
+        </div>
+        <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+          Adapter le QCM aux risques réellement présents dans l’entreprise ou au poste de travail.
+        </p>
+      </div>
+
+      <div class="flex items-start gap-3">
+        <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs mt-0.5">
+          <i class="fa-solid fa-check"></i>
+        </div>
+        <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+          Identifier les EPI remis au salarié et les faire apparaître dans l’attestation finale.
+        </p>
+      </div>
+
+      <div class="flex items-start gap-3">
+        <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs mt-0.5">
+          <i class="fa-solid fa-check"></i>
+        </div>
+        <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+          Centraliser les signalements de dangers et les réponses du responsable.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <button onclick="switchScreen('scr-home')" class="w-full bg-gradient-to-r from-restev-magenta to-restev-magenta-dark text-white p-4 rounded-xl text-sm font-extrabold shadow-md">
+    J’ai compris
+  </button>
+</section>
+ 
+
+    <!-- AUTH --> 
+
+    <section id="scr-auth" class="screen max-w-md mx-auto w-full space-y-6 py-6"> 
+
+      <button onclick="switchScreen('scr-home')" class="text-xs bg-white dark:bg-slate-800 border px-4 py-2 rounded-xl font-bold flex items-center gap-1.5"><i class="fa-solid fa-arrow-left"></i> Retour</button> 
+
+      <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-premium border-t-4 border-t-restev-blue space-y-4"> 
+
+        <h2 class="text-xl font-black dark:text-white">Connexion Manager</h2> 
+
+        <p class="text-xs text-slate-500 dark:text-slate-400">Saisissez votre code établissement pour accéder à la console.</p> 
+
+        <input type="text" id="manager-company-code" placeholder="Ex: RSTV-DEMO-1234" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-sm font-bold uppercase dark:text-white" /> 
+
+        <button onclick="handleManagerLogin()" class="w-full bg-restev-blue text-white py-3 rounded-xl text-sm font-extrabold shadow-md">Accéder à l'Espace</button> 
+
+      </div> 
+
+      <div class="bg-gradient-to-br from-slate-50 to-amber-50/30 dark:from-slate-900 dark:to-slate-800 p-6 rounded-3xl shadow-sm border space-y-4"> 
+
+        <h3 class="text-sm font-black dark:text-white">Nouvel Établissement ?</h3> 
+
+        <input type="text" id="new-company-name" placeholder="Raison sociale" class="w-full p-3 bg-white dark:bg-slate-800 border rounded-xl text-xs font-bold dark:text-white" />
+        <button onclick="createNewCompany()" class="w-full bg-slate-800 dark:bg-slate-700 text-white py-2.5 rounded-xl text-xs font-bold shadow">Générer un code d'accès</button> 
+
+        <div id="generated-code-box" class="hidden mt-3 p-3 bg-amber-50 dark:bg-slate-800 border rounded-xl text-center space-y-2"> 
+
+          <span class="block text-[10px] font-black text-amber-600 uppercase tracking-wider">Votre Code Unique :</span> 
+
+          <span id="lbl-generated-code" class="block text-lg font-black dark:text-white font-mono tracking-widest"></span> 
+
+          <button onclick="copyGeneratedCode()" class="text-[10px] bg-white dark:bg-slate-700 px-3 py-1.5 rounded-lg font-bold text-slate-600 dark:text-white shadow-sm border"><i class="fa-solid fa-copy mr-1"></i> Copier le code</button> 
+
+        </div> 
+
+      </div> 
+
+    </section> 
+
+ 
+
+    <!-- DIRECTION --> 
+
+    <section id="scr-direction" class="screen max-w-2xl mx-auto w-full space-y-6 py-6"> 
+
+      <button onclick="switchScreen('scr-home')" class="text-xs bg-white dark:bg-slate-800 border px-4 py-2 rounded-xl font-bold flex items-center gap-1.5"><i class="fa-solid fa-arrow-left"></i> Retour</button> 
+
+      <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-premium border-t-4 border-t-restev-gold"> 
+
+        <h2 class="text-xl font-black dark:text-white mb-4">Tableau de Bord - Direction</h2> 
+
+        <div class="relative h-64 w-full"><canvas id="chart-restev-risks"></canvas></div> 
+
+      </div> 
+
+    </section> 
+
+ 
+
+    <!-- STUDIO --> 
+
+    <section id="scr-studio" class="screen max-w-2xl mx-auto w-full space-y-6 py-6"> 
+
+      <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-premium border-t-4 border-t-amber-500"> 
+
+        <h2 class="text-xl font-black dark:text-white mb-2">Éditeur DUERP</h2> 
+
+        <p class="text-xs text-slate-400 mb-4">Cochez ou décochez les risques applicables.</p> 
+
+        <div class="p-4 bg-blue-50/50 dark:bg-slate-900/50 border rounded-2xl space-y-2 mb-4"> 
+
+          <label class="block text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300"><i class="fa-solid fa-map-pin text-restev-magenta mr-1"></i> Pré-réglage sectoriel :</label> 
+
+          <select id="manager-sector-select" onchange="applySectorPreset()" class="w-full p-3 bg-white dark:bg-slate-800 border rounded-xl text-xs font-bold dark:text-white"></select> 
+
+        </div> 
+
+        <div id="studio-rules-list" class="space-y-2.5 max-h-[500px] overflow-y-auto pr-2"></div> 
+
+        <div class="mt-6 grid grid-cols-2 gap-3"> 
+
+          <button onclick="switchScreen('scr-manager')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl font-bold">Retour</button> 
+
+          <button onclick="saveCustomQCM()" class="bg-restev-blue text-white py-3 rounded-xl font-bold shadow-md">Enregistrer</button> 
+
+        </div> 
+
+      </div> 
+
+    </section> 
+
+ 
+
+    <!-- MANAGER --> 
+
+          <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border shadow-premium flex flex-col sm:flex-row justify-between items-center gap-4 border-l-4 border-l-restev-blue">   
+        <div class="flex items-center space-x-2.5"><div class="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div><h2 class="text-xs font-black dark:text-white uppercase tracking-wide">Console Adhérent : <span id="lbl-manager-comp-name" class="text-restev-blue font-black"></span></h2></div>   
+        <div class="flex items-center gap-2">   
+          <button onclick="toggleAlertSound()" id="btn-alert-sound" class="text-xs bg-slate-100 dark:bg-slate-700 dark:text-white px-3 py-2 rounded-xl font-bold"><i class="fa-solid fa-volume-high mr-1"></i> Son ON</button>   
+          <button onclick="quitManager()" class="text-xs bg-red-50 text-red-600 hover:bg-red-100 font-extrabold px-4 py-2 rounded-xl"><i class="fa-solid fa-right-from-bracket mr-1"></i> Quitter</button>   
+        </div>   
+      </div> 
+
+ 
+
+          <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-premium border-t-4 border-t-emerald-500 space-y-3"> 
+
+            <h3 class="font-black dark:text-white text-xs uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-box-open text-emerald-500"></i> 3. Dotation EPI</h3> 
+
+            <p class="text-[10px] text-slate-500 dark:text-slate-400">Sélectionnez le matériel remis au salarié :</p> 
+
+            <div id="epi-grid" class="grid grid-cols-2 gap-2"></div> 
+
+            <button onclick="saveEPIKit()" class="w-full bg-emerald-500 text-white py-2 rounded-xl text-[10px] font-black uppercase">Valider la remise du kit</button> 
+
+          </div> 
+
+        </div> 
+
+ 
+
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border-t-4 border-t-red-500 shadow-premium flex flex-col"> 
+
+          <div class="flex items-center justify-between gap-2"> 
+
+            <h3 class="font-black dark:text-white text-xs uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-bell text-red-500 animate-bounce"></i> Signalements Dangers</h3> 
+
+            <button onclick="loadManagerReports()" class="text-[10px] bg-slate-100 dark:bg-slate-700 dark:text-white px-2 py-1 rounded-lg font-black">Actualiser</button> 
+
+          </div> 
+
+          <div id="manager-risk-box" class="space-y-3 max-h-[580px] overflow-y-auto pt-4 flex-1"><p class="text-xs text-slate-400 italic text-center py-8">Aucun danger signalé pour le moment.</p></div> 
+
+        </div> 
+
+      </div> 
+
+ 
+
+      <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border-t-4 border-t-emerald-500 shadow-premium space-y-3"> 
+
+        <h3 class="font-black dark:text-white text-xs uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-id-card text-emerald-500"></i> Registre des Passeports Validés</h3> 
+
+        <div class="overflow-x-auto"> 
+
+          <table class="w-full text-left text-xs text-slate-500 dark:text-slate-400"> 
+
+            <thead class="bg-slate-50 dark:bg-slate-900 text-[10px] font-black uppercase text-slate-700 dark:text-slate-300"><tr><th class="p-3">Travailleur</th><th class="p-3">Date / Heure</th><th class="p-3">Résultat QCM</th><th class="p-3">Statut</th></tr></thead> 
+
+            <tbody id="manager-emargements-list"><tr><td colspan="4" class="p-4 text-center italic text-slate-400">Aucun passeport validé pour le moment.</td></tr></tbody> 
+
+          </table> 
+
+        </div> 
+
+      </div> 
+
+    </section> 
+
+ 
+
+    <!-- TRAINING --> 
+
+    <section id="scr-training" class="screen hidden max-w-md mx-auto w-full p-4 space-y-4"> 
+
+      <div class="flex items-center justify-between mb-4"> 
+
+        <button onclick="backFromTraining()" class="text-xs bg-white dark:bg-slate-800 border px-4 py-2 rounded-xl font-bold flex items-center gap-1.5 shadow-sm"><i class="fa-solid fa-arrow-left"></i> Retour</button> 
+
+        <h2 class="text-lg font-black dark:text-white">Formation INRS</h2> 
+
+      </div> 
+
+      <div id="menu-list" class="grid grid-cols-1 gap-3"><p class="text-xs text-slate-500 italic">Sélectionnez votre secteur pour accéder au tutoriel :</p></div> 
+
+      <div id="tuto-container" class="hidden space-y-3"> 
+
+        <div class="flex items-center justify-between gap-2"> 
+
+          <button onclick="backToTrainingMenu()" class="text-xs text-restev-blue font-bold flex items-center gap-1 bg-white dark:bg-slate-800 border px-3 py-2 rounded-xl shadow-sm"><i class="fa-solid fa-chevron-left"></i> Retour secteurs</button> 
+
+          <button onclick="openTutoFullscreen()" class="text-xs bg-restev-blue text-white font-bold flex items-center gap-1 px-3 py-2 rounded-xl shadow-sm"><i class="fa-solid fa-expand"></i> Plein écran</button> 
+
+        </div> 
+
+        <div class="bg-blue-50 dark:bg-slate-900 border rounded-2xl p-3"><p id="tuto-orientation-help" class="text-[11px] font-bold text-slate-600 dark:text-slate-300 leading-relaxed">Astuce : tournez votre smartphone en mode paysage si le module paraît trop petit.</p></div> 
+
+        <div id="tuto-frame-wrapper" class="tuto-frame-wrapper"><iframe id="tuto-viewer" class="tuto-iframe" src="" allowfullscreen loading="lazy"></iframe></div> 
+
+      </div> 
+
+    </section> 
+
+ 
+
+    <!-- EMPLOYEE --> 
+
+    <section id="scr-employee" class="screen max-w-md mx-auto w-full space-y-4"> 
+
+      <div class="bg-gradient-to-br from-restev-blue via-blue-600 to-restev-magenta text-white p-6 rounded-3xl shadow-xl space-y-2 relative overflow-hidden"> 
+
+        <span class="bg-gradient-to-r from-red-500 to-rose-600 text-white text-[9px] font-black px-2.5 py-0.5 rounded uppercase tracking-wider shadow-md flex items-center w-max gap-1.5"><i class="fa-solid fa-lock text-[8px]"></i> Session Verrouillée</span> 
+
+        <h2 class="text-xl font-black tracking-tight pt-1" id="lbl-emp-welcome">Bonjour</h2> 
+
+        <p class="text-xs text-blue-50 font-medium" id="lbl-emp-company">Chargement des données...</p> 
+
+      </div> 
+
+      <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border shadow-premium space-y-3"> 
+
+        <button onclick="startEmployeeQCM()" class="w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-restev-blue p-4 rounded-xl text-left flex items-center justify-between group shadow-sm"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-restev-blue/10 text-restev-blue rounded-xl flex items-center justify-center"><i class="fa-solid fa-book-open-reader"></i></div><div><p class="text-xs font-black dark:text-white">1. Validation des Acquis</p><p class="text-[10px] text-slate-400 mt-0.5">Vérification interactive des connaissances HSE.</p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i></button> 
+
+        <button onclick="switchScreen('scr-report')" class="w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-restev-magenta p-4 rounded-xl text-left flex items-center justify-between group shadow-sm"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-restev-magenta/10 text-restev-magenta rounded-xl flex items-center justify-center"><i class="fa-solid fa-triangle-exclamation"></i></div><div><p class="text-xs font-black dark:text-white">2. Signaler une Situation</p><p class="text-[10px] text-slate-400 mt-0.5">Remonter immédiatement un risque terrain.</p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i></button> 
+
+        <button onclick="openEmployeeResources()" class="w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-emerald-500 p-4 rounded-xl text-left flex items-center justify-between group shadow-sm"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-emerald-500/10 text-emerald-500 rounded-xl flex items-center justify-center"><i class="fa-solid fa-book-medical"></i></div><div><p class="text-xs font-black dark:text-white">3. Fiches Conseils Sécurité</p><p class="text-[10px] text-slate-400 mt-0.5">Ressources INRS, CARSAT & OPPBTP.</p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i></button> 
+
+        <button onclick="switchScreen('scr-training')" class="w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-restev-gold p-4 rounded-xl text-left flex items-center justify-between group shadow-sm"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-restev-gold/10 text-restev-gold rounded-xl flex items-center justify-center"><i class="fa-solid fa-graduation-cap"></i></div><div><p class="text-xs font-black dark:text-white">4. Modules INRS</p><p class="text-[10px] text-slate-400 mt-0.5">Tutoriels prévention adaptés aux métiers.</p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i></button> 
+
+        <button onclick="openEmployeeMessages()" class="w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-cyan-500 p-4 rounded-xl text-left flex items-center justify-between group shadow-sm"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-cyan-500/10 text-cyan-500 rounded-xl flex items-center justify-center"><i class="fa-solid fa-comments"></i></div><div><p class="text-xs font-black dark:text-white">5. Messages du responsable</p><p class="text-[10px] text-slate-400 mt-0.5">Suivre les réponses à vos signalements.</p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i></button> 
+
+      </div> 
+
+    </section> 
+
+ 
+
+    <!-- QCM --> 
+
+    <section id="scr-qcm" class="screen max-w-md mx-auto w-full bg-white dark:bg-slate-800 p-5 rounded-3xl border shadow-premium space-y-4"> 
+
+      <div class="flex justify-between items-center border-b pb-3"><h3 class="text-sm font-black dark:text-white flex items-center gap-2"><i class="fa-solid fa-graduation-cap text-restev-blue"></i> Validation des Connaissances</h3><span id="qcm-progress" class="text-[10px] bg-blue-50 text-restev-blue font-black px-2.5 py-1 rounded-lg uppercase tracking-wider">Question 1</span></div> 
+
+      <div class="space-y-4 py-2"><div id="qcm-question-text" class="text-xs font-bold dark:text-white bg-slate-50 dark:bg-slate-900 p-3.5 rounded-xl border"></div><div id="qcm-options-box" class="space-y-2"></div></div> 
+
+      <button onclick="submitQCMAnswer()" class="w-full bg-restev-blue text-white py-3.5 rounded-xl text-xs font-extrabold shadow-md">Valider la réponse</button> 
+
+    </section> 
+
+ 
+
+    <!-- CERTIFICAT --> 
+
+    <section id="scr-qcm-success" class="screen max-w-2xl mx-auto w-full bg-white dark:bg-slate-800 p-8 rounded-3xl border shadow-premium space-y-6 print:shadow-none print:border-none print:p-0 print:m-0 print:bg-white print:text-black"> 
+
+      <div class="text-center space-y-2 border-b-2 border-slate-200 pb-6 print:border-slate-800 print:pb-4"><div class="hidden print:block font-extrabold text-2xl tracking-tight text-slate-800 mb-4">RESTEV <span class="text-restev-magenta">85</span></div><h2 id="qcm-result-title" class="text-2xl font-black text-emerald-600 print:text-slate-900">Attestation de Formation Sécurité</h2><p class="text-sm font-bold text-slate-500 print:text-slate-600">Délivrée dans le cadre du Passeport Prévention</p></div> 
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border print:bg-transparent print:border-none print:p-0"> 
+
+        <div><label class="block text-[10px] font-black uppercase text-slate-500">Entreprise / Établissement :</label><input type="text" id="cert-company" class="w-full bg-white dark:bg-slate-800 border p-2 rounded-lg text-sm font-bold dark:text-white print:border-none print:bg-transparent print:p-0 print:text-base print:border-b print:text-black"></div> 
+
+        <div><label class="block text-[10px] font-black uppercase text-slate-500">Formateur / Manager :</label><input type="text" id="cert-manager" class="w-full bg-white dark:bg-slate-800 border p-2 rounded-lg text-sm font-bold dark:text-white print:border-none print:bg-transparent print:p-0 print:text-base print:border-b print:text-black"></div> 
+
+        <div><label class="block text-[10px] font-black uppercase text-slate-500">Salarié / Agent :</label><input type="text" id="cert-employee" class="w-full bg-white dark:bg-slate-800 border p-2 rounded-lg text-sm font-bold dark:text-white print:border-none print:bg-transparent print:p-0 print:text-base print:border-b print:text-black"></div> 
+
+        <div><label class="block text-[10px] font-black uppercase text-slate-500">Score QCM & Date :</label><div class="flex items-center gap-2 p-2 print:p-0"><span id="lbl-qcm-score-final" class="font-extrabold text-emerald-600 text-lg"></span><span class="text-xs font-medium text-slate-400 print:text-slate-600" id="lbl-cert-date"></span></div></div> 
+
+      </div> 
+
+      <div class="bg-amber-50 dark:bg-amber-900/20 border p-4 rounded-xl print:bg-transparent print:border-slate-300"><p class="text-xs text-justify text-slate-700 dark:text-slate-300 print:text-slate-800 font-medium leading-relaxed">Par la présente, les signataires attestent que l'agent a suivi son parcours d'intégration à la sécurité. Les risques spécifiques au poste de travail ont été présentés et les EPI requis ont été remis et expliqués.</p></div> 
+
+      <div class="bg-emerald-50 dark:bg-emerald-900/20 border p-4 rounded-xl print:bg-transparent print:border-slate-300"><h4 class="text-[11px] font-black uppercase text-emerald-600 mb-2"><i class="fa-solid fa-helmet-safety"></i> Équipements de Protection Individuelle remis</h4><div id="cert-epi-list" class="text-xs text-slate-700 dark:text-slate-300 print:text-slate-800 font-bold leading-relaxed">Aucun EPI renseigné.</div></div> 
+
+      <div class="grid grid-cols-2 gap-6"><div class="border rounded-xl p-4 text-center space-y-3 bg-slate-50 dark:bg-slate-900 print:bg-transparent"><h4 class="text-[11px] font-black uppercase text-slate-500">Signature du Salarié</h4><div class="no-print"><label class="flex items-start gap-2 cursor-pointer text-left"><input type="checkbox" id="chk-sign-emp" onchange="updateSignStatus('emp')" class="mt-1"><span class="text-[10px] font-medium text-slate-600 dark:text-slate-300">Je certifie l'exactitude des infos.</span></label></div><div id="sign-box-emp" class="h-16 flex items-center justify-center border-2 border-dashed rounded-lg border-slate-300"><span class="text-xs italic text-slate-400 print:hidden">En attente...</span></div></div><div class="border rounded-xl p-4 text-center space-y-3 bg-slate-50 dark:bg-slate-900 print:bg-transparent"><h4 class="text-[11px] font-black uppercase text-slate-500">Validation Manager</h4><div class="no-print"><label class="flex items-start gap-2 cursor-pointer text-left"><input type="checkbox" id="chk-sign-mgr" onchange="updateSignStatus('mgr')" class="mt-1"><span class="text-[10px] font-medium text-slate-600 dark:text-slate-300">Je valide la formation au poste.</span></label></div><div id="sign-box-mgr" class="h-16 flex items-center justify-center border-2 border-dashed rounded-lg border-slate-300"><span class="text-xs italic text-slate-400 print:hidden">En attente...</span></div></div></div> 
+
+      <div class="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 no-print"><button onclick="prepareAndPrint()" class="w-full bg-slate-800 dark:bg-slate-700 text-white py-3.5 rounded-xl text-sm font-bold flex justify-center items-center gap-2"><i class="fa-solid fa-print"></i> PDF / Impression</button><button onclick="finalizeAndClose()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-3.5 rounded-xl text-sm font-extrabold flex justify-center items-center gap-2"><i class="fa-solid fa-door-open"></i> Clôturer & Quitter</button></div> 
+
+    </section> 
+
+ 
+
+    <!-- RESOURCES --> 
+
+    <section id="scr-resources" class="screen max-w-md mx-auto w-full space-y-4 py-4"><button onclick="switchScreen('scr-employee')" class="text-xs bg-white dark:bg-slate-800 border px-4 py-2 rounded-xl font-bold flex items-center gap-1.5 shadow-sm"><i class="fa-solid fa-arrow-left"></i> Retour au portail</button><div class="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-3xl text-white shadow-xl"><h2 class="text-xl font-black tracking-tight mb-2">Fiches Prévention</h2><p class="text-emerald-50 text-xs leading-relaxed font-medium">Recommandations officielles adaptées aux risques du poste.</p></div><div id="resources-list" class="space-y-3 pb-8"></div></section> 
+
+ 
+
+    <!-- REPORT --> 
+
+    <section id="scr-report" class="screen max-w-md mx-auto w-full bg-white dark:bg-slate-800 p-5 rounded-3xl border shadow-premium space-y-4"> 
+
+      <h3 class="text-base font-black dark:text-white flex items-center space-x-2"><i class="fa-solid fa-triangle-exclamation text-restev-magenta animate-pulse"></i><span>Signalement Incident</span></h3> 
+
+      <div class="p-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border text-center"><p id="geo-status" class="text-[11px] font-bold text-slate-500">Recherche GPS...</p></div> 
+
+      <div id="map" class="h-44 w-full rounded-2xl border shadow-inner bg-slate-100 z-0"></div> 
+
+      <div class="space-y-2"><label class="block text-xs font-black text-slate-700 dark:text-slate-300">Type de Risque :</label><select id="risk-category-select" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white"></select></div> 
+
+      <div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-black text-slate-700 dark:text-slate-300">Gravité :</label><select id="risk-level" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold text-red-600"><option value="Critique 🔴">Danger Grave</option><option value="Modéré 🟠">Anomalie Simple</option></select></div><div><label class="block text-xs font-black text-slate-700 dark:text-slate-300">Fréquence :</label><select id="risk-frequency" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white"><option value="Ponctuelle">Ponctuelle</option><option value="Régulière">Régulière</option><option value="Permanente">Permanente</option></select></div></div> 
+
+      <div><label class="block text-xs font-black text-slate-700 dark:text-slate-300">Commentaires :</label><textarea id="risk-description" rows="3" placeholder="Décrivez la situation..." class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white"></textarea></div> 
+
+      <button onclick="submitRiskReport()" class="w-full bg-gradient-to-r from-red-600 to-pink-600 text-white py-3.5 rounded-xl text-sm font-extrabold shadow-lg">Envoyer le Signalement</button> 
+
+      <button onclick="switchScreen('scr-employee')" class="w-full text-center text-xs text-slate-400 font-bold py-2">Annuler</button> 
+
+    </section> 
+
+ 
+
+    <!-- EMPLOYEE MESSAGES --> 
+
+    <section id="scr-employee-messages" class="screen max-w-md mx-auto w-full space-y-4 py-4"> 
+
+      <button onclick="switchScreen('scr-employee')" class="text-xs bg-white dark:bg-slate-800 border px-4 py-2 rounded-xl font-bold flex items-center gap-1.5 shadow-sm"><i class="fa-solid fa-arrow-left"></i> Retour</button> 
+
+      <div class="bg-gradient-to-br from-cyan-500 to-blue-600 p-6 rounded-3xl text-white shadow-xl"><h2 class="text-xl font-black tracking-tight mb-2">Messages du responsable</h2><p class="text-cyan-50 text-xs leading-relaxed font-medium">Consultez les suites données à vos signalements prévention.</p></div> 
+
+      <div id="employee-messages-list" class="space-y-3"><p class="text-xs text-slate-400 italic text-center py-6">Aucun message pour le moment.</p></div> 
+
+    </section> 
+
+  </main> 
+
+ 
+
+  <script> 
+
+   const SUPABASE_URL = "https://qahamxdomftqodziluci.supabase.co"; 
+
+ 
+
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhaGFteGRvbWZ0cW9kemlsdWNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5MDI2NDEsImV4cCI6MjA5ODQ3ODY0MX0.VUjKmNc9UsOoBSNatZoOnxGExVQji9L05BiU5SlvnOc"; 
+
+ 
+
+ 
+
+const supabaseClient = window.supabase 
+
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
+
+  : null; 
+
+ 
+
+ 
+
+    const RISKS_DATABASE = [ 
+
+      { id: '1', name: 'Risques de chute de plain-pied', active: true, question: 'Sur un sol glissant ou encombré, quelle est la bonne attitude ?', options: ['Je cours pour passer vite', 'Je contourne et je signale la zone', "J'attends que quelqu'un d'autre nettoie"], answer: 1 }, 
+
+      { id: '2', name: 'Risques de chute de hauteur', active: true, question: 'Pour travailler à 3 mètres de haut de façon sécurisée, j’utilise :', options: ['Une chaise sur une table', 'Une échelle simple non fixée', 'Un échafaudage ou une PIRL adaptée'], answer: 2 }, 
+
+      { id: '3', name: 'Risques liés aux circulations internes', active: false, question: 'Dans une zone de circulation d’engins, qui a la priorité absolue ?', options: ['Le piéton sans gilet', 'L’engin ou le chariot élévateur', 'La voiture du directeur'], answer: 1 }, 
+
+      { id: '4', name: 'Risques routiers en mission', active: true, question: 'Avant de prendre la route pour une mission professionnelle, je dois :', options: ['Régler mon GPS en conduisant', 'Vérifier l’état de mon véhicule et arrimer les charges', 'Téléphoner en conduisant'], answer: 1 }, 
+
+      { id: '5', name: 'Risques liés à la charge physique de travail', active: true, question: 'Pour ramasser un colis lourd par terre, la méthode ergonomique est :', options: ['Fléchir les genoux en gardant le dos droit', 'Courber le dos sans plier les jambes', 'Tirer d’un coup sec avec les bras'], answer: 0 }, 
+
+      { id: '6', name: 'Risques liés à la manutention mécanique', active: false, question: 'Suis-je autorisé à conduire un transpalette électrique sans autorisation ?', options: ['Oui si c’est pour 2 minutes', 'Non, il faut une autorisation de conduite interne', 'Oui si je sais démarrer'], answer: 1 }, 
+
+      { id: '7', name: 'Risques liés aux produits chimiques', active: true, question: 'Que signifie une flamme sur un bidon ?', options: ['Produit inoffensif', 'Produit inflammable à éloigner du feu', 'Produit à base d’eau'], answer: 1 }, 
+
+      { id: '13', name: 'Risques d’incendie et d’explosion', active: true, question: 'En cas d’alarme incendie, quelle est l’action immédiate ?', options: ['Finir mon mail', 'Évacuer calmement vers le point de rassemblement', 'Prendre l’ascenseur'], answer: 1 }, 
+
+      { id: '14', name: 'Risques liés à l’électricité', active: true, question: 'Un câble électrique est dénudé au sol. Que faites-vous ?', options: ['Je mets du scotch classique', 'Je n’y touche pas, j’isole et je signale', 'Je passe dessus'], answer: 1 }, 
+
+      { id: '17', name: 'Risques psychosociaux', active: true, question: 'En situation d’isolement ou de stress intense, je peux :', options: ['Garder tout pour moi', 'En parler au manager, RH ou médecin du travail', 'Attendre que ça passe'], answer: 1 } 
+
+    ]; 
+
+ 
+
+    const VENDEE_SECTORS = { 
+
+      agro: { name: 'Industrie Agroalimentaire', risks: ['1','5','6','7'] }, 
+
+      wood: { name: 'Menuiserie, Mobilier & Ossature Bois', risks: ['1','3','5','13'] }, 
+
+      outdoor: { name: 'Hôtellerie de Plein Air & Campings', risks: ['1','4','14','17'] }, 
+
+      agri: { name: 'Agriculture, Maraîchage & Élevage', risks: ['1','5','6','7'] }, 
+
+      btp: { name: 'Bâtiment et Travaux Publics', risks: ['1','2','5','14'] }, 
+
+      log: { name: 'Transport, Logistique', risks: ['3','4','5','6'] }, 
+
+      metal: { name: 'Métallurgie, Mécanique industrielle', risks: ['3','6','7','13'] }, 
+
+      retail: { name: 'Grande Distribution & Commerces', risks: ['1','3','5','17'] }, 
+
+      health: { name: 'Santé, Services à la personne', risks: ['1','4','5','17'] }, 
+
+      tertiaire: { name: 'Tertiaire & Bureaux', risks: ['1','5','17'] } 
+
+    }; 
+
+ 
+
+    const modulesTuto = [ 
+
+      { titre: 'Aide à domicile', url: 'https://ressources.inrs.fr/tutoprev/content/Aide_personne_domicile_etablissement/story.html' }, 
+
+      { titre: 'BTP', url: 'https://ressources.inrs.fr/tutoprev/content/BTP/story.html' }, 
+
+      { titre: 'Travail de bureau', url: 'https://ressources.inrs.fr/tutoprev/content/Travail-de-bureau/story.html' }, 
+
+      { titre: 'Commerce', url: 'https://ressources.inrs.fr/tutoprev/content/Commerce/story.html' }, 
+
+      { titre: 'Hôtellerie/Restauration', url: 'https://ressources.inrs.fr/tutoprev/content/Hotellerie-Restauration/story.html' }, 
+
+      { titre: 'Logistique', url: 'https://ressources.inrs.fr/tutoprev/content/Logistique/story.html' }, 
+
+      { titre: 'Maintenance industrielle', url: 'https://ressources.inrs.fr/tutoprev/content/Maintenance-industrielle/story.html' }, 
+
+      { titre: 'Métiers de la beauté', url: 'https://ressources.inrs.fr/tutoprev/content/Metiers-de-la-beaute/story.html' }, 
+
+      { titre: 'Métiers de la propreté', url: 'https://ressources.inrs.fr/tutoprev/content/Metiers-de-la-proprete/story.html' }, 
+
+      { titre: 'Énergie du bâtiment', url: 'https://ressources.inrs.fr/tutoprev/content/Metiers-de-l-energie-du-batiment/story.html' }, 
+
+      { titre: 'Métiers du bois', url: 'https://ressources.inrs.fr/tutoprev/content/Metiers-du-bois/story.html' }, 
+
+      { titre: 'Métiers de bouche', url: 'https://ressources.inrs.fr/tutoprev/content/Metiers-de-bouche/story.html' }, 
+
+      { titre: 'Réparation automobile', url: 'https://ressources.inrs.fr/tutoprev/content/Reparation-automobile/story.html' }, 
+
+      { titre: 'Transport routier', url: 'https://ressources.inrs.fr/tutoprev/content/Transport-routier-de-marchandises/story.html' } 
+
+    ]; 
+
+ 
+
+    const EPI_LIST = [ 
+
+      ['epi-casque','Casque de protection','Casque'], ['epi-gants','Gants de protection','Gants'], ['epi-chaussures','Chaussures de sécurité','Chaussures'], ['epi-lunettes','Lunettes de protection','Lunettes'], ['epi-gilet','Gilet haute visibilité','Gilet HV'], ['epi-auditif','Protection auditive','Protection auditive'], ['epi-masque','Masque / protection respiratoire','Masque'], ['epi-harnais','Harnais antichute','Harnais'] 
+
+    ]; 
+
+ 
+
+    const OFFICIAL_RESOURCES = { 
+
+      '1': { org:'INRS', title:'Prévenir les chutes de plain-pied', link:'https://www.inrs.fr/risques/chutes-de-plain-pied/ce-qu-il-faut-retenir.html', color:'bg-blue-50 text-blue-600 border-blue-200' }, 
+
+      '2': { org:'OPPBTP', title:'Travaux en hauteur : règles et matériels', link:'https://www.preventionbtp.fr/', color:'bg-amber-50 text-amber-600 border-amber-200' }, 
+
+      '3': { org:'INRS', title:'Circulation interne et signalisation', link:'https://www.inrs.fr/risques/circulation-entreprise/ce-qu-il-faut-retenir.html', color:'bg-slate-100 text-slate-700 border-slate-300' }, 
+
+      '4': { org:'CARSAT', title:'Prévention du risque routier', link:'https://www.carsat-pl.fr/entreprises/prevenir-vos-risques-professionnels.html', color:'bg-emerald-50 text-emerald-600 border-emerald-200' }, 
+
+      '5': { org:'AMELI', title:'Agir contre les TMS', link:'https://www.ameli.fr/entreprise/sante-travail/risques/troubles-musculosquelettiques-tms', color:'bg-teal-50 text-teal-600 border-teal-200' }, 
+
+      '6': { org:'INRS', title:'Manutention mécanique', link:'https://www.inrs.fr/risques/manutention-mecanique/ce-qu-il-faut-retenir.html', color:'bg-blue-50 text-blue-600 border-blue-200' }, 
+
+      '7': { org:'INRS', title:'Produits chimiques', link:'https://www.inrs.fr/risques/chimiques/ce-qu-il-faut-retenir.html', color:'bg-purple-50 text-purple-600 border-purple-200' }, 
+
+      '13': { org:'INRS', title:'Incendie et explosion', link:'https://www.inrs.fr/risques/incendie-lieu-travail/ce-qu-il-faut-retenir.html', color:'bg-red-50 text-red-600 border-red-200' }, 
+
+      '14': { org:'INRS', title:'Risque électrique', link:'https://www.inrs.fr/risques/electriques/ce-qu-il-faut-retenir.html', color:'bg-blue-50 text-blue-600 border-blue-200' }, 
+
+      '17': { org:'INRS', title:'Risques psychosociaux', link:'https://www.inrs.fr/risques/psychosociaux/ce-qu-il-faut-retenir.html', color:'bg-pink-50 text-pink-600 border-pink-200' } 
+
+    }; 
+
+ 
+
+    let currentEmployeeSession = null; 
+
+    let mapInstance = null; 
+
+    let soundMuted = false; 
+
+    let qcmActiveQuestions = []; 
+
+    let qcmCurrentIndex = 0; 
+
+    let qcmScore = 0; 
+
+    let selectedEPIList = []; 
+
+    let currentTutoUrl = ''; 
+
+    let managerPollingInterval = null; 
+    let alertAudioCtx = null;
+let managerRealtimeChannel = null;
+let lastReportAlertAt = 0;
+
+ 
+
+    document.addEventListener('DOMContentLoaded', () => { 
+
+      populateSectorDropdown(); 
+
+      renderStudioRisks(); 
+
+      populateRiskSelectors(); 
+
+      renderEPIGrid(); 
+
+      generateTrainingMenu(); 
+
+      initLeafletMap(); 
+
+      initChart(); 
+
+      checkUrlParameters(); 
+
+    }); 
+
+ 
+
+    window.addEventListener('resize', adjustTutoViewer); 
+
+    window.addEventListener('orientationchange', () => setTimeout(adjustTutoViewer, 300)); 
+
+ 
+
+    function toggleDarkMode(){ document.documentElement.classList.toggle('dark'); } 
+
+    function showToast(text){ const toast=document.getElementById('toast'); document.getElementById('toast-text').innerText=text; toast.classList.remove('translate-y-20','opacity-0'); setTimeout(()=>toast.classList.add('translate-y-20','opacity-0'),3500); } 
+function unlockAlertSound() {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+
+    if (!alertAudioCtx) {
+      alertAudioCtx = new AudioContext();
+    }
+
+    if (alertAudioCtx.state === 'suspended') {
+      alertAudioCtx.resume();
+    }
+  } catch (e) {
+    console.warn('Son non disponible :', e);
+  }
+}
+
+function playAlertSound() {
+  try {
+    if (soundMuted) return;
+
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+
+    if (!alertAudioCtx) {
+      alertAudioCtx = new AudioContext();
+    }
+
+    if (alertAudioCtx.state === 'suspended') {
+      alertAudioCtx.resume();
+    }
+
+    const now = alertAudioCtx.currentTime;
+
+    const osc = alertAudioCtx.createOscillator();
+    const gain = alertAudioCtx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, now);
+
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.25, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+
+    osc.connect(gain);
+    gain.connect(alertAudioCtx.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.38);
+  } catch (e) {
+    console.warn('Erreur alerte sonore :', e);
+  }
+}
+
+function vibrateAlert() {
+  try {
+    if ('vibrate' in navigator) {
+      navigator.vibrate([250, 120, 250, 120, 400]);
+    }
+  } catch (e) {
+    console.warn('Vibration non disponible :', e);
+  }
+}
+
+function triggerNewReportAlert(report) {
+  const now = Date.now();
+
+  // Anti-spam : évite 10 sons si plusieurs événements arrivent ensemble.
+  if (now - lastReportAlertAt < 1500) return;
+  lastReportAlertAt = now;
+
+  playAlertSound();
+  vibrateAlert();
+
+  const employee = report?.employee_name || 'Un salarié';
+  const category = report?.category || 'un danger';
+
+  showToast(`Nouveau signalement : ${employee} - ${category}`);
+}
+
+    function toggleAlertSound(){
+      soundMuted = !soundMuted;
+      const btn = document.getElementById('btn-alert-sound');
+      if(btn){
+        btn.innerHTML = soundMuted ? '<i class="fa-solid fa-volume-xmark mr-1"></i> Son OFF' : '<i class="fa-solid fa-volume-high mr-1"></i> Son ON';
+      }
+      if(!soundMuted) unlockAlertSound();
+      showToast(soundMuted ? 'Alertes sonores désactivées.' : 'Alertes sonores activées.');
+    }
+
+    function switchScreen(screenId){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); const t=document.getElementById(screenId); if(t){ t.classList.add('active'); window.scrollTo({top:0,behavior:'smooth'}); if(screenId==='scr-report') setTimeout(fixMapSize,250); } } 
+
+ function startManagerRealtime() {
+  if (!supabaseClient) {
+    showToast('Supabase non chargé.');
+    return;
+  }
+
+  const companyCode = document.getElementById('lbl-manager-comp-name')?.innerText?.trim();
+
+  if (!companyCode) {
+    return;
+  }
+
+  // Sécurité : on coupe l'ancien abonnement s'il existe.
+  if (managerRealtimeChannel) {
+    supabaseClient.removeChannel(managerRealtimeChannel);
+    managerRealtimeChannel = null;
+  }
+
+  managerRealtimeChannel = supabaseClient
+    .channel(`prevention_reports_${companyCode}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'prevention_reports',
+        filter: `company_code=eq.${companyCode}`
+      },
+      payload => {
+        console.log('Nouveau signalement reçu en temps réel :', payload.new);
+
+        triggerNewReportAlert(payload.new);
+        loadManagerReports();
+      }
+    )
+    .subscribe(status => {
+      console.log('Realtime Supabase :', status);
+
+      if (status === 'SUBSCRIBED') {
+        showToast('Alertes temps réel activées.');
+      }
+    });
+}
+
+    function checkUrlParameters(){ const p=new URLSearchParams(window.location.search); const emp=p.get('emp'); const comp=p.get('comp'); if(emp && comp){ currentEmployeeSession={name:emp, company:comp}; document.getElementById('lbl-emp-welcome').innerText=`Bonjour, ${emp}`; document.getElementById('lbl-emp-company').innerText=`Établissement : ${comp}`; switchScreen('scr-employee'); showToast('Passeport Prévention activé via QR Code !'); } } 
+
+ 
+
+    function createNewCompany(){ const name=document.getElementById('new-company-name').value.trim(); if(!name) return showToast("Veuillez saisir un nom d'établissement"); const code='RSTV-'+name.substring(0,4).toUpperCase().replace(/[^A-Z0-9]/g,'')+'-'+Math.floor(1000+Math.random()*9000); document.getElementById('generated-code-box').classList.remove('hidden'); document.getElementById('lbl-generated-code').innerText=code; document.getElementById('manager-company-code').value=code; showToast('Code généré et inscrit dans la console !'); } 
+
+    function copyGeneratedCode(){ const code=document.getElementById('lbl-generated-code').innerText; navigator.clipboard?.writeText(code); showToast('Code copié !'); } 
+
+ 
+
+    function handleManagerLogin() {
+  const code = document.getElementById('manager-company-code').value.trim().toUpperCase();
+
+  if (!code) {
+    return showToast("Veuillez saisir un code établissement");
+  }
+
+  // Débloque le son grâce au clic utilisateur sur le bouton de connexion.
+  unlockAlertSound();
+
+  document.getElementById('lbl-manager-comp-name').innerText = code;
+  showToast("Identification validée.");
+  switchScreen('scr-manager');
+
+  // Chargement initial.
+  loadManagerReports();
+
+  // Alertes quasi instantanées.
+  startManagerRealtime();
+}
+    function quitManager(){
+      if(managerPollingInterval) clearInterval(managerPollingInterval);
+      managerPollingInterval=null;
+      if(managerRealtimeChannel && supabaseClient){
+        supabaseClient.removeChannel(managerRealtimeChannel);
+        managerRealtimeChannel=null;
+      }
+      switchScreen('scr-home');
+    } 
+
+ 
+
+    function populateSectorDropdown(){ const select=document.getElementById('manager-sector-select'); if(!select) return; select.innerHTML='<option value="">-- Sélectionner un profil métier --</option>'; Object.entries(VENDEE_SECTORS).forEach(([key,sector])=>{ const opt=document.createElement('option'); opt.value=key; opt.innerText=sector.name; select.appendChild(opt); }); } 
+
+    function applySectorPreset(){ const key=document.getElementById('manager-sector-select').value; if(!key) return; const ids=VENDEE_SECTORS[key].risks; RISKS_DATABASE.forEach(r=>r.active=ids.includes(r.id)); renderStudioRisks(); populateRiskSelectors(); showToast('Matrice pré-remplie : '+VENDEE_SECTORS[key].name); } 
+
+    function renderStudioRisks(){ const c=document.getElementById('studio-rules-list'); if(!c) return; c.innerHTML=''; RISKS_DATABASE.forEach((risk,index)=>{ const row=document.createElement('div'); row.className='flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border hover:border-blue-300'; row.innerHTML=`<label class="flex items-center gap-3 cursor-pointer flex-1"><input type="checkbox" ${risk.active?'checked':''} onchange="toggleRiskItem(${index})" class="w-4 h-4 rounded text-restev-blue"><span class="text-xs font-bold text-slate-700 dark:text-slate-300">${escapeHtml(risk.name)}</span></label><span class="text-[10px] font-black ${risk.active?'text-emerald-500':'text-slate-400'} uppercase">${risk.active?'Concerné':'Non concerné'}</span>`; c.appendChild(row); }); } 
+
+    function toggleRiskItem(index){ RISKS_DATABASE[index].active=!RISKS_DATABASE[index].active; renderStudioRisks(); populateRiskSelectors(); } 
+
+    function openStudio(){ renderStudioRisks(); switchScreen('scr-studio'); } 
+
+    function saveCustomQCM(){ showToast('Matrice DUERP mise à jour.'); switchScreen('scr-manager'); } 
+
+    function populateRiskSelectors(){ const select=document.getElementById('risk-category-select'); if(!select) return; select.innerHTML=''; RISKS_DATABASE.filter(r=>r.active).forEach(r=>{ const opt=document.createElement('option'); opt.value=r.name; opt.innerText=r.name; select.appendChild(opt); }); } 
+
+ 
+
+    function renderEPIGrid(){ const grid=document.getElementById('epi-grid'); if(!grid) return; grid.innerHTML=''; EPI_LIST.forEach(([id,value,label])=>{ const lab=document.createElement('label'); lab.className='flex items-center gap-2 bg-slate-50 dark:bg-slate-900 p-2 rounded-lg text-[10px] font-bold dark:text-white'; lab.innerHTML=`<input type="checkbox" id="${id}" value="${escapeHtml(value)}" class="text-emerald-500"> ${escapeHtml(label)}`; grid.appendChild(lab); }); } 
+
+    function getSelectedEPI(){ return EPI_LIST.map(([id])=>document.getElementById(id)).filter(i=>i && i.checked).map(i=>i.value); } 
+
+    function saveEPIKit(){ selectedEPIList=getSelectedEPI(); showToast(selectedEPIList.length ? 'Dotation EPI enregistrée au dossier salarié.' : 'Aucun EPI sélectionné.'); } 
+
+    function updateCertificateEPI(){ const box=document.getElementById('cert-epi-list'); if(!box) return; selectedEPIList=getSelectedEPI(); box.innerHTML = selectedEPIList.length ? `<ul class="list-disc list-inside space-y-1">${selectedEPIList.map(e=>`<li>${escapeHtml(e)}</li>`).join('')}</ul>` : '<span class="italic text-slate-400">Aucun EPI déclaré comme remis.</span>'; } 
+
+ 
+
+    function generateEmployeeAccess(){ const name=document.getElementById('reg-emp-name').value.trim(); const code=document.getElementById('lbl-manager-comp-name').innerText.trim(); if(!name) return showToast('Veuillez saisir un nom et un prénom !'); if(!code) return showToast('Code établissement manquant.'); const baseUrl=window.location.origin+window.location.pathname; const url=`${baseUrl}?emp=${encodeURIComponent(name)}&comp=${encodeURIComponent(code)}`; QRCode.toCanvas(document.getElementById('qr-canvas'), url, {width:180, margin:2, color:{dark:'#245ca6', light:'#ffffff'}}, err=>{ if(err){ console.error(err); showToast('Erreur QR Code.'); } else { document.getElementById('qr-area').classList.remove('hidden'); showToast('QR salarié généré.'); } }); } 
+
+ 
+
+    async function submitRiskReport(){ 
+
+      if(!supabaseClient) return showToast('Supabase non chargé. Vérifiez internet.'); 
+
+      const category=document.getElementById('risk-category-select').value; 
+
+      const desc=document.getElementById('risk-description').value.trim(); 
+
+      const lvl=document.getElementById('risk-level').value; 
+
+      const freq=document.getElementById('risk-frequency').value; 
+
+      if(!desc) return showToast('Veuillez saisir une description du danger.'); 
+
+      const employeeName=currentEmployeeSession ? currentEmployeeSession.name : 'Salarié terrain'; 
+
+      const companyCode=currentEmployeeSession ? currentEmployeeSession.company : (document.getElementById('lbl-manager-comp-name')?.innerText || 'Établissement non renseigné'); 
+
+      const { error } = await supabaseClient.from('prevention_reports').insert([{ company_code: companyCode, employee_name: employeeName, category, level: lvl, frequency: freq, description: desc, status:'Nouveau' }]); 
+
+      if(error){ console.error('Erreur Supabase insertion:', error); return showToast('Erreur Supabase : '+error.message); } 
+
+      document.getElementById('risk-description').value=''; 
+
+      showToast('Signalement envoyé au responsable.'); 
+
+      switchScreen('scr-employee'); 
+
+    } 
+
+ 
+
+    function startManagerPolling(){ loadManagerReports(); if(managerPollingInterval) clearInterval(managerPollingInterval); managerPollingInterval=setInterval(loadManagerReports,30000); } 
+
+    async function loadManagerReports() { 
+
+  if (!supabaseClient) { 
+
+    return showToast('Supabase non chargé.'); 
+
+  } 
+
+ 
+
+  const companyCode = document.getElementById('lbl-manager-comp-name')?.innerText?.trim(); 
+
+ 
+
+  if (!companyCode) { 
+
+    return; 
+
+  } 
+
+ 
+
+  const { data, error } = await supabaseClient 
+
+    .from('prevention_reports') 
+
+    .select('id,company_code,employee_name,category,level,frequency,description,status,manager_response,corrective_action,created_at') 
+
+    .eq('company_code', companyCode) 
+
+    .order('created_at', { ascending: false }) 
+
+    .limit(20); 
+
+ 
+
+  if (error) { 
+
+    console.error('Erreur chargement signalements:', error); 
+
+    return showToast('Erreur Supabase : ' + error.message); 
+
+  } 
+
+ 
+
+  renderManagerReports(data || []); 
+
+} 
+
+    function renderManagerReports(reports){ const c=document.getElementById('manager-risk-box'); if(!c) return; c.innerHTML=''; if(!reports.length){ c.innerHTML='<p class="text-xs text-slate-400 italic text-center py-8">Aucun danger signalé pour le moment.</p>'; return; } reports.forEach(r=>{ const card=document.createElement('div'); card.className='p-3 bg-red-50 dark:bg-slate-900 border border-red-200 dark:border-red-800 rounded-xl space-y-2 text-xs'; card.innerHTML=`<div class="flex justify-between items-start gap-2"><div><p class="font-black text-slate-900 dark:text-white">${escapeHtml(r.category || 'Signalement')}</p><p class="text-[10px] text-slate-400">Par ${escapeHtml(r.employee_name || '')} - ${new Date(r.created_at).toLocaleString('fr-FR')}</p></div><span class="text-[10px] font-black px-2 py-1 rounded bg-white dark:bg-slate-800 text-red-600">${escapeHtml(r.level || 'Non défini')}</span></div><p class="text-slate-600 dark:text-slate-300 font-medium">${escapeHtml(r.description || '')}</p><select onchange="updateReportStatus('${r.id}', this.value)" class="w-full p-2 rounded-lg border text-xs font-bold dark:bg-slate-900 dark:text-white"><option value="Nouveau" ${r.status==='Nouveau'?'selected':''}>Nouveau</option><option value="Vu par le responsable" ${r.status==='Vu par le responsable'?'selected':''}>Vu par le responsable</option><option value="En cours de traitement" ${r.status==='En cours de traitement'?'selected':''}>En cours de traitement</option><option value="Traité" ${r.status==='Traité'?'selected':''}>Traité</option></select><textarea id="response-${r.id}" rows="2" placeholder="Réponse au salarié..." class="w-full p-2 rounded-lg border text-xs dark:bg-slate-900 dark:text-white">${escapeHtml(r.manager_response || '')}</textarea><textarea id="action-${r.id}" rows="2" placeholder="Action corrective..." class="w-full p-2 rounded-lg border text-xs dark:bg-slate-900 dark:text-white">${escapeHtml(r.corrective_action || '')}</textarea><button onclick="sendManagerResponse('${r.id}')" class="w-full bg-restev-blue text-white py-2 rounded-lg text-[10px] font-black uppercase">Répondre / enregistrer</button>`; c.appendChild(card); }); } 
+
+    async function sendManagerResponse(id){ const response=document.getElementById(`response-${id}`).value.trim(); const action=document.getElementById(`action-${id}`).value.trim(); const {error}=await supabaseClient.from('prevention_reports').update({manager_response:response, corrective_action:action, status:'En cours de traitement'}).eq('id',id); if(error){ console.error(error); return showToast('Erreur Supabase : '+error.message); } showToast('Réponse enregistrée.'); loadManagerReports(); } 
+
+    async function updateReportStatus(id,status){ const {error}=await supabaseClient.from('prevention_reports').update({status}).eq('id',id); if(error){ console.error(error); return showToast('Erreur Supabase : '+error.message); } showToast('Statut mis à jour.'); } 
+
+ 
+
+    async function openEmployeeMessages(){ if(!currentEmployeeSession) return showToast('Session salarié non reconnue.'); if(!supabaseClient) return showToast('Supabase non chargé. Vérifiez internet.'); const {data,error}=await supabaseClient.from('prevention_reports').select('*').eq('company_code',currentEmployeeSession.company).eq('employee_name',currentEmployeeSession.name).order('created_at',{ascending:false}).limit(20); if(error){ console.error(error); return showToast('Erreur Supabase : '+error.message); } renderEmployeeMessages(data||[]); switchScreen('scr-employee-messages'); } 
+
+    function renderEmployeeMessages(msgs){ const c=document.getElementById('employee-messages-list'); c.innerHTML=''; if(!msgs.length){ c.innerHTML='<p class="text-xs text-slate-400 italic text-center py-6">Aucun message pour le moment.</p>'; return; } msgs.forEach(m=>{ const card=document.createElement('div'); card.className='bg-white dark:bg-slate-800 p-4 rounded-2xl border shadow-sm space-y-2'; card.innerHTML=`<div class="flex justify-between items-start gap-2"><div><p class="text-xs font-black dark:text-white">${escapeHtml(m.category||'Signalement')}</p><p class="text-[10px] text-slate-400">${new Date(m.created_at).toLocaleString('fr-FR')}</p></div><span class="text-[10px] font-black px-2 py-1 rounded bg-blue-50 text-blue-600">${escapeHtml(m.status||'Nouveau')}</span></div><div class="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl"><p class="text-[10px] font-black uppercase text-slate-400 mb-1">Votre signalement</p><p class="text-xs text-slate-700 dark:text-slate-300">${escapeHtml(m.description||'')}</p></div><div class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-xl border"><p class="text-[10px] font-black uppercase text-emerald-600 mb-1">Réponse du responsable</p><p class="text-xs text-slate-700 dark:text-slate-300">${escapeHtml(m.manager_response || 'Aucune réponse pour le moment.')}</p></div><div class="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-xl border"><p class="text-[10px] font-black uppercase text-amber-600 mb-1">Action corrective</p><p class="text-xs text-slate-700 dark:text-slate-300">${escapeHtml(m.corrective_action || 'Aucune action corrective renseignée.')}</p></div>`; c.appendChild(card); }); } 
+
+ 
+
+    function startEmployeeQCM(){ qcmActiveQuestions=RISKS_DATABASE.filter(r=>r.active && r.question); if(!qcmActiveQuestions.length) return showToast('Aucun risque configuré.'); qcmCurrentIndex=0; qcmScore=0; renderQCMQuestion(); switchScreen('scr-qcm'); } 
+
+    function renderQCMQuestion(){ const q=qcmActiveQuestions[qcmCurrentIndex]; document.getElementById('qcm-progress').innerText=`Question ${qcmCurrentIndex+1} / ${qcmActiveQuestions.length}`; document.getElementById('qcm-question-text').innerText=q.question; const box=document.getElementById('qcm-options-box'); box.innerHTML=''; q.options.forEach((opt,i)=>{ const div=document.createElement('div'); div.className='flex items-center p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl hover:bg-blue-50/50'; div.innerHTML=`<label class="flex items-center gap-3 w-full cursor-pointer text-xs font-semibold dark:text-slate-300"><input type="radio" name="qcm-opt" value="${i}" class="w-4 h-4 text-restev-blue"><span>${escapeHtml(opt)}</span></label>`; box.appendChild(div); }); } 
+
+    function submitQCMAnswer(){ const checked=document.querySelector('input[name="qcm-opt"]:checked'); if(!checked) return showToast('Veuillez sélectionner une réponse !'); const q=qcmActiveQuestions[qcmCurrentIndex]; if(parseInt(checked.value,10)===q.answer) qcmScore++; qcmCurrentIndex++; if(qcmCurrentIndex<qcmActiveQuestions.length) return renderQCMQuestion(); const total=qcmActiveQuestions.length; document.getElementById('lbl-qcm-score-final').innerText=`${qcmScore} / ${total}`; const now=new Date(); document.getElementById('lbl-cert-date').innerText='- '+now.toLocaleDateString('fr-FR')+' à '+now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); if(currentEmployeeSession){ document.getElementById('cert-company').value=currentEmployeeSession.company; document.getElementById('cert-employee').value=currentEmployeeSession.name; } updateCertificateEPI(); document.getElementById('chk-sign-emp').checked=false; document.getElementById('chk-sign-mgr').checked=false; updateSignStatus('emp'); updateSignStatus('mgr'); const title=document.getElementById('qcm-result-title'); title.innerText=qcmScore===total?'Attestation de Formation Sécurité':'Attestation de Suivi (Avec Réserves)'; title.className=qcmScore===total?'text-2xl font-black text-emerald-600 print:text-slate-900':'text-2xl font-black text-amber-600 print:text-slate-900'; switchScreen('scr-qcm-success'); } 
+
+    function updateSignStatus(type){ const checked=document.getElementById(`chk-sign-${type}`).checked; const box=document.getElementById(`sign-box-${type}`); if(checked){ box.innerHTML=`<div class="text-center p-2"><p class="font-black text-lg ${type==='mgr'?'text-emerald-600':'text-restev-blue'}" style="font-family: 'Brush Script MT', cursive; transform: rotate(-3deg);">Validé</p><p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">Le ${new Date().toLocaleDateString('fr-FR')}</p></div>`; } else { box.innerHTML='<span class="text-xs italic text-slate-400 print:hidden">En attente...</span>'; } } 
+
+    function prepareAndPrint(){ window.print(); } 
+
+    function finalizeAndClose(){ if(!document.getElementById('chk-sign-emp').checked || !document.getElementById('chk-sign-mgr').checked) return showToast('Vous devez cocher les deux signatures.'); const table=document.getElementById('manager-emargements-list'); const empty=table.querySelector('td[colspan="4"]'); if(empty) empty.parentElement.remove(); const name=document.getElementById('cert-employee').value || (currentEmployeeSession?currentEmployeeSession.name:'Salarié'); const now=new Date().toLocaleString('fr-FR'); const row=document.createElement('tr'); row.className='border-b border-slate-100 dark:border-slate-700'; row.innerHTML=`<td class="p-3 font-bold dark:text-white">${escapeHtml(name)}</td><td class="p-3 text-slate-500">${now}</td><td class="p-3"><span class="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded font-bold">${qcmScore} / ${qcmActiveQuestions.length}</span></td><td class="p-3 text-emerald-500 font-extrabold text-[11px] uppercase">Validé et signé</td>`; table.insertBefore(row, table.firstChild); showToast('Passeport clôturé.'); switchScreen('scr-employee'); } 
+
+ 
+
+    function generateTrainingMenu(){ const c=document.getElementById('menu-list'); if(!c) return; c.innerHTML='<p class="text-xs text-slate-500 italic">Sélectionnez votre secteur pour accéder au tutoriel :</p>'; modulesTuto.forEach(m=>{ const btn=document.createElement('button'); btn.className='p-4 bg-white dark:bg-slate-800 border-l-4 border-restev-blue shadow-sm rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-700 transition w-full flex items-center justify-between'; btn.onclick=()=>loadTrainingModule(m.url); btn.innerHTML=`<span class="font-semibold text-slate-700 dark:text-white text-sm">${escapeHtml(m.titre)}</span><i class="fa-solid fa-chevron-right text-slate-300"></i>`; c.appendChild(btn); }); } 
+
+    function loadTrainingModule(url){ currentTutoUrl=url; const iframe=document.getElementById('tuto-viewer'); iframe.src=url; document.getElementById('menu-list').classList.add('hidden'); document.getElementById('tuto-container').classList.remove('hidden'); adjustTutoViewer(); setTimeout(()=>window.scrollTo({top:0,behavior:'smooth'}),100); } 
+
+    function backToTrainingMenu(){ document.getElementById('tuto-viewer').src=''; currentTutoUrl=''; document.getElementById('menu-list').classList.remove('hidden'); document.getElementById('tuto-container').classList.add('hidden'); } 
+
+    function openTutoFullscreen(){ if(!currentTutoUrl) return showToast('Aucun tutoriel sélectionné.'); const iframe=document.getElementById('tuto-viewer'); if(iframe.requestFullscreen) iframe.requestFullscreen().catch(()=>window.open(currentTutoUrl,'_blank')); else window.open(currentTutoUrl,'_blank'); } 
+
+    function adjustTutoViewer(){ const help=document.getElementById('tuto-orientation-help'); if(!help) return; const isMobile=window.innerWidth<=900; const isLandscape=window.innerWidth>window.innerHeight; help.innerText = isMobile && isLandscape ? 'Mode paysage détecté : affichage optimisé.' : isMobile ? 'Astuce : tournez votre smartphone en paysage ou utilisez Plein écran.' : 'Module chargé. Vous pouvez utiliser Plein écran.'; } 
+
+    function backFromTraining(){ if(currentEmployeeSession) switchScreen('scr-employee'); else switchScreen('scr-home'); } 
+
+ 
+
+    function openEmployeeResources(){ const c=document.getElementById('resources-list'); c.innerHTML=''; const active=RISKS_DATABASE.filter(r=>r.active); if(!active.length){ c.innerHTML='<p class="text-xs text-slate-500 text-center italic py-4">Aucun risque spécifique paramétré.</p>'; } active.forEach(r=>{ const res=OFFICIAL_RESOURCES[r.id]; if(!res) return; const a=document.createElement('a'); a.href=res.link; a.target='_blank'; a.className='block bg-white dark:bg-slate-800 p-4 rounded-2xl border shadow-sm hover:shadow-md transition group'; a.innerHTML=`<div class="flex items-center justify-between gap-3"><div class="space-y-1.5 flex-1"><span class="inline-block text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${res.color} border">${res.org}</span><h4 class="text-sm font-bold dark:text-white group-hover:text-emerald-500 transition leading-tight">${escapeHtml(res.title)}</h4><p class="text-[10px] font-medium text-slate-400 italic">Lié à : ${escapeHtml(r.name)}</p></div><div class="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center text-slate-400"><i class="fa-solid fa-arrow-up-right-from-square text-sm"></i></div></div>`; c.appendChild(a); }); switchScreen('scr-resources'); } 
+
+ 
+
+    function initLeafletMap(){ try{ if(document.getElementById('map') && window.L && !mapInstance){ mapInstance=L.map('map',{zoomControl:false}).setView([46.670,-1.426],13); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance); if(navigator.geolocation){ navigator.geolocation.getCurrentPosition(pos=>{ const lat=pos.coords.latitude,lng=pos.coords.longitude; mapInstance.setView([lat,lng],15); L.marker([lat,lng]).addTo(mapInstance).bindPopup('Position terrain').openPopup(); document.getElementById('geo-status').innerText='📍 Coordonnées GPS verrouillées'; },()=>{ document.getElementById('geo-status').innerText='GPS non disponible'; }); } } }catch(e){ console.warn(e); } } 
+
+    function fixMapSize(){ if(mapInstance) mapInstance.invalidateSize(); } 
+
+    function initChart(){ const ctx=document.getElementById('chart-restev-risks'); if(!ctx || !window.Chart) return; new Chart(ctx,{type:'doughnut',data:{labels:['Chutes','Manutention','RPS'],datasets:[{data:[45,30,25],backgroundColor:['#3a7bd5','#e0248a','#ffb007']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}}); } 
+
+    function escapeHtml(str){ return String(str ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); } 
+
+  </script> 
+
+</body> 
+
+</html>
