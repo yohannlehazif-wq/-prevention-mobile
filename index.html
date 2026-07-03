@@ -2764,7 +2764,49 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log(PATCH_CENTER_VERSION + ' installé');
   });
 })();
-</script>
+<script>
+/* =========================================================
+   PATCH ALIGNEMENT CENTRE RESTEV - PASSEPORTS
+   Aligne les chiffres Total / Acquis / À renforcer
+   ========================================================= */
+
+function alignPassportKpiCards() {
+  const ids = [
+    'restev-passport-total',
+    'restev-passport-complete',
+    'restev-passport-improve'
+  ];
+
+  ids.forEach(id => {
+    const number = document.getElementById(id);
+    if (!number) return;
+
+    const card = number.parentElement;
+    if (!card) return;
+
+    card.classList.add(
+      'flex',
+      'flex-col',
+      'justify-between',
+      'min-h-[105px]'
+    );
+
+    number.classList.add(
+      'leading-none',
+      'mt-3',
+      'block'
+    );
+
+    number.style.lineHeight = '1';
+    number.style.marginTop = '12px';
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(alignPassportKpiCards, 300);
+});
+
+
 
 </body> 
 </html>
