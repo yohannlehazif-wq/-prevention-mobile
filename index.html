@@ -2524,23 +2524,201 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 })();
 </script>
-
-
 <!-- =========================================================
-     PATCH RESTEV 85 — CENTRE RESTEV : SÉPARATION ALERTES / PASSEPORTS
-     Objectif : afficher distinctement
-     1) les alertes / signalements terrain
-     2) les passeports prévention validés
+     PATCH RESTEV 85 — CORRECTION CLÔTURE QCM / REMONTÉE PASSEPORT
+     Objectif : le bouton "Clôturer & Quitter" ne doit plus bloquer.
+     - Détection renforcée des signatures canvas
+     - Enregistrement direct passport_registry
+     - Remontée Centre RESTEV dans prevention_stats
+     - Message d'erreur visible si Supabase bloque
      ========================================================= -->
 <script>
 (function(){
-  const PATCH_CENTER_VERSION = 'RESTEV85_CENTER_SPLIT_ALERTES_PASSEPORTS_2026_07_03';
+  const PATCH_QCM_VERSION = 'RESTEV85_QCM_CLOTURE_FIX_2026_07_03';
+  function r85Text(id){ return (document.getElementById(id)?.value || document.getElementById(id)?.innerText || '').trim(); }
+  function r85NowFr(){ return new Date().toLocaleString('fr-FR'); }
+  function r85Period(){ return new Date().toISOString().slice(0,7); }
+  function r85SafeToast(msg){ if(typeof showToast === 'function') showToast(msg); else alert(msg); }
+  function r85CanvasHasInk(type){
+    const canvas = document.getElementById(`sig-canvas-${type}`);
+    if(!canvas) return false;
+    try{
+      const data = canvas.toDataURL('image/png');
+      // Un canvas vide est très court. Dès qu'il y a un tracé, la taille augmente nettement.
+      return data && data.length > 1800;
+    }catch(e){ return false; }
+  }
+  function r85SignatureDone(type){
+    try{
+      if(typeof isSignatureDone === 'function' && isSignatureDone(type)) return true;
+    }catch(e){}
+    return r85CanvasHasInk(type);
+  }
+  function r85SignatureData(type){
+    try{
+      if(typeof getSignatureData === 'function') return getSignatureData(type);
+    }catch(e){}
+    const canvas = document.getElementById(`sig-canvas-${type}`);
+    try{ return canvas ? canvas.toDataURL('image/png') : null; }catch(e){ return null; }
+  }
+  function r85GetEpis(){
+    try{
+      if(typeof updateCertificateEPI === 'function') updateCertificateEPI();
+    }catch(e){}
+    try{
+      if(Array.isArray(selectedEPIList) && selectedEPIList.length) return selectedEPIList;
+    }catch(e){}
+    try{
+      if(typeof getSelectedEPI === 'function') return getSelectedEPI();
+    }catch(e){}
+    return [];
+  }
+  function r85GetScoreParts(){
+    let score = 0;
+    let total = 0;
+    try{ score = Number(qcmScore || 0); }catch(e){}
+    try{ total = Number((qcmActiveQuestions && qcmActiveQuestions.length) || 0); }catch(e){}
+    // Fallback depuis l'affichage "8 / 10" si les variables JS sont indisponibles.
+    if(!total){
+      const txt = r85Text('lbl-qcm-score-final');
+      const m = txt.match(/(\d+)\s*\/\s*(\d+)/);
+      if(m){ score = Number(m[1]); total = Number(m[2]); }
+    }
+    return {score, total};
+  }
+  function r85GetCompanyCode(){
+    let company = '';
+    try{ company = currentEmployeeSession?.company || ''; }catch(e){}
+    company = company || r85Text('cert-company') || r85Text('lbl-manager-comp-name') || 'Établissement non renseigné';
+    return company.trim();
+  }
+  function r85GetEmployeeName(){
+    let name = '';
+    try{ name = currentEmployeeSession?.name || ''; }catch(e){}
+    return (r85Text('cert-employee') || name || 'Salarié').trim();
+  }
+  function r85GetSector(){
+    try{ if(typeof getCurrentSectorLabel === 'function') return getCurrentSectorLabel(); }catch(e){}
+    try{ return currentEmployeeSession?.sector || 'Non renseigné'; }catch(e){ return 'Non renseigné'; }
+  }
+  function r85GetSize(){
+    try{ if(typeof getCurrentCompanySizeLabel === 'function') return getCurrentCompanySizeLabel(); }catch(e){}
+    return 'Non renseigné';
+  }
+  async function r85InsertPassport(entry, score, total){
+    if(!supabaseClient) return {ok:false, error:'Supabase non chargé'};
+    const payload = {
+      company_code: entry.company_code,
+      employee_name: entry.employee_name,
+      score: score,
+      total: total,
+      epis: entry.epis || [],
+      status: entry.status || 'Validé et signé',
+      signature_employee: entry.signature_employee || null,
+      signature_manager: entry.signature_manager || null
+    };
+    const {error} = await supabaseClient.from('passport_registry').insert([payload]);
+    if(error) return {ok:false, error:error.message};
+    return {ok:true};
+  }
+  async function r85InsertPassportStat(entry, score, total){
+    if(!supabaseClient) return {ok:false, error:'Supabase non chargé'};
+    const complete = total > 0 && score === total;
+    const payload = {
+      period_month: r85Period(),
+      sector: entry.sector || r85GetSector(),
+      company_size_range: r85GetSize(),
+      risk_category: 'Validation passeport prévention',
+      risk_level: complete ? 'Acquis complet' : 'Points à renforcer',
+      frequency: 'Ponctuelle',
+      event_type: 'Passeport validé',
+      corrective_action_type: complete ? 'Aucune' : 'Reprise des points faibles'
+    };
+    const {error} = await supabaseClient.from('prevention_stats').insert([payload]);
+    if(error) return {ok:false, error:error.message};
+    return {ok:true};
+  }
+  function r85SaveLocal(entry){
+    try{
+      const key = `restev_passport_registry_${entry.company_code || 'default'}`;
+      let rows = [];
+      try{ rows = JSON.parse(safeStorage.getItem(key) || '[]'); }catch(e){ rows = []; }
+      rows.unshift(entry);
+      safeStorage.setItem(key, JSON.stringify(rows.slice(0,100)));
+    }catch(e){ console.warn('Sauvegarde locale passeport impossible:', e); }
+  }
+  window.finalizeAndClose = async function(){
+    // Anti double-clic
+    const btns = Array.from(document.querySelectorAll('button')).filter(b => (b.textContent || '').includes('Clôturer'));
+    btns.forEach(b => { b.disabled = true; b.dataset.oldText = b.innerHTML; b.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Enregistrement...'; });
+    try{
+      try{ if(typeof updateCertificateEPI === 'function') updateCertificateEPI(); }catch(e){}
+      try{ if(typeof initSignaturePads === 'function') initSignaturePads(); }catch(e){}
+      const empSigned = r85SignatureDone('emp');
+      const mgrSigned = r85SignatureDone('mgr');
+      // On n'empêche plus la remontée : si une signature n'est pas détectée, on enregistre avec réserve.
+      // Cela corrige le blocage rencontré à la fin du QCM.
+      const signatureStatus = (empSigned && mgrSigned) ? 'Validé et signé' : 'Validé - signature à vérifier';
+      const {score, total} = r85GetScoreParts();
+      const entry = {
+        company_code: r85GetCompanyCode(),
+        employee_name: r85GetEmployeeName(),
+        validated_at: r85NowFr(),
+        score: `${score}/${total}`,
+        epis: r85GetEpis(),
+        sector: r85GetSector(),
+        status: signatureStatus,
+        signature_employee: r85SignatureData('emp'),
+        signature_manager: r85SignatureData('mgr')
+      };
+      if(!entry.company_code || entry.company_code === 'Établissement non renseigné'){
+        r85SafeToast('Code établissement manquant : impossible de remonter le passeport.');
+        return;
+      }
+      r85SaveLocal(entry);
+      const pass = await r85InsertPassport(entry, score, total);
+      if(!pass.ok){
+        console.error('Erreur passport_registry:', pass.error);
+        r85SafeToast('Erreur registre passeport : ' + pass.error);
+        return;
+      }
+      const stat = await r85InsertPassportStat(entry, score, total);
+      if(!stat.ok){
+        console.warn('Stat RESTEV non enregistrée:', stat.error);
+        r85SafeToast('Passeport enregistré, mais statistique RESTEV bloquée : ' + stat.error);
+      } else {
+        r85SafeToast('Passeport clôturé, enregistré et remonté au Centre RESTEV.');
+      }
+      try{ if(typeof loadPassportRegistry === 'function') await loadPassportRegistry(); }catch(e){}
+      switchScreen('scr-employee');
+    }catch(e){
+      console.error('Erreur clôture QCM:', e);
+      r85SafeToast('Erreur clôture QCM : ' + (e.message || e));
+    }finally{
+      btns.forEach(b => { b.disabled = false; if(b.dataset.oldText) b.innerHTML = b.dataset.oldText; });
+    }
+  };
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log(PATCH_QCM_VERSION + ' installé');
+  });
+})();
+</script>
+
+
+<!-- =========================================================
+     PATCH RESTEV 85 — CENTRE RESTEV SÉPARÉ + ALIGNEMENT KPI
+     - Sépare distinctement Alertes terrain / Passeports prévention
+     - Aligne les chiffres : Total passeports / Acquis complets / À renforcer
+     À placer juste avant </body>
+     ========================================================= -->
+<script>
+(function(){
+  const PATCH_VERSION = 'RESTEV85_CENTER_SPLIT_AND_ALIGN_2026_07_03';
 
   function r85Esc(v){
     if(typeof escapeHtml === 'function') return escapeHtml(v || '');
     return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
-
   function r85CountBy(rows, key){
     return (rows || []).reduce((acc, row) => {
       const value = row[key] || 'Non renseigné';
@@ -2548,17 +2726,53 @@ document.addEventListener('DOMContentLoaded', () => {
       return acc;
     }, {});
   }
-
-  function r85Top(obj, limit=5){
+  function r85Top(obj, limit=6){
     return Object.entries(obj || {}).sort((a,b) => b[1] - a[1]).slice(0, limit);
   }
+
+  window.alignPassportKpiCards = function(){
+    const ids = ['restev-passport-total','restev-passport-complete','restev-passport-improve'];
+    ids.forEach(id => {
+      const number = document.getElementById(id);
+      if(!number) return;
+      const card = number.parentElement;
+      if(!card) return;
+
+      // Même structure visuelle pour les 3 cartes KPI
+      card.classList.add('flex','flex-col','items-center','justify-center','text-center','min-h-[118px]');
+      card.style.minHeight = '118px';
+      card.style.display = 'flex';
+      card.style.flexDirection = 'column';
+      card.style.alignItems = 'center';
+      card.style.justifyContent = 'center';
+      card.style.textAlign = 'center';
+
+      const label = card.querySelector('p:first-child');
+      if(label){
+        label.classList.add('min-h-[26px]','flex','items-center','justify-center','text-center');
+        label.style.minHeight = '26px';
+        label.style.display = 'flex';
+        label.style.alignItems = 'center';
+        label.style.justifyContent = 'center';
+        label.style.margin = '0 0 10px 0';
+        label.style.lineHeight = '1.05';
+      }
+
+      number.classList.add('leading-none','block','text-center');
+      number.style.lineHeight = '1';
+      number.style.marginTop = '0';
+      number.style.display = 'block';
+      number.style.width = '100%';
+      number.style.textAlign = 'center';
+    });
+  };
 
   function installCenterSplitLayout(){
     const screen = document.getElementById('scr-direction');
     if(!screen || document.getElementById('restev-center-split-dashboard')) return;
 
-    const originalCards = document.getElementById('stats-total')?.closest('.grid');
-    if(originalCards) originalCards.style.display = 'none';
+    const oldCards = document.getElementById('stats-total')?.closest('.grid');
+    if(oldCards) oldCards.style.display = 'none';
 
     const split = document.createElement('div');
     split.id = 'restev-center-split-dashboard';
@@ -2574,9 +2788,9 @@ document.addEventListener('DOMContentLoaded', () => {
             <button onclick="loadRestevStats()" class="text-[10px] bg-red-50 text-red-600 dark:bg-slate-700 dark:text-red-300 px-3 py-2 rounded-xl font-black">Actualiser</button>
           </div>
           <div class="grid grid-cols-3 gap-3">
-            <div class="bg-red-50 dark:bg-slate-900 p-4 rounded-2xl border border-red-100 dark:border-red-900"><p class="text-[9px] font-black uppercase text-slate-400">Total alertes</p><p id="restev-alert-total" class="text-3xl font-black text-red-600">0</p></div>
-            <div class="bg-orange-50 dark:bg-slate-900 p-4 rounded-2xl border border-orange-100 dark:border-orange-900"><p class="text-[9px] font-black uppercase text-slate-400">Critiques</p><p id="restev-alert-critical" class="text-3xl font-black text-orange-600">0</p></div>
-            <div class="bg-blue-50 dark:bg-slate-900 p-4 rounded-2xl border border-blue-100 dark:border-blue-900"><p class="text-[9px] font-black uppercase text-slate-400">Risque dominant</p><p id="restev-alert-top" class="text-xs font-black text-blue-700 mt-2 leading-tight">—</p></div>
+            <div class="bg-red-50 dark:bg-slate-900 p-4 rounded-2xl border border-red-100 dark:border-red-900 text-center min-h-[118px] flex flex-col items-center justify-center"><p class="text-[9px] font-black uppercase text-slate-400 min-h-[26px] flex items-center">Total alertes</p><p id="restev-alert-total" class="text-3xl font-black text-red-600 leading-none">0</p></div>
+            <div class="bg-orange-50 dark:bg-slate-900 p-4 rounded-2xl border border-orange-100 dark:border-orange-900 text-center min-h-[118px] flex flex-col items-center justify-center"><p class="text-[9px] font-black uppercase text-slate-400 min-h-[26px] flex items-center">Critiques</p><p id="restev-alert-critical" class="text-3xl font-black text-orange-600 leading-none">0</p></div>
+            <div class="bg-blue-50 dark:bg-slate-900 p-4 rounded-2xl border border-blue-100 dark:border-blue-900 text-center min-h-[118px] flex flex-col items-center justify-center"><p class="text-[9px] font-black uppercase text-slate-400 min-h-[26px] flex items-center">Risque dominant</p><p id="restev-alert-top" class="text-xs font-black text-blue-700 leading-tight">—</p></div>
           </div>
           <div>
             <h4 class="text-xs font-black uppercase text-slate-500 mb-2">Top alertes par risque</h4>
@@ -2593,9 +2807,9 @@ document.addEventListener('DOMContentLoaded', () => {
             <span class="text-[10px] bg-emerald-50 text-emerald-600 dark:bg-slate-700 dark:text-emerald-300 px-3 py-2 rounded-xl font-black">Registre séparé</span>
           </div>
           <div class="grid grid-cols-3 gap-3">
-            <div class="bg-emerald-50 dark:bg-slate-900 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900"><p class="text-[9px] font-black uppercase text-slate-400">Total passeports</p><p id="restev-passport-total" class="text-3xl font-black text-emerald-600">0</p></div>
-            <div class="bg-teal-50 dark:bg-slate-900 p-4 rounded-2xl border border-teal-100 dark:border-teal-900"><p class="text-[9px] font-black uppercase text-slate-400">Acquis complets</p><p id="restev-passport-complete" class="text-3xl font-black text-teal-600">0</p></div>
-            <div class="bg-amber-50 dark:bg-slate-900 p-4 rounded-2xl border border-amber-100 dark:border-amber-900"><p class="text-[9px] font-black uppercase text-slate-400">À renforcer</p><p id="restev-passport-improve" class="text-3xl font-black text-amber-600">0</p></div>
+            <div class="bg-emerald-50 dark:bg-slate-900 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900 text-center min-h-[118px] flex flex-col items-center justify-center"><p class="text-[9px] font-black uppercase text-slate-400 min-h-[26px] flex items-center justify-center">Total passeports</p><p id="restev-passport-total" class="text-3xl font-black text-emerald-600 leading-none">0</p></div>
+            <div class="bg-teal-50 dark:bg-slate-900 p-4 rounded-2xl border border-teal-100 dark:border-teal-900 text-center min-h-[118px] flex flex-col items-center justify-center"><p class="text-[9px] font-black uppercase text-slate-400 min-h-[26px] flex items-center justify-center">Acquis complets</p><p id="restev-passport-complete" class="text-3xl font-black text-teal-600 leading-none">0</p></div>
+            <div class="bg-amber-50 dark:bg-slate-900 p-4 rounded-2xl border border-amber-100 dark:border-amber-900 text-center min-h-[118px] flex flex-col items-center justify-center"><p class="text-[9px] font-black uppercase text-slate-400 min-h-[26px] flex items-center justify-center">À renforcer</p><p id="restev-passport-improve" class="text-3xl font-black text-amber-600 leading-none">0</p></div>
           </div>
           <div>
             <h4 class="text-xs font-black uppercase text-slate-500 mb-2">Derniers passeports enregistrés</h4>
@@ -2603,17 +2817,13 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         </div>
       </div>
-
-      <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl">
-        <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
-          <b>Lecture séparée :</b> les alertes terrain servent à repérer les risques à traiter, tandis que les passeports prévention mesurent l'activité d'accueil / formation. Les deux flux restent distincts pour éviter de mélanger les signalements de danger avec les validations pédagogiques.
-        </p>
-      </div>
     `;
 
     const hero = screen.querySelector('.bg-gradient-to-br');
     if(hero && hero.nextSibling) screen.insertBefore(split, hero.nextSibling);
     else screen.appendChild(split);
+
+    setTimeout(window.alignPassportKpiCards, 100);
   }
 
   window.loadRestevStats = async function(){
@@ -2621,7 +2831,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if(!supabaseClient){ showToast('Supabase non chargé : statistiques indisponibles.'); return; }
 
     try{
-      // 1) Alertes / signalements anonymisés depuis prevention_stats
       const statRes = await supabaseClient
         .from('prevention_stats')
         .select('period_month,sector,company_size_range,risk_category,risk_level,frequency,event_type,created_at')
@@ -2635,10 +2844,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const allStats = statRes.data || [];
-      const alertRows = allStats.filter(r => (r.event_type || '').toLowerCase().includes('signalement'));
-      const passportStatRows = allStats.filter(r => (r.event_type || '').toLowerCase().includes('passeport'));
+      const alertRows = allStats.filter(r => String(r.event_type || '').toLowerCase().includes('signalement'));
+      const passportStatRows = allStats.filter(r => String(r.event_type || '').toLowerCase().includes('passeport'));
 
-      // 2) Passeports depuis le registre nominatif entreprise, puis affichage Centre sans commentaire détaillé.
       let passportRows = [];
       const passRes = await supabaseClient
         .from('passport_registry')
@@ -2646,13 +2854,9 @@ document.addEventListener('DOMContentLoaded', () => {
         .order('created_at',{ascending:false})
         .limit(500);
 
-      if(!passRes.error && passRes.data){
-        passportRows = passRes.data || [];
-      } else {
-        console.warn('passport_registry non disponible, fallback prevention_stats:', passRes.error?.message);
-      }
-
+      if(!passRes.error && passRes.data) passportRows = passRes.data || [];
       renderRestevSplitStats(alertRows, passportRows, passportStatRows);
+      setTimeout(window.alignPassportKpiCards, 100);
     }catch(e){
       console.error(e);
       showToast('Erreur chargement Centre RESTEV.');
@@ -2664,17 +2868,14 @@ document.addEventListener('DOMContentLoaded', () => {
     passportRows = passportRows || [];
     passportStatRows = passportStatRows || [];
 
-    // ALERTES
     const riskCounts = r85CountBy(alertRows, 'risk_category');
     const topAlerts = r85Top(riskCounts, 6);
     const critical = alertRows.filter(r => String(r.risk_level || '').toLowerCase().includes('critique')).length;
 
-    const alertTotalEl = document.getElementById('restev-alert-total');
-    if(alertTotalEl) alertTotalEl.innerText = String(alertRows.length);
-    const criticalEl = document.getElementById('restev-alert-critical');
-    if(criticalEl) criticalEl.innerText = String(critical);
-    const topEl = document.getElementById('restev-alert-top');
-    if(topEl) topEl.innerText = topAlerts[0] ? topAlerts[0][0] : '—';
+    const set = (id, value) => { const el = document.getElementById(id); if(el) el.innerText = String(value); };
+    set('restev-alert-total', alertRows.length);
+    set('restev-alert-critical', critical);
+    set('restev-alert-top', topAlerts[0] ? topAlerts[0][0] : '—');
 
     const alertList = document.getElementById('restev-alert-list');
     if(alertList){
@@ -2684,35 +2885,21 @@ document.addEventListener('DOMContentLoaded', () => {
             <p class="text-xs font-black dark:text-white">${idx+1}. ${r85Esc(risk)}</p>
             <span class="text-[10px] font-black text-red-600 bg-white dark:bg-slate-800 px-2 py-1 rounded-lg">${count}</span>
           </div>
-        </div>
-      `).join('') : '<p class="text-xs text-slate-400 italic">Aucune alerte terrain.</p>';
+        </div>`).join('') : '<p class="text-xs text-slate-400 italic">Aucune alerte terrain.</p>';
     }
 
-    // PASSEPORTS
-    let complete = 0;
-    let improve = 0;
+    let complete = 0, improve = 0;
     passportRows.forEach(p => {
-      const s = Number(p.score || 0);
-      const t = Number(p.total || 0);
-      if(t > 0 && s === t) complete++;
-      else improve++;
+      const s = Number(p.score || 0), t = Number(p.total || 0);
+      if(t > 0 && s === t) complete++; else improve++;
     });
-
-    // Fallback si passport_registry vide mais prevention_stats contient les validations.
     if(!passportRows.length && passportStatRows.length){
-      passportStatRows.forEach(p => {
-        if(String(p.risk_level || '').toLowerCase().includes('complet')) complete++;
-        else improve++;
-      });
+      passportStatRows.forEach(p => String(p.risk_level || '').toLowerCase().includes('complet') ? complete++ : improve++);
     }
-
-    const totalPassports = passportRows.length || passportStatRows.length;
-    const passTotalEl = document.getElementById('restev-passport-total');
-    if(passTotalEl) passTotalEl.innerText = String(totalPassports);
-    const completeEl = document.getElementById('restev-passport-complete');
-    if(completeEl) completeEl.innerText = String(complete);
-    const improveEl = document.getElementById('restev-passport-improve');
-    if(improveEl) improveEl.innerText = String(improve);
+    const passportTotal = passportRows.length || passportStatRows.length;
+    set('restev-passport-total', passportTotal);
+    set('restev-passport-complete', complete);
+    set('restev-passport-improve', improve);
 
     const passportList = document.getElementById('restev-passport-list');
     if(passportList){
@@ -2726,87 +2913,33 @@ document.addEventListener('DOMContentLoaded', () => {
               </div>
               <span class="text-[10px] font-black text-emerald-600 bg-white dark:bg-slate-800 px-2 py-1 rounded-lg">${r85Esc(p.status || 'Validé')}</span>
             </div>
-          </div>
-        `).join('');
+          </div>`).join('');
       } else if(passportStatRows.length){
         passportList.innerHTML = passportStatRows.slice(0,8).map(p => `
           <div class="p-3 rounded-2xl border bg-emerald-50/70 dark:bg-slate-900 border-emerald-100 dark:border-emerald-900">
             <p class="text-xs font-black dark:text-white">${r85Esc(p.risk_category || 'Validation passeport prévention')}</p>
             <p class="text-[10px] text-slate-500">${new Date(p.created_at).toLocaleString('fr-FR')} — ${r85Esc(p.risk_level || '')}</p>
-          </div>
-        `).join('');
+          </div>`).join('');
       } else {
         passportList.innerHTML = '<p class="text-xs text-slate-400 italic">Aucun passeport validé.</p>';
       }
     }
 
-    // Compatibilité avec les anciens compteurs et graphique existant.
-    const totalEl = document.getElementById('stats-total');
-    if(totalEl) totalEl.innerText = String(alertRows.length);
-    const topRiskEl = document.getElementById('stats-top-risk');
-    if(topRiskEl) topRiskEl.innerText = topAlerts[0] ? topAlerts[0][0] : '—';
-    const sectorEl = document.getElementById('stats-sector-count');
-    if(sectorEl) sectorEl.innerText = String(Object.keys(r85CountBy(alertRows, 'sector')).length);
+    // Ancienne zone compatible, mais uniquement sur les alertes.
+    set('stats-total', alertRows.length);
+    set('stats-top-risk', topAlerts[0] ? topAlerts[0][0] : '—');
+    set('stats-sector-count', Object.keys(r85CountBy(alertRows, 'sector')).length);
 
-    const actionBox = document.getElementById('stats-actions-list');
-    if(actionBox){
-      actionBox.innerHTML = topAlerts.length ? topAlerts.map(([risk,count],idx) => `
-        <div class="p-3 rounded-2xl border bg-slate-50 dark:bg-slate-900">
-          <div class="flex justify-between gap-2"><p class="text-xs font-black dark:text-white">${idx+1}. ${r85Esc(risk)}</p><span class="text-[10px] font-black text-restev-blue bg-blue-50 px-2 py-1 rounded-lg">${count}</span></div>
-          <p class="text-[11px] text-slate-500 dark:text-slate-300 mt-1 leading-relaxed">Action prévention à prioriser à partir des alertes terrain uniquement.</p>
-        </div>
-      `).join('') : '<p class="text-xs text-slate-400 italic">Aucune alerte terrain disponible.</p>';
-    }
+    setTimeout(window.alignPassportKpiCards, 100);
   };
 
   document.addEventListener('DOMContentLoaded', () => {
     installCenterSplitLayout();
-    console.log(PATCH_CENTER_VERSION + ' installé');
+    setTimeout(window.alignPassportKpiCards, 300);
+    console.log(PATCH_VERSION + ' installé');
   });
 })();
-<script>
-/* =========================================================
-   PATCH ALIGNEMENT CENTRE RESTEV - PASSEPORTS
-   Aligne les chiffres Total / Acquis / À renforcer
-   ========================================================= */
-
-function alignPassportKpiCards() {
-  const ids = [
-    'restev-passport-total',
-    'restev-passport-complete',
-    'restev-passport-improve'
-  ];
-
-  ids.forEach(id => {
-    const number = document.getElementById(id);
-    if (!number) return;
-
-    const card = number.parentElement;
-    if (!card) return;
-
-    card.classList.add(
-      'flex',
-      'flex-col',
-      'justify-between',
-      'min-h-[105px]'
-    );
-
-    number.classList.add(
-      'leading-none',
-      'mt-3',
-      'block'
-    );
-
-    number.style.lineHeight = '1';
-    number.style.marginTop = '12px';
-  });
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(alignPassportKpiCards, 300);
-});
-
-
+</script>
 
 </body> 
 </html>
