@@ -102,7 +102,6 @@ function normalizeRegistryRow(r){
   return {
     company_code:r.company_code || r.company || '',
     employee_name:r.employee_name || r.employee || 'Salarié',
-    contract_type:r.contract_type || r.contract || 'Non renseigné',
     validated_at: created.includes('/') ? created : new Date(created).toLocaleString('fr-FR'),
     score: scoreText,
     epis: Array.isArray(r.epis) ? r.epis : [],
@@ -114,14 +113,14 @@ function renderPassportRegistry(entries){
   if(!table) return;
   table.innerHTML='';
   if(!entries || !entries.length){
-    table.innerHTML='<tr><td colspan="6" class="p-4 text-center italic text-slate-400">Aucun passeport validé pour le moment. Si un test vient d’être fait sur un autre téléphone, vérifiez que la table Supabase <b>passport_registry</b> existe et que les droits INSERT/SELECT sont ouverts.</td></tr>';
+    table.innerHTML='<tr><td colspan="5" class="p-4 text-center italic text-slate-400">Aucun passeport validé pour le moment. Si un test vient d’être fait sur un autre téléphone, vérifiez que la table Supabase <b>passport_registry</b> existe et que les droits INSERT/SELECT sont ouverts.</td></tr>';
     return;
   }
   entries.forEach(entry=>{
     const row=document.createElement('tr');
     row.className='border-b border-slate-100 dark:border-slate-700';
     const epiText=(entry.epis && entry.epis.length) ? entry.epis.join(', ') : 'Aucun EPI renseigné';
-    row.innerHTML=`<td class="p-3 font-bold dark:text-white">${escapeHtml(entry.employee_name || 'Salarié')}</td><td class="p-3 text-slate-500">${escapeHtml(entry.contract_type || entry.contract || 'Non renseigné')}</td><td class="p-3 text-slate-500">${escapeHtml(entry.validated_at || '')}</td><td class="p-3"><span class="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded font-bold">${escapeHtml(entry.score || '')}</span></td><td class="p-3 text-slate-500">${escapeHtml(epiText)}</td><td class="p-3 text-emerald-500 font-extrabold text-[11px] uppercase">${escapeHtml(entry.status || 'Validé et signé')}</td>`;
+    row.innerHTML=`<td class="p-3 font-bold dark:text-white">${escapeHtml(entry.employee_name || 'Salarié')}</td><td class="p-3 text-slate-500">${escapeHtml(entry.validated_at || '')}</td><td class="p-3"><span class="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded font-bold">${escapeHtml(entry.score || '')}</span></td><td class="p-3 text-slate-500">${escapeHtml(epiText)}</td><td class="p-3 text-emerald-500 font-extrabold text-[11px] uppercase">${escapeHtml(entry.status || 'Validé et signé')}</td>`;
     table.appendChild(row);
   });
 }
@@ -222,7 +221,6 @@ async function finalizeAndClose(){
   const entry={
     company_code: companyCode,
     employee_name: name,
-        contract_type: currentEmployeeSession?.contract_type || document.getElementById('cert-contract')?.value || 'Non renseigné',
     validated_at: now,
     score: `${qcmScore}/${qcmActiveQuestions.length}`,
     epis: selectedEPIList,
@@ -566,16 +564,10 @@ async function loadRestevStats(){
     </h3>
 
     <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed text-justify">
-      L’employeur s’engage à accueillir chaque salarié dans de bonnes conditions et à lui expliquer simplement
-      les règles de sécurité, les risques de son poste et les consignes à respecter. Une attention particulière
-      doit être portée aux salariés de moins de 18 ans, aux intérimaires, aux apprentis et aux saisonniers,
-      car ils peuvent être plus fragiles ou moins connaître l’entreprise.
-    </p>
-
-    <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed text-justify">
-      Conformément à l’article L4141-2 du Code du travail, l’employeur organise une formation pratique et
-      adaptée à la sécurité pour les salariés embauchés, ceux qui changent de poste ou de technique, ainsi que
-      pour les salariés temporaires. Cette formation aide chacun à travailler en sécurité dès son arrivée.
+      Lors de l’embauche ou de l’arrivée sur un nouveau poste, l’employeur doit organiser une information
+      et une formation pratique adaptées à la sécurité. Cette démarche permet au salarié d’identifier les
+      risques auxquels il peut être exposé, de connaître les consignes applicables et d’utiliser correctement
+      les moyens de prévention mis à sa disposition.
     </p>
 
     <div class="bg-blue-50 dark:bg-slate-900/70 border border-blue-100 dark:border-slate-700 p-4 rounded-xl">
@@ -680,7 +672,7 @@ async function loadRestevStats(){
           </select>
         </div> 
 
-        <button onclick="handleManagerLogin()" class="w-full bg-restev-blue text-white py-3 rounded-xl text-sm font-extrabold shadow-md">Accéder à l'Espace</button> 
+        <button id="btn-manager-login" type="button" onclick="handleManagerLogin(); return false;" class="w-full bg-restev-blue text-white py-3 rounded-xl text-sm font-extrabold shadow-md">Accéder à l'Espace</button> 
 
       </div> 
 
@@ -823,15 +815,6 @@ async function loadRestevStats(){
 
             <input type="text" id="reg-emp-name" placeholder="Nom & Prénom du travailleur" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white" /> 
 
-            <select id="reg-emp-contract" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white">
-              <option value="Non renseigné">Statut du salarié</option>
-              <option value="CDI">CDI</option>
-              <option value="CDD">CDD</option>
-              <option value="Intérimaire">Intérimaire</option>
-              <option value="Apprenti">Apprenti</option>
-              <option value="Saisonnier">Saisonnier</option>
-            </select> 
-
             <button onclick="generateEmployeeAccess()" class="w-full bg-gradient-to-r from-restev-magenta to-restev-magenta-dark text-white py-3 rounded-xl text-xs font-extrabold shadow-md"><i class="fa-solid fa-bolt mr-1.5"></i> Générer le QR salarié</button> 
 
             <div id="qr-area" class="hidden flex flex-col items-center justify-center p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-dashed space-y-3"> 
@@ -876,9 +859,9 @@ async function loadRestevStats(){
 
           <table class="w-full text-left text-xs text-slate-500 dark:text-slate-400"> 
 
-            <thead class="bg-slate-50 dark:bg-slate-900 text-[10px] font-black uppercase text-slate-700 dark:text-slate-300"><tr><th class="p-3">Travailleur</th><th class="p-3">Contrat</th><th class="p-3">Date / Heure</th><th class="p-3">Résultat QCM</th><th class="p-3">EPI remis</th><th class="p-3">Statut</th></tr></thead> 
+            <thead class="bg-slate-50 dark:bg-slate-900 text-[10px] font-black uppercase text-slate-700 dark:text-slate-300"><tr><th class="p-3">Travailleur</th><th class="p-3">Date / Heure</th><th class="p-3">Résultat QCM</th><th class="p-3">EPI remis</th><th class="p-3">Statut</th></tr></thead> 
 
-            <tbody id="manager-emargements-list"><tr><td colspan="6" class="p-4 text-center italic text-slate-400">Aucun passeport validé pour le moment.</td></tr></tbody> 
+            <tbody id="manager-emargements-list"><tr><td colspan="5" class="p-4 text-center italic text-slate-400">Aucun passeport validé pour le moment.</td></tr></tbody> 
 
           </table> 
 
@@ -983,8 +966,6 @@ async function loadRestevStats(){
         <div><label class="block text-[10px] font-black uppercase text-slate-500">Formateur / Manager :</label><input type="text" id="cert-manager" class="w-full bg-white dark:bg-slate-800 border p-2 rounded-lg text-sm font-bold dark:text-white print:border-none print:bg-transparent print:p-0 print:text-base print:border-b print:text-black"></div> 
 
         <div><label class="block text-[10px] font-black uppercase text-slate-500">Salarié / Agent :</label><input type="text" id="cert-employee" class="w-full bg-white dark:bg-slate-800 border p-2 rounded-lg text-sm font-bold dark:text-white print:border-none print:bg-transparent print:p-0 print:text-base print:border-b print:text-black"></div> 
-
-        <div><label class="block text-[10px] font-black uppercase text-slate-500">Statut / Contrat :</label><input type="text" id="cert-contract" class="w-full bg-white dark:bg-slate-800 border p-2 rounded-lg text-sm font-bold dark:text-white print:border-none print:bg-transparent print:p-0 print:text-base print:border-b print:text-black" value="Non renseigné"></div> 
 
         <div><label class="block text-[10px] font-black uppercase text-slate-500">Score QCM & Date :</label><div class="flex items-center gap-2 p-2 print:p-0"><span id="lbl-qcm-score-final" class="font-extrabold text-emerald-600 text-lg"></span><span class="text-xs font-medium text-slate-400 print:text-slate-600" id="lbl-cert-date"></span></div></div> 
 
@@ -1767,15 +1748,14 @@ function triggerNewReportAlert(report) {
       const comp=p.get('comp');
       const epis=p.get('epis');
       const sector=p.get('sector') || p.get('secteur');
-      const contract=p.get('contract') || p.get('contrat') || 'Non renseigné';
       if(epis){
         try{ selectedEPIList=JSON.parse(decodeURIComponent(epis)); if(!Array.isArray(selectedEPIList)) selectedEPIList=[]; }
         catch(e){ console.warn('EPI non lisibles depuis le QR Code :', e); selectedEPIList=[]; }
       }
       if(emp && comp){
-        currentEmployeeSession={name:emp, company:comp, epis:selectedEPIList, sector: sector || 'Autre', contract_type: contract};
+        currentEmployeeSession={name:emp, company:comp, epis:selectedEPIList, sector: sector || 'Autre'};
         document.getElementById('lbl-emp-welcome').innerText=`Bonjour, ${emp}`;
-        document.getElementById('lbl-emp-company').innerText=`Établissement : ${comp}${sector ? ' | Secteur : '+sector : ''} | Statut : ${contract}`;
+        document.getElementById('lbl-emp-company').innerText=`Établissement : ${comp}${sector ? ' | Secteur : '+sector : ''}`;
         switchScreen('scr-employee');
         showToast('Passeport Prévention activé via QR Code !');
       }
@@ -1858,17 +1838,16 @@ function triggerNewReportAlert(report) {
     function generateEmployeeAccess(){
       const name=document.getElementById('reg-emp-name').value.trim();
       const code=document.getElementById('lbl-manager-comp-name').innerText.trim();
-      const contract=document.getElementById('reg-emp-contract')?.value || 'Non renseigné';
       if(!name) return showToast('Veuillez saisir un nom et un prénom !');
       if(!code) return showToast('Code établissement manquant.');
       selectedEPIList=getSelectedEPI();
       const baseUrl=window.location.origin+window.location.pathname;
       const episParam=encodeURIComponent(JSON.stringify(selectedEPIList));
       const sectorLabel = managerSector || document.getElementById('manager-login-sector')?.value || 'Autre';
-      const url=`${baseUrl}?emp=${encodeURIComponent(name)}&comp=${encodeURIComponent(code)}&epis=${episParam}&sector=${encodeURIComponent(sectorLabel)}&contract=${encodeURIComponent(contract)}`;
+      const url=`${baseUrl}?emp=${encodeURIComponent(name)}&comp=${encodeURIComponent(code)}&epis=${episParam}&sector=${encodeURIComponent(sectorLabel)}`;
       QRCode.toCanvas(document.getElementById('qr-canvas'), url, {width:180, margin:2, color:{dark:'#245ca6', light:'#ffffff'}}, err=>{
         if(err){ console.error(err); showToast('Erreur QR Code.'); }
-        else { document.getElementById('qr-area').classList.remove('hidden'); showToast(selectedEPIList.length ? `QR salarié généré avec les EPI. Statut : ${contract}` : `QR salarié généré sans EPI. Statut : ${contract}`); }
+        else { document.getElementById('qr-area').classList.remove('hidden'); showToast(selectedEPIList.length ? 'QR salarié généré avec les EPI.' : 'QR salarié généré sans EPI.'); }
       });
     } 
 
@@ -2023,7 +2002,7 @@ function triggerNewReportAlert(report) {
 
     function renderQCMQuestion(){ const q=qcmActiveQuestions[qcmCurrentIndex]; document.getElementById('qcm-progress').innerText=`Question ${qcmCurrentIndex+1} / ${qcmActiveQuestions.length}`; document.getElementById('qcm-question-text').innerText=q.question; const box=document.getElementById('qcm-options-box'); box.innerHTML=''; q.options.forEach((opt,i)=>{ const div=document.createElement('div'); div.className='flex items-center p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl hover:bg-blue-50/50'; div.innerHTML=`<label class="flex items-center gap-3 w-full cursor-pointer text-xs font-semibold dark:text-slate-300"><input type="radio" name="qcm-opt" value="${i}" class="w-4 h-4 text-restev-blue"><span>${escapeHtml(opt)}</span></label>`; box.appendChild(div); }); } 
 
-    function submitQCMAnswer(){ const checked=document.querySelector('input[name="qcm-opt"]:checked'); if(!checked) return showToast('Veuillez sélectionner une réponse !'); const q=qcmActiveQuestions[qcmCurrentIndex]; if(parseInt(checked.value,10)===q.answer) qcmScore++; qcmCurrentIndex++; if(qcmCurrentIndex<qcmActiveQuestions.length) return renderQCMQuestion(); const total=qcmActiveQuestions.length; document.getElementById('lbl-qcm-score-final').innerText=`${qcmScore} / ${total}`; const now=new Date(); document.getElementById('lbl-cert-date').innerText='- '+now.toLocaleDateString('fr-FR')+' à '+now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); if(currentEmployeeSession){ document.getElementById('cert-company').value=currentEmployeeSession.company; document.getElementById('cert-employee').value=currentEmployeeSession.name; const c=document.getElementById('cert-contract'); if(c) c.value=currentEmployeeSession.contract_type || 'Non renseigné'; } updateCertificateEPI(); clearSignature('emp'); clearSignature('mgr'); const title=document.getElementById('qcm-result-title'); title.innerText=qcmScore===total?'Attestation de Formation Sécurité':'Attestation de Suivi (Avec Réserves)'; title.className=qcmScore===total?'text-2xl font-black text-emerald-600 print:text-slate-900':'text-2xl font-black text-amber-600 print:text-slate-900'; switchScreen('scr-qcm-success'); } 
+    function submitQCMAnswer(){ const checked=document.querySelector('input[name="qcm-opt"]:checked'); if(!checked) return showToast('Veuillez sélectionner une réponse !'); const q=qcmActiveQuestions[qcmCurrentIndex]; if(parseInt(checked.value,10)===q.answer) qcmScore++; qcmCurrentIndex++; if(qcmCurrentIndex<qcmActiveQuestions.length) return renderQCMQuestion(); const total=qcmActiveQuestions.length; document.getElementById('lbl-qcm-score-final').innerText=`${qcmScore} / ${total}`; const now=new Date(); document.getElementById('lbl-cert-date').innerText='- '+now.toLocaleDateString('fr-FR')+' à '+now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); if(currentEmployeeSession){ document.getElementById('cert-company').value=currentEmployeeSession.company; document.getElementById('cert-employee').value=currentEmployeeSession.name; } updateCertificateEPI(); clearSignature('emp'); clearSignature('mgr'); const title=document.getElementById('qcm-result-title'); title.innerText=qcmScore===total?'Attestation de Formation Sécurité':'Attestation de Suivi (Avec Réserves)'; title.className=qcmScore===total?'text-2xl font-black text-emerald-600 print:text-slate-900':'text-2xl font-black text-amber-600 print:text-slate-900'; switchScreen('scr-qcm-success'); } 
 
     function updateSignStatus(type){ const checked=document.getElementById(`chk-sign-${type}`).checked; const box=document.getElementById(`sign-box-${type}`); if(checked){ box.innerHTML=`<div class="text-center p-2"><p class="font-black text-lg ${type==='mgr'?'text-emerald-600':'text-restev-blue'}" style="font-family: 'Brush Script MT', cursive; transform: rotate(-3deg);">Validé</p><p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">Le ${new Date().toLocaleDateString('fr-FR')}</p></div>`; } else { box.innerHTML='<span class="text-xs italic text-slate-400 print:hidden">En attente...</span>'; } } 
 
@@ -2129,14 +2108,14 @@ function triggerNewReportAlert(report) {
       if(!table) return;
       table.innerHTML='';
       if(!entries.length){
-        table.innerHTML='<tr><td colspan="6" class="p-4 text-center italic text-slate-400">Aucun passeport validé pour le moment.</td></tr>';
+        table.innerHTML='<tr><td colspan="5" class="p-4 text-center italic text-slate-400">Aucun passeport validé pour le moment.</td></tr>';
         return;
       }
       entries.forEach(entry=>{
         const row=document.createElement('tr');
         row.className='border-b border-slate-100 dark:border-slate-700';
         const epiText=(entry.epis && entry.epis.length) ? entry.epis.join(', ') : 'Aucun EPI renseigné';
-        row.innerHTML=`<td class="p-3 font-bold dark:text-white">${escapeHtml(entry.employee_name || entry.employee || 'Salarié')}</td><td class="p-3 text-slate-500">${escapeHtml(entry.contract_type || entry.contract || 'Non renseigné')}</td><td class="p-3 text-slate-500">${escapeHtml(entry.validated_at || entry.date || '')}</td><td class="p-3"><span class="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded font-bold">${escapeHtml(entry.score || '')}</span></td><td class="p-3 text-slate-500">${escapeHtml(epiText)}</td><td class="p-3 text-emerald-500 font-extrabold text-[11px] uppercase">${escapeHtml(entry.status || 'Validé et signé')}</td>`;
+        row.innerHTML=`<td class="p-3 font-bold dark:text-white">${escapeHtml(entry.employee_name || entry.employee || 'Salarié')}</td><td class="p-3 text-slate-500">${escapeHtml(entry.validated_at || entry.date || '')}</td><td class="p-3"><span class="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded font-bold">${escapeHtml(entry.score || '')}</span></td><td class="p-3 text-slate-500">${escapeHtml(epiText)}</td><td class="p-3 text-emerald-500 font-extrabold text-[11px] uppercase">${escapeHtml(entry.status || 'Validé et signé')}</td>`;
         table.appendChild(row);
       });
     }
@@ -2150,7 +2129,7 @@ function triggerNewReportAlert(report) {
       try{
         const {data,error}=await supabaseClient.from('passport_registry').select('*').eq('company_code',companyCode).order('created_at',{ascending:false}).limit(100);
         if(error){ console.warn('Registre Supabase non disponible :', error.message); return; }
-        entries=(data || []).map(r=>({employee_name:r.employee_name, contract_type:r.contract_type || 'Non renseigné', validated_at:new Date(r.created_at).toLocaleString('fr-FR'), score:`${r.score}/${r.total}`, epis:r.epis || [], status:r.status || 'Validé et signé'}));
+        entries=(data || []).map(r=>({employee_name:r.employee_name, validated_at:new Date(r.created_at).toLocaleString('fr-FR'), score:`${r.score}/${r.total}`, epis:r.epis || [], status:r.status || 'Validé et signé'}));
         renderPassportRegistry(entries);
       }catch(e){ console.warn('Chargement registre local uniquement :', e); }
     }
@@ -2188,7 +2167,6 @@ function triggerNewReportAlert(report) {
       const entry={
         company_code: companyCode,
         employee_name: name,
-        contract_type: currentEmployeeSession?.contract_type || document.getElementById('cert-contract')?.value || 'Non renseigné',
         validated_at: now,
         score: `${qcmScore}/${qcmActiveQuestions.length}`,
         epis: selectedEPIList,
@@ -2536,12 +2514,86 @@ function fixMapSize(){
   else setTimeout(()=>mapInstance.invalidateSize(),250);
 }
 // Ré-init map quand on ouvre l'écran signalement via le shell app
-const previousAppNavigateForMap = appNavigate;
-function appNavigate(screenId, remember=true, restoreScroll=false){
-  previousAppNavigateForMap(screenId, remember, restoreScroll);
+// HOTFIX : sécurise appNavigate sans ReferenceError ni récursion.
+window.appNavigate = function(screenId, remember=true, restoreScroll=false){
+  if (typeof switchScreen === 'function') switchScreen(screenId);
   if(screenId==='scr-report') setTimeout(()=>{ initLeafletMap(); fixMapSize(); },450);
-}
+};
 
+
+
+/* =========================================================
+   HOTFIX V2 — ACCÈS MANAGER FORCÉ ET DIAGNOSTIC
+   À placer en tout dernier dans le script.
+   ========================================================= */
+window.addEventListener('error', function(e){
+  console.error('Erreur JS détectée :', e.message, e.filename, e.lineno);
+  const t = document.getElementById('toast-text');
+  const toast = document.getElementById('toast');
+  if (t && toast) {
+    t.innerText = 'Erreur app : ' + e.message;
+    toast.classList.remove('translate-y-20','opacity-0');
+  }
+});
+
+window.forceOpenManagerSpace = function(){
+  const input = document.getElementById('manager-company-code');
+  const rawCode = (input?.value || '').trim();
+  const code = rawCode ? rawCode.toUpperCase() : 'RSTV-DEMO-0000';
+
+  const lbl = document.getElementById('lbl-manager-comp-name');
+  if (lbl) lbl.innerText = code;
+
+  const sectorValue = document.getElementById('manager-login-sector')?.value || 'Non renseigné';
+  const sizeValue = document.getElementById('manager-login-size')?.value || 'Non renseigné';
+  try {
+    window.managerSector = sectorValue;
+    window.managerCompanySize = sizeValue;
+    localStorage.setItem('restev_manager_sector_' + code, sectorValue);
+    localStorage.setItem('restev_manager_size_' + code, sizeValue);
+  } catch(e) { console.warn('localStorage indisponible', e); }
+
+  // Navigation sans dépendre d'autres patchs.
+  document.querySelectorAll('.screen').forEach(function(s){
+    s.classList.remove('active');
+    s.style.display = 'none';
+  });
+  const manager = document.getElementById('scr-manager');
+  if (manager) {
+    manager.classList.add('active');
+    manager.style.display = 'block';
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  try { unlockAlertSound && unlockAlertSound(); } catch(e) {}
+  try { loadManagerReports && loadManagerReports(); } catch(e) { console.warn('loadManagerReports KO', e); }
+  try { loadPassportRegistry && loadPassportRegistry(); } catch(e) { console.warn('loadPassportRegistry KO', e); }
+  try { startManagerRealtime && startManagerRealtime(); } catch(e) { console.warn('startManagerRealtime KO', e); }
+  try { unlockManagerAlerts && unlockManagerAlerts(); } catch(e) { console.warn('unlockManagerAlerts KO', e); }
+  try { startManagerAlertPolling && startManagerAlertPolling(); } catch(e) { console.warn('startManagerAlertPolling KO', e); }
+
+  if (typeof showToast === 'function') showToast('Espace Management ouvert.');
+};
+
+// Remplacement définitif de la fonction appelée par le bouton.
+window.handleManagerLogin = function(){
+  const code = (document.getElementById('manager-company-code')?.value || '').trim();
+  if (!code) return showToast('Veuillez saisir un code établissement');
+  window.forceOpenManagerSpace();
+};
+
+// Sécurisation directe du bouton, même si onclick est ignoré.
+setTimeout(function(){
+  const btn = document.getElementById('btn-manager-login');
+  if (btn) {
+    btn.type = 'button';
+    btn.onclick = function(ev){
+      if (ev) ev.preventDefault();
+      window.handleManagerLogin();
+      return false;
+    };
+  }
+}, 300);
 </script> 
 
 </body> 
