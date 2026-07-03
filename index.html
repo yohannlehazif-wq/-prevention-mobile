@@ -2706,490 +2706,207 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 <!-- =========================================================
-     PATCH RESTEV 85 — ALERTES MANAGER ULTRA VISUELLES + INFOS DESCENDANTES
-     À COLLER JUSTE AVANT </body>
-     Fonctions ajoutées :
-     - Alerte manager plein écran rouge + gyrophare + badge flottant
-     - Sonnerie renforcée multi-bips
-     - Vibration mobile + notification navigateur
-     - Panneau manager -> salarié via table manager_messages
-     - Lecture salarié des infos descendantes + réponses aux signalements
+     PATCH RESTEV 85 — ALERTES TRAITÉES + SIGNALEMENT SALARIÉ SIMPLIFIÉ
+     À coller juste avant </body>
+
+     1) Retire le badge/alerte suspendue quand les signalements sont traités.
+     2) Simplifie le choix salarié : il ne choisit plus gravité + fréquence,
+        il choisit une phrase simple. L'application traduit en niveau technique.
      ========================================================= -->
 <script>
 (function(){
-  const PATCH_VERSION = 'RESTEV85_ULTRA_ALERTES_INFOS_DESC_2026_07_03';
-  let restevAlertCounter = 0;
-  let restevEmployeeRealtimeChannel = null;
-  let restevManagerRealtimeChannel = null;
-  let restevAudioCtx = null;
-
-  function r85Esc(v){
-    if(typeof escapeHtml === 'function') return escapeHtml(v || '');
-    return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
+  const PATCH_VERSION = 'RESTEV85_TREATED_ALERTS_AND_SIMPLE_REPORT_2026_07_03';
 
   function r85Toast(msg){
     if(typeof showToast === 'function') showToast(msg);
     else alert(msg);
   }
 
-  function r85ManagerCompany(){
+  function r85Company(){
     return (document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
   }
 
-  function r85EmployeeSession(){
-    try { return currentEmployeeSession || window.currentEmployeeSession || null; }
-    catch(e){ return window.currentEmployeeSession || null; }
+  function r85Esc(v){
+    if(typeof escapeHtml === 'function') return escapeHtml(v || '');
+    return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
-  function r85UnlockAudio(){
-    try{
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if(!AC) return;
-      if(!restevAudioCtx) restevAudioCtx = new AC();
-      if(restevAudioCtx.state === 'suspended') restevAudioCtx.resume();
-    }catch(e){ console.warn('Audio RESTEV indisponible:', e); }
-  }
-
-  window.playRestevUltraAlertSound = function(){
-    try{
-      if(typeof soundMuted !== 'undefined' && soundMuted) return;
-      r85UnlockAudio();
-      if(!restevAudioCtx) return;
-      const pattern = [0, .16, .32, .62, .78, .94];
-      pattern.forEach((delay, idx) => {
-        const now = restevAudioCtx.currentTime + delay;
-        const osc = restevAudioCtx.createOscillator();
-        const gain = restevAudioCtx.createGain();
-        osc.type = idx % 2 === 0 ? 'square' : 'sawtooth';
-        osc.frequency.setValueAtTime(idx % 2 === 0 ? 980 : 620, now);
-        gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.exponentialRampToValueAtTime(0.28, now + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
-        osc.connect(gain);
-        gain.connect(restevAudioCtx.destination);
-        osc.start(now);
-        osc.stop(now + 0.16);
-      });
-    }catch(e){ console.warn('Son alerte impossible:', e); }
-  };
-
-  function r85Vibrate(){
-    try { if(navigator.vibrate) navigator.vibrate([350,100,350,100,650]); } catch(e){}
-  }
-
-  function r85BrowserNotification(report){
-    try{
-      if(!('Notification' in window)) return;
-      if(Notification.permission !== 'granted') return;
-      const body = `${report?.employee_name || 'Un salarié'} — ${report?.category || 'Danger signalé'}`;
-      new Notification('🚨 Nouveau signalement prévention', { body, icon:'logo.png', badge:'logo.png' });
-    }catch(e){ console.warn('Notification impossible:', e); }
-  }
-
-  function installUltraAlertStyles(){
-    if(document.getElementById('restev-ultra-alert-styles')) return;
-    const style = document.createElement('style');
-    style.id = 'restev-ultra-alert-styles';
-    style.innerHTML = `
-      @keyframes r85SirenFlash { 0%{background:#7f1d1d; transform:scale(1)} 50%{background:#dc2626; transform:scale(1.015)} 100%{background:#991b1b; transform:scale(1)} }
-      @keyframes r85Shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
-      @keyframes r85Beacon { 0%{box-shadow:0 0 0 0 rgba(239,68,68,.85)} 70%{box-shadow:0 0 0 24px rgba(239,68,68,0)} 100%{box-shadow:0 0 0 0 rgba(239,68,68,0)} }
-      @keyframes r85BadgePulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.12)} }
-      #restev-ultra-alert-overlay.r85-show { display:flex !important; }
-      .r85-alert-card { animation:r85Shake .45s ease-in-out 2; }
-      .r85-beacon { animation:r85Beacon 1s infinite; }
-      .r85-alert-bg { animation:r85SirenFlash .7s infinite; }
-      #restev-alert-floating-badge { animation:r85BadgePulse 1s infinite; }
-    `;
-    document.head.appendChild(style);
-  }
-
-  function installUltraAlertUI(){
-    installUltraAlertStyles();
-    if(!document.getElementById('restev-ultra-alert-overlay')){
-      const overlay = document.createElement('div');
-      overlay.id = 'restev-ultra-alert-overlay';
-      overlay.className = 'hidden fixed inset-0 z-[9999] items-center justify-center p-4 bg-black/70 backdrop-blur-sm no-print';
-      overlay.innerHTML = `
-        <div class="r85-alert-bg r85-alert-card max-w-2xl w-full text-white rounded-[2rem] shadow-2xl border-4 border-white/70 p-6 md:p-8 text-center space-y-5">
-          <div class="mx-auto w-24 h-24 rounded-full bg-white/20 border-4 border-white flex items-center justify-center r85-beacon">
-            <i class="fa-solid fa-triangle-exclamation text-5xl"></i>
-          </div>
-          <div>
-            <p class="text-[11px] font-black uppercase tracking-[.35em] text-red-100">Alerte terrain immédiate</p>
-            <h2 class="text-3xl md:text-5xl font-black mt-2">🚨 SIGNALÉ AU MANAGER 🚨</h2>
-          </div>
-          <div class="bg-white/15 border border-white/30 rounded-2xl p-4 text-left">
-            <p class="text-xs font-black uppercase text-red-100 mb-1">Risque</p>
-            <p id="restev-alert-risk" class="text-xl font-black">—</p>
-            <div class="grid grid-cols-2 gap-3 mt-4">
-              <div><p class="text-[10px] font-black uppercase text-red-100">Salarié</p><p id="restev-alert-employee" class="font-bold">—</p></div>
-              <div><p class="text-[10px] font-black uppercase text-red-100">Gravité</p><p id="restev-alert-level" class="font-bold">—</p></div>
-            </div>
-            <p id="restev-alert-desc" class="text-sm mt-4 leading-relaxed bg-black/20 rounded-xl p-3">—</p>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button onclick="acknowledgeRestevAlert()" class="bg-white text-red-700 py-3 rounded-xl font-black shadow-lg"><i class="fa-solid fa-check mr-1"></i> J'ai vu</button>
-            <button onclick="openRestevAlertsPanel()" class="bg-slate-900 text-white py-3 rounded-xl font-black shadow-lg"><i class="fa-solid fa-list-check mr-1"></i> Ouvrir les signalements</button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(overlay);
-    }
-
-    if(!document.getElementById('restev-alert-floating-badge')){
-      const badge = document.createElement('button');
-      badge.id = 'restev-alert-floating-badge';
-      badge.className = 'hidden fixed bottom-5 left-5 z-[9998] bg-red-600 text-white rounded-2xl shadow-2xl border-4 border-white px-4 py-3 font-black no-print';
-      badge.onclick = () => openRestevAlertsPanel();
-      badge.innerHTML = `<i class="fa-solid fa-bell mr-2"></i><span id="restev-alert-badge-count">0</span> alerte(s)`;
-      document.body.appendChild(badge);
-    }
-  }
-
-  window.acknowledgeRestevAlert = function(){
-    document.getElementById('restev-ultra-alert-overlay')?.classList.remove('r85-show');
-    document.getElementById('restev-ultra-alert-overlay')?.classList.add('hidden');
-  };
-
-  window.openRestevAlertsPanel = function(){
-    acknowledgeRestevAlert();
-    if(typeof switchScreen === 'function') switchScreen('scr-manager');
-    setTimeout(() => document.getElementById('manager-risk-box')?.scrollIntoView({behavior:'smooth', block:'start'}), 300);
-    if(typeof loadManagerReports === 'function') loadManagerReports();
-  };
-
-  window.triggerRestevUltraManagerAlert = function(report){
-    installUltraAlertUI();
-    restevAlertCounter += 1;
+  function hideSuspendedAlertUI(){
     const overlay = document.getElementById('restev-ultra-alert-overlay');
+    if(overlay){
+      overlay.classList.remove('r85-show');
+      overlay.classList.add('hidden');
+    }
+    const banner = document.getElementById('restev-live-alert-banner') || document.getElementById('bigAlertBanner');
+    if(banner) banner.classList.add('hidden');
+    const badge = document.getElementById('restev-alert-floating-badge');
+    if(badge) badge.classList.add('hidden');
+    const count = document.getElementById('restev-alert-badge-count');
+    if(count) count.innerText = '0';
+    try { window.restevAlertCounter = 0; } catch(e) {}
+  }
+
+  window.updateRestevActiveAlertBadge = async function(){
+    if(!supabaseClient) return;
+    const company = r85Company();
+    if(!company) return;
+
+    const { data, error } = await supabaseClient
+      .from('prevention_reports')
+      .select('id,status')
+      .eq('company_code', company)
+      .neq('status', 'Traité')
+      .limit(200);
+
+    if(error){
+      console.warn('Comptage alertes actives impossible:', error.message);
+      return;
+    }
+
+    const activeCount = (data || []).length;
     const badge = document.getElementById('restev-alert-floating-badge');
     const count = document.getElementById('restev-alert-badge-count');
-    if(count) count.innerText = String(restevAlertCounter);
-    if(badge) badge.classList.remove('hidden');
 
-    const set = (id,val) => { const el = document.getElementById(id); if(el) el.innerText = val || '—'; };
-    set('restev-alert-risk', report?.category);
-    set('restev-alert-employee', report?.employee_name);
-    set('restev-alert-level', report?.level);
-    set('restev-alert-desc', report?.description);
+    if(count) count.innerText = String(activeCount);
 
-    overlay?.classList.remove('hidden');
-    overlay?.classList.add('r85-show');
-
-    window.playRestevUltraAlertSound();
-    r85Vibrate();
-    r85BrowserNotification(report);
-    r85Toast('🚨 Nouveau signalement terrain reçu !');
-
-    setTimeout(() => {
-      // On garde le badge visible, mais on retire le plein écran après 18 secondes.
-      overlay?.classList.remove('r85-show');
-      overlay?.classList.add('hidden');
-    }, 18000);
+    if(activeCount <= 0){
+      hideSuspendedAlertUI();
+    } else if(badge){
+      badge.classList.remove('hidden');
+    }
   };
 
-  function installManagerMessagePanel(){
-    const managerScreen = document.getElementById('scr-manager');
-    if(!managerScreen || document.getElementById('restev-manager-desc-panel')) return;
-
-    const panel = document.createElement('div');
-    panel.id = 'restev-manager-desc-panel';
-    panel.className = 'bg-white dark:bg-slate-800 p-5 rounded-2xl border-t-4 border-t-cyan-500 shadow-premium space-y-4';
-    panel.innerHTML = `
-      <div class="flex items-center justify-between gap-2">
-        <h3 class="font-black dark:text-white text-xs uppercase tracking-wider flex items-center gap-2">
-          <i class="fa-solid fa-bullhorn text-cyan-500"></i> Infos descendantes manager → salarié
-        </h3>
-        <button onclick="loadManagerSentMessages()" class="text-[10px] bg-cyan-50 text-cyan-700 dark:bg-slate-700 dark:text-cyan-300 px-3 py-2 rounded-xl font-black">Historique</button>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <input id="r85-msg-employee" class="md:col-span-1 w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white" placeholder="Nom exact du salarié">
-        <input id="r85-msg-title" class="md:col-span-2 w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white" placeholder="Titre : consigne, rappel, info...">
-        <select id="r85-msg-priority" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white">
-          <option value="Information">Information</option>
-          <option value="Important">Important</option>
-          <option value="Urgent">Urgent</option>
-        </select>
-      </div>
-      <textarea id="r85-msg-content" rows="3" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white" placeholder="Votre message prévention au salarié..."></textarea>
-      <button onclick="sendManagerMessage()" class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 text-white py-3 rounded-xl text-xs font-extrabold shadow-md">
-        <i class="fa-solid fa-paper-plane mr-1"></i> Envoyer au salarié
-      </button>
-      <div id="r85-manager-sent-messages" class="space-y-2"></div>
-    `;
-
-    const registryTitle = Array.from(managerScreen.querySelectorAll('h3')).find(h => h.textContent.includes('Registre des Passeports'));
-    const registryCard = registryTitle ? registryTitle.closest('.bg-white, .dark\\:bg-slate-800') : null;
-    if(registryCard) managerScreen.insertBefore(panel, registryCard);
-    else managerScreen.appendChild(panel);
-  }
-
-  window.sendManagerMessage = async function(){
-    if(!supabaseClient) return r85Toast('Supabase non chargé.');
-    const company = r85ManagerCompany();
-    if(!company) return r85Toast('Code établissement manager manquant.');
-
-    const employee_name = document.getElementById('r85-msg-employee')?.value.trim();
-    const title = document.getElementById('r85-msg-title')?.value.trim();
-    const message = document.getElementById('r85-msg-content')?.value.trim();
-    const priority = document.getElementById('r85-msg-priority')?.value || 'Information';
-
-    if(!employee_name || !title || !message) return r85Toast('Complétez le salarié, le titre et le message.');
-
-    const { error } = await supabaseClient.from('manager_messages').insert([{
-      company_code: company,
-      employee_name,
-      title,
-      message,
-      priority,
-      read_by_employee: false
-    }]);
-
-    if(error){
-      console.error('Erreur manager_messages:', error);
-      return r85Toast('Erreur info descendante : ' + error.message);
+  // Override statut : quand une alerte passe en Traité, on recalcule immédiatement le badge.
+  const oldUpdateReportStatus = window.updateReportStatus;
+  window.updateReportStatus = async function(id, status){
+    if(!supabaseClient){
+      if(typeof oldUpdateReportStatus === 'function') return oldUpdateReportStatus(id,status);
+      return r85Toast('Supabase non chargé.');
     }
-
-    document.getElementById('r85-msg-title').value = '';
-    document.getElementById('r85-msg-content').value = '';
-    r85Toast('Information descendante envoyée au salarié.');
-    loadManagerSentMessages();
-  };
-
-  window.loadManagerSentMessages = async function(){
-    const box = document.getElementById('r85-manager-sent-messages');
-    if(!box || !supabaseClient) return;
-    const company = r85ManagerCompany();
-    if(!company) return;
-
-    const {data, error} = await supabaseClient
-      .from('manager_messages')
-      .select('employee_name,title,priority,read_by_employee,created_at')
-      .eq('company_code', company)
-      .order('created_at',{ascending:false})
-      .limit(8);
-
-    if(error){
-      box.innerHTML = `<p class="text-xs text-red-500 font-bold">Erreur historique messages : ${r85Esc(error.message)}</p>`;
-      return;
-    }
-
-    if(!data || !data.length){
-      box.innerHTML = '<p class="text-xs text-slate-400 italic">Aucun message envoyé pour le moment.</p>';
-      return;
-    }
-
-    box.innerHTML = data.map(m => `
-      <div class="p-3 rounded-xl border bg-cyan-50/70 dark:bg-slate-900 border-cyan-100 dark:border-slate-700 text-xs">
-        <div class="flex justify-between gap-2">
-          <p class="font-black dark:text-white">${r85Esc(m.title)}</p>
-          <span class="font-black ${m.read_by_employee ? 'text-emerald-600' : 'text-amber-600'}">${m.read_by_employee ? 'Lu' : 'Non lu'}</span>
-        </div>
-        <p class="text-[10px] text-slate-500 mt-1">${r85Esc(m.employee_name)} — ${r85Esc(m.priority)} — ${new Date(m.created_at).toLocaleString('fr-FR')}</p>
-      </div>
-    `).join('');
-  };
-
-  // Renforce l'abonnement manager : alerte plein écran + badge.
-  window.startManagerRealtime = function(){
-    if(!supabaseClient){ r85Toast('Supabase non chargé.'); return; }
-    const company = r85ManagerCompany();
-    if(!company) return;
-    installUltraAlertUI();
-    r85UnlockAudio();
-
-    if(restevManagerRealtimeChannel){
-      try{ supabaseClient.removeChannel(restevManagerRealtimeChannel); }catch(e){}
-      restevManagerRealtimeChannel = null;
-    }
-
-    restevManagerRealtimeChannel = supabaseClient
-      .channel('restev_ultra_manager_' + company)
-      .on('postgres_changes', { event:'INSERT', schema:'public', table:'prevention_reports', filter:'company_code=eq.' + company }, payload => {
-        window.triggerRestevUltraManagerAlert(payload.new);
-        if(typeof loadManagerReports === 'function') loadManagerReports();
-      })
-      .on('postgres_changes', { event:'INSERT', schema:'public', table:'passport_registry', filter:'company_code=eq.' + company }, payload => {
-        r85Toast('✅ Nouveau passeport prévention validé.');
-        if(typeof loadPassportRegistry === 'function') loadPassportRegistry();
-      })
-      .subscribe(status => {
-        console.log('Realtime manager RESTEV ultra:', status);
-        if(status === 'SUBSCRIBED') r85Toast('Alertes manager ultra-visuelles activées.');
-      });
-  };
-
-  // Réponse manager : écrit dans prevention_reports + copie dans manager_messages pour affichage salarié.
-  window.sendManagerResponse = async function(id){
-    if(!supabaseClient) return r85Toast('Supabase non chargé.');
-    const response = document.getElementById(`response-${id}`)?.value.trim() || '';
-    const action = document.getElementById(`action-${id}`)?.value.trim() || '';
 
     const { error } = await supabaseClient
       .from('prevention_reports')
-      .update({ manager_response: response, corrective_action: action, status:'En cours de traitement' })
+      .update({ status })
       .eq('id', id);
 
-    if(error) return r85Toast('Erreur réponse manager : ' + error.message);
-
-    try{
-      const { data } = await supabaseClient
-        .from('prevention_reports')
-        .select('company_code,employee_name,category')
-        .eq('id', id)
-        .single();
-      if(data && response){
-        await supabaseClient.from('manager_messages').insert([{
-          company_code: data.company_code,
-          employee_name: data.employee_name,
-          title: 'Réponse à votre signalement : ' + (data.category || 'prévention'),
-          message: response + (action ? '\n\nAction corrective prévue : ' + action : ''),
-          priority: 'Important',
-          read_by_employee: false
-        }]);
-      }
-    }catch(e){ console.warn('Copie manager_messages impossible:', e); }
-
-    r85Toast('Réponse enregistrée et transmise au salarié.');
-    if(typeof loadManagerReports === 'function') loadManagerReports();
-  };
-
-  function installEmployeeMessageBadge(){
-    const session = r85EmployeeSession();
-    if(!session || !supabaseClient) return;
-    if(restevEmployeeRealtimeChannel){
-      try{ supabaseClient.removeChannel(restevEmployeeRealtimeChannel); }catch(e){}
-      restevEmployeeRealtimeChannel = null;
+    if(error){
+      console.error('Erreur update statut:', error);
+      return r85Toast('Erreur Supabase : ' + error.message);
     }
 
-    restevEmployeeRealtimeChannel = supabaseClient
-      .channel('restev_employee_messages_' + session.company + '_' + session.name)
-      .on('postgres_changes', {event:'INSERT', schema:'public', table:'manager_messages', filter:'company_code=eq.' + session.company}, payload => {
-        if(payload.new?.employee_name === session.name){
-          r85Toast('📢 Nouveau message du responsable.');
-          try{ if(navigator.vibrate) navigator.vibrate([150,80,150]); }catch(e){}
-        }
-      })
-      .subscribe();
+    r85Toast(status === 'Traité' ? 'Alerte traitée : rappel visuel retiré si plus aucune alerte active.' : 'Statut mis à jour.');
+
+    if(typeof loadManagerReports === 'function') await loadManagerReports();
+    setTimeout(window.updateRestevActiveAlertBadge, 250);
+  };
+
+  // Si le manager enregistre une réponse + action et met à jour la liste, on recalcule aussi.
+  const oldLoadManagerReports = window.loadManagerReports;
+  window.loadManagerReports = async function(){
+    if(typeof oldLoadManagerReports === 'function') await oldLoadManagerReports();
+    setTimeout(window.updateRestevActiveAlertBadge, 250);
+  };
+
+  // Si l'ancien bouton "J'ai vu" ferme l'overlay, on garde le badge tant que l'alerte n'est pas traitée.
+  const oldAcknowledge = window.acknowledgeRestevAlert;
+  window.acknowledgeRestevAlert = function(){
+    if(typeof oldAcknowledge === 'function') oldAcknowledge();
+    setTimeout(window.updateRestevActiveAlertBadge, 250);
+  };
+
+  // Injection d'un choix salarié simple, sans notion technique gravité/fréquence.
+  function installSimpleEmployeeReportUI(){
+    const screen = document.getElementById('scr-report');
+    const levelSelect = document.getElementById('risk-level');
+    const freqSelect = document.getElementById('risk-frequency');
+    const categorySelect = document.getElementById('risk-category-select');
+    if(!screen || !levelSelect || !freqSelect || !categorySelect) return;
+    if(document.getElementById('restev-simple-report-choice')) return;
+
+    // On garde les selects dans le DOM pour compatibilité, mais on les masque.
+    const levelContainer = levelSelect.closest('div');
+    const freqContainer = freqSelect.closest('div');
+    if(levelContainer) levelContainer.style.display = 'none';
+    if(freqContainer) freqContainer.style.display = 'none';
+
+    // Valeur par défaut : le salarié ne tranche pas, le manager qualifiera.
+    levelSelect.value = 'À vérifier par le manager 🟠';
+    freqSelect.value = 'Non renseignée';
+
+    const block = document.createElement('div');
+    block.id = 'restev-simple-report-choice';
+    block.className = 'space-y-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl';
+    block.innerHTML = `
+      <div>
+        <p class="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center gap-2">
+          <i class="fa-solid fa-hand-pointer text-restev-blue"></i> Ce que je vois ressemble plutôt à :
+        </p>
+        <p class="text-[10px] text-slate-500 mt-1 leading-relaxed">Pas besoin d'évaluer précisément la gravité : choisissez la phrase la plus proche, le responsable qualifiera ensuite.</p>
+      </div>
+      <div class="grid grid-cols-1 gap-2">
+        <button type="button" data-level="Danger immédiat 🔴" data-frequency="Maintenant" class="r85-simple-risk-btn text-left p-3 rounded-xl border-2 border-red-200 bg-red-50 text-red-700 font-black text-xs flex items-start gap-3">
+          <span class="text-lg">🚨</span><span><b>Quelqu'un peut se blesser maintenant</b><br><small class="font-bold text-red-500">Ex : chute possible, machine dangereuse, circulation engin...</small></span>
+        </button>
+        <button type="button" data-level="À vérifier par le manager 🟠" data-frequency="Régulière" class="r85-simple-risk-btn text-left p-3 rounded-xl border-2 border-orange-200 bg-orange-50 text-orange-700 font-black text-xs flex items-start gap-3">
+          <span class="text-lg">⚠️</span><span><b>C'est dangereux ou gênant, mais pas immédiat</b><br><small class="font-bold text-orange-500">Ex : situation qui revient, organisation à revoir...</small></span>
+        </button>
+        <button type="button" data-level="Amélioration prévention 🟢" data-frequency="Ponctuelle" class="r85-simple-risk-btn text-left p-3 rounded-xl border-2 border-emerald-200 bg-emerald-50 text-emerald-700 font-black text-xs flex items-start gap-3">
+          <span class="text-lg">💡</span><span><b>J'ai une idée d'amélioration / presque accident</b><br><small class="font-bold text-emerald-500">Ex : meilleure signalisation, rangement, matériel...</small></span>
+        </button>
+      </div>
+      <input type="hidden" id="restev-simple-choice-label" value="À vérifier par le manager">
+    `;
+
+    const commentBlock = document.getElementById('risk-description')?.closest('div');
+    if(commentBlock) screen.insertBefore(block, commentBlock);
+    else screen.appendChild(block);
+
+    const buttons = Array.from(block.querySelectorAll('.r85-simple-risk-btn'));
+    function selectButton(btn){
+      buttons.forEach(b => {
+        b.classList.remove('ring-4','ring-offset-2','ring-restev-blue','scale-[1.01]');
+        b.style.transform = 'scale(1)';
+      });
+      btn.classList.add('ring-4','ring-offset-2','ring-restev-blue','scale-[1.01]');
+      btn.style.transform = 'scale(1.01)';
+      levelSelect.value = btn.dataset.level || 'À vérifier par le manager 🟠';
+      freqSelect.value = btn.dataset.frequency || 'Non renseignée';
+      const hidden = document.getElementById('restev-simple-choice-label');
+      if(hidden) hidden.value = btn.innerText.replace(/\s+/g,' ').trim();
+    }
+    buttons.forEach(btn => btn.addEventListener('click', () => selectButton(btn)));
+    selectButton(buttons[1]);
   }
 
-  window.openEmployeeMessages = async function(){
-    const session = r85EmployeeSession();
-    if(!session) return r85Toast('Session salarié non reconnue.');
-    if(!supabaseClient) return r85Toast('Supabase non chargé.');
-
-    let messages = [];
-
-    const msgRes = await supabaseClient
-      .from('manager_messages')
-      .select('id,title,message,priority,read_by_employee,created_at')
-      .eq('company_code', session.company)
-      .eq('employee_name', session.name)
-      .order('created_at',{ascending:false})
-      .limit(40);
-
-    if(msgRes.error){
-      console.error('Erreur manager_messages salarié:', msgRes.error);
-      r85Toast('Erreur lecture infos descendantes : ' + msgRes.error.message);
-    } else {
-      messages = messages.concat((msgRes.data || []).map(m => ({...m, source:'Info descendante'})));
-      const unread = (msgRes.data || []).filter(m => !m.read_by_employee).map(m => m.id);
-      if(unread.length){
-        try{ await supabaseClient.from('manager_messages').update({read_by_employee:true}).in('id', unread); }catch(e){}
-      }
+  // Submit simplifié : ajoute la phrase choisie dans la description pour aider le manager.
+  const oldSubmitRiskReport = window.submitRiskReport;
+  window.submitRiskReport = async function(){
+    installSimpleEmployeeReportUI();
+    const desc = document.getElementById('risk-description');
+    const choice = document.getElementById('restev-simple-choice-label')?.value || '';
+    if(desc && choice && !desc.value.includes('[Ressenti salarié]')){
+      desc.value = `[Ressenti salarié] ${choice}\n\n${desc.value}`.trim();
     }
-
-    const repRes = await supabaseClient
-      .from('prevention_reports')
-      .select('id,category,description,status,manager_response,corrective_action,created_at')
-      .eq('company_code', session.company)
-      .eq('employee_name', session.name)
-      .order('created_at',{ascending:false})
-      .limit(40);
-
-    if(!repRes.error){
-      messages = messages.concat((repRes.data || []).filter(r => r.manager_response || r.corrective_action).map(r => ({
-        id: r.id,
-        title: 'Suite à votre signalement : ' + (r.category || 'prévention'),
-        message: (r.manager_response || 'Votre signalement est en cours de traitement.') + (r.corrective_action ? '\n\nAction corrective : ' + r.corrective_action : ''),
-        priority: r.status || 'Suivi',
-        created_at: r.created_at,
-        source:'Réponse signalement',
-        original_description: r.description
-      })));
-    }
-
-    messages.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
-    renderEmployeeMessagesDesc(messages);
-    if(typeof switchScreen === 'function') switchScreen('scr-employee-messages');
+    if(typeof oldSubmitRiskReport === 'function') return oldSubmitRiskReport();
   };
 
-  window.renderEmployeeMessagesDesc = function(messages){
-    const box = document.getElementById('employee-messages-list');
-    if(!box) return;
-    if(!messages.length){
-      box.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-6">Aucun message pour le moment.</p>';
-      return;
-    }
-
-    box.innerHTML = messages.map(m => {
-      const urgent = String(m.priority || '').toLowerCase().includes('urgent');
-      const color = urgent ? 'bg-red-50 border-red-300 dark:bg-red-950/20' : 'bg-cyan-50 border-cyan-200 dark:bg-slate-800';
-      return `
-        <div class="p-4 rounded-2xl border shadow-sm space-y-3 ${color}">
-          <div class="flex justify-between items-start gap-2">
-            <div>
-              <p class="text-xs font-black dark:text-white">${r85Esc(m.title || 'Message prévention')}</p>
-              <p class="text-[10px] text-slate-400">${r85Esc(m.source || 'Message')} — ${new Date(m.created_at).toLocaleString('fr-FR')}</p>
-            </div>
-            <span class="text-[10px] font-black px-2 py-1 rounded bg-white dark:bg-slate-900 text-cyan-700">${r85Esc(m.priority || 'Information')}</span>
-          </div>
-          ${m.original_description ? `<div class="bg-white/70 dark:bg-slate-900 p-3 rounded-xl"><p class="text-[10px] font-black uppercase text-slate-400 mb-1">Votre signalement initial</p><p class="text-xs text-slate-700 dark:text-slate-300">${r85Esc(m.original_description)}</p></div>` : ''}
-          <div class="bg-white/80 dark:bg-slate-900 p-3 rounded-xl border">
-            <p class="text-[10px] font-black uppercase text-cyan-600 mb-1">Message du responsable</p>
-            <p class="text-xs text-slate-700 dark:text-slate-300 whitespace-pre-line">${r85Esc(m.message || '')}</p>
-          </div>
-        </div>
-      `;
-    }).join('');
-  };
-
-  // Patch du login manager pour installer le panel et ultra alertes après connexion.
-  const oldHandleManagerLogin = window.handleManagerLogin;
-  window.handleManagerLogin = function(){
-    r85UnlockAudio();
-    if(typeof oldHandleManagerLogin === 'function') oldHandleManagerLogin();
-    setTimeout(() => {
-      installUltraAlertUI();
-      installManagerMessagePanel();
-      if(typeof loadManagerSentMessages === 'function') loadManagerSentMessages();
-      if(typeof startManagerRealtime === 'function') startManagerRealtime();
-    }, 350);
+  // Quand l'alerte arrive, le badge est recalculé depuis Supabase pour éviter les alertes fantômes.
+  const oldTriggerUltra = window.triggerRestevUltraManagerAlert;
+  window.triggerRestevUltraManagerAlert = function(report){
+    if(typeof oldTriggerUltra === 'function') oldTriggerUltra(report);
+    setTimeout(window.updateRestevActiveAlertBadge, 500);
   };
 
   const oldSwitchScreen = window.switchScreen;
   window.switchScreen = function(screenId){
     if(typeof oldSwitchScreen === 'function') oldSwitchScreen(screenId);
-    if(screenId === 'scr-manager'){
-      setTimeout(() => {
-        installUltraAlertUI();
-        installManagerMessagePanel();
-        loadManagerSentMessages();
-      }, 150);
-    }
-    if(screenId === 'scr-employee'){
-      setTimeout(installEmployeeMessageBadge, 200);
-    }
+    if(screenId === 'scr-report') setTimeout(installSimpleEmployeeReportUI, 150);
+    if(screenId === 'scr-manager') setTimeout(window.updateRestevActiveAlertBadge, 400);
   };
 
   document.addEventListener('DOMContentLoaded', () => {
-    installUltraAlertUI();
-    setTimeout(() => {
-      installManagerMessagePanel();
-      installEmployeeMessageBadge();
-    }, 400);
+    installSimpleEmployeeReportUI();
+    setTimeout(window.updateRestevActiveAlertBadge, 1000);
     console.log(PATCH_VERSION + ' installé');
   });
 })();
