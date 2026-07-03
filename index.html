@@ -2706,521 +2706,326 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 <!-- =========================================================
-     PATCH RESTEV 85 — ZONES SANS GPS + PHOTO + ALERTE MANAGER FORTE
+     PATCH RESTEV 85 — MODE VIBRANT + SONORE MANAGER
      À coller juste avant </body>
 
-     Corrections :
-     1) Suppression du GPS pour les zones de travail.
-     2) Le manager crée simplement des lieux/zones : Ligne 1, Atelier, Réserve, Chantier XXX...
-     3) Le salarié choisit une zone + ajoute éventuellement une photo.
-     4) L'alerte visuelle manager plein écran est restaurée.
-     5) Le badge d'alerte disparaît quand toutes les alertes sont traitées.
+     Fonctions :
+     - Mode sonore ON/OFF
+     - Mode vibrant ON/OFF mobile
+     - Intensité : Normal / Fort / Urgence continue
+     - Répétition sonore/vibration jusqu'à "J'ai vu" ou traitement
+     - Bouton test alerte
+     - Sauvegarde des réglages navigateur
      ========================================================= -->
 <script>
 (function(){
-  const PATCH_VERSION = 'RESTEV85_ZONES_SANS_GPS_PHOTO_ALERTE_2026_07_03';
-  let r85PhotoData = null;
-  let r85PhotoName = null;
-  let r85ManagerAlertChannel = null;
+  const PATCH_VERSION = 'RESTEV85_SOUND_VIBRATION_MODE_2026_07_03';
   let r85AudioCtx = null;
+  let r85AlarmInterval = null;
+  let r85RealtimeChannel = null;
+
+  const defaultSettings = {
+    sound: true,
+    vibration: true,
+    intensity: 'fort', // normal | fort | urgence
+    repeat: true
+  };
+
+  function getSettings(){
+    try{
+      return Object.assign({}, defaultSettings, JSON.parse(localStorage.getItem('r85_alert_settings') || '{}'));
+    }catch(e){ return {...defaultSettings}; }
+  }
+
+  function saveSettings(settings){
+    try{ localStorage.setItem('r85_alert_settings', JSON.stringify(settings)); }catch(e){}
+  }
 
   function r85Toast(msg){
     if(typeof showToast === 'function') showToast(msg);
     else alert(msg);
   }
 
-  function r85Esc(v){
-    if(typeof escapeHtml === 'function') return escapeHtml(v || '');
-    return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
-
-  function r85ManagerCompany(){
+  function companyCode(){
     return (document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
   }
 
-  function r85EmployeeSession(){
-    try { return currentEmployeeSession || window.currentEmployeeSession || null; }
-    catch(e){ return window.currentEmployeeSession || null; }
-  }
-
-  // =========================================================
-  // ALERTE MANAGER FORTE — RESTAURÉE
-  // =========================================================
-  function r85UnlockAudio(){
+  function unlockAudio(){
     try{
       const AC = window.AudioContext || window.webkitAudioContext;
       if(!AC) return;
       if(!r85AudioCtx) r85AudioCtx = new AC();
       if(r85AudioCtx.state === 'suspended') r85AudioCtx.resume();
+    }catch(e){ console.warn('Audio indisponible:', e); }
+  }
+
+  function beepSequence(intensity='fort'){
+    const settings = getSettings();
+    if(!settings.sound) return;
+    unlockAudio();
+    if(!r85AudioCtx) return;
+
+    let pattern;
+    if(intensity === 'normal') pattern = [0, .25, .50];
+    else if(intensity === 'urgence') pattern = [0, .12, .24, .40, .52, .64, .90, 1.02, 1.14];
+    else pattern = [0, .16, .32, .62, .78, .94];
+
+    pattern.forEach((delay, idx) => {
+      const now = r85AudioCtx.currentTime + delay;
+      const osc = r85AudioCtx.createOscillator();
+      const gain = r85AudioCtx.createGain();
+      osc.type = idx % 2 ? 'sawtooth' : 'square';
+      osc.frequency.setValueAtTime(idx % 2 ? 640 : 980, now);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(intensity === 'normal' ? 0.16 : 0.30, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+      osc.connect(gain);
+      gain.connect(r85AudioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.16);
+    });
+  }
+
+  function vibrateSequence(intensity='fort'){
+    const settings = getSettings();
+    if(!settings.vibration) return;
+    try{
+      if(!navigator.vibrate) return;
+      if(intensity === 'normal') navigator.vibrate([180,80,180]);
+      else if(intensity === 'urgence') navigator.vibrate([350,100,350,100,700,150,700]);
+      else navigator.vibrate([260,100,260,100,500]);
+    }catch(e){ console.warn('Vibration indisponible:', e); }
+  }
+
+  function browserNotification(report){
+    try{
+      if(!('Notification' in window) || Notification.permission !== 'granted') return;
+      new Notification('🚨 RESTEV 85 — Nouveau signalement', {
+        body: `${report?.employee_name || 'Un salarié'} — ${report?.category || 'Danger signalé'} — ${report?.work_zone || 'Zone non précisée'}`,
+        icon: 'logo.png',
+        badge: 'logo.png',
+        requireInteraction: true
+      });
     }catch(e){}
   }
 
-  function r85PlayStrongSound(){
-    try{
-      if(typeof soundMuted !== 'undefined' && soundMuted) return;
-      r85UnlockAudio();
-      if(!r85AudioCtx) return;
-      [0,.18,.36,.72,.90,1.08].forEach((delay, idx) => {
-        const now = r85AudioCtx.currentTime + delay;
-        const osc = r85AudioCtx.createOscillator();
-        const gain = r85AudioCtx.createGain();
-        osc.type = idx % 2 ? 'sawtooth' : 'square';
-        osc.frequency.setValueAtTime(idx % 2 ? 650 : 980, now);
-        gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.exponentialRampToValueAtTime(0.25, now + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
-        osc.connect(gain);
-        gain.connect(r85AudioCtx.destination);
-        osc.start(now);
-        osc.stop(now + 0.17);
-      });
-    }catch(e){ console.warn('Alerte sonore impossible:', e); }
-  }
-
-  function installStrongAlertUI(){
-    if(!document.getElementById('r85-strong-alert-style')){
+  function installAlertOverlay(){
+    if(!document.getElementById('r85-mode-alert-style')){
       const style = document.createElement('style');
-      style.id = 'r85-strong-alert-style';
+      style.id = 'r85-mode-alert-style';
       style.innerHTML = `
-        @keyframes r85FlashRed {0%{background:#7f1d1d;transform:scale(1)}50%{background:#dc2626;transform:scale(1.018)}100%{background:#991b1b;transform:scale(1)}}
-        @keyframes r85BeaconPulse {0%{box-shadow:0 0 0 0 rgba(255,255,255,.9)}70%{box-shadow:0 0 0 28px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
-        @keyframes r85BadgePulse {0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
-        #r85-manager-alert-overlay.r85-show { display:flex !important; }
-        .r85-flash-red { animation:r85FlashRed .65s infinite; }
-        .r85-beacon-pulse { animation:r85BeaconPulse 1s infinite; }
-        #r85-manager-alert-badge { animation:r85BadgePulse 1s infinite; }
+        @keyframes r85AlarmFlash {0%{background:#7f1d1d; transform:scale(1)} 50%{background:#dc2626; transform:scale(1.018)} 100%{background:#991b1b; transform:scale(1)}}
+        @keyframes r85AlarmPulse {0%{box-shadow:0 0 0 0 rgba(255,255,255,.9)}70%{box-shadow:0 0 0 28px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
+        @keyframes r85AlarmBadge {0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+        #r85-alarm-overlay.r85-show{display:flex!important;}
+        .r85-alarm-bg{animation:r85AlarmFlash .65s infinite;}
+        .r85-alarm-pulse{animation:r85AlarmPulse 1s infinite;}
+        #r85-alarm-badge{animation:r85AlarmBadge 1s infinite;}
       `;
       document.head.appendChild(style);
     }
 
-    if(!document.getElementById('r85-manager-alert-overlay')){
+    if(!document.getElementById('r85-alarm-overlay')){
       const overlay = document.createElement('div');
-      overlay.id = 'r85-manager-alert-overlay';
+      overlay.id = 'r85-alarm-overlay';
       overlay.className = 'hidden fixed inset-0 z-[9999] items-center justify-center p-4 bg-black/75 backdrop-blur-sm no-print';
       overlay.innerHTML = `
-        <div class="r85-flash-red max-w-2xl w-full text-white rounded-[2rem] shadow-2xl border-4 border-white p-6 md:p-8 text-center space-y-5">
-          <div class="mx-auto w-24 h-24 rounded-full bg-white/20 border-4 border-white flex items-center justify-center r85-beacon-pulse">
+        <div class="r85-alarm-bg max-w-2xl w-full text-white rounded-[2rem] shadow-2xl border-4 border-white p-6 md:p-8 text-center space-y-5">
+          <div class="mx-auto w-24 h-24 rounded-full bg-white/20 border-4 border-white flex items-center justify-center r85-alarm-pulse">
             <i class="fa-solid fa-triangle-exclamation text-5xl"></i>
           </div>
-          <div>
-            <p class="text-[11px] font-black uppercase tracking-[.35em] text-red-100">Alerte terrain</p>
-            <h2 class="text-3xl md:text-5xl font-black mt-2">🚨 NOUVEAU SIGNALEMENT 🚨</h2>
-          </div>
-          <div class="bg-white/15 border border-white/30 rounded-2xl p-4 text-left space-y-3">
-            <div>
-              <p class="text-[10px] font-black uppercase text-red-100">Risque</p>
-              <p id="r85-alert-risk" class="text-xl font-black">—</p>
-            </div>
+          <h2 class="text-3xl md:text-5xl font-black">🚨 ALERTE TERRAIN 🚨</h2>
+          <div class="bg-white/15 border border-white/30 rounded-2xl p-4 text-left space-y-2">
+            <p class="text-[10px] font-black uppercase text-red-100">Risque</p><p id="r85-alarm-risk" class="text-xl font-black">—</p>
             <div class="grid grid-cols-2 gap-3">
-              <div><p class="text-[10px] font-black uppercase text-red-100">Salarié</p><p id="r85-alert-employee" class="font-bold">—</p></div>
-              <div><p class="text-[10px] font-black uppercase text-red-100">Zone / lieu</p><p id="r85-alert-zone" class="font-bold">—</p></div>
+              <div><p class="text-[10px] font-black uppercase text-red-100">Salarié</p><p id="r85-alarm-employee" class="font-bold">—</p></div>
+              <div><p class="text-[10px] font-black uppercase text-red-100">Zone</p><p id="r85-alarm-zone" class="font-bold">—</p></div>
             </div>
-            <p id="r85-alert-desc" class="text-sm leading-relaxed bg-black/20 rounded-xl p-3">—</p>
+            <p id="r85-alarm-desc" class="text-sm leading-relaxed bg-black/20 rounded-xl p-3">—</p>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button onclick="acknowledgeR85ManagerAlert()" class="bg-white text-red-700 py-3 rounded-xl font-black shadow-lg"><i class="fa-solid fa-check mr-1"></i> J'ai vu</button>
-            <button onclick="openR85ManagerAlerts()" class="bg-slate-900 text-white py-3 rounded-xl font-black shadow-lg"><i class="fa-solid fa-list-check mr-1"></i> Ouvrir les signalements</button>
+            <button onclick="r85AcknowledgeAlarm()" class="bg-white text-red-700 py-3 rounded-xl font-black shadow-lg"><i class="fa-solid fa-check mr-1"></i> J'ai vu</button>
+            <button onclick="r85OpenAlertsPanel()" class="bg-slate-900 text-white py-3 rounded-xl font-black shadow-lg"><i class="fa-solid fa-list-check mr-1"></i> Ouvrir les signalements</button>
           </div>
-        </div>
-      `;
+        </div>`;
       document.body.appendChild(overlay);
     }
 
-    if(!document.getElementById('r85-manager-alert-badge')){
+    if(!document.getElementById('r85-alarm-badge')){
       const badge = document.createElement('button');
-      badge.id = 'r85-manager-alert-badge';
+      badge.id = 'r85-alarm-badge';
       badge.className = 'hidden fixed bottom-5 left-5 z-[9998] bg-red-600 text-white rounded-2xl shadow-2xl border-4 border-white px-4 py-3 font-black no-print';
-      badge.onclick = () => openR85ManagerAlerts();
-      badge.innerHTML = `<i class="fa-solid fa-bell mr-2"></i><span id="r85-manager-alert-count">0</span> alerte(s)`;
+      badge.onclick = () => r85OpenAlertsPanel();
+      badge.innerHTML = `<i class="fa-solid fa-bell mr-2"></i><span id="r85-alarm-count">0</span> alerte(s)`;
       document.body.appendChild(badge);
     }
   }
 
-  window.acknowledgeR85ManagerAlert = function(){
-    const overlay = document.getElementById('r85-manager-alert-overlay');
+  function stopRepeatingAlarm(){
+    if(r85AlarmInterval){ clearInterval(r85AlarmInterval); r85AlarmInterval = null; }
+    try{ if(navigator.vibrate) navigator.vibrate(0); }catch(e){}
+  }
+
+  window.r85AcknowledgeAlarm = function(){
+    const overlay = document.getElementById('r85-alarm-overlay');
     if(overlay){ overlay.classList.remove('r85-show'); overlay.classList.add('hidden'); }
-    updateR85ActiveAlertBadge();
+    stopRepeatingAlarm();
+    updateR85AlarmBadge();
   };
 
-  window.openR85ManagerAlerts = function(){
-    acknowledgeR85ManagerAlert();
+  window.r85OpenAlertsPanel = function(){
+    r85AcknowledgeAlarm();
     if(typeof switchScreen === 'function') switchScreen('scr-manager');
     setTimeout(() => document.getElementById('manager-risk-box')?.scrollIntoView({behavior:'smooth', block:'start'}), 300);
     if(typeof loadManagerReports === 'function') loadManagerReports();
   };
 
-  function triggerR85ManagerAlert(report){
-    installStrongAlertUI();
-    const overlay = document.getElementById('r85-manager-alert-overlay');
-    const set = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val || '—'; };
-    set('r85-alert-risk', report?.category);
-    set('r85-alert-employee', report?.employee_name);
-    set('r85-alert-zone', report?.work_zone || 'Zone non précisée');
-    set('r85-alert-desc', report?.description);
-
-    overlay?.classList.remove('hidden');
-    overlay?.classList.add('r85-show');
-    r85PlayStrongSound();
-    try{ if(navigator.vibrate) navigator.vibrate([350,120,350,120,650]); }catch(e){}
-    r85Toast('🚨 Nouveau signalement terrain reçu !');
-    updateR85ActiveAlertBadge();
-  }
-
-  window.updateR85ActiveAlertBadge = async function(){
+  window.updateR85AlarmBadge = async function(){
     if(!supabaseClient) return;
-    const company = r85ManagerCompany();
+    const company = companyCode();
     if(!company) return;
-
-    const { data, error } = await supabaseClient
+    const {data, error} = await supabaseClient
       .from('prevention_reports')
       .select('id,status')
       .eq('company_code', company)
-      .neq('status', 'Traité')
+      .neq('status','Traité')
       .limit(200);
-
-    if(error) return console.warn('Comptage alertes actives impossible:', error.message);
+    if(error) return;
     const active = (data || []).length;
-    const badge = document.getElementById('r85-manager-alert-badge');
-    const count = document.getElementById('r85-manager-alert-count');
+    const badge = document.getElementById('r85-alarm-badge');
+    const count = document.getElementById('r85-alarm-count');
     if(count) count.innerText = String(active);
-    if(active <= 0){
-      const overlay = document.getElementById('r85-manager-alert-overlay');
-      if(overlay){ overlay.classList.remove('r85-show'); overlay.classList.add('hidden'); }
-      if(badge) badge.classList.add('hidden');
-    } else if(badge){
-      badge.classList.remove('hidden');
+    if(active > 0) badge?.classList.remove('hidden');
+    else {
+      badge?.classList.add('hidden');
+      document.getElementById('r85-alarm-overlay')?.classList.remove('r85-show');
+      document.getElementById('r85-alarm-overlay')?.classList.add('hidden');
+      stopRepeatingAlarm();
     }
   };
 
-  // Realtime manager restauré.
-  window.startManagerRealtime = function(){
-    if(!supabaseClient) return r85Toast('Supabase non chargé.');
-    const company = r85ManagerCompany();
-    if(!company) return;
-    installStrongAlertUI();
-    r85UnlockAudio();
+  function fireAlarm(report){
+    const settings = getSettings();
+    installAlertOverlay();
+    const set = (id,val) => { const el = document.getElementById(id); if(el) el.innerText = val || '—'; };
+    set('r85-alarm-risk', report?.category);
+    set('r85-alarm-employee', report?.employee_name);
+    set('r85-alarm-zone', report?.work_zone || 'Zone non précisée');
+    set('r85-alarm-desc', report?.description);
 
-    if(r85ManagerAlertChannel){
-      try{ supabaseClient.removeChannel(r85ManagerAlertChannel); }catch(e){}
-      r85ManagerAlertChannel = null;
+    document.getElementById('r85-alarm-overlay')?.classList.remove('hidden');
+    document.getElementById('r85-alarm-overlay')?.classList.add('r85-show');
+
+    beepSequence(settings.intensity);
+    vibrateSequence(settings.intensity);
+    browserNotification(report);
+    updateR85AlarmBadge();
+
+    stopRepeatingAlarm();
+    if(settings.repeat){
+      const intervalMs = settings.intensity === 'urgence' ? 5500 : 9000;
+      r85AlarmInterval = setInterval(() => {
+        beepSequence(settings.intensity);
+        vibrateSequence(settings.intensity);
+      }, intervalMs);
     }
+  }
 
-    r85ManagerAlertChannel = supabaseClient
-      .channel('r85_manager_alerts_' + company)
-      .on('postgres_changes', {event:'INSERT', schema:'public', table:'prevention_reports', filter:'company_code=eq.' + company}, payload => {
-        triggerR85ManagerAlert(payload.new);
-        if(typeof loadManagerReports === 'function') loadManagerReports();
-      })
-      .subscribe(status => {
-        console.log('Realtime alertes manager:', status);
-        if(status === 'SUBSCRIBED') r85Toast('Alertes visuelles manager activées.');
-      });
-  };
-
-  // =========================================================
-  // ZONES MANAGER SANS GPS
-  // =========================================================
-  function installManagerZonesPanel(){
+  function installSettingsPanel(){
     const screen = document.getElementById('scr-manager');
-    if(!screen || document.getElementById('r85-manager-zones-panel')) return;
-
+    if(!screen || document.getElementById('r85-alert-settings-panel')) return;
+    const s = getSettings();
     const panel = document.createElement('div');
-    panel.id = 'r85-manager-zones-panel';
-    panel.className = 'bg-white dark:bg-slate-800 p-5 rounded-2xl border-t-4 border-t-violet-500 shadow-premium space-y-4';
+    panel.id = 'r85-alert-settings-panel';
+    panel.className = 'bg-white dark:bg-slate-800 p-5 rounded-2xl border-t-4 border-t-red-500 shadow-premium space-y-4';
     panel.innerHTML = `
       <div class="flex items-center justify-between gap-2">
-        <h3 class="font-black dark:text-white text-xs uppercase tracking-wider flex items-center gap-2">
-          <i class="fa-solid fa-map-location-dot text-violet-500"></i> Zones / lieux de travail
-        </h3>
-        <button onclick="loadWorkZones()" class="text-[10px] bg-violet-50 text-violet-700 dark:bg-slate-700 dark:text-violet-300 px-3 py-2 rounded-xl font-black">Actualiser</button>
+        <h3 class="font-black dark:text-white text-xs uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-volume-high text-red-500"></i> Mode alerte manager</h3>
+        <button onclick="testR85SoundVibration()" class="text-[10px] bg-red-50 text-red-700 dark:bg-slate-700 dark:text-red-300 px-3 py-2 rounded-xl font-black">Tester</button>
       </div>
-      <p class="text-[10px] text-slate-500 leading-relaxed">Exemples : Ligne 1, Atelier, Réserve, Chantier XXX, Parking, Quai, Véhicule tournée...</p>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <input id="r85-zone-name" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white" placeholder="Nom zone : Ligne 1">
-        <input id="r85-zone-activity" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white" placeholder="Activité : production, stockage...">
-        <button onclick="saveWorkZone()" class="bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white py-3 rounded-xl text-xs font-black"><i class="fa-solid fa-plus mr-1"></i> Ajouter</button>
-      </div>
-      <textarea id="r85-zone-description" rows="2" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white" placeholder="Description courte facultative"></textarea>
-      <div id="r85-zones-list" class="space-y-2"><p class="text-xs text-slate-400 italic">Aucune zone créée.</p></div>
-    `;
-
-    const firstGrid = screen.querySelector('.grid.grid-cols-1.md\\:grid-cols-2') || screen.querySelector('.grid');
-    if(firstGrid && firstGrid.nextSibling) screen.insertBefore(panel, firstGrid.nextSibling);
-    else screen.appendChild(panel);
-  }
-
-  window.saveWorkZone = async function(){
-    if(!supabaseClient) return r85Toast('Supabase non chargé.');
-    const company = r85ManagerCompany();
-    if(!company) return r85Toast('Code établissement manager manquant.');
-    const zone_name = document.getElementById('r85-zone-name')?.value.trim();
-    const activity_type = document.getElementById('r85-zone-activity')?.value.trim();
-    const description = document.getElementById('r85-zone-description')?.value.trim();
-    if(!zone_name) return r85Toast('Nom de zone obligatoire.');
-
-    const { error } = await supabaseClient.from('company_work_zones').insert([{ company_code: company, zone_name, activity_type, description }]);
-    if(error) return r85Toast('Erreur création zone : ' + error.message);
-
-    ['r85-zone-name','r85-zone-activity','r85-zone-description'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
-    r85Toast('Zone / lieu ajouté.');
-    loadWorkZones();
-  };
-
-  window.deleteWorkZone = async function(id){
-    if(!supabaseClient) return;
-    if(!confirm('Supprimer cette zone ?')) return;
-    const { error } = await supabaseClient.from('company_work_zones').delete().eq('id', id);
-    if(error) return r85Toast('Erreur suppression : ' + error.message);
-    r85Toast('Zone supprimée.');
-    loadWorkZones();
-  };
-
-  window.loadWorkZones = async function(){
-    const company = r85ManagerCompany() || r85EmployeeSession()?.company;
-    if(!company || !supabaseClient) return;
-    const list = document.getElementById('r85-zones-list');
-    const select = document.getElementById('r85-report-zone');
-
-    const { data, error } = await supabaseClient
-      .from('company_work_zones')
-      .select('id,zone_name,activity_type,description,created_at')
-      .eq('company_code', company)
-      .order('zone_name',{ascending:true});
-
-    if(error){
-      if(list) list.innerHTML = `<p class="text-xs text-red-500 font-bold">Erreur zones : ${r85Esc(error.message)}</p>`;
-      if(select) select.innerHTML = '<option value="">Aucune zone disponible</option>';
-      return;
-    }
-
-    const rows = data || [];
-    if(list){
-      list.innerHTML = rows.length ? rows.map(z => `
-        <div class="p-3 rounded-xl border bg-violet-50/70 dark:bg-slate-900 border-violet-100 dark:border-slate-700 text-xs">
-          <div class="flex justify-between gap-2">
-            <div>
-              <p class="font-black dark:text-white">${r85Esc(z.zone_name)}</p>
-              <p class="text-[10px] text-slate-500">${r85Esc(z.activity_type || 'Activité non renseignée')}</p>
-              <p class="text-[10px] text-slate-400 mt-1">${r85Esc(z.description || '')}</p>
-            </div>
-            <button onclick="deleteWorkZone('${z.id}')" class="text-red-500 font-black text-[10px]">Supprimer</button>
-          </div>
-        </div>`).join('') : '<p class="text-xs text-slate-400 italic">Aucune zone créée.</p>';
-    }
-
-    if(select){
-      select.innerHTML = '<option value="Autre / non précisée">Je ne sais pas / Autre zone</option>' + rows.map(z =>
-        `<option value="${r85Esc(z.zone_name)}">${r85Esc(z.zone_name)}${z.activity_type ? ' — '+r85Esc(z.activity_type) : ''}</option>`
-      ).join('');
-    }
-  };
-
-  // =========================================================
-  // SIGNALEMENT SALARIÉ : ZONE + PHOTO, SANS GPS
-  // =========================================================
-  function compressImageFile(file, maxWidth=900, quality=0.72){
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = e => {
-        const img = new Image();
-        img.onload = () => {
-          const scale = Math.min(1, maxWidth / img.width);
-          const canvas = document.createElement('canvas');
-          canvas.width = Math.round(img.width * scale);
-          canvas.height = Math.round(img.height * scale);
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL('image/jpeg', quality));
-        };
-        img.onerror = reject;
-        img.src = e.target.result;
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-  async function handlePhoto(event){
-    const file = event.target.files && event.target.files[0];
-    if(!file) return;
-    try{
-      r85PhotoName = file.name || ('photo-signalement-' + Date.now() + '.jpg');
-      r85PhotoData = await compressImageFile(file);
-      const preview = document.getElementById('r85-photo-preview');
-      if(preview){
-        preview.classList.remove('hidden');
-        preview.innerHTML = `<p class="text-[10px] font-black text-slate-500 mb-2">Photo ajoutée</p><img src="${r85PhotoData}" class="w-full max-h-56 object-cover rounded-xl border"><button type="button" onclick="clearReportPhoto()" class="mt-2 text-[10px] font-black text-red-600">Retirer la photo</button>`;
-      }
-      r85Toast('Photo ajoutée.');
-    }catch(e){ r85Toast('Impossible de lire la photo.'); }
-  }
-
-  window.clearReportPhoto = function(){
-    r85PhotoData = null; r85PhotoName = null;
-    const input = document.getElementById('r85-report-photo'); if(input) input.value = '';
-    const preview = document.getElementById('r85-photo-preview'); if(preview){ preview.classList.add('hidden'); preview.innerHTML=''; }
-  };
-
-  function installReportZonePhotoUI(){
-    const screen = document.getElementById('scr-report');
-    const riskSelect = document.getElementById('risk-category-select');
-    const desc = document.getElementById('risk-description');
-    if(!screen || !riskSelect || !desc) return;
-
-    // Supprime l'ancien bloc GPS/photo si présent.
-    const oldGps = document.getElementById('r85-zone-gps-photo-block');
-    if(oldGps) oldGps.remove();
-
-    if(document.getElementById('r85-zone-photo-block')) return;
-
-    const block = document.createElement('div');
-    block.id = 'r85-zone-photo-block';
-    block.className = 'space-y-3 bg-blue-50/70 dark:bg-slate-900 border border-blue-100 dark:border-slate-700 p-4 rounded-2xl';
-    block.innerHTML = `
-      <div class="space-y-2">
-        <label class="block text-xs font-black text-slate-700 dark:text-slate-300"><i class="fa-solid fa-location-dot text-restev-blue mr-1"></i> Zone / lieu concerné</label>
-        <select id="r85-report-zone" class="w-full p-3 bg-white dark:bg-slate-800 border rounded-xl text-xs font-bold dark:text-white"><option value="Autre / non précisée">Chargement des zones...</option></select>
-      </div>
-      <label class="block bg-slate-900 dark:bg-slate-700 text-white py-3 rounded-xl text-xs font-black text-center cursor-pointer">
-        <i class="fa-solid fa-camera mr-1"></i> Ajouter une photo pour aider le manager
-        <input id="r85-report-photo" type="file" accept="image/*" capture="environment" class="hidden">
-      </label>
-      <div id="r85-photo-preview" class="hidden bg-white dark:bg-slate-800 border rounded-xl p-2"></div>
-    `;
-
-    const riskBlock = riskSelect.closest('div');
-    if(riskBlock && riskBlock.nextSibling) screen.insertBefore(block, riskBlock.nextSibling);
-    else screen.appendChild(block);
-    document.getElementById('r85-report-photo')?.addEventListener('change', handlePhoto);
-    loadWorkZones();
-  }
-
-  // Envoi signalement : zone + photo, sans GPS.
-  window.submitRiskReport = async function(){
-    installReportZonePhotoUI();
-    if(!supabaseClient) return r85Toast('Supabase non chargé.');
-    const category = document.getElementById('risk-category-select')?.value || 'Non renseigné';
-    const desc = document.getElementById('risk-description')?.value.trim();
-    const lvl = document.getElementById('risk-level')?.value || 'À vérifier par le manager 🟠';
-    const freq = document.getElementById('risk-frequency')?.value || 'Non renseignée';
-    const work_zone = document.getElementById('r85-report-zone')?.value || 'Autre / non précisée';
-    if(!desc) return r85Toast('Veuillez décrire simplement la situation.');
-
-    const session = r85EmployeeSession();
-    const employeeName = session ? session.name : 'Salarié terrain';
-    const companyCode = session ? session.company : (r85ManagerCompany() || 'Établissement non renseigné');
-    const fullDescription = `[Zone / lieu] ${work_zone}\n\n${desc}`;
-
-    const { error } = await supabaseClient.from('prevention_reports').insert([{
-      company_code: companyCode,
-      employee_name: employeeName,
-      category,
-      level: lvl,
-      frequency: freq,
-      description: fullDescription,
-      status: 'Nouveau',
-      work_zone,
-      photo_data: r85PhotoData,
-      photo_name: r85PhotoName
-    }]);
-
-    if(error) return r85Toast('Erreur signalement : ' + error.message);
-
-    try{
-      if(typeof submitAnonymizedPreventionStat === 'function') await submitAnonymizedPreventionStat({category, level:lvl, frequency:freq, event_type:'Signalement prévention'});
-    }catch(e){}
-
-    document.getElementById('risk-description').value = '';
-    clearReportPhoto();
-    r85Toast('Signalement envoyé au manager.');
-    if(typeof switchScreen === 'function') switchScreen('scr-employee');
-  };
-
-  // Manager : cartes signalement enrichies zone + photo.
-  window.loadManagerReports = async function(){
-    if(!supabaseClient) return r85Toast('Supabase non chargé.');
-    const company = r85ManagerCompany();
-    if(!company) return;
-
-    const { data, error } = await supabaseClient
-      .from('prevention_reports')
-      .select('id,company_code,employee_name,category,level,frequency,description,status,manager_response,corrective_action,created_at,work_zone,photo_data,photo_name')
-      .eq('company_code', company)
-      .order('created_at', {ascending:false})
-      .limit(40);
-
-    if(error) return r85Toast('Erreur chargement signalements : ' + error.message);
-    renderManagerReports(data || []);
-    updateR85ActiveAlertBadge();
-  };
-
-  window.renderManagerReports = function(reports){
-    const c = document.getElementById('manager-risk-box');
-    if(!c) return;
-    c.innerHTML = '';
-    if(!reports || !reports.length){
-      c.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-8">Aucun danger signalé pour le moment.</p>';
-      return;
-    }
-
-    reports.forEach(r => {
-      const card = document.createElement('div');
-      const critical = String(r.level || '').includes('🔴') || String(r.level || '').toLowerCase().includes('danger') || String(r.level || '').toLowerCase().includes('critique');
-      card.className = `p-3 ${critical ? 'bg-red-50 border-red-300' : 'bg-orange-50 border-orange-200'} dark:bg-slate-900 border dark:border-slate-700 rounded-xl space-y-3 text-xs`;
-      card.innerHTML = `
-        <div class="flex justify-between items-start gap-2">
-          <div>
-            <p class="font-black text-slate-900 dark:text-white">${r85Esc(r.category || 'Signalement')}</p>
-            <p class="text-[10px] text-slate-400">Par ${r85Esc(r.employee_name || '')} — ${new Date(r.created_at).toLocaleString('fr-FR')}</p>
-          </div>
-          <span class="text-[10px] font-black px-2 py-1 rounded bg-white dark:bg-slate-800 text-red-600">${r85Esc(r.level || 'À qualifier')}</span>
-        </div>
-        <div class="bg-white/80 dark:bg-slate-800 border rounded-xl p-3">
-          <p class="text-[10px] font-black uppercase text-slate-400">Zone / lieu</p>
-          <p class="font-black dark:text-white">${r85Esc(r.work_zone || 'Zone non précisée')}</p>
-        </div>
-        ${r.photo_data ? `<img src="${r.photo_data}" class="w-full max-h-64 object-cover rounded-xl border shadow-sm" alt="Photo signalement terrain">` : ''}
-        <p class="text-slate-600 dark:text-slate-300 font-medium whitespace-pre-line">${r85Esc(r.description || '')}</p>
-        <select onchange="updateReportStatus('${r.id}', this.value)" class="w-full p-2 rounded-lg border text-xs font-bold dark:bg-slate-900 dark:text-white">
-          <option value="Nouveau" ${r.status==='Nouveau'?'selected':''}>Nouveau</option>
-          <option value="Vu par le responsable" ${r.status==='Vu par le responsable'?'selected':''}>Vu par le responsable</option>
-          <option value="En cours de traitement" ${r.status==='En cours de traitement'?'selected':''}>En cours de traitement</option>
-          <option value="Traité" ${r.status==='Traité'?'selected':''}>Traité</option>
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 text-xs">
+        <label class="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 border p-3 rounded-xl font-black dark:text-white"><input id="r85-set-sound" type="checkbox" ${s.sound?'checked':''}> Son</label>
+        <label class="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 border p-3 rounded-xl font-black dark:text-white"><input id="r85-set-vibration" type="checkbox" ${s.vibration?'checked':''}> Vibration</label>
+        <label class="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 border p-3 rounded-xl font-black dark:text-white"><input id="r85-set-repeat" type="checkbox" ${s.repeat?'checked':''}> Répéter jusqu'à “J'ai vu”</label>
+        <select id="r85-set-intensity" class="bg-slate-50 dark:bg-slate-900 border p-3 rounded-xl font-black dark:text-white">
+          <option value="normal" ${s.intensity==='normal'?'selected':''}>Normal</option>
+          <option value="fort" ${s.intensity==='fort'?'selected':''}>Fort</option>
+          <option value="urgence" ${s.intensity==='urgence'?'selected':''}>Urgence continue</option>
         </select>
-        <textarea id="response-${r.id}" rows="2" placeholder="Réponse au salarié..." class="w-full p-2 rounded-lg border text-xs dark:bg-slate-900 dark:text-white">${r85Esc(r.manager_response || '')}</textarea>
-        <textarea id="action-${r.id}" rows="2" placeholder="Action corrective..." class="w-full p-2 rounded-lg border text-xs dark:bg-slate-900 dark:text-white">${r85Esc(r.corrective_action || '')}</textarea>
-        <button onclick="sendManagerResponse('${r.id}')" class="w-full bg-restev-blue text-white py-2 rounded-lg text-[10px] font-black uppercase">Répondre / enregistrer</button>
-      `;
-      c.appendChild(card);
+      </div>
+      <p class="text-[10px] text-slate-500 leading-relaxed">La vibration dépend du smartphone et du navigateur. Le son nécessite un premier clic dans la page manager pour être autorisé.</p>
+    `;
+    const first = screen.querySelector('.bg-white, .dark\\:bg-slate-800');
+    if(first && first.nextSibling) screen.insertBefore(panel, first.nextSibling);
+    else screen.prepend(panel);
+
+    ['r85-set-sound','r85-set-vibration','r85-set-repeat','r85-set-intensity'].forEach(id => {
+      document.getElementById(id)?.addEventListener('change', savePanelSettings);
     });
+  }
+
+  function savePanelSettings(){
+    const settings = {
+      sound: !!document.getElementById('r85-set-sound')?.checked,
+      vibration: !!document.getElementById('r85-set-vibration')?.checked,
+      repeat: !!document.getElementById('r85-set-repeat')?.checked,
+      intensity: document.getElementById('r85-set-intensity')?.value || 'fort'
+    };
+    saveSettings(settings);
+    unlockAudio();
+    r85Toast('Mode alerte enregistré.');
+  }
+
+  window.testR85SoundVibration = function(){
+    savePanelSettings();
+    const settings = getSettings();
+    unlockAudio();
+    beepSequence(settings.intensity);
+    vibrateSequence(settings.intensity);
+    r85Toast('Test son/vibration lancé.');
   };
 
-  // Statut traité : retire badge/overlay si plus aucune alerte active.
+  window.startManagerRealtime = function(){
+    if(!supabaseClient) return r85Toast('Supabase non chargé.');
+    const company = companyCode();
+    if(!company) return;
+    installAlertOverlay();
+    unlockAudio();
+    if(r85RealtimeChannel){ try{supabaseClient.removeChannel(r85RealtimeChannel);}catch(e){} r85RealtimeChannel = null; }
+    r85RealtimeChannel = supabaseClient.channel('r85_sound_vibration_' + company)
+      .on('postgres_changes', {event:'INSERT', schema:'public', table:'prevention_reports', filter:'company_code=eq.' + company}, payload => {
+        fireAlarm(payload.new);
+        if(typeof loadManagerReports === 'function') loadManagerReports();
+      })
+      .subscribe(status => { if(status === 'SUBSCRIBED') r85Toast('Mode sonore/vibrant activé en temps réel.'); });
+  };
+
+  const oldUpdateReportStatus = window.updateReportStatus;
   window.updateReportStatus = async function(id, status){
-    if(!supabaseClient) return;
-    const { error } = await supabaseClient.from('prevention_reports').update({status}).eq('id', id);
+    if(!supabaseClient){ if(typeof oldUpdateReportStatus === 'function') return oldUpdateReportStatus(id,status); return; }
+    const {error} = await supabaseClient.from('prevention_reports').update({status}).eq('id', id);
     if(error) return r85Toast('Erreur statut : ' + error.message);
     r85Toast(status === 'Traité' ? 'Alerte traitée.' : 'Statut mis à jour.');
-    await loadManagerReports();
-    updateR85ActiveAlertBadge();
+    if(typeof loadManagerReports === 'function') await loadManagerReports();
+    updateR85AlarmBadge();
   };
 
   const oldHandleManagerLogin = window.handleManagerLogin;
   window.handleManagerLogin = function(){
-    r85UnlockAudio();
+    unlockAudio();
     if(typeof oldHandleManagerLogin === 'function') oldHandleManagerLogin();
-    setTimeout(() => { installStrongAlertUI(); installManagerZonesPanel(); loadWorkZones(); startManagerRealtime(); updateR85ActiveAlertBadge(); }, 400);
+    setTimeout(() => { installSettingsPanel(); installAlertOverlay(); startManagerRealtime(); updateR85AlarmBadge(); }, 500);
   };
 
   const oldSwitchScreen = window.switchScreen;
   window.switchScreen = function(screenId){
     if(typeof oldSwitchScreen === 'function') oldSwitchScreen(screenId);
-    if(screenId === 'scr-manager') setTimeout(() => { installStrongAlertUI(); installManagerZonesPanel(); loadWorkZones(); updateR85ActiveAlertBadge(); }, 250);
-    if(screenId === 'scr-report') setTimeout(installReportZonePhotoUI, 250);
+    if(screenId === 'scr-manager') setTimeout(() => { installSettingsPanel(); installAlertOverlay(); updateR85AlarmBadge(); }, 300);
   };
 
   document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => { installStrongAlertUI(); installManagerZonesPanel(); installReportZonePhotoUI(); }, 600);
+    installAlertOverlay();
+    setTimeout(installSettingsPanel, 700);
     console.log(PATCH_VERSION + ' installé');
   });
 })();
