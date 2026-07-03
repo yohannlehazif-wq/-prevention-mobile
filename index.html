@@ -2514,12 +2514,49 @@ function fixMapSize(){
   else setTimeout(()=>mapInstance.invalidateSize(),250);
 }
 // Ré-init map quand on ouvre l'écran signalement via le shell app
-const previousAppNavigateForMap = appNavigate;
+// Correction : l'application utilise switchScreen ; appNavigate n'existait pas toujours.
+const previousAppNavigateForMap = (typeof appNavigate === 'function') ? appNavigate : function(screenId){ switchScreen(screenId); };
 function appNavigate(screenId, remember=true, restoreScroll=false){
   previousAppNavigateForMap(screenId, remember, restoreScroll);
   if(screenId==='scr-report') setTimeout(()=>{ initLeafletMap(); fixMapSize(); },450);
 }
 
+
+
+/* =========================================================
+   CORRECTION FINALE — CONNEXION MANAGER ROBUSTE
+   ========================================================= */
+handleManagerLogin = function(){
+  const input = document.getElementById('manager-company-code');
+  const code = (input?.value || '').trim().toUpperCase();
+  if (!code) return showToast('Veuillez saisir un code établissement');
+
+  const sectorValue = document.getElementById('manager-login-sector')?.value || 'Non renseigné';
+  const sizeValue = document.getElementById('manager-login-size')?.value || 'Non renseigné';
+
+  managerSector = sectorValue;
+  managerCompanySize = sizeValue;
+  try {
+    localStorage.setItem('restev_manager_sector_' + code, sectorValue);
+    localStorage.setItem('restev_manager_size_' + code, sizeValue);
+  } catch(e) {
+    console.warn('Stockage secteur/taille impossible', e);
+  }
+
+  try { unlockAlertSound(); } catch(e) { console.warn('Son non déverrouillé', e); }
+
+  const lbl = document.getElementById('lbl-manager-comp-name');
+  if (lbl) lbl.innerText = code;
+
+  showToast('Identification validée. Ouverture de l’espace Management.');
+  switchScreen('scr-manager');
+
+  try { loadManagerReports(); } catch(e) { console.warn('Signalements non chargés', e); }
+  try { startManagerRealtime(); } catch(e) { console.warn('Realtime non activé', e); }
+  try { loadPassportRegistry(); } catch(e) { console.warn('Registre non chargé', e); }
+  try { unlockManagerAlerts(); } catch(e) { console.warn('Alertes non déverrouillées', e); }
+  try { startManagerAlertPolling(); } catch(e) { console.warn('Polling alertes non activé', e); }
+};
 </script> 
 
 </body> 
