@@ -2215,8 +2215,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 // FIN PATCH V4 — PROFILS SALARIÉS
 </script> 
-
-
 <!-- =========================================================
      PATCH RESTEV 85 — VERSION COMPLÈTE + SUPABASE PRÉVENTION 360
      Ajouts conservés :
@@ -2229,26 +2227,21 @@ document.addEventListener('DOMContentLoaded', () => {
 <script>
 (function(){
   const PATCH_VERSION = 'RESTEV85_PREVENTION_360_FULL_2026_07_03';
-
   function ppEscape(value){
     if(typeof escapeHtml === 'function') return escapeHtml(value || '');
     return String(value ?? '').replace(/[&<>"']/g, function(c){
       return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
     });
   }
-
   function getManagerCompanyCode(){
     return (document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
   }
-
   function getEmployeeSessionSafe(){
     return window.currentEmployeeSession || currentEmployeeSession || null;
   }
-
   function installManagerAlertBanner(){
     const managerScreen = document.getElementById('scr-manager');
     if(!managerScreen || document.getElementById('restev-live-alert-banner')) return;
-
     const banner = document.createElement('div');
     banner.id = 'restev-live-alert-banner';
     banner.className = 'hidden bg-gradient-to-r from-red-700 via-rose-600 to-red-700 text-white p-6 rounded-3xl shadow-xl text-center border-4 border-white/60';
@@ -2257,7 +2250,6 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="text-2xl md:text-3xl font-black tracking-tight">🚨 NOUVEAU SIGNALEMENT TERRAIN 🚨</div>
       <div class="text-xs md:text-sm font-bold mt-2 opacity-95">Action manager attendue : consulter, qualifier et répondre au salarié.</div>
     `;
-
     const style = document.createElement('style');
     style.innerHTML = `
       @keyframes restevFlashAlert {
@@ -2271,23 +2263,19 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     `;
     document.head.appendChild(style);
-
     const firstCard = managerScreen.querySelector(':scope > div');
     if(firstCard && firstCard.nextSibling) managerScreen.insertBefore(banner, firstCard.nextSibling);
     else managerScreen.prepend(banner);
   }
-
   window.activateDangerBanner = function(){
     const banner = document.getElementById('restev-live-alert-banner');
     if(!banner) return;
     banner.classList.remove('hidden');
     setTimeout(() => banner.classList.add('hidden'), 12000);
   };
-
   function installManagerMessagePanel(){
     const managerScreen = document.getElementById('scr-manager');
     if(!managerScreen || document.getElementById('restev-manager-message-panel')) return;
-
     const panel = document.createElement('div');
     panel.id = 'restev-manager-message-panel';
     panel.className = 'bg-white dark:bg-slate-800 p-5 rounded-2xl border-t-4 border-t-cyan-500 shadow-premium space-y-4';
@@ -2312,25 +2300,20 @@ document.addEventListener('DOMContentLoaded', () => {
         <i class="fa-solid fa-paper-plane mr-1"></i> Envoyer l'information au salarié
       </button>
     `;
-
     const registryTitle = Array.from(managerScreen.querySelectorAll('h3')).find(h => h.textContent.includes('Registre des Passeports'));
     const registryCard = registryTitle ? registryTitle.closest('.bg-white, .dark\\:bg-slate-800') : null;
     if(registryCard) managerScreen.insertBefore(panel, registryCard);
     else managerScreen.appendChild(panel);
   }
-
   window.sendManagerMessage = async function(){
     if(!supabaseClient) return showToast('Supabase non chargé.');
     const companyCode = getManagerCompanyCode();
     if(!companyCode) return showToast('Code établissement manager manquant.');
-
     const employee = document.getElementById('restev-msg-employee')?.value.trim();
     const title = document.getElementById('restev-msg-title')?.value.trim();
     const message = document.getElementById('restev-msg-content')?.value.trim();
     const priority = document.getElementById('restev-msg-priority')?.value || 'Information';
-
     if(!employee || !title || !message) return showToast('Veuillez compléter salarié, titre et message.');
-
     const { error } = await supabaseClient.from('manager_messages').insert([{
       company_code: companyCode,
       employee_name: employee,
@@ -2339,28 +2322,23 @@ document.addEventListener('DOMContentLoaded', () => {
       priority,
       read_by_employee: false
     }]);
-
     if(error){
       console.error('Erreur manager_messages:', error);
       return showToast('Erreur message : ' + error.message);
     }
-
     document.getElementById('restev-msg-title').value = '';
     document.getElementById('restev-msg-content').value = '';
     showToast('Information envoyée au salarié.');
   };
-
   // Realtime manager renforcé : prevention_reports + passport_registry + bandeau visuel + son/vibration/notification.
   window.startManagerRealtime = function(){
     if(!supabaseClient){ showToast('Supabase non chargé.'); return; }
     const companyCode = getManagerCompanyCode();
     if(!companyCode) return;
-
     if(window.managerRealtimeChannel){
       try { supabaseClient.removeChannel(window.managerRealtimeChannel); } catch(e) {}
       window.managerRealtimeChannel = null;
     }
-
     window.managerRealtimeChannel = supabaseClient
       .channel('restev_manager_realtime_' + companyCode)
       .on('postgres_changes', {
@@ -2387,7 +2365,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if(status === 'SUBSCRIBED') showToast('Alertes manager temps réel activées.');
       });
   };
-
   // Signalement salarié robuste : l'alerte part même si la stat anonymisée échoue.
   window.submitRiskReport = async function(){
     if(!supabaseClient) return showToast('Supabase non chargé. Vérifiez internet.');
@@ -2395,13 +2372,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const desc = document.getElementById('risk-description')?.value.trim();
     const lvl = document.getElementById('risk-level')?.value || 'Non renseigné';
     const freq = document.getElementById('risk-frequency')?.value || 'Non renseigné';
-
     if(!desc) return showToast('Veuillez saisir une description du danger.');
-
     const session = getEmployeeSessionSafe();
     const employeeName = session ? session.name : 'Salarié terrain';
     const companyCode = session ? session.company : (getManagerCompanyCode() || 'Établissement non renseigné');
-
     const { error } = await supabaseClient.from('prevention_reports').insert([{
       company_code: companyCode,
       employee_name: employeeName,
@@ -2412,12 +2386,10 @@ document.addEventListener('DOMContentLoaded', () => {
       status: 'Nouveau',
       read_by_manager: false
     }]);
-
     if(error){
       console.error('Erreur insertion prevention_reports:', error);
       return showToast('Erreur signalement : ' + error.message);
     }
-
     // Copie anonymisée Centre RESTEV : on n'empêche jamais l'alerte manager si cette étape échoue.
     try{
       if(typeof submitAnonymizedPreventionStat === 'function'){
@@ -2436,33 +2408,27 @@ document.addEventListener('DOMContentLoaded', () => {
         if(statInsert.error) console.warn('Stat RESTEV non enregistrée:', statInsert.error.message);
       }
     }catch(e){ console.warn('Stat RESTEV ignorée:', e); }
-
     const area = document.getElementById('risk-description');
     if(area) area.value = '';
     showToast('Signalement envoyé au responsable + remontée RESTEV anonymisée.');
     switchScreen('scr-employee');
   };
-
   // Réponse manager enrichie : conserve prevention_reports et envoie aussi un message descendant lisible dans manager_messages.
   window.sendManagerResponse = async function(id){
     if(!supabaseClient) return showToast('Supabase non chargé.');
     const response = document.getElementById(`response-${id}`)?.value.trim() || '';
     const action = document.getElementById(`action-${id}`)?.value.trim() || '';
-
     const { error } = await supabaseClient
       .from('prevention_reports')
       .update({manager_response: response, corrective_action: action, status:'En cours de traitement'})
       .eq('id', id);
-
     if(error){ console.error(error); return showToast('Erreur Supabase : ' + error.message); }
-
     try{
       const { data } = await supabaseClient
         .from('prevention_reports')
         .select('company_code,employee_name,category')
         .eq('id', id)
         .single();
-
       if(data && response){
         await supabaseClient.from('manager_messages').insert([{
           company_code: data.company_code,
@@ -2474,19 +2440,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }]);
       }
     }catch(e){ console.warn('Message descendant non doublé:', e); }
-
     showToast('Réponse enregistrée et transmise au salarié.');
     loadManagerReports();
   };
-
   // Lecture salarié : 1) messages descendants manager_messages + 2) réponses historiques issues des signalements.
   window.openEmployeeMessages = async function(){
     const session = getEmployeeSessionSafe();
     if(!session) return showToast('Session salarié non reconnue.');
     if(!supabaseClient) return showToast('Supabase non chargé. Vérifiez internet.');
-
     let messages = [];
-
     const msgRes = await supabaseClient
       .from('manager_messages')
       .select('id,title,message,priority,read_by_employee,created_at')
@@ -2494,7 +2456,6 @@ document.addEventListener('DOMContentLoaded', () => {
       .eq('employee_name', session.name)
       .order('created_at',{ascending:false})
       .limit(50);
-
     if(msgRes.error){
       console.warn('manager_messages non disponible:', msgRes.error.message);
     } else {
@@ -2504,7 +2465,6 @@ document.addEventListener('DOMContentLoaded', () => {
         try { await supabaseClient.from('manager_messages').update({read_by_employee:true}).in('id', unreadIds); } catch(e) {}
       }
     }
-
     const repRes = await supabaseClient
       .from('prevention_reports')
       .select('id,category,description,status,manager_response,corrective_action,created_at')
@@ -2512,7 +2472,6 @@ document.addEventListener('DOMContentLoaded', () => {
       .eq('employee_name', session.name)
       .order('created_at',{ascending:false})
       .limit(50);
-
     if(!repRes.error){
       messages = messages.concat((repRes.data || []).filter(r => r.manager_response || r.corrective_action).map(r => ({
         id: r.id,
@@ -2524,12 +2483,10 @@ document.addEventListener('DOMContentLoaded', () => {
         original_description: r.description
       })));
     }
-
     messages.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
     renderEmployeeMessages360(messages);
     switchScreen('scr-employee-messages');
   };
-
   window.renderEmployeeMessages360 = function(msgs){
     const c = document.getElementById('employee-messages-list');
     if(!c) return;
@@ -2538,7 +2495,6 @@ document.addEventListener('DOMContentLoaded', () => {
       c.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-6">Aucun message pour le moment.</p>';
       return;
     }
-
     c.innerHTML = msgs.map(m => {
       const urgent = (m.priority || '').toLowerCase().includes('urgent');
       const border = urgent ? 'border-red-300 bg-red-50 dark:bg-red-950/20' : 'border-cyan-200 bg-white dark:bg-slate-800';
@@ -2560,12 +2516,219 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
     }).join('');
   };
-
   // Installation au chargement.
   document.addEventListener('DOMContentLoaded', () => {
     installManagerAlertBanner();
     installManagerMessagePanel();
     console.log(PATCH_VERSION + ' installé');
+  });
+})();
+</script>
+
+
+<!-- =========================================================
+     PATCH RESTEV 85 — CORRECTION CLÔTURE QCM / REMONTÉE PASSEPORT
+     Objectif : le bouton "Clôturer & Quitter" ne doit plus bloquer.
+     - Détection renforcée des signatures canvas
+     - Enregistrement direct passport_registry
+     - Remontée Centre RESTEV dans prevention_stats
+     - Message d'erreur visible si Supabase bloque
+     ========================================================= -->
+<script>
+(function(){
+  const PATCH_QCM_VERSION = 'RESTEV85_QCM_CLOTURE_FIX_2026_07_03';
+
+  function r85Text(id){ return (document.getElementById(id)?.value || document.getElementById(id)?.innerText || '').trim(); }
+  function r85NowFr(){ return new Date().toLocaleString('fr-FR'); }
+  function r85Period(){ return new Date().toISOString().slice(0,7); }
+  function r85SafeToast(msg){ if(typeof showToast === 'function') showToast(msg); else alert(msg); }
+
+  function r85CanvasHasInk(type){
+    const canvas = document.getElementById(`sig-canvas-${type}`);
+    if(!canvas) return false;
+    try{
+      const data = canvas.toDataURL('image/png');
+      // Un canvas vide est très court. Dès qu'il y a un tracé, la taille augmente nettement.
+      return data && data.length > 1800;
+    }catch(e){ return false; }
+  }
+
+  function r85SignatureDone(type){
+    try{
+      if(typeof isSignatureDone === 'function' && isSignatureDone(type)) return true;
+    }catch(e){}
+    return r85CanvasHasInk(type);
+  }
+
+  function r85SignatureData(type){
+    try{
+      if(typeof getSignatureData === 'function') return getSignatureData(type);
+    }catch(e){}
+    const canvas = document.getElementById(`sig-canvas-${type}`);
+    try{ return canvas ? canvas.toDataURL('image/png') : null; }catch(e){ return null; }
+  }
+
+  function r85GetEpis(){
+    try{
+      if(typeof updateCertificateEPI === 'function') updateCertificateEPI();
+    }catch(e){}
+    try{
+      if(Array.isArray(selectedEPIList) && selectedEPIList.length) return selectedEPIList;
+    }catch(e){}
+    try{
+      if(typeof getSelectedEPI === 'function') return getSelectedEPI();
+    }catch(e){}
+    return [];
+  }
+
+  function r85GetScoreParts(){
+    let score = 0;
+    let total = 0;
+    try{ score = Number(qcmScore || 0); }catch(e){}
+    try{ total = Number((qcmActiveQuestions && qcmActiveQuestions.length) || 0); }catch(e){}
+
+    // Fallback depuis l'affichage "8 / 10" si les variables JS sont indisponibles.
+    if(!total){
+      const txt = r85Text('lbl-qcm-score-final');
+      const m = txt.match(/(\d+)\s*\/\s*(\d+)/);
+      if(m){ score = Number(m[1]); total = Number(m[2]); }
+    }
+    return {score, total};
+  }
+
+  function r85GetCompanyCode(){
+    let company = '';
+    try{ company = currentEmployeeSession?.company || ''; }catch(e){}
+    company = company || r85Text('cert-company') || r85Text('lbl-manager-comp-name') || 'Établissement non renseigné';
+    return company.trim();
+  }
+
+  function r85GetEmployeeName(){
+    let name = '';
+    try{ name = currentEmployeeSession?.name || ''; }catch(e){}
+    return (r85Text('cert-employee') || name || 'Salarié').trim();
+  }
+
+  function r85GetSector(){
+    try{ if(typeof getCurrentSectorLabel === 'function') return getCurrentSectorLabel(); }catch(e){}
+    try{ return currentEmployeeSession?.sector || 'Non renseigné'; }catch(e){ return 'Non renseigné'; }
+  }
+
+  function r85GetSize(){
+    try{ if(typeof getCurrentCompanySizeLabel === 'function') return getCurrentCompanySizeLabel(); }catch(e){}
+    return 'Non renseigné';
+  }
+
+  async function r85InsertPassport(entry, score, total){
+    if(!supabaseClient) return {ok:false, error:'Supabase non chargé'};
+
+    const payload = {
+      company_code: entry.company_code,
+      employee_name: entry.employee_name,
+      score: score,
+      total: total,
+      epis: entry.epis || [],
+      status: entry.status || 'Validé et signé',
+      signature_employee: entry.signature_employee || null,
+      signature_manager: entry.signature_manager || null
+    };
+
+    const {error} = await supabaseClient.from('passport_registry').insert([payload]);
+    if(error) return {ok:false, error:error.message};
+    return {ok:true};
+  }
+
+  async function r85InsertPassportStat(entry, score, total){
+    if(!supabaseClient) return {ok:false, error:'Supabase non chargé'};
+    const complete = total > 0 && score === total;
+    const payload = {
+      period_month: r85Period(),
+      sector: entry.sector || r85GetSector(),
+      company_size_range: r85GetSize(),
+      risk_category: 'Validation passeport prévention',
+      risk_level: complete ? 'Acquis complet' : 'Points à renforcer',
+      frequency: 'Ponctuelle',
+      event_type: 'Passeport validé',
+      corrective_action_type: complete ? 'Aucune' : 'Reprise des points faibles'
+    };
+    const {error} = await supabaseClient.from('prevention_stats').insert([payload]);
+    if(error) return {ok:false, error:error.message};
+    return {ok:true};
+  }
+
+  function r85SaveLocal(entry){
+    try{
+      const key = `restev_passport_registry_${entry.company_code || 'default'}`;
+      let rows = [];
+      try{ rows = JSON.parse(safeStorage.getItem(key) || '[]'); }catch(e){ rows = []; }
+      rows.unshift(entry);
+      safeStorage.setItem(key, JSON.stringify(rows.slice(0,100)));
+    }catch(e){ console.warn('Sauvegarde locale passeport impossible:', e); }
+  }
+
+  window.finalizeAndClose = async function(){
+    // Anti double-clic
+    const btns = Array.from(document.querySelectorAll('button')).filter(b => (b.textContent || '').includes('Clôturer'));
+    btns.forEach(b => { b.disabled = true; b.dataset.oldText = b.innerHTML; b.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Enregistrement...'; });
+
+    try{
+      try{ if(typeof updateCertificateEPI === 'function') updateCertificateEPI(); }catch(e){}
+      try{ if(typeof initSignaturePads === 'function') initSignaturePads(); }catch(e){}
+
+      const empSigned = r85SignatureDone('emp');
+      const mgrSigned = r85SignatureDone('mgr');
+
+      // On n'empêche plus la remontée : si une signature n'est pas détectée, on enregistre avec réserve.
+      // Cela corrige le blocage rencontré à la fin du QCM.
+      const signatureStatus = (empSigned && mgrSigned) ? 'Validé et signé' : 'Validé - signature à vérifier';
+
+      const {score, total} = r85GetScoreParts();
+      const entry = {
+        company_code: r85GetCompanyCode(),
+        employee_name: r85GetEmployeeName(),
+        validated_at: r85NowFr(),
+        score: `${score}/${total}`,
+        epis: r85GetEpis(),
+        sector: r85GetSector(),
+        status: signatureStatus,
+        signature_employee: r85SignatureData('emp'),
+        signature_manager: r85SignatureData('mgr')
+      };
+
+      if(!entry.company_code || entry.company_code === 'Établissement non renseigné'){
+        r85SafeToast('Code établissement manquant : impossible de remonter le passeport.');
+        return;
+      }
+
+      r85SaveLocal(entry);
+
+      const pass = await r85InsertPassport(entry, score, total);
+      if(!pass.ok){
+        console.error('Erreur passport_registry:', pass.error);
+        r85SafeToast('Erreur registre passeport : ' + pass.error);
+        return;
+      }
+
+      const stat = await r85InsertPassportStat(entry, score, total);
+      if(!stat.ok){
+        console.warn('Stat RESTEV non enregistrée:', stat.error);
+        r85SafeToast('Passeport enregistré, mais statistique RESTEV bloquée : ' + stat.error);
+      } else {
+        r85SafeToast('Passeport clôturé, enregistré et remonté au Centre RESTEV.');
+      }
+
+      try{ if(typeof loadPassportRegistry === 'function') await loadPassportRegistry(); }catch(e){}
+      switchScreen('scr-employee');
+    }catch(e){
+      console.error('Erreur clôture QCM:', e);
+      r85SafeToast('Erreur clôture QCM : ' + (e.message || e));
+    }finally{
+      btns.forEach(b => { b.disabled = false; if(b.dataset.oldText) b.innerHTML = b.dataset.oldText; });
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log(PATCH_QCM_VERSION + ' installé');
   });
 })();
 </script>
