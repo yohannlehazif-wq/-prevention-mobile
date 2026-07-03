@@ -2706,21 +2706,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 <!-- =========================================================
-     PATCH RESTEV 85 — BULLE MESSAGE SALARIÉ POUR INFOS DESCENDANTES
+     PATCH RESTEV 85 — CENTRE RESTEV GLOBAL : PASSEPORTS + RISQUES VISUELS
      À coller juste avant </body>
 
      Objectifs :
-     - Bulle flottante côté salarié quand un message manager arrive.
-     - Badge rouge avec nombre de messages non lus.
-     - Mini aperçu du dernier message.
-     - Clic sur la bulle = ouverture "Messages du responsable".
-     - Realtime Supabase sur manager_messages.
+     - Afficher le nombre général de Passeports Prévention créés.
+     - Afficher les statistiques générales des risques en chiffres.
+     - Ajouter une représentation visuelle : graphiques + barres de progression.
+     - Rester anonymisé : aucun nom salarié, aucun commentaire détaillé, aucun classement entreprise.
+     - Mode secours si prevention_stats est vide : lecture prevention_reports + passport_registry.
      ========================================================= -->
 <script>
 (function(){
-  const PATCH_VERSION = 'RESTEV85_EMPLOYEE_MESSAGE_BUBBLE_2026_07_03';
-  let r85EmployeeMessageChannel = null;
-  let r85MessageBubbleAudioCtx = null;
+  const PATCH_VERSION = 'RESTEV85_CENTER_GLOBAL_STATS_2026_07_03';
+  let r85RiskChart = null;
+  let r85PassportChart = null;
+  let r85MonthChart = null;
 
   function r85Toast(msg){
     if(typeof showToast === 'function') showToast(msg);
@@ -2732,243 +2733,310 @@ document.addEventListener('DOMContentLoaded', () => {
     return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
-  function r85Session(){
-    try { return currentEmployeeSession || window.currentEmployeeSession || null; }
-    catch(e){ return window.currentEmployeeSession || null; }
+  function r85Month(value){
+    if(!value) return new Date().toISOString().slice(0,7);
+    const s = String(value);
+    if(/^\d{4}-\d{2}$/.test(s)) return s;
+    if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,7);
+    const d = new Date(s);
+    if(!isNaN(d.getTime())) return d.toISOString().slice(0,7);
+    return new Date().toISOString().slice(0,7);
   }
 
-  function unlockMessageSound(){
-    try{
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if(!AC) return;
-      if(!r85MessageBubbleAudioCtx) r85MessageBubbleAudioCtx = new AC();
-      if(r85MessageBubbleAudioCtx.state === 'suspended') r85MessageBubbleAudioCtx.resume();
-    }catch(e){}
+  function r85CountBy(rows, key){
+    return (rows || []).reduce((acc,row) => {
+      const value = row[key] || 'Non renseigné';
+      acc[value] = (acc[value] || 0) + 1;
+      return acc;
+    }, {});
   }
 
-  function playMessageBubbleSound(){
-    try{
-      unlockMessageSound();
-      if(!r85MessageBubbleAudioCtx) return;
-      [0, .18].forEach((delay, idx) => {
-        const now = r85MessageBubbleAudioCtx.currentTime + delay;
-        const osc = r85MessageBubbleAudioCtx.createOscillator();
-        const gain = r85MessageBubbleAudioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(idx === 0 ? 660 : 880, now);
-        gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.exponentialRampToValueAtTime(0.16, now + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
-        osc.connect(gain);
-        gain.connect(r85MessageBubbleAudioCtx.destination);
-        osc.start(now);
-        osc.stop(now + 0.18);
-      });
-    }catch(e){}
+  function r85Top(obj, limit=8){
+    return Object.entries(obj || {}).sort((a,b) => b[1] - a[1]).slice(0, limit);
   }
 
-  function vibrateMessageBubble(){
-    try{ if(navigator.vibrate) navigator.vibrate([120,70,120]); }catch(e){}
+  function r85Set(id, value){
+    const el = document.getElementById(id);
+    if(el) el.innerText = String(value);
   }
 
-  function installBubbleStyles(){
-    if(document.getElementById('r85-employee-bubble-styles')) return;
-    const style = document.createElement('style');
-    style.id = 'r85-employee-bubble-styles';
-    style.innerHTML = `
-      @keyframes r85BubblePulse {0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
-      @keyframes r85BubblePop {0%{transform:translateY(12px) scale(.92);opacity:0}100%{transform:translateY(0) scale(1);opacity:1}}
-      @keyframes r85BubbleRing {0%{box-shadow:0 0 0 0 rgba(6,182,212,.6)}70%{box-shadow:0 0 0 16px rgba(6,182,212,0)}100%{box-shadow:0 0 0 0 rgba(6,182,212,0)}}
-      #r85-employee-message-bubble.r85-unread { animation:r85BubblePulse 1.1s infinite; }
-      #r85-employee-message-bubble .r85-ring { animation:r85BubbleRing 1.4s infinite; }
-      #r85-employee-message-preview.r85-show { display:block !important; animation:r85BubblePop .22s ease-out; }
-    `;
-    document.head.appendChild(style);
+  function r85Percent(value, total){
+    if(!total) return 0;
+    return Math.round((value / total) * 100);
   }
 
-  function installEmployeeMessageBubble(){
-    installBubbleStyles();
+  function installGlobalCenterLayout(){
+    const screen = document.getElementById('scr-direction');
+    if(!screen || document.getElementById('r85-global-center-dashboard')) return;
 
-    if(!document.getElementById('r85-employee-message-bubble')){
-      const wrap = document.createElement('div');
-      wrap.id = 'r85-employee-message-area';
-      wrap.className = 'fixed bottom-5 right-5 z-[9997] no-print';
-      wrap.innerHTML = `
-        <div id="r85-employee-message-preview" class="hidden mb-3 max-w-[280px] bg-white dark:bg-slate-800 border border-cyan-200 dark:border-slate-700 rounded-2xl shadow-2xl p-3 text-left">
-          <div class="flex items-start gap-2">
-            <div class="w-8 h-8 rounded-xl bg-cyan-100 text-cyan-700 flex items-center justify-center"><i class="fa-solid fa-bullhorn"></i></div>
-            <div class="flex-1 min-w-0">
-              <p class="text-[10px] font-black uppercase text-cyan-600">Message du responsable</p>
-              <p id="r85-employee-preview-title" class="text-xs font-black dark:text-white truncate">Nouveau message</p>
-              <p id="r85-employee-preview-text" class="text-[11px] text-slate-500 dark:text-slate-300 line-clamp-2">Cliquez pour lire.</p>
-            </div>
+    // Masque les anciens petits compteurs si présents pour éviter les doublons visuels.
+    const oldCards = document.getElementById('stats-total')?.closest('.grid');
+    if(oldCards) oldCards.style.display = 'none';
+
+    const block = document.createElement('div');
+    block.id = 'r85-global-center-dashboard';
+    block.className = 'space-y-6';
+    block.innerHTML = `
+      <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-premium border-t-4 border-t-restev-blue space-y-5">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-widest text-restev-blue">Vue générale anonymisée</p>
+            <h3 class="text-xl font-black dark:text-white flex items-center gap-2"><i class="fa-solid fa-chart-simple text-restev-blue"></i> Indicateurs RESTEV 85</h3>
+            <p class="text-[11px] text-slate-500 dark:text-slate-300 mt-1">Passeports prévention + risques signalés, sans données nominatives.</p>
+          </div>
+          <button onclick="loadRestevStats()" class="bg-restev-blue text-white px-4 py-3 rounded-xl text-xs font-black shadow-md"><i class="fa-solid fa-rotate mr-1"></i> Actualiser</button>
+        </div>
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-emerald-50 dark:bg-slate-900 p-5 rounded-2xl border border-emerald-100 dark:border-slate-700 text-center min-h-[125px] flex flex-col justify-center">
+            <p class="text-[9px] font-black uppercase text-slate-400 min-h-[26px]">Passeports prévention créés</p>
+            <p id="r85-global-passports" class="text-4xl font-black text-emerald-600 leading-none">0</p>
+          </div>
+          <div class="bg-teal-50 dark:bg-slate-900 p-5 rounded-2xl border border-teal-100 dark:border-slate-700 text-center min-h-[125px] flex flex-col justify-center">
+            <p class="text-[9px] font-black uppercase text-slate-400 min-h-[26px]">Acquis complets</p>
+            <p id="r85-global-passports-complete" class="text-4xl font-black text-teal-600 leading-none">0</p>
+          </div>
+          <div class="bg-red-50 dark:bg-slate-900 p-5 rounded-2xl border border-red-100 dark:border-slate-700 text-center min-h-[125px] flex flex-col justify-center">
+            <p class="text-[9px] font-black uppercase text-slate-400 min-h-[26px]">Alertes risques générales</p>
+            <p id="r85-global-alerts" class="text-4xl font-black text-red-600 leading-none">0</p>
+          </div>
+          <div class="bg-orange-50 dark:bg-slate-900 p-5 rounded-2xl border border-orange-100 dark:border-slate-700 text-center min-h-[125px] flex flex-col justify-center">
+            <p class="text-[9px] font-black uppercase text-slate-400 min-h-[26px]">Alertes critiques</p>
+            <p id="r85-global-critical" class="text-4xl font-black text-orange-600 leading-none">0</p>
           </div>
         </div>
-        <button id="r85-employee-message-bubble" onclick="openEmployeeMessagesFromBubble()" class="hidden relative w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-2xl border-4 border-white flex items-center justify-center">
-          <span class="r85-ring absolute inset-0 rounded-full"></span>
-          <i class="fa-solid fa-comments text-2xl relative z-10"></i>
-          <span id="r85-employee-message-count" class="hidden absolute -top-2 -right-2 min-w-7 h-7 px-2 rounded-full bg-red-600 text-white border-2 border-white text-xs font-black flex items-center justify-center">0</span>
-        </button>
-      `;
-      document.body.appendChild(wrap);
-    }
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-premium border-t-4 border-t-red-500 space-y-4">
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-widest text-red-500">Risques généraux</p>
+            <h3 class="text-sm font-black dark:text-white"><i class="fa-solid fa-triangle-exclamation text-red-500 mr-1"></i> Répartition des risques signalés</h3>
+          </div>
+          <div class="relative h-72 w-full"><canvas id="r85-risk-chart"></canvas></div>
+          <div id="r85-risk-bars" class="space-y-3"><p class="text-xs text-slate-400 italic">Aucune donnée risque.</p></div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-premium border-t-4 border-t-emerald-500 space-y-4">
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-widest text-emerald-500">Passeports prévention</p>
+            <h3 class="text-sm font-black dark:text-white"><i class="fa-solid fa-id-card text-emerald-500 mr-1"></i> Résultats des passeports</h3>
+          </div>
+          <div class="relative h-72 w-full"><canvas id="r85-passport-chart"></canvas></div>
+          <div id="r85-passport-bars" class="space-y-3"><p class="text-xs text-slate-400 italic">Aucune donnée passeport.</p></div>
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-premium border-t-4 border-t-restev-gold space-y-4">
+        <div>
+          <p class="text-[10px] font-black uppercase tracking-widest text-restev-gold">Évolution globale</p>
+          <h3 class="text-sm font-black dark:text-white"><i class="fa-solid fa-chart-line text-restev-gold mr-1"></i> Passeports et alertes par mois</h3>
+        </div>
+        <div class="relative h-72 w-full"><canvas id="r85-month-chart"></canvas></div>
+      </div>
+
+      <div class="bg-blue-50 dark:bg-slate-900 border border-blue-100 dark:border-slate-700 p-4 rounded-2xl">
+        <p id="r85-global-stats-source" class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed"><b>Source :</b> chargement en cours.</p>
+      </div>
+    `;
+
+    const hero = screen.querySelector('.bg-gradient-to-br');
+    if(hero && hero.nextSibling) screen.insertBefore(block, hero.nextSibling);
+    else screen.appendChild(block);
   }
 
-  window.openEmployeeMessagesFromBubble = async function(){
-    hideEmployeeMessagePreview(false);
-    if(typeof openEmployeeMessages === 'function'){
-      await openEmployeeMessages();
-    } else if(typeof switchScreen === 'function'){
-      switchScreen('scr-employee-messages');
-    }
-    setTimeout(refreshEmployeeMessageBubble, 600);
-  };
-
-  function showEmployeeBubble(){
-    installEmployeeMessageBubble();
-    document.getElementById('r85-employee-message-bubble')?.classList.remove('hidden');
-  }
-
-  function hideEmployeeBubble(){
-    document.getElementById('r85-employee-message-bubble')?.classList.add('hidden');
-    hideEmployeeMessagePreview(false);
-  }
-
-  function showEmployeeMessagePreview(message){
-    installEmployeeMessageBubble();
-    const preview = document.getElementById('r85-employee-message-preview');
-    const title = document.getElementById('r85-employee-preview-title');
-    const text = document.getElementById('r85-employee-preview-text');
-    if(title) title.innerText = message?.title || 'Nouveau message';
-    if(text) text.innerText = message?.message || 'Cliquez pour lire.';
-    preview?.classList.remove('hidden');
-    preview?.classList.add('r85-show');
-    setTimeout(() => hideEmployeeMessagePreview(true), 9000);
-  }
-
-  function hideEmployeeMessagePreview(keepBubble=true){
-    const preview = document.getElementById('r85-employee-message-preview');
-    if(preview){
-      preview.classList.remove('r85-show');
-      preview.classList.add('hidden');
-    }
-    if(!keepBubble) document.getElementById('r85-employee-message-bubble')?.classList.remove('r85-unread');
-  }
-
-  window.refreshEmployeeMessageBubble = async function(){
-    installEmployeeMessageBubble();
-    const session = r85Session();
-    if(!session || !supabaseClient){
-      hideEmployeeBubble();
-      return;
-    }
-
-    const { data, error } = await supabaseClient
-      .from('manager_messages')
-      .select('id,title,message,priority,read_by_employee,created_at')
-      .eq('company_code', session.company)
-      .eq('employee_name', session.name)
-      .eq('read_by_employee', false)
+  async function readPreventionStats(){
+    const res = await supabaseClient
+      .from('prevention_stats')
+      .select('period_month,sector,company_size_range,risk_category,risk_level,frequency,event_type,corrective_action_type,created_at')
       .order('created_at', {ascending:false})
-      .limit(20);
-
-    if(error){
-      console.warn('Bulle messages salarié indisponible:', error.message);
-      hideEmployeeBubble();
-      return;
-    }
-
-    const unread = data || [];
-    const bubble = document.getElementById('r85-employee-message-bubble');
-    const count = document.getElementById('r85-employee-message-count');
-
-    if(unread.length > 0){
-      showEmployeeBubble();
-      bubble?.classList.add('r85-unread');
-      if(count){
-        count.innerText = String(unread.length);
-        count.classList.remove('hidden');
-      }
-    } else {
-      if(count) count.classList.add('hidden');
-      bubble?.classList.remove('r85-unread');
-      // On garde la bulle visible dans l'espace salarié comme raccourci Messages.
-      if(document.getElementById('scr-employee')?.classList.contains('active')) showEmployeeBubble();
-      else hideEmployeeBubble();
-    }
-  };
-
-  function subscribeEmployeeMessages(){
-    const session = r85Session();
-    if(!session || !supabaseClient) return;
-    installEmployeeMessageBubble();
-
-    if(r85EmployeeMessageChannel){
-      try{ supabaseClient.removeChannel(r85EmployeeMessageChannel); }catch(e){}
-      r85EmployeeMessageChannel = null;
-    }
-
-    r85EmployeeMessageChannel = supabaseClient
-      .channel('r85_employee_message_bubble_' + session.company + '_' + session.name)
-      .on('postgres_changes', {
-        event:'INSERT',
-        schema:'public',
-        table:'manager_messages',
-        filter:'company_code=eq.' + session.company
-      }, payload => {
-        const m = payload.new;
-        if(m && m.employee_name === session.name){
-          showEmployeeBubble();
-          showEmployeeMessagePreview(m);
-          playMessageBubbleSound();
-          vibrateMessageBubble();
-          r85Toast('📢 Nouveau message du responsable.');
-          refreshEmployeeMessageBubble();
-        }
-      })
-      .subscribe(status => console.log('Realtime bulle salarié:', status));
-
-    refreshEmployeeMessageBubble();
+      .limit(2000);
+    if(res.error) throw res.error;
+    return res.data || [];
   }
 
-  // On complète l'ouverture des messages : après lecture, la bulle se met à jour.
-  const oldOpenEmployeeMessages = window.openEmployeeMessages;
-  window.openEmployeeMessages = async function(){
-    if(typeof oldOpenEmployeeMessages === 'function'){
-      await oldOpenEmployeeMessages();
+  async function readFallbackAlerts(){
+    const res = await supabaseClient
+      .from('prevention_reports')
+      .select('category,level,frequency,status,created_at')
+      .order('created_at', {ascending:false})
+      .limit(2000);
+    if(res.error){ console.warn('Fallback alertes impossible:', res.error.message); return []; }
+    return (res.data || []).map(r => ({
+      period_month: r85Month(r.created_at),
+      risk_category: r.category || 'Signalement terrain',
+      risk_level: r.level || 'Non renseigné',
+      frequency: r.frequency || 'Non renseigné',
+      event_type: 'Signalement prévention',
+      created_at: r.created_at
+    }));
+  }
+
+  async function readFallbackPassports(){
+    const res = await supabaseClient
+      .from('passport_registry')
+      .select('score,total,status,created_at')
+      .order('created_at', {ascending:false})
+      .limit(2000);
+    if(res.error){ console.warn('Fallback passeports impossible:', res.error.message); return []; }
+    return (res.data || []).map(p => ({
+      period_month: r85Month(p.created_at),
+      risk_category: 'Validation passeport prévention',
+      risk_level: Number(p.score) === Number(p.total) ? 'Acquis complet' : 'Points à renforcer',
+      frequency: 'Ponctuelle',
+      event_type: 'Passeport validé',
+      created_at: p.created_at
+    }));
+  }
+
+  window.loadRestevStats = async function(){
+    installGlobalCenterLayout();
+    if(!supabaseClient){ r85Toast('Supabase non chargé : statistiques indisponibles.'); return; }
+
+    let rows = [];
+    let source = 'prevention_stats';
+    try{
+      rows = await readPreventionStats();
+    }catch(e){
+      console.warn('prevention_stats indisponible:', e.message || e);
+      source = 'mode secours';
     }
-    setTimeout(refreshEmployeeMessageBubble, 800);
+
+    if(!rows.length){
+      source = 'mode secours';
+      const alerts = await readFallbackAlerts();
+      const passports = await readFallbackPassports();
+      rows = [...alerts, ...passports];
+    }
+
+    renderRestevGlobalStats(rows, source);
   };
 
-  const oldSwitchScreen = window.switchScreen;
-  window.switchScreen = function(screenId){
-    if(typeof oldSwitchScreen === 'function') oldSwitchScreen(screenId);
+  window.renderRestevGlobalStats = function(rows, source){
+    rows = rows || [];
+    const alertRows = rows.filter(r => String(r.event_type || '').toLowerCase().includes('signalement'));
+    const passportRows = rows.filter(r => String(r.event_type || '').toLowerCase().includes('passeport'));
 
-    if(screenId === 'scr-employee'){
-      setTimeout(() => {
-        installEmployeeMessageBubble();
-        subscribeEmployeeMessages();
-        showEmployeeBubble();
-        refreshEmployeeMessageBubble();
-      }, 300);
-    }
+    const passportTotal = passportRows.length;
+    const passportComplete = passportRows.filter(p => String(p.risk_level || '').toLowerCase().includes('complet')).length;
+    const passportImprove = Math.max(passportTotal - passportComplete, 0);
 
-    if(screenId === 'scr-employee-messages'){
-      setTimeout(refreshEmployeeMessageBubble, 800);
-    }
+    const criticalTotal = alertRows.filter(r => {
+      const v = String(r.risk_level || '').toLowerCase();
+      return v.includes('critique') || v.includes('danger') || String(r.risk_level || '').includes('🔴');
+    }).length;
 
-    if(screenId !== 'scr-employee' && screenId !== 'scr-employee-messages'){
-      // On masque hors espace salarié pour ne pas gêner manager/centre.
-      setTimeout(hideEmployeeBubble, 200);
+    r85Set('r85-global-passports', passportTotal);
+    r85Set('r85-global-passports-complete', passportComplete);
+    r85Set('r85-global-alerts', alertRows.length);
+    r85Set('r85-global-critical', criticalTotal);
+
+    // Compatibilité avec anciens compteurs.
+    r85Set('stats-total', alertRows.length);
+    r85Set('stats-top-risk', r85Top(r85CountBy(alertRows, 'risk_category'), 1)[0]?.[0] || '—');
+    r85Set('stats-sector-count', Object.keys(r85CountBy(alertRows, 'sector')).length);
+
+    const riskTop = r85Top(r85CountBy(alertRows, 'risk_category'), 8);
+    renderRiskBars(riskTop, alertRows.length);
+    renderPassportBars(passportComplete, passportImprove, passportTotal);
+    renderCharts(riskTop, passportComplete, passportImprove, alertRows, passportRows);
+
+    const src = document.getElementById('r85-global-stats-source');
+    if(src){
+      src.innerHTML = source === 'mode secours'
+        ? '<b>Source :</b> mode secours depuis les signalements terrain et le registre passeports. Données anonymisées à l’affichage.'
+        : '<b>Source :</b> prevention_stats anonymisé. Données collectives uniquement.';
     }
   };
+
+  function renderRiskBars(riskTop, total){
+    const box = document.getElementById('r85-risk-bars');
+    if(!box) return;
+    if(!riskTop.length){
+      box.innerHTML = '<p class="text-xs text-slate-400 italic">Aucune donnée risque.</p>';
+      return;
+    }
+    box.innerHTML = riskTop.map(([risk,count], idx) => {
+      const pct = r85Percent(count, total);
+      return `
+        <div class="space-y-1">
+          <div class="flex justify-between text-xs gap-3"><span class="font-black dark:text-white">${idx+1}. ${r85Esc(risk)}</span><span class="font-black text-red-600">${count} (${pct}%)</span></div>
+          <div class="w-full bg-slate-100 dark:bg-slate-900 rounded-full h-3 overflow-hidden"><div class="bg-gradient-to-r from-red-500 to-pink-500 h-3 rounded-full" style="width:${pct}%"></div></div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderPassportBars(complete, improve, total){
+    const box = document.getElementById('r85-passport-bars');
+    if(!box) return;
+    if(!total){
+      box.innerHTML = '<p class="text-xs text-slate-400 italic">Aucune donnée passeport.</p>';
+      return;
+    }
+    const pctComplete = r85Percent(complete, total);
+    const pctImprove = r85Percent(improve, total);
+    box.innerHTML = `
+      <div class="space-y-1">
+        <div class="flex justify-between text-xs"><span class="font-black dark:text-white">Acquis complets</span><span class="font-black text-emerald-600">${complete} (${pctComplete}%)</span></div>
+        <div class="w-full bg-slate-100 dark:bg-slate-900 rounded-full h-3 overflow-hidden"><div class="bg-gradient-to-r from-emerald-500 to-teal-500 h-3 rounded-full" style="width:${pctComplete}%"></div></div>
+      </div>
+      <div class="space-y-1">
+        <div class="flex justify-between text-xs"><span class="font-black dark:text-white">Points à renforcer</span><span class="font-black text-amber-600">${improve} (${pctImprove}%)</span></div>
+        <div class="w-full bg-slate-100 dark:bg-slate-900 rounded-full h-3 overflow-hidden"><div class="bg-gradient-to-r from-amber-400 to-orange-500 h-3 rounded-full" style="width:${pctImprove}%"></div></div>
+      </div>
+    `;
+  }
+
+  function renderCharts(riskTop, complete, improve, alertRows, passportRows){
+    try{
+      if(window.Chart){
+        const riskCanvas = document.getElementById('r85-risk-chart');
+        if(riskCanvas){
+          if(r85RiskChart) r85RiskChart.destroy();
+          r85RiskChart = new Chart(riskCanvas, {
+            type:'doughnut',
+            data:{labels:riskTop.map(e => e[0]), datasets:[{data:riskTop.map(e => e[1]), backgroundColor:['#ef4444','#f97316','#e0248a','#3a7bd5','#4ec3b1','#ffb007','#245ca6','#b31269']}]},
+            options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}}
+          });
+        }
+
+        const passportCanvas = document.getElementById('r85-passport-chart');
+        if(passportCanvas){
+          if(r85PassportChart) r85PassportChart.destroy();
+          r85PassportChart = new Chart(passportCanvas, {
+            type:'doughnut',
+            data:{labels:['Acquis complets','Points à renforcer'], datasets:[{data:[complete, improve], backgroundColor:['#10b981','#f59e0b']}]},
+            options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}}
+          });
+        }
+
+        const monthCanvas = document.getElementById('r85-month-chart');
+        if(monthCanvas){
+          const monthsSet = new Set([...alertRows, ...passportRows].map(r => r85Month(r.period_month || r.created_at)));
+          const months = Array.from(monthsSet).sort().slice(-12);
+          const alertByMonth = r85CountBy(alertRows.map(r => ({month:r85Month(r.period_month || r.created_at)})), 'month');
+          const passportByMonth = r85CountBy(passportRows.map(r => ({month:r85Month(r.period_month || r.created_at)})), 'month');
+          if(r85MonthChart) r85MonthChart.destroy();
+          r85MonthChart = new Chart(monthCanvas, {
+            type:'bar',
+            data:{
+              labels: months,
+              datasets:[
+                {label:'Alertes risques', data:months.map(m => alertByMonth[m] || 0), backgroundColor:'#ef4444'},
+                {label:'Passeports prévention', data:months.map(m => passportByMonth[m] || 0), backgroundColor:'#10b981'}
+              ]
+            },
+            options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true, ticks:{precision:0}}}}
+          });
+        }
+      }
+    }catch(e){
+      console.warn('Graphiques globaux ignorés:', e);
+    }
+  }
 
   document.addEventListener('DOMContentLoaded', () => {
-    installEmployeeMessageBubble();
-    setTimeout(() => {
-      subscribeEmployeeMessages();
-      refreshEmployeeMessageBubble();
-    }, 900);
     console.log(PATCH_VERSION + ' installé');
   });
 })();
