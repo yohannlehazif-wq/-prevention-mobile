@@ -28,31 +28,9 @@
 
  
 
-  <script>
-/* =========================================================
-   SAFE STORAGE — compatible iframe sandbox / about:srcdoc
-   Évite : SecurityError localStorage sans allow-same-origin.
-   ========================================================= */
-const safeStorage = (() => {
-  const memory = {};
-  try {
-    const testKey = '__restev_storage_test__';
-    window.localStorage.setItem(testKey, '1');
-    window.localStorage.removeItem(testKey);
-    return window.localStorage;
-  } catch (e) {
-    console.warn('localStorage indisponible, stockage mémoire temporaire utilisé :', e?.message || e);
-    return {
-      getItem: key => Object.prototype.hasOwnProperty.call(memory, key) ? memory[key] : null,
-      setItem: (key, value) => { memory[key] = String(value); },
-      removeItem: key => { delete memory[key]; },
-      clear: () => { Object.keys(memory).forEach(k => delete memory[k]); }
-    };
-  }
-})();
- 
+  <script> 
 
-    if (window.tailwind) { tailwind.config = { 
+    tailwind.config = { 
 
       darkMode: 'class', 
 
@@ -85,8 +63,11 @@ const safeStorage = (() => {
         } 
 
       } 
-    };
-}
+
+    }; 
+
+
+
 /* =========================================================
    PATCH SYNCHRO RESTEV 85 — Registre passeports + Centre RESTEV
    Objectif : rendre visibles les validations QCM dans le registre
@@ -101,14 +82,14 @@ function getCurrentSectorLabel(){
   const fromSession=getCleanLabel(currentEmployeeSession?.sector, '');
   const fromManager=getCleanLabel(managerSector, '');
   const fromSelect=getCleanLabel(document.getElementById('manager-login-sector')?.value, '');
-  const fromStore=getCleanLabel(safeStorage.getItem('restev_manager_sector_' + companyCode), '');
+  const fromStore=getCleanLabel(localStorage.getItem('restev_manager_sector_' + companyCode), '');
   return fromSession || fromManager || fromSelect || fromStore || 'Non renseigné';
 }
 function getCurrentCompanySizeLabel(){
   const companyCode=(currentEmployeeSession?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
   const fromManager=getCleanLabel(managerCompanySize, '');
   const fromSelect=getCleanLabel(document.getElementById('manager-login-size')?.value, '');
-  const fromStore=getCleanLabel(safeStorage.getItem('restev_manager_size_' + companyCode), '');
+  const fromStore=getCleanLabel(localStorage.getItem('restev_manager_size_' + companyCode), '');
   return fromManager || fromSelect || fromStore || 'Non renseigné';
 }
 function getRegistryKey(){
@@ -147,7 +128,7 @@ async function loadPassportRegistry(){
   const companyCode=document.getElementById('lbl-manager-comp-name')?.innerText?.trim();
   if(!companyCode) return;
   let localEntries=[];
-  try{ localEntries=JSON.parse(safeStorage.getItem(getRegistryKey()) || '[]').map(normalizeRegistryRow); }catch(e){ localEntries=[]; }
+  try{ localEntries=JSON.parse(localStorage.getItem(getRegistryKey()) || '[]').map(normalizeRegistryRow); }catch(e){ localEntries=[]; }
   renderPassportRegistry(localEntries);
   if(!supabaseClient){
     showToast('Registre local affiché : Supabase non chargé.');
@@ -194,9 +175,9 @@ async function submitAnonymizedPreventionStat(evt){
 async function savePassportEntry(entry){
   // 1) sauvegarde locale immédiate
   let entries=[];
-  try{ entries=JSON.parse(safeStorage.getItem(getRegistryKey()) || '[]'); }catch(e){ entries=[]; }
+  try{ entries=JSON.parse(localStorage.getItem(getRegistryKey()) || '[]'); }catch(e){ entries=[]; }
   entries.unshift(entry);
-  safeStorage.setItem(getRegistryKey(), JSON.stringify(entries.slice(0,100)));
+  localStorage.setItem(getRegistryKey(), JSON.stringify(entries.slice(0,100)));
 
   // 2) sauvegarde Supabase pour visibilité manager multi-appareil
   let cloudOK=false;
@@ -371,14 +352,7 @@ async function loadRestevStats(){
   
     .signature-pad { min-height: 128px; }
     @media print { .signature-pad { border: 1px solid #94a3b8 !important; } }
-  
-
-/* =========================================================
-   FALLBACK CSS si Tailwind CDN est bloqué par un aperçu sandbox
-   ========================================================= */
-.hidden{display:none!important}.block{display:block}.flex{display:flex}.grid{display:grid}.items-center{align-items:center}.justify-between{justify-content:space-between}.text-center{text-align:center}.w-full{width:100%}.mx-auto{margin-left:auto;margin-right:auto}.space-y-4>*+*{margin-top:1rem}.space-y-6>*+*{margin-top:1.5rem}.p-3{padding:.75rem}.p-4{padding:1rem}.p-5{padding:1.25rem}.p-6{padding:1.5rem}.py-6{padding-top:1.5rem;padding-bottom:1.5rem}.mb-4{margin-bottom:1rem}.mt-1{margin-top:.25rem}.rounded-xl{border-radius:.75rem}.rounded-2xl{border-radius:1rem}.rounded-3xl{border-radius:1.5rem}.border{border:1px solid #e2e8f0}.shadow-premium,.shadow-lg,.shadow-xl,.shadow-md,.shadow-sm{box-shadow:0 12px 30px rgba(15,23,42,.12)}.bg-white{background:#fff}.text-white{color:#fff}.font-bold{font-weight:700}.font-black{font-weight:900}.text-xs{font-size:.75rem}.text-sm{font-size:.875rem}.text-xl{font-size:1.25rem}.text-2xl{font-size:1.5rem}.max-w-md{max-width:28rem}.max-w-xl{max-width:36rem}.max-w-2xl{max-width:42rem}.max-w-4xl{max-width:56rem}.gap-2{gap:.5rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}button{cursor:pointer}input,select,textarea{max-width:100%;box-sizing:border-box}
-
-</style> 
+  </style> 
 
 </head> 
 
@@ -2121,12 +2095,12 @@ function triggerNewReportAlert(report) {
     }
 
     function getLocalPassportRegistry(){
-      try{return JSON.parse(safeStorage.getItem(getRegistryKey()) || '[]');}
+      try{return JSON.parse(localStorage.getItem(getRegistryKey()) || '[]');}
       catch(e){return [];}
     }
 
     function saveLocalPassportRegistry(entries){
-      safeStorage.setItem(getRegistryKey(), JSON.stringify(entries));
+      localStorage.setItem(getRegistryKey(), JSON.stringify(entries));
     }
 
     function renderPassportRegistry(entries){
@@ -2232,12 +2206,12 @@ function triggerNewReportAlert(report) {
 
     function getCurrentSectorLabel(){
       const companyCode = (currentEmployeeSession?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
-      return managerSector || safeStorage.getItem('restev_manager_sector_' + companyCode) || 'Non renseigné';
+      return managerSector || localStorage.getItem('restev_manager_sector_' + companyCode) || 'Non renseigné';
     }
 
     function getCurrentCompanySizeLabel(){
       const companyCode = (currentEmployeeSession?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
-      return managerCompanySize || safeStorage.getItem('restev_manager_size_' + companyCode) || 'Non renseigné';
+      return managerCompanySize || localStorage.getItem('restev_manager_size_' + companyCode) || 'Non renseigné';
     }
 
     function getPeriodMonth(){
@@ -2337,7 +2311,7 @@ function triggerNewReportAlert(report) {
    - Carte Leaflet initialisée quand l'écran est visible
    ========================================================= */
 let managerAlertsUnlocked = false;
-let managerLastSeenReportId = safeStorage.getItem('restev_last_report_id') || '';
+let managerLastSeenReportId = localStorage.getItem('restev_last_report_id') || '';
 let managerAlertPolling = null;
 let managerAlertOscillators = [];
 
@@ -2486,10 +2460,10 @@ async function pollLatestManagerReport(initial=false){
       .limit(1);
     if(error || !data || !data.length) return;
     const latest=data[0];
-    if(initial){ managerLastSeenReportId=latest.id; safeStorage.setItem('restev_last_report_id', latest.id); return; }
+    if(initial){ managerLastSeenReportId=latest.id; localStorage.setItem('restev_last_report_id', latest.id); return; }
     if(latest.id && latest.id !== managerLastSeenReportId){
       managerLastSeenReportId=latest.id;
-      safeStorage.setItem('restev_last_report_id', latest.id);
+      localStorage.setItem('restev_last_report_id', latest.id);
       triggerNewReportAlert(latest);
       loadManagerReports();
     }
@@ -2545,132 +2519,6 @@ function appNavigate(screenId, remember=true, restoreScroll=false){
   previousAppNavigateForMap(screenId, remember, restoreScroll);
   if(screenId==='scr-report') setTimeout(()=>{ initLeafletMap(); fixMapSize(); },450);
 }
-
-
-
-/* =========================================================
-   PATCH FINAL ACCÈS MANAGER — navigation stable sans récursion
-   À conserver en DERNIER dans le dernier <script>.
-   Corrige le blocage du bouton "Accéder à l'Espace".
-   ========================================================= */
-function appNavigate(screenId, remember = true, restoreScroll = false) {
-  const current = document.querySelector('.screen.active')?.id || appCurrentScreen || 'scr-home';
-
-  if (current) {
-    appScrollMemory[current] = window.scrollY || 0;
-  }
-
-  if (remember && !appNavInternal && current && current !== screenId) {
-    appScreenStack.push(current);
-  }
-
-  document.querySelectorAll('.screen').forEach(s => {
-    s.classList.remove('active');
-    s.style.display = 'none';
-  });
-
-  const target = document.getElementById(screenId);
-
-  if (!target) {
-    console.warn('Écran introuvable :', screenId);
-    showToast('Écran introuvable : ' + screenId);
-    return;
-  }
-
-  target.classList.add('active');
-  target.style.display = 'block';
-  appCurrentScreen = screenId;
-
-  setTimeout(() => {
-    const y = restoreScroll ? (appScrollMemory[screenId] || 0) : 0;
-    window.scrollTo({ top: y, behavior: 'smooth' });
-
-    if (screenId === 'scr-report') {
-      setTimeout(() => {
-        try {
-          initLeafletMap();
-          fixMapSize();
-        } catch (e) {
-          console.warn('Carte non initialisée :', e);
-        }
-      }, 350);
-    }
-
-    if (screenId === 'scr-qcm-success') {
-      setTimeout(initSignaturePads, 250);
-    }
-
-    if (screenId === 'scr-direction') {
-      setTimeout(loadRestevStats, 250);
-    }
-
-    try { removeDiagnosticSync(); } catch (e) {}
-    try { enhanceBackButtons(); } catch (e) {}
-    try { updateAppChrome(screenId); } catch (e) {}
-  }, 20);
-}
-
-function switchScreen(screenId) {
-  appNavigate(screenId, true, false);
-}
-
-function handleManagerLogin() {
-  const input = document.getElementById('manager-company-code');
-  const code = (input?.value || '').trim().toUpperCase();
-
-  if (!code) {
-    return showToast('Veuillez saisir un code établissement');
-  }
-
-  try { unlockAlertSound(); } catch (e) {}
-  try { unlockManagerAlerts(); } catch (e) {}
-
-  const sectorSelect = document.getElementById('manager-login-sector');
-  const sizeSelect = document.getElementById('manager-login-size');
-
-  managerSector = sectorSelect?.value || 'Non renseigné';
-  managerCompanySize = sizeSelect?.value || 'Non renseigné';
-
-  safeStorage.setItem('restev_manager_sector_' + code, managerSector);
-  safeStorage.setItem('restev_manager_size_' + code, managerCompanySize);
-
-  const lbl = document.getElementById('lbl-manager-comp-name');
-  if (lbl) lbl.innerText = code;
-
-  showToast('Identification validée. Ouverture de l’espace manager...');
-
-  appNavigate('scr-manager', true, false);
-
-  setTimeout(() => {
-    try { loadManagerReports(); } catch (e) { console.warn(e); }
-    try { startManagerRealtime(); } catch (e) { console.warn(e); }
-    try { loadPassportRegistry(); } catch (e) { console.warn(e); }
-    try { startManagerAlertPolling(); } catch (e) { console.warn(e); }
-  }, 250);
-}
-
-function appOpenManager() {
-  const code = document.getElementById('lbl-manager-comp-name')?.innerText?.trim();
-  appNavigate(code ? 'scr-manager' : 'scr-auth', true, false);
-}
-
-function appGoBack() {
-  if (!appScreenStack.length) {
-    appNavigate('scr-home', false, true);
-    return;
-  }
-
-  const prev = appScreenStack.pop();
-  appNavInternal = true;
-  appNavigate(prev, false, true);
-  appNavInternal = false;
-}
-
-// Sécurise le lancement du shell app et la suppression de l'ancien diagnostic.
-setTimeout(() => {
-  try { setupAppShell(); } catch (e) { console.warn(e); }
-  try { removeDiagnosticSync(); } catch (e) { console.warn(e); }
-}, 80);
 
 </script> 
 
