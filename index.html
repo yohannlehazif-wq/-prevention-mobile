@@ -2706,326 +2706,269 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 <!-- =========================================================
-     PATCH RESTEV 85 — MODE VIBRANT + SONORE MANAGER
+     PATCH RESTEV 85 — BULLE MESSAGE SALARIÉ POUR INFOS DESCENDANTES
      À coller juste avant </body>
 
-     Fonctions :
-     - Mode sonore ON/OFF
-     - Mode vibrant ON/OFF mobile
-     - Intensité : Normal / Fort / Urgence continue
-     - Répétition sonore/vibration jusqu'à "J'ai vu" ou traitement
-     - Bouton test alerte
-     - Sauvegarde des réglages navigateur
+     Objectifs :
+     - Bulle flottante côté salarié quand un message manager arrive.
+     - Badge rouge avec nombre de messages non lus.
+     - Mini aperçu du dernier message.
+     - Clic sur la bulle = ouverture "Messages du responsable".
+     - Realtime Supabase sur manager_messages.
      ========================================================= -->
 <script>
 (function(){
-  const PATCH_VERSION = 'RESTEV85_SOUND_VIBRATION_MODE_2026_07_03';
-  let r85AudioCtx = null;
-  let r85AlarmInterval = null;
-  let r85RealtimeChannel = null;
-
-  const defaultSettings = {
-    sound: true,
-    vibration: true,
-    intensity: 'fort', // normal | fort | urgence
-    repeat: true
-  };
-
-  function getSettings(){
-    try{
-      return Object.assign({}, defaultSettings, JSON.parse(localStorage.getItem('r85_alert_settings') || '{}'));
-    }catch(e){ return {...defaultSettings}; }
-  }
-
-  function saveSettings(settings){
-    try{ localStorage.setItem('r85_alert_settings', JSON.stringify(settings)); }catch(e){}
-  }
+  const PATCH_VERSION = 'RESTEV85_EMPLOYEE_MESSAGE_BUBBLE_2026_07_03';
+  let r85EmployeeMessageChannel = null;
+  let r85MessageBubbleAudioCtx = null;
 
   function r85Toast(msg){
     if(typeof showToast === 'function') showToast(msg);
     else alert(msg);
   }
 
-  function companyCode(){
-    return (document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
+  function r85Esc(v){
+    if(typeof escapeHtml === 'function') return escapeHtml(v || '');
+    return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
-  function unlockAudio(){
+  function r85Session(){
+    try { return currentEmployeeSession || window.currentEmployeeSession || null; }
+    catch(e){ return window.currentEmployeeSession || null; }
+  }
+
+  function unlockMessageSound(){
     try{
       const AC = window.AudioContext || window.webkitAudioContext;
       if(!AC) return;
-      if(!r85AudioCtx) r85AudioCtx = new AC();
-      if(r85AudioCtx.state === 'suspended') r85AudioCtx.resume();
-    }catch(e){ console.warn('Audio indisponible:', e); }
+      if(!r85MessageBubbleAudioCtx) r85MessageBubbleAudioCtx = new AC();
+      if(r85MessageBubbleAudioCtx.state === 'suspended') r85MessageBubbleAudioCtx.resume();
+    }catch(e){}
   }
 
-  function beepSequence(intensity='fort'){
-    const settings = getSettings();
-    if(!settings.sound) return;
-    unlockAudio();
-    if(!r85AudioCtx) return;
-
-    let pattern;
-    if(intensity === 'normal') pattern = [0, .25, .50];
-    else if(intensity === 'urgence') pattern = [0, .12, .24, .40, .52, .64, .90, 1.02, 1.14];
-    else pattern = [0, .16, .32, .62, .78, .94];
-
-    pattern.forEach((delay, idx) => {
-      const now = r85AudioCtx.currentTime + delay;
-      const osc = r85AudioCtx.createOscillator();
-      const gain = r85AudioCtx.createGain();
-      osc.type = idx % 2 ? 'sawtooth' : 'square';
-      osc.frequency.setValueAtTime(idx % 2 ? 640 : 980, now);
-      gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(intensity === 'normal' ? 0.16 : 0.30, now + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
-      osc.connect(gain);
-      gain.connect(r85AudioCtx.destination);
-      osc.start(now);
-      osc.stop(now + 0.16);
-    });
-  }
-
-  function vibrateSequence(intensity='fort'){
-    const settings = getSettings();
-    if(!settings.vibration) return;
+  function playMessageBubbleSound(){
     try{
-      if(!navigator.vibrate) return;
-      if(intensity === 'normal') navigator.vibrate([180,80,180]);
-      else if(intensity === 'urgence') navigator.vibrate([350,100,350,100,700,150,700]);
-      else navigator.vibrate([260,100,260,100,500]);
-    }catch(e){ console.warn('Vibration indisponible:', e); }
-  }
-
-  function browserNotification(report){
-    try{
-      if(!('Notification' in window) || Notification.permission !== 'granted') return;
-      new Notification('🚨 RESTEV 85 — Nouveau signalement', {
-        body: `${report?.employee_name || 'Un salarié'} — ${report?.category || 'Danger signalé'} — ${report?.work_zone || 'Zone non précisée'}`,
-        icon: 'logo.png',
-        badge: 'logo.png',
-        requireInteraction: true
+      unlockMessageSound();
+      if(!r85MessageBubbleAudioCtx) return;
+      [0, .18].forEach((delay, idx) => {
+        const now = r85MessageBubbleAudioCtx.currentTime + delay;
+        const osc = r85MessageBubbleAudioCtx.createOscillator();
+        const gain = r85MessageBubbleAudioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(idx === 0 ? 660 : 880, now);
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.16, now + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+        osc.connect(gain);
+        gain.connect(r85MessageBubbleAudioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.18);
       });
     }catch(e){}
   }
 
-  function installAlertOverlay(){
-    if(!document.getElementById('r85-mode-alert-style')){
-      const style = document.createElement('style');
-      style.id = 'r85-mode-alert-style';
-      style.innerHTML = `
-        @keyframes r85AlarmFlash {0%{background:#7f1d1d; transform:scale(1)} 50%{background:#dc2626; transform:scale(1.018)} 100%{background:#991b1b; transform:scale(1)}}
-        @keyframes r85AlarmPulse {0%{box-shadow:0 0 0 0 rgba(255,255,255,.9)}70%{box-shadow:0 0 0 28px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
-        @keyframes r85AlarmBadge {0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
-        #r85-alarm-overlay.r85-show{display:flex!important;}
-        .r85-alarm-bg{animation:r85AlarmFlash .65s infinite;}
-        .r85-alarm-pulse{animation:r85AlarmPulse 1s infinite;}
-        #r85-alarm-badge{animation:r85AlarmBadge 1s infinite;}
-      `;
-      document.head.appendChild(style);
-    }
-
-    if(!document.getElementById('r85-alarm-overlay')){
-      const overlay = document.createElement('div');
-      overlay.id = 'r85-alarm-overlay';
-      overlay.className = 'hidden fixed inset-0 z-[9999] items-center justify-center p-4 bg-black/75 backdrop-blur-sm no-print';
-      overlay.innerHTML = `
-        <div class="r85-alarm-bg max-w-2xl w-full text-white rounded-[2rem] shadow-2xl border-4 border-white p-6 md:p-8 text-center space-y-5">
-          <div class="mx-auto w-24 h-24 rounded-full bg-white/20 border-4 border-white flex items-center justify-center r85-alarm-pulse">
-            <i class="fa-solid fa-triangle-exclamation text-5xl"></i>
-          </div>
-          <h2 class="text-3xl md:text-5xl font-black">🚨 ALERTE TERRAIN 🚨</h2>
-          <div class="bg-white/15 border border-white/30 rounded-2xl p-4 text-left space-y-2">
-            <p class="text-[10px] font-black uppercase text-red-100">Risque</p><p id="r85-alarm-risk" class="text-xl font-black">—</p>
-            <div class="grid grid-cols-2 gap-3">
-              <div><p class="text-[10px] font-black uppercase text-red-100">Salarié</p><p id="r85-alarm-employee" class="font-bold">—</p></div>
-              <div><p class="text-[10px] font-black uppercase text-red-100">Zone</p><p id="r85-alarm-zone" class="font-bold">—</p></div>
-            </div>
-            <p id="r85-alarm-desc" class="text-sm leading-relaxed bg-black/20 rounded-xl p-3">—</p>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button onclick="r85AcknowledgeAlarm()" class="bg-white text-red-700 py-3 rounded-xl font-black shadow-lg"><i class="fa-solid fa-check mr-1"></i> J'ai vu</button>
-            <button onclick="r85OpenAlertsPanel()" class="bg-slate-900 text-white py-3 rounded-xl font-black shadow-lg"><i class="fa-solid fa-list-check mr-1"></i> Ouvrir les signalements</button>
-          </div>
-        </div>`;
-      document.body.appendChild(overlay);
-    }
-
-    if(!document.getElementById('r85-alarm-badge')){
-      const badge = document.createElement('button');
-      badge.id = 'r85-alarm-badge';
-      badge.className = 'hidden fixed bottom-5 left-5 z-[9998] bg-red-600 text-white rounded-2xl shadow-2xl border-4 border-white px-4 py-3 font-black no-print';
-      badge.onclick = () => r85OpenAlertsPanel();
-      badge.innerHTML = `<i class="fa-solid fa-bell mr-2"></i><span id="r85-alarm-count">0</span> alerte(s)`;
-      document.body.appendChild(badge);
-    }
+  function vibrateMessageBubble(){
+    try{ if(navigator.vibrate) navigator.vibrate([120,70,120]); }catch(e){}
   }
 
-  function stopRepeatingAlarm(){
-    if(r85AlarmInterval){ clearInterval(r85AlarmInterval); r85AlarmInterval = null; }
-    try{ if(navigator.vibrate) navigator.vibrate(0); }catch(e){}
-  }
-
-  window.r85AcknowledgeAlarm = function(){
-    const overlay = document.getElementById('r85-alarm-overlay');
-    if(overlay){ overlay.classList.remove('r85-show'); overlay.classList.add('hidden'); }
-    stopRepeatingAlarm();
-    updateR85AlarmBadge();
-  };
-
-  window.r85OpenAlertsPanel = function(){
-    r85AcknowledgeAlarm();
-    if(typeof switchScreen === 'function') switchScreen('scr-manager');
-    setTimeout(() => document.getElementById('manager-risk-box')?.scrollIntoView({behavior:'smooth', block:'start'}), 300);
-    if(typeof loadManagerReports === 'function') loadManagerReports();
-  };
-
-  window.updateR85AlarmBadge = async function(){
-    if(!supabaseClient) return;
-    const company = companyCode();
-    if(!company) return;
-    const {data, error} = await supabaseClient
-      .from('prevention_reports')
-      .select('id,status')
-      .eq('company_code', company)
-      .neq('status','Traité')
-      .limit(200);
-    if(error) return;
-    const active = (data || []).length;
-    const badge = document.getElementById('r85-alarm-badge');
-    const count = document.getElementById('r85-alarm-count');
-    if(count) count.innerText = String(active);
-    if(active > 0) badge?.classList.remove('hidden');
-    else {
-      badge?.classList.add('hidden');
-      document.getElementById('r85-alarm-overlay')?.classList.remove('r85-show');
-      document.getElementById('r85-alarm-overlay')?.classList.add('hidden');
-      stopRepeatingAlarm();
-    }
-  };
-
-  function fireAlarm(report){
-    const settings = getSettings();
-    installAlertOverlay();
-    const set = (id,val) => { const el = document.getElementById(id); if(el) el.innerText = val || '—'; };
-    set('r85-alarm-risk', report?.category);
-    set('r85-alarm-employee', report?.employee_name);
-    set('r85-alarm-zone', report?.work_zone || 'Zone non précisée');
-    set('r85-alarm-desc', report?.description);
-
-    document.getElementById('r85-alarm-overlay')?.classList.remove('hidden');
-    document.getElementById('r85-alarm-overlay')?.classList.add('r85-show');
-
-    beepSequence(settings.intensity);
-    vibrateSequence(settings.intensity);
-    browserNotification(report);
-    updateR85AlarmBadge();
-
-    stopRepeatingAlarm();
-    if(settings.repeat){
-      const intervalMs = settings.intensity === 'urgence' ? 5500 : 9000;
-      r85AlarmInterval = setInterval(() => {
-        beepSequence(settings.intensity);
-        vibrateSequence(settings.intensity);
-      }, intervalMs);
-    }
-  }
-
-  function installSettingsPanel(){
-    const screen = document.getElementById('scr-manager');
-    if(!screen || document.getElementById('r85-alert-settings-panel')) return;
-    const s = getSettings();
-    const panel = document.createElement('div');
-    panel.id = 'r85-alert-settings-panel';
-    panel.className = 'bg-white dark:bg-slate-800 p-5 rounded-2xl border-t-4 border-t-red-500 shadow-premium space-y-4';
-    panel.innerHTML = `
-      <div class="flex items-center justify-between gap-2">
-        <h3 class="font-black dark:text-white text-xs uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-volume-high text-red-500"></i> Mode alerte manager</h3>
-        <button onclick="testR85SoundVibration()" class="text-[10px] bg-red-50 text-red-700 dark:bg-slate-700 dark:text-red-300 px-3 py-2 rounded-xl font-black">Tester</button>
-      </div>
-      <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 text-xs">
-        <label class="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 border p-3 rounded-xl font-black dark:text-white"><input id="r85-set-sound" type="checkbox" ${s.sound?'checked':''}> Son</label>
-        <label class="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 border p-3 rounded-xl font-black dark:text-white"><input id="r85-set-vibration" type="checkbox" ${s.vibration?'checked':''}> Vibration</label>
-        <label class="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 border p-3 rounded-xl font-black dark:text-white"><input id="r85-set-repeat" type="checkbox" ${s.repeat?'checked':''}> Répéter jusqu'à “J'ai vu”</label>
-        <select id="r85-set-intensity" class="bg-slate-50 dark:bg-slate-900 border p-3 rounded-xl font-black dark:text-white">
-          <option value="normal" ${s.intensity==='normal'?'selected':''}>Normal</option>
-          <option value="fort" ${s.intensity==='fort'?'selected':''}>Fort</option>
-          <option value="urgence" ${s.intensity==='urgence'?'selected':''}>Urgence continue</option>
-        </select>
-      </div>
-      <p class="text-[10px] text-slate-500 leading-relaxed">La vibration dépend du smartphone et du navigateur. Le son nécessite un premier clic dans la page manager pour être autorisé.</p>
+  function installBubbleStyles(){
+    if(document.getElementById('r85-employee-bubble-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'r85-employee-bubble-styles';
+    style.innerHTML = `
+      @keyframes r85BubblePulse {0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+      @keyframes r85BubblePop {0%{transform:translateY(12px) scale(.92);opacity:0}100%{transform:translateY(0) scale(1);opacity:1}}
+      @keyframes r85BubbleRing {0%{box-shadow:0 0 0 0 rgba(6,182,212,.6)}70%{box-shadow:0 0 0 16px rgba(6,182,212,0)}100%{box-shadow:0 0 0 0 rgba(6,182,212,0)}}
+      #r85-employee-message-bubble.r85-unread { animation:r85BubblePulse 1.1s infinite; }
+      #r85-employee-message-bubble .r85-ring { animation:r85BubbleRing 1.4s infinite; }
+      #r85-employee-message-preview.r85-show { display:block !important; animation:r85BubblePop .22s ease-out; }
     `;
-    const first = screen.querySelector('.bg-white, .dark\\:bg-slate-800');
-    if(first && first.nextSibling) screen.insertBefore(panel, first.nextSibling);
-    else screen.prepend(panel);
-
-    ['r85-set-sound','r85-set-vibration','r85-set-repeat','r85-set-intensity'].forEach(id => {
-      document.getElementById(id)?.addEventListener('change', savePanelSettings);
-    });
+    document.head.appendChild(style);
   }
 
-  function savePanelSettings(){
-    const settings = {
-      sound: !!document.getElementById('r85-set-sound')?.checked,
-      vibration: !!document.getElementById('r85-set-vibration')?.checked,
-      repeat: !!document.getElementById('r85-set-repeat')?.checked,
-      intensity: document.getElementById('r85-set-intensity')?.value || 'fort'
-    };
-    saveSettings(settings);
-    unlockAudio();
-    r85Toast('Mode alerte enregistré.');
+  function installEmployeeMessageBubble(){
+    installBubbleStyles();
+
+    if(!document.getElementById('r85-employee-message-bubble')){
+      const wrap = document.createElement('div');
+      wrap.id = 'r85-employee-message-area';
+      wrap.className = 'fixed bottom-5 right-5 z-[9997] no-print';
+      wrap.innerHTML = `
+        <div id="r85-employee-message-preview" class="hidden mb-3 max-w-[280px] bg-white dark:bg-slate-800 border border-cyan-200 dark:border-slate-700 rounded-2xl shadow-2xl p-3 text-left">
+          <div class="flex items-start gap-2">
+            <div class="w-8 h-8 rounded-xl bg-cyan-100 text-cyan-700 flex items-center justify-center"><i class="fa-solid fa-bullhorn"></i></div>
+            <div class="flex-1 min-w-0">
+              <p class="text-[10px] font-black uppercase text-cyan-600">Message du responsable</p>
+              <p id="r85-employee-preview-title" class="text-xs font-black dark:text-white truncate">Nouveau message</p>
+              <p id="r85-employee-preview-text" class="text-[11px] text-slate-500 dark:text-slate-300 line-clamp-2">Cliquez pour lire.</p>
+            </div>
+          </div>
+        </div>
+        <button id="r85-employee-message-bubble" onclick="openEmployeeMessagesFromBubble()" class="hidden relative w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-2xl border-4 border-white flex items-center justify-center">
+          <span class="r85-ring absolute inset-0 rounded-full"></span>
+          <i class="fa-solid fa-comments text-2xl relative z-10"></i>
+          <span id="r85-employee-message-count" class="hidden absolute -top-2 -right-2 min-w-7 h-7 px-2 rounded-full bg-red-600 text-white border-2 border-white text-xs font-black flex items-center justify-center">0</span>
+        </button>
+      `;
+      document.body.appendChild(wrap);
+    }
   }
 
-  window.testR85SoundVibration = function(){
-    savePanelSettings();
-    const settings = getSettings();
-    unlockAudio();
-    beepSequence(settings.intensity);
-    vibrateSequence(settings.intensity);
-    r85Toast('Test son/vibration lancé.');
+  window.openEmployeeMessagesFromBubble = async function(){
+    hideEmployeeMessagePreview(false);
+    if(typeof openEmployeeMessages === 'function'){
+      await openEmployeeMessages();
+    } else if(typeof switchScreen === 'function'){
+      switchScreen('scr-employee-messages');
+    }
+    setTimeout(refreshEmployeeMessageBubble, 600);
   };
 
-  window.startManagerRealtime = function(){
-    if(!supabaseClient) return r85Toast('Supabase non chargé.');
-    const company = companyCode();
-    if(!company) return;
-    installAlertOverlay();
-    unlockAudio();
-    if(r85RealtimeChannel){ try{supabaseClient.removeChannel(r85RealtimeChannel);}catch(e){} r85RealtimeChannel = null; }
-    r85RealtimeChannel = supabaseClient.channel('r85_sound_vibration_' + company)
-      .on('postgres_changes', {event:'INSERT', schema:'public', table:'prevention_reports', filter:'company_code=eq.' + company}, payload => {
-        fireAlarm(payload.new);
-        if(typeof loadManagerReports === 'function') loadManagerReports();
+  function showEmployeeBubble(){
+    installEmployeeMessageBubble();
+    document.getElementById('r85-employee-message-bubble')?.classList.remove('hidden');
+  }
+
+  function hideEmployeeBubble(){
+    document.getElementById('r85-employee-message-bubble')?.classList.add('hidden');
+    hideEmployeeMessagePreview(false);
+  }
+
+  function showEmployeeMessagePreview(message){
+    installEmployeeMessageBubble();
+    const preview = document.getElementById('r85-employee-message-preview');
+    const title = document.getElementById('r85-employee-preview-title');
+    const text = document.getElementById('r85-employee-preview-text');
+    if(title) title.innerText = message?.title || 'Nouveau message';
+    if(text) text.innerText = message?.message || 'Cliquez pour lire.';
+    preview?.classList.remove('hidden');
+    preview?.classList.add('r85-show');
+    setTimeout(() => hideEmployeeMessagePreview(true), 9000);
+  }
+
+  function hideEmployeeMessagePreview(keepBubble=true){
+    const preview = document.getElementById('r85-employee-message-preview');
+    if(preview){
+      preview.classList.remove('r85-show');
+      preview.classList.add('hidden');
+    }
+    if(!keepBubble) document.getElementById('r85-employee-message-bubble')?.classList.remove('r85-unread');
+  }
+
+  window.refreshEmployeeMessageBubble = async function(){
+    installEmployeeMessageBubble();
+    const session = r85Session();
+    if(!session || !supabaseClient){
+      hideEmployeeBubble();
+      return;
+    }
+
+    const { data, error } = await supabaseClient
+      .from('manager_messages')
+      .select('id,title,message,priority,read_by_employee,created_at')
+      .eq('company_code', session.company)
+      .eq('employee_name', session.name)
+      .eq('read_by_employee', false)
+      .order('created_at', {ascending:false})
+      .limit(20);
+
+    if(error){
+      console.warn('Bulle messages salarié indisponible:', error.message);
+      hideEmployeeBubble();
+      return;
+    }
+
+    const unread = data || [];
+    const bubble = document.getElementById('r85-employee-message-bubble');
+    const count = document.getElementById('r85-employee-message-count');
+
+    if(unread.length > 0){
+      showEmployeeBubble();
+      bubble?.classList.add('r85-unread');
+      if(count){
+        count.innerText = String(unread.length);
+        count.classList.remove('hidden');
+      }
+    } else {
+      if(count) count.classList.add('hidden');
+      bubble?.classList.remove('r85-unread');
+      // On garde la bulle visible dans l'espace salarié comme raccourci Messages.
+      if(document.getElementById('scr-employee')?.classList.contains('active')) showEmployeeBubble();
+      else hideEmployeeBubble();
+    }
+  };
+
+  function subscribeEmployeeMessages(){
+    const session = r85Session();
+    if(!session || !supabaseClient) return;
+    installEmployeeMessageBubble();
+
+    if(r85EmployeeMessageChannel){
+      try{ supabaseClient.removeChannel(r85EmployeeMessageChannel); }catch(e){}
+      r85EmployeeMessageChannel = null;
+    }
+
+    r85EmployeeMessageChannel = supabaseClient
+      .channel('r85_employee_message_bubble_' + session.company + '_' + session.name)
+      .on('postgres_changes', {
+        event:'INSERT',
+        schema:'public',
+        table:'manager_messages',
+        filter:'company_code=eq.' + session.company
+      }, payload => {
+        const m = payload.new;
+        if(m && m.employee_name === session.name){
+          showEmployeeBubble();
+          showEmployeeMessagePreview(m);
+          playMessageBubbleSound();
+          vibrateMessageBubble();
+          r85Toast('📢 Nouveau message du responsable.');
+          refreshEmployeeMessageBubble();
+        }
       })
-      .subscribe(status => { if(status === 'SUBSCRIBED') r85Toast('Mode sonore/vibrant activé en temps réel.'); });
-  };
+      .subscribe(status => console.log('Realtime bulle salarié:', status));
 
-  const oldUpdateReportStatus = window.updateReportStatus;
-  window.updateReportStatus = async function(id, status){
-    if(!supabaseClient){ if(typeof oldUpdateReportStatus === 'function') return oldUpdateReportStatus(id,status); return; }
-    const {error} = await supabaseClient.from('prevention_reports').update({status}).eq('id', id);
-    if(error) return r85Toast('Erreur statut : ' + error.message);
-    r85Toast(status === 'Traité' ? 'Alerte traitée.' : 'Statut mis à jour.');
-    if(typeof loadManagerReports === 'function') await loadManagerReports();
-    updateR85AlarmBadge();
-  };
+    refreshEmployeeMessageBubble();
+  }
 
-  const oldHandleManagerLogin = window.handleManagerLogin;
-  window.handleManagerLogin = function(){
-    unlockAudio();
-    if(typeof oldHandleManagerLogin === 'function') oldHandleManagerLogin();
-    setTimeout(() => { installSettingsPanel(); installAlertOverlay(); startManagerRealtime(); updateR85AlarmBadge(); }, 500);
+  // On complète l'ouverture des messages : après lecture, la bulle se met à jour.
+  const oldOpenEmployeeMessages = window.openEmployeeMessages;
+  window.openEmployeeMessages = async function(){
+    if(typeof oldOpenEmployeeMessages === 'function'){
+      await oldOpenEmployeeMessages();
+    }
+    setTimeout(refreshEmployeeMessageBubble, 800);
   };
 
   const oldSwitchScreen = window.switchScreen;
   window.switchScreen = function(screenId){
     if(typeof oldSwitchScreen === 'function') oldSwitchScreen(screenId);
-    if(screenId === 'scr-manager') setTimeout(() => { installSettingsPanel(); installAlertOverlay(); updateR85AlarmBadge(); }, 300);
+
+    if(screenId === 'scr-employee'){
+      setTimeout(() => {
+        installEmployeeMessageBubble();
+        subscribeEmployeeMessages();
+        showEmployeeBubble();
+        refreshEmployeeMessageBubble();
+      }, 300);
+    }
+
+    if(screenId === 'scr-employee-messages'){
+      setTimeout(refreshEmployeeMessageBubble, 800);
+    }
+
+    if(screenId !== 'scr-employee' && screenId !== 'scr-employee-messages'){
+      // On masque hors espace salarié pour ne pas gêner manager/centre.
+      setTimeout(hideEmployeeBubble, 200);
+    }
   };
 
   document.addEventListener('DOMContentLoaded', () => {
-    installAlertOverlay();
-    setTimeout(installSettingsPanel, 700);
+    installEmployeeMessageBubble();
+    setTimeout(() => {
+      subscribeEmployeeMessages();
+      refreshEmployeeMessageBubble();
+    }, 900);
     console.log(PATCH_VERSION + ' installé');
   });
 })();
