@@ -1,2822 +1,457 @@
-<!DOCTYPE html> 
-
-<html lang="fr"> 
-
-<head> 
-
-  <meta charset="UTF-8" /> 
-
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" /> 
-
-  <title>RESTEV 85 - Passeport Prévention Connecté</title> 
-
- 
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> 
-
-  <script src="https://cdn.tailwindcss.com"></script> 
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
-
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script> 
-
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" /> 
-
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" /> 
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script> 
-
- 
-
-  <script> 
-
-    if (window.tailwind) {
-    tailwind.config = { 
-
-      darkMode: 'class', 
-
-      theme: { 
-
-        extend: { 
-
-          colors: { 
-
-            'restev-blue': '#3a7bd5', 
-
-            'restev-blue-dark': '#245ca6', 
-
-            'restev-magenta': '#e0248a', 
-
-            'restev-magenta-dark': '#b31269', 
-
-            'restev-teal': '#4ec3b1', 
-
-            'restev-gold': '#ffb007' 
-
-          }, 
-
-          boxShadow: { 
-
-            'premium': '0 10px 30px -5px rgba(58, 123, 213, 0.12), 0 4px 12px -2px rgba(0, 0, 0, 0.02)' 
-
-          } 
-
-        } 
-
-      } 
-    };
-    }
-
-// Stockage sécurisé : évite les erreurs SecurityError quand l'app est ouverte en aperçu sandbox/about:srcdoc.
-const safeStorage = (() => {
-  const memory = {};
-  const fallback = {
-    getItem: key => Object.prototype.hasOwnProperty.call(memory, key) ? memory[key] : null,
-    setItem: (key, value) => { memory[key] = String(value); },
-    removeItem: key => { delete memory[key]; },
-    clear: () => { Object.keys(memory).forEach(key => delete memory[key]); }
-  };
-  try {
-    const ls = window['localStorage'];
-    const testKey = '__restev_storage_test__';
-    ls.setItem(testKey, '1');
-    ls.removeItem(testKey);
-    return ls;
-  } catch (e) {
-    console.warn('localStorage indisponible : stockage mémoire temporaire utilisé.');
-    return fallback;
-  }
-})();
-
-/* =========================================================
-   PATCH SYNCHRO RESTEV 85 — Registre passeports + Centre RESTEV
-   Objectif : rendre visibles les validations QCM dans le registre
-   et faire remonter les validations + signalements dans les stats.
-   ========================================================= */
-function getCleanLabel(value, fallback='Non renseigné'){
-  const v=String(value || '').trim();
-  return (!v || v === 'Non renseigné' || v === 'undefined' || v === 'null') ? fallback : v;
-}
-function getCurrentSectorLabel(){
-  const companyCode=(currentEmployeeSession?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
-  const fromSession=getCleanLabel(currentEmployeeSession?.sector, '');
-  const fromManager=getCleanLabel(managerSector, '');
-  const fromSelect=getCleanLabel(document.getElementById('manager-login-sector')?.value, '');
-  const fromStore=getCleanLabel(safeStorage.getItem('restev_manager_sector_' + companyCode), '');
-  return fromSession || fromManager || fromSelect || fromStore || 'Non renseigné';
-}
-function getCurrentCompanySizeLabel(){
-  const companyCode=(currentEmployeeSession?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
-  const fromManager=getCleanLabel(managerCompanySize, '');
-  const fromSelect=getCleanLabel(document.getElementById('manager-login-size')?.value, '');
-  const fromStore=getCleanLabel(safeStorage.getItem('restev_manager_size_' + companyCode), '');
-  return fromManager || fromSelect || fromStore || 'Non renseigné';
-}
-function getRegistryKey(){
-  const companyCode=(document.getElementById('lbl-manager-comp-name')?.innerText?.trim() || currentEmployeeSession?.company || 'default').trim();
-  return `restev_passport_registry_${companyCode}`;
-}
-function normalizeRegistryRow(r){
-  const created=r.created_at || r.validated_at || r.date || new Date().toISOString();
-  const scoreText = (r.score !== undefined && r.total !== undefined) ? `${r.score}/${r.total}` : (r.score || '');
-  return {
-    company_code:r.company_code || r.company || '',
-    employee_name:r.employee_name || r.employee || 'Salarié',
-    validated_at: created.includes('/') ? created : new Date(created).toLocaleString('fr-FR'),
-    score: scoreText,
-    epis: Array.isArray(r.epis) ? r.epis : [],
-    status:r.status || 'Validé et signé'
-  };
-}
-function renderPassportRegistry(entries){
-  const table=document.getElementById('manager-emargements-list');
-  if(!table) return;
-  table.innerHTML='';
-  if(!entries || !entries.length){
-    table.innerHTML='<tr><td colspan="6" class="p-4 text-center italic text-slate-400">Aucun passeport validé pour le moment. Si un test vient d’être fait sur un autre téléphone, vérifiez que la table Supabase <b>passport_registry</b> existe et que les droits INSERT/SELECT sont ouverts.</td></tr>';
-    return;
-  }
-  entries.forEach(entry=>{
-    const row=document.createElement('tr');
-    row.className='border-b border-slate-100 dark:border-slate-700';
-    const epiText=(entry.epis && entry.epis.length) ? entry.epis.join(', ') : 'Aucun EPI renseigné';
-    row.innerHTML=`<td class="p-3 font-bold dark:text-white">${escapeHtml(entry.employee_name || 'Salarié')}</td><td class="p-3 text-slate-500">${escapeHtml(entry.validated_at || '')}</td><td class="p-3"><span class="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded font-bold">${escapeHtml(entry.score || '')}</span></td><td class="p-3 text-slate-500">${escapeHtml(epiText)}</td><td class="p-3 text-emerald-500 font-extrabold text-[11px] uppercase">${escapeHtml(entry.status || 'Validé et signé')}</td>`;
-    table.appendChild(row);
-  });
-}
-async function loadPassportRegistry(){
-  const companyCode=document.getElementById('lbl-manager-comp-name')?.innerText?.trim();
-  if(!companyCode) return;
-  let localEntries=[];
-  try{ localEntries=JSON.parse(safeStorage.getItem(getRegistryKey()) || '[]').map(normalizeRegistryRow); }catch(e){ localEntries=[]; }
-  renderPassportRegistry(localEntries);
-  if(!supabaseClient){
-    showToast('Registre local affiché : Supabase non chargé.');
-    return;
-  }
-  try{
-    const {data,error}=await supabaseClient
-      .from('passport_registry')
-      .select('company_code,employee_name,score,total,epis,status,created_at')
-      .eq('company_code', companyCode)
-      .order('created_at',{ascending:false})
-      .limit(100);
-    if(error){
-      console.warn('Registre Supabase non disponible :', error.message);
-      showToast('Registre Supabase non disponible : vérifiez la table passport_registry.');
-      return;
-    }
-    const rows=(data || []).map(normalizeRegistryRow);
-    renderPassportRegistry(rows.length ? rows : localEntries);
-    if(rows.length) showToast(`${rows.length} passeport(s) chargé(s) depuis Supabase.`);
-  }catch(e){
-    console.warn('Chargement registre local uniquement :', e);
-    showToast('Registre local uniquement : erreur Supabase.');
-  }
-}
-async function submitAnonymizedPreventionStat(evt){
-  if(!supabaseClient) return false;
-  try{
-    const anonymized={
-      period_month:getPeriodMonth(),
-      sector: evt.sector || getCurrentSectorLabel(),
-      company_size_range: evt.company_size_range || getCurrentCompanySizeLabel(),
-      risk_category: evt.category || evt.risk_category || 'Non renseigné',
-      risk_level: evt.level || evt.risk_level || 'Non renseigné',
-      frequency: evt.frequency || 'Non renseigné',
-      event_type: evt.event_type || 'Signalement prévention',
-      corrective_action_type: evt.corrective_action_type || 'À définir'
-    };
-    const {error}=await supabaseClient.from('prevention_stats').insert([anonymized]);
-    if(error){ console.warn('Stat anonymisée non enregistrée :', error.message); return false; }
-    return true;
-  }catch(e){ console.warn('Stat anonymisée ignorée :', e); return false; }
-}
-async function savePassportEntry(entry){
-  // 1) sauvegarde locale immédiate
-  let entries=[];
-  try{ entries=JSON.parse(safeStorage.getItem(getRegistryKey()) || '[]'); }catch(e){ entries=[]; }
-  entries.unshift(entry);
-  safeStorage.setItem(getRegistryKey(), JSON.stringify(entries.slice(0,100)));
-
-  // 2) sauvegarde Supabase pour visibilité manager multi-appareil
-  let cloudOK=false;
-  if(supabaseClient){
-    try{
-      const {error}=await supabaseClient.from('passport_registry').insert([{
-        company_code: entry.company_code,
-        employee_name: entry.employee_name,
-        score: qcmScore,
-        total: qcmActiveQuestions.length,
-        epis: entry.epis || [],
-        status: entry.status || 'Validé et signé',
-        signature_employee: entry.signature_employee || null,
-        signature_manager: entry.signature_manager || null
-      }]);
-      if(error){ console.warn('Sauvegarde Supabase registre impossible :', error.message); }
-      else { cloudOK=true; }
-    }catch(e){ console.warn('Sauvegarde registre locale uniquement :', e); }
-  }
-
-  // 3) alimentation Centre RESTEV : une validation QCM devient une stat agrégée
-  await submitAnonymizedPreventionStat({
-    sector: entry.sector || getCurrentSectorLabel(),
-    company_size_range: getCurrentCompanySizeLabel(),
-    category: 'Validation passeport prévention',
-    level: qcmScore === qcmActiveQuestions.length ? 'Acquis complet' : 'Points à renforcer',
-    frequency: 'Ponctuelle',
-    event_type: 'Passeport validé',
-    corrective_action_type: qcmScore === qcmActiveQuestions.length ? 'Aucune' : 'Reprise des points faibles'
-  });
-
-  if(document.getElementById('manager-emargements-list')) loadPassportRegistry();
-  showToast(cloudOK ? 'Passeport enregistré dans le registre partagé.' : 'Passeport enregistré localement. Vérifiez Supabase pour partage manager.');
-}
-async function finalizeAndClose(){
-  updateCertificateEPI();
-  if(!isSignatureDone('emp') || !isSignatureDone('mgr')) return showToast('Les deux signatures réelles sont obligatoires.');
-  const name=document.getElementById('cert-employee').value || (currentEmployeeSession?currentEmployeeSession.name:'Salarié');
-  const companyCode=(currentEmployeeSession?.company || document.getElementById('cert-company').value || document.getElementById('lbl-manager-comp-name')?.innerText || 'Établissement non renseigné').trim();
-  const now=new Date().toLocaleString('fr-FR');
-  const entry={
-    company_code: companyCode,
-    employee_name: name,
-    validated_at: now,
-    score: `${qcmScore}/${qcmActiveQuestions.length}`,
-    epis: selectedEPIList,
-    sector: getCurrentSectorLabel(),
-    status:'Validé et signé',
-    signature_employee:getSignatureData('emp'),
-    signature_manager:getSignatureData('mgr')
-  };
-  await savePassportEntry(entry);
-  switchScreen('scr-employee');
-}
-async function submitRiskReport(){
-  if(!supabaseClient) return showToast('Supabase non chargé. Vérifiez internet.');
-  const category=document.getElementById('risk-category-select').value;
-  const desc=document.getElementById('risk-description').value.trim();
-  const lvl=document.getElementById('risk-level').value;
-  const freq=document.getElementById('risk-frequency').value;
-  if(!desc) return showToast('Veuillez saisir une description du danger.');
-  const employeeName=currentEmployeeSession ? currentEmployeeSession.name : 'Salarié terrain';
-  const companyCode=currentEmployeeSession ? currentEmployeeSession.company : (document.getElementById('lbl-manager-comp-name')?.innerText || 'Établissement non renseigné');
-  const { error } = await supabaseClient.from('prevention_reports').insert([{ company_code: companyCode, employee_name: employeeName, category, level: lvl, frequency: freq, description: desc, status:'Nouveau' }]);
-  if(error){ console.error('Erreur Supabase insertion:', error); return showToast('Erreur Supabase signalement : '+error.message); }
-  await submitAnonymizedPreventionStat({category, level:lvl, frequency:freq, event_type:'Signalement prévention'});
-  document.getElementById('risk-description').value='';
-  showToast('Signalement envoyé + statistique agrégée enregistrée.');
-  switchScreen('scr-employee');
-}
-async function loadRestevStats(){
-  const totalEl=document.getElementById('stats-total');
-  if(!totalEl) return;
-  if(!supabaseClient){ showToast('Supabase non chargé : statistiques indisponibles.'); return; }
-  try{
-    let rows=[];
-    const statRes=await supabaseClient
-      .from('prevention_stats')
-      .select('period_month,sector,company_size_range,risk_category,risk_level,frequency,event_type,created_at')
-      .order('created_at',{ascending:false})
-      .limit(500);
-    if(!statRes.error && statRes.data) rows=statRes.data;
-
-    // Fallback : si prevention_stats est vide, on agrège les passeports validés pour que le Centre ne reste pas à zéro.
-    if(!rows.length){
-      const passRes=await supabaseClient
-        .from('passport_registry')
-        .select('company_code,score,total,status,created_at')
-        .order('created_at',{ascending:false})
-        .limit(500);
-      if(!passRes.error && passRes.data){
-        rows=passRes.data.map(p=>({
-          period_month:(p.created_at || new Date().toISOString()).slice(0,7),
-          sector:'Non renseigné',
-          company_size_range:'Non renseigné',
-          risk_category:'Validation passeport prévention',
-          risk_level:(Number(p.score) === Number(p.total)) ? 'Acquis complet' : 'Points à renforcer',
-          frequency:'Ponctuelle',
-          event_type:'Passeport validé',
-          created_at:p.created_at
-        }));
-      }
-    }
-    if(!rows.length && statRes.error){
-      console.error(statRes.error);
-      showToast('Statistiques non disponibles : vérifiez la table prevention_stats.');
-    }
-    renderRestevStats(rows || []);
-  }catch(e){ console.error(e); showToast('Erreur chargement statistiques.'); }
-}
-
-  </script> 
-
- 
-
-  <style> 
-
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap'); 
-
-    body { font-family: 'Plus Jakarta Sans', sans-serif; } 
-
-    .screen { display: none !important; } 
-
-    .screen.active { display: block !important; animation: smoothSlide .35s ease; } 
-
-    @keyframes smoothSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } } 
-
-    @media print { .no-print { display: none !important; } body { background: white !important; } } 
-
- 
-
-    .tuto-frame-wrapper { 
-
-      width: 100%; 
-
-      height: calc(100vh - 190px); 
-
-      min-height: 520px; 
-
-      background: #fff; 
-
-      border-radius: 18px; 
-
-      overflow: hidden; 
-
-      border: 2px solid #e2e8f0; 
-
-      box-shadow: 0 10px 25px rgba(15,23,42,.12); 
-
-    } 
-
-    .tuto-iframe { width: 100%; height: 100%; border: 0; display: block; background: #fff; } 
-
-    @media screen and (max-width: 640px) and (orientation: portrait) { 
-
-      #scr-training { max-width: 100% !important; padding: .75rem !important; } 
-
-      .tuto-frame-wrapper { height: calc(100dvh - 185px); min-height: 560px; border-radius: 14px; } 
-
-    } 
-
-    @media screen and (max-width: 900px) and (orientation: landscape) { 
-
-      #scr-training { max-width: 100% !important; padding: .5rem !important; } 
-
-      .tuto-frame-wrapper { height: calc(100dvh - 105px); min-height: 320px; border-radius: 12px; } 
-
-      #tuto-orientation-help { display: none; } 
-
-    } 
-
-  
-    .signature-pad { min-height: 128px; }
-    @media print { .signature-pad { border: 1px solid #94a3b8 !important; } }
-  </style> 
-
-</head> 
-
- 
-
-<body class="bg-gradient-to-tr from-slate-50 via-blue-50/40 to-pink-50/20 text-slate-800 antialiased min-h-screen flex flex-col dark:from-slate-950 dark:via-slate-900 dark:to-slate-950"> 
-
- 
-
-  <!-- EN-TÊTE : pas de logo ici --> 
-
-  <header class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-blue-100/80 dark:border-slate-800 py-3 px-4 sticky top-0 z-40 shadow-sm no-print"> 
-
-    <div class="max-w-5xl mx-auto flex justify-between items-center">
-      <div class="w-24" aria-hidden="true"></div> 
-
-      <div class="flex items-center gap-3"> 
-
-        <button onclick="toggleDarkMode()" class="p-2.5 bg-slate-100 hover:bg-blue-100/50 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-slate-600 dark:text-yellow-400 transition"> 
-
-          <i class="fa-solid fa-moon"></i> 
-
-        </button> 
-
-        <span id="cloud-sync-badge" class="bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 px-3 py-1.5 rounded-full uppercase text-[10px] font-extrabold tracking-wider border shadow-sm flex items-center gap-1.5"> 
-
-          <i class="fa-solid fa-check"></i> Synchronisé 
-
-        </span> 
-
-      </div> 
-
-    </div> 
-
-  </header> 
-
- 
-
-  <div id="toast" class="fixed bottom-6 right-6 bg-gradient-to-r from-slate-900 to-slate-800 text-white text-xs font-bold py-3.5 px-5 rounded-2xl shadow-xl z-50 transition-all duration-300 transform translate-y-20 opacity-0 flex items-center space-x-3 border border-slate-700/50 no-print"> 
-
-    <div class="w-2.5 h-2.5 bg-restev-magenta rounded-full animate-pulse"></div> 
-
-    <span id="toast-text">Notification</span> 
-
-  </div> 
-
- 
-
-  <main class="max-w-5xl mx-auto p-4 md:p-6 flex-1 w-full"> 
-
- 
-
-    <!-- ACCUEIL --> 
-
-    <section id="scr-home" class="screen active max-w-xl mx-auto w-full space-y-8 py-6"> 
-
-      <div class="text-center space-y-4"> 
-
-        <img src="logo.png" alt="Logo RESTEV 85" class="mx-auto h-20 md:h-24 w-auto object-contain mb-2" onerror="this.style.display='none'"> 
-
-        <div class="inline-block bg-gradient-to-r from-emerald-400 to-teal-500 text-white text-[11px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-md">PST 2026-2030</div> 
-
-        <h1 class="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-restev-blue-dark via-restev-blue to-restev-magenta tracking-tight pb-1">Passeport Prévention</h1> 
-
-        <p class="text-sm font-medium text-slate-500 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">Bienvenue ! Sélectionnez votre espace réglementaire pour une intégration simple, sécurisée et dynamique.</p> 
-
-      </div> 
-
- 
-
-      <div class="space-y-5 pt-4"> 
-
-        <button onclick="switchScreen('scr-about')" class="w-full bg-white dark:bg-slate-800 p-5 rounded-3xl text-left flex items-center justify-between border-2 border-transparent hover:border-restev-blue-dark shadow-lg group"> 
-
-          <div class="flex items-center space-x-4"> 
-
-            <div class="w-14 h-14 bg-blue-50 dark:bg-slate-700 rounded-2xl flex items-center justify-center text-2xl text-restev-blue"><i class="fa-solid fa-shield-heart"></i></div> 
-
-            <div><h3 class="font-black text-base dark:text-white">Découvrir la démarche</h3><p class="text-xs text-slate-500 mt-1 font-medium">L'application, les enjeux et les objectifs.</p></div> 
-
-          </div><i class="fa-solid fa-arrow-right text-slate-400"></i> 
-
-        </button> 
-
- 
-
-        <button onclick="switchScreen('scr-training')" class="w-full bg-white dark:bg-slate-800 p-5 rounded-3xl text-left flex items-center justify-between border-2 border-transparent hover:border-emerald-500 shadow-lg group"> 
-
-          <div class="flex items-center space-x-4"> 
-
-            <div class="w-14 h-14 bg-emerald-50 dark:bg-slate-700 rounded-2xl flex items-center justify-center text-2xl text-emerald-600"><i class="fa-solid fa-graduation-cap"></i></div> 
-
-            <div><h3 class="font-black text-base dark:text-white">Modules INRS</h3><p class="text-xs text-slate-500 mt-1 font-medium">Formations métiers TutoPrev.</p></div> 
-
-          </div><i class="fa-solid fa-arrow-right text-slate-400"></i> 
-
-        </button> 
-
- 
-
-        <div class="bg-gradient-to-br from-blue-50 to-pink-50/50 dark:from-slate-900 dark:to-slate-900/80 border-2 border-blue-100/50 dark:border-slate-800 p-5 rounded-3xl shadow-sm"> 
-
-          <span class="text-[11px] font-black text-restev-blue dark:text-blue-400 uppercase tracking-widest flex items-center gap-2 mb-4"><i class="fa-solid fa-industry"></i> Parcours Entreprises</span> 
-
-          <button onclick="switchScreen('scr-auth')" class="w-full bg-white dark:bg-slate-800 border-l-4 border-l-restev-blue p-4 rounded-2xl text-left flex items-center space-x-4 shadow-sm hover:shadow-md"> 
-
-            <div class="p-3 bg-blue-50 dark:bg-slate-700 text-restev-blue rounded-xl text-xl"><i class="fa-solid fa-user-tie"></i></div> 
-
-            <div><h3 class="font-black dark:text-white text-sm">Espace Management</h3><p class="text-xs text-slate-500 mt-0.5 font-medium">Gestion des sessions, DUERP, signalements.</p></div> 
-
-          </button> 
-
-        </div> 
-
- 
-
-        <button onclick="switchScreen('scr-direction')" class="w-full bg-white dark:bg-slate-800 p-5 rounded-3xl text-left flex items-center justify-between border-2 border-transparent hover:border-restev-gold shadow-lg group"> 
-
-          <div class="flex items-center space-x-4"> 
-
-            <div class="w-14 h-14 bg-amber-50 dark:bg-slate-700 rounded-2xl flex items-center justify-center text-2xl text-restev-gold"><i class="fa-solid fa-chart-line"></i></div> 
-
-            <div><h3 class="font-black text-base dark:text-white">Centre RESTEV</h3><p class="text-xs text-slate-500 mt-1 font-medium">Tableau de bord prévention.</p></div> 
-
-          </div><i class="fa-solid fa-arrow-right text-slate-400"></i> 
-
-        </button> 
-
-      </div> 
-
-    </section> 
-
- 
-
-    <!-- ABOUT --> 
-
-    <!-- ABOUT -->
-<section id="scr-about" class="screen max-w-2xl mx-auto w-full space-y-6 py-4">
-  <button onclick="switchScreen('scr-home')" class="text-xs bg-white dark:bg-slate-800 border px-4 py-2 rounded-xl font-bold flex items-center gap-1.5">
-    <i class="fa-solid fa-arrow-left"></i> Retour
-  </button>
-
-  <div class="bg-gradient-to-br from-restev-blue via-blue-600 to-restev-magenta p-6 md:p-8 rounded-3xl text-white shadow-xl relative overflow-hidden">
-    <div class="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full"></div>
-    <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full"></div>
-
-    <div class="relative z-10 space-y-4">
-      <div class="w-16 h-16 bg-white/15 border border-white/20 rounded-2xl flex items-center justify-center text-3xl shadow-lg">
-        <i class="fa-solid fa-shield-heart"></i>
-      </div>
-
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RESTEV 85 - Test Supabase Prévention 360</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; }
+    .screen { display:none; }
+    .screen.active { display:block; }
+    .danger-flash { animation: flash 0.7s infinite alternate; }
+    @keyframes flash { from { background:#dc2626; transform:scale(1); } to { background:#991b1b; transform:scale(1.02); } }
+    .pulse-red { animation: pulseRed 1s infinite; }
+    @keyframes pulseRed { 0%,100% { box-shadow:0 0 0 0 rgba(220,38,38,.7); } 50% { box-shadow:0 0 0 12px rgba(220,38,38,0); } }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800">
+
+<div id="toast" class="fixed bottom-5 right-5 hidden z-50 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-xl font-bold text-sm"></div>
+
+<header class="bg-white shadow sticky top-0 z-40">
+  <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row gap-3 justify-between items-center">
+    <div>
+      <h1 class="text-2xl font-black text-blue-700">RESTEV 85 - Prévention 360</h1>
+      <p class="text-xs text-slate-500 font-bold">Test opérationnel Supabase : salarié ↔ manager ↔ centre RESTEV</p>
+    </div>
+    <div class="flex gap-2 flex-wrap justify-center">
+      <button onclick="showScreen('home')" class="px-4 py-2 rounded-xl bg-slate-100 font-bold text-xs">Accueil</button>
+      <button onclick="showScreen('manager-login')" class="px-4 py-2 rounded-xl bg-blue-600 text-white font-bold text-xs">Manager</button>
+      <button onclick="showScreen('employee-login')" class="px-4 py-2 rounded-xl bg-pink-600 text-white font-bold text-xs">Salarié</button>
+      <button onclick="showScreen('center') ; loadCenterStats();" class="px-4 py-2 rounded-xl bg-amber-500 text-white font-bold text-xs">Centre RESTEV</button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-6xl mx-auto p-4 space-y-6">
+
+  <section id="home" class="screen active">
+    <div class="bg-gradient-to-br from-blue-700 to-pink-600 text-white p-8 rounded-3xl shadow-xl">
+      <h2 class="text-3xl font-black mb-3">Passeport Prévention Connecté</h2>
+      <p class="font-medium max-w-3xl">Ce fichier permet de tester immédiatement les remontées terrain, les messages descendants, les alertes visuelles/sonores manager, le registre passeport et les statistiques anonymisées RESTEV.</p>
+    </div>
+    <div class="grid md:grid-cols-3 gap-4 mt-6">
+      <button onclick="showScreen('manager-login')" class="bg-white p-6 rounded-2xl shadow text-left border-t-4 border-blue-600">
+        <i class="fa-solid fa-user-tie text-3xl text-blue-600"></i>
+        <h3 class="font-black mt-3">Espace Manager</h3>
+        <p class="text-xs text-slate-500">Voir les alertes, répondre, envoyer des consignes.</p>
+      </button>
+      <button onclick="showScreen('employee-login')" class="bg-white p-6 rounded-2xl shadow text-left border-t-4 border-pink-600">
+        <i class="fa-solid fa-hard-hat text-3xl text-pink-600"></i>
+        <h3 class="font-black mt-3">Espace Salarié</h3>
+        <p class="text-xs text-slate-500">Signaler un risque, consulter les messages, valider un passeport.</p>
+      </button>
+      <button onclick="showScreen('center'); loadCenterStats();" class="bg-white p-6 rounded-2xl shadow text-left border-t-4 border-amber-500">
+        <i class="fa-solid fa-chart-pie text-3xl text-amber-500"></i>
+        <h3 class="font-black mt-3">Centre RESTEV</h3>
+        <p class="text-xs text-slate-500">Statistiques anonymisées et compteur passeports.</p>
+      </button>
+    </div>
+  </section>
+
+  <section id="manager-login" class="screen max-w-xl mx-auto">
+    <div class="bg-white p-6 rounded-3xl shadow space-y-4 border-t-4 border-blue-600">
+      <h2 class="text-xl font-black">Connexion Manager</h2>
+      <input id="managerCompany" class="w-full p-3 border rounded-xl font-bold uppercase" placeholder="Code établissement ex : RSTV-DEMO-1234">
+      <select id="managerSector" class="w-full p-3 border rounded-xl font-bold">
+        <option>BTP</option><option>Commerce</option><option>Industrie</option><option>Transport / Logistique</option><option>Santé / Aide à domicile</option><option>Tertiaire</option><option>Autre</option>
+      </select>
+      <select id="managerSize" class="w-full p-3 border rounded-xl font-bold">
+        <option>1-10 salariés</option><option>11-49 salariés</option><option>50-199 salariés</option><option>200 salariés et +</option>
+      </select>
+      <button onclick="managerLogin()" class="w-full bg-blue-600 text-white p-3 rounded-xl font-black">Accéder au tableau de bord</button>
+    </div>
+  </section>
+
+  <section id="manager" class="screen space-y-5">
+    <div class="bg-white p-4 rounded-2xl shadow flex flex-col md:flex-row justify-between gap-3 items-center border-l-4 border-blue-600">
       <div>
-        <span class="inline-flex items-center gap-2 bg-white/15 border border-white/20 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest mb-3">
-          <i class="fa-solid fa-compass"></i>
-          Parcours prévention
-        </span>
-
-        <h2 class="text-2xl md:text-3xl font-black tracking-tight mb-3">
-          La prévention dès le premier jour
-        </h2>
-
-        <p class="text-blue-50 text-sm leading-relaxed font-medium">
-          Le Passeport Prévention RESTEV 85 accompagne l’accueil sécurité des nouveaux arrivants,
-          facilite la transmission des consignes essentielles et permet de tracer les actions réalisées.
-        </p>
+        <p class="text-xs font-black uppercase text-slate-400">Console Manager</p>
+        <h2 class="font-black text-xl">Établissement : <span id="currentManagerCompany" class="text-blue-600"></span></h2>
+      </div>
+      <div class="flex gap-2 flex-wrap">
+        <button onclick="toggleSound()" id="soundBtn" class="bg-slate-100 px-4 py-2 rounded-xl font-bold text-xs"><i class="fa-solid fa-volume-high"></i> Son ON</button>
+        <button onclick="askNotifications()" class="bg-blue-50 text-blue-700 px-4 py-2 rounded-xl font-bold text-xs"><i class="fa-solid fa-bell"></i> Notifications</button>
+        <button onclick="loadManagerReports()" class="bg-slate-900 text-white px-4 py-2 rounded-xl font-bold text-xs">Actualiser</button>
       </div>
     </div>
-  </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-    <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-premium border border-blue-100 dark:border-slate-700">
-      <div class="w-11 h-11 bg-blue-50 dark:bg-slate-700 text-restev-blue rounded-xl flex items-center justify-center text-xl mb-3">
-        <i class="fa-solid fa-user-check"></i>
-      </div>
-      <h3 class="font-black text-sm dark:text-white mb-2">Accueillir</h3>
-      <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-        Présenter au salarié les règles essentielles, les risques du poste, les consignes internes
-        et les bonnes pratiques à appliquer dès son arrivée.
-      </p>
+    <div id="bigAlertBanner" class="hidden danger-flash text-white p-6 rounded-3xl shadow-xl text-center font-black text-2xl">
+      🚨 NOUVEAU SIGNALEMENT TERRAIN 🚨
+      <div class="text-sm mt-2">Ouvrir immédiatement le tableau des alertes.</div>
     </div>
 
-    <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-premium border border-pink-100 dark:border-slate-700">
-      <div class="w-11 h-11 bg-pink-50 dark:bg-slate-700 text-restev-magenta rounded-xl flex items-center justify-center text-xl mb-3">
-        <i class="fa-solid fa-clipboard-check"></i>
-      </div>
-      <h3 class="font-black text-sm dark:text-white mb-2">Tracer</h3>
-      <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-        Conserver une preuve claire du parcours réalisé : QCM, attestation, validation manager,
-        remise des EPI et consultation des ressources prévention.
-      </p>
+    <div class="grid md:grid-cols-4 gap-4">
+      <div class="bg-white p-5 rounded-2xl shadow border-t-4 border-red-600"><p class="text-xs font-black text-slate-400">Nouvelles alertes</p><p id="statNew" class="text-4xl font-black text-red-600">0</p></div>
+      <div class="bg-white p-5 rounded-2xl shadow border-t-4 border-orange-500"><p class="text-xs font-black text-slate-400">En cours</p><p id="statProgress" class="text-4xl font-black text-orange-500">0</p></div>
+      <div class="bg-white p-5 rounded-2xl shadow border-t-4 border-green-600"><p class="text-xs font-black text-slate-400">Traitées</p><p id="statDone" class="text-4xl font-black text-green-600">0</p></div>
+      <div class="bg-white p-5 rounded-2xl shadow border-t-4 border-blue-600"><p class="text-xs font-black text-slate-400">Total</p><p id="statTotal" class="text-4xl font-black text-blue-600">0</p></div>
     </div>
 
-    <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-premium border border-emerald-100 dark:border-slate-700">
-      <div class="w-11 h-11 bg-emerald-50 dark:bg-slate-700 text-emerald-500 rounded-xl flex items-center justify-center text-xl mb-3">
-        <i class="fa-solid fa-triangle-exclamation"></i>
-      </div>
-      <h3 class="font-black text-sm dark:text-white mb-2">Remonter</h3>
-      <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-        Permettre au salarié de signaler rapidement une situation dangereuse afin que le responsable
-        puisse analyser, répondre et suivre les actions correctives.
-      </p>
-    </div>
-  </div>
-
-  <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-premium border-l-4 border-l-restev-blue space-y-3">
-    <h3 class="font-black dark:text-white text-sm flex items-center gap-2">
-      <i class="fa-solid fa-scale-balanced text-restev-blue"></i>
-      L’engagement de l’employeur
-    </h3>
-
-    <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed text-justify">
-      Lors de l’embauche ou de l’arrivée sur un nouveau poste, l’employeur doit organiser une information
-      et une formation pratique adaptées à la sécurité. Cette démarche permet au salarié d’identifier les
-      risques auxquels il peut être exposé, de connaître les consignes applicables et d’utiliser correctement
-      les moyens de prévention mis à sa disposition.
-    </p>
-
-    <div class="bg-blue-50 dark:bg-slate-900/70 border border-blue-100 dark:border-slate-700 p-4 rounded-xl">
-      <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
-        Le Passeport Prévention ne remplace pas l’évaluation des risques ni les obligations réglementaires
-        de l’entreprise. Il sert de support opérationnel pour structurer l’accueil sécurité, renforcer la culture
-        prévention et conserver une traçabilité simple des actions réalisées.
-      </p>
-    </div>
-  </div>
-
-  <div class="bg-gradient-to-br from-slate-50 to-amber-50/40 dark:from-slate-900 dark:to-slate-800 p-5 rounded-2xl border shadow-sm space-y-4">
-    <h3 class="font-black dark:text-white text-sm flex items-center gap-2">
-      <i class="fa-solid fa-list-check text-restev-gold"></i>
-      Ce que permet l’application
-    </h3>
-
-    <div class="space-y-3">
-      <div class="flex items-start gap-3">
-        <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs mt-0.5">
-          <i class="fa-solid fa-check"></i>
+    <div class="grid lg:grid-cols-2 gap-5">
+      <div class="bg-white p-5 rounded-2xl shadow border-t-4 border-red-600">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-black"><i class="fa-solid fa-triangle-exclamation text-red-600"></i> Signalements terrain</h3>
+          <button onclick="loadManagerReports()" class="text-xs bg-slate-100 px-3 py-2 rounded-xl font-bold">Actualiser</button>
         </div>
-        <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-          Générer un accès salarié par QR Code pour lancer un parcours d’accueil individualisé.
-        </p>
+        <div id="managerReportsList" class="space-y-3 max-h-[650px] overflow-y-auto"><p class="text-xs text-slate-400 italic">Aucun signalement.</p></div>
       </div>
 
-      <div class="flex items-start gap-3">
-        <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs mt-0.5">
-          <i class="fa-solid fa-check"></i>
-        </div>
-        <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-          Adapter le QCM aux risques réellement présents dans l’entreprise ou au poste de travail.
-        </p>
-      </div>
-
-      <div class="flex items-start gap-3">
-        <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs mt-0.5">
-          <i class="fa-solid fa-check"></i>
-        </div>
-        <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-          Identifier les EPI remis au salarié et les faire apparaître dans l’attestation finale.
-        </p>
-      </div>
-
-      <div class="flex items-start gap-3">
-        <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs mt-0.5">
-          <i class="fa-solid fa-check"></i>
-        </div>
-        <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-          Centraliser les signalements de dangers et les réponses du responsable.
-        </p>
-      </div>
-    </div>
-  </div>
-
-
-  <div class="bg-gradient-to-br from-blue-50 to-emerald-50/60 dark:from-slate-900 dark:to-slate-800 p-5 rounded-2xl border-2 border-blue-100 dark:border-slate-700 shadow-sm space-y-3">
-    <h3 class="font-black dark:text-white text-sm flex items-center gap-2">
-      <i class="fa-solid fa-user-shield text-restev-blue"></i>
-      Charte de confiance : prévenir sans surveiller
-    </h3>
-    <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed text-justify">
-      Les signalements détaillés restent destinés à l’entreprise pour traiter ses propres situations dangereuses.
-      RESTEV 85 exploite uniquement des données agrégées et anonymisées pour identifier les risques fréquents par secteur
-      et proposer des actions de prévention adaptées. Aucun classement nominatif des entreprises n’est réalisé.
-    </p>
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
-      <div class="bg-white/80 dark:bg-slate-900 border rounded-xl p-3 text-[10px] font-bold text-slate-600 dark:text-slate-300"><i class="fa-solid fa-eye-slash text-emerald-500 mr-1"></i> Pas de surveillance individuelle</div>
-      <div class="bg-white/80 dark:bg-slate-900 border rounded-xl p-3 text-[10px] font-bold text-slate-600 dark:text-slate-300"><i class="fa-solid fa-chart-pie text-restev-blue mr-1"></i> Données collectives uniquement</div>
-      <div class="bg-white/80 dark:bg-slate-900 border rounded-xl p-3 text-[10px] font-bold text-slate-600 dark:text-slate-300"><i class="fa-solid fa-handshake-angle text-restev-magenta mr-1"></i> Actions de prévention ciblées</div>
-    </div>
-  </div>
-
-  <button onclick="switchScreen('scr-home')" class="w-full bg-gradient-to-r from-restev-magenta to-restev-magenta-dark text-white p-4 rounded-xl text-sm font-extrabold shadow-md">
-    J’ai compris
-  </button>
-</section>
- 
-
-    <!-- AUTH --> 
-
-    <section id="scr-auth" class="screen max-w-md mx-auto w-full space-y-6 py-6"> 
-
-      <button onclick="switchScreen('scr-home')" class="text-xs bg-white dark:bg-slate-800 border px-4 py-2 rounded-xl font-bold flex items-center gap-1.5"><i class="fa-solid fa-arrow-left"></i> Retour</button> 
-
-      <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-premium border-t-4 border-t-restev-blue space-y-4"> 
-
-        <h2 class="text-xl font-black dark:text-white">Connexion Manager</h2> 
-
-        <p class="text-xs text-slate-500 dark:text-slate-400">Saisissez votre code établissement pour accéder à la console.</p> 
-
-        <input type="text" id="manager-company-code" placeholder="Ex: RSTV-DEMO-1234" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-sm font-bold uppercase dark:text-white" />
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <select id="manager-login-sector" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white">
-            <option value="Non renseigné">Secteur d’activité</option>
-            <option>BTP</option><option>Commerce</option><option>Industrie</option><option>Transport / Logistique</option><option>Aide à domicile / Santé</option><option>Agriculture</option><option>Tertiaire</option><option>Hôtellerie / Restauration</option><option>Autre</option>
+      <div class="space-y-5">
+        <div class="bg-white p-5 rounded-2xl shadow border-t-4 border-cyan-500 space-y-3">
+          <h3 class="font-black"><i class="fa-solid fa-bullhorn text-cyan-600"></i> Message descendant vers salarié</h3>
+          <input id="msgEmployee" class="w-full p-3 border rounded-xl text-sm font-bold" placeholder="Nom exact du salarié">
+          <input id="msgTitle" class="w-full p-3 border rounded-xl text-sm font-bold" placeholder="Titre du message">
+          <textarea id="msgContent" rows="4" class="w-full p-3 border rounded-xl text-sm font-bold" placeholder="Votre consigne prévention..."></textarea>
+          <select id="msgPriority" class="w-full p-3 border rounded-xl text-sm font-bold">
+            <option>Information</option><option>Important</option><option>Urgent</option>
           </select>
-          <select id="manager-login-size" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white">
-            <option value="Non renseigné">Taille établissement</option>
-            <option>1-10 salariés</option><option>11-49 salariés</option><option>50-199 salariés</option><option>200 salariés et +</option>
-          </select>
-        </div> 
-
-        <button id="btn-manager-login" type="button" onclick="handleManagerLogin(); return false;" class="w-full bg-restev-blue text-white py-3 rounded-xl text-sm font-extrabold shadow-md">Accéder à l\'Espace</button> 
-
-      </div> 
-
-      <div class="bg-gradient-to-br from-slate-50 to-amber-50/30 dark:from-slate-900 dark:to-slate-800 p-6 rounded-3xl shadow-sm border space-y-4"> 
-
-        <h3 class="text-sm font-black dark:text-white">Nouvel Établissement ?</h3> 
-
-        <input type="text" id="new-company-name" placeholder="Raison sociale" class="w-full p-3 bg-white dark:bg-slate-800 border rounded-xl text-xs font-bold dark:text-white" />
-        <button onclick="createNewCompany()" class="w-full bg-slate-800 dark:bg-slate-700 text-white py-2.5 rounded-xl text-xs font-bold shadow">Générer un code d'accès</button> 
-
-        <div id="generated-code-box" class="hidden mt-3 p-3 bg-amber-50 dark:bg-slate-800 border rounded-xl text-center space-y-2"> 
-
-          <span class="block text-[10px] font-black text-amber-600 uppercase tracking-wider">Votre Code Unique :</span> 
-
-          <span id="lbl-generated-code" class="block text-lg font-black dark:text-white font-mono tracking-widest"></span> 
-
-          <button onclick="copyGeneratedCode()" class="text-[10px] bg-white dark:bg-slate-700 px-3 py-1.5 rounded-lg font-bold text-slate-600 dark:text-white shadow-sm border"><i class="fa-solid fa-copy mr-1"></i> Copier le code</button> 
-
-        </div> 
-
-      </div> 
-
-    </section> 
-
- 
-
-    <!-- DIRECTION --> 
-
-    <section id="scr-direction" class="screen max-w-4xl mx-auto w-full space-y-6 py-6">
-      <button onclick="switchScreen('scr-home')" class="text-xs bg-white dark:bg-slate-800 border px-4 py-2 rounded-xl font-bold flex items-center gap-1.5"><i class="fa-solid fa-arrow-left"></i> Retour</button>
-      <div class="bg-gradient-to-br from-slate-900 via-restev-blue-dark to-restev-magenta p-6 rounded-3xl text-white shadow-xl space-y-3">
-        <span class="inline-flex items-center gap-2 bg-white/15 border border-white/20 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest"><i class="fa-solid fa-chart-simple"></i> Veille prévention collective</span>
-        <h2 class="text-2xl md:text-3xl font-black">Centre RESTEV — Tendances anonymisées</h2>
-        <p class="text-xs md:text-sm text-blue-50 leading-relaxed max-w-2xl">Tableau de bord conçu pour repérer les risques fréquents par secteur, sans classement nominatif des entreprises et sans commentaire individuel.</p>
-      </div>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border shadow-premium"><p class="text-[10px] font-black uppercase text-slate-400">Signalements agrégés</p><p id="stats-total" class="text-3xl font-black text-restev-blue mt-1">0</p></div>
-        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border shadow-premium"><p class="text-[10px] font-black uppercase text-slate-400">Risque dominant</p><p id="stats-top-risk" class="text-lg font-black dark:text-white mt-1">—</p></div>
-        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border shadow-premium"><p class="text-[10px] font-black uppercase text-slate-400">Secteurs représentés</p><p id="stats-sector-count" class="text-3xl font-black text-restev-magenta mt-1">0</p></div>
-      </div>
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-premium border-t-4 border-t-restev-gold">
-          <div class="flex justify-between items-center mb-4"><h3 class="text-sm font-black dark:text-white"><i class="fa-solid fa-chart-pie text-restev-gold mr-1"></i> Top risques signalés</h3><button onclick="loadRestevStats()" class="text-[10px] bg-slate-100 dark:bg-slate-700 dark:text-white px-3 py-2 rounded-xl font-black">Actualiser</button></div>
-          <div class="relative h-72 w-full"><canvas id="chart-restev-risks"></canvas></div>
+          <button onclick="sendManagerMessage()" class="w-full bg-cyan-600 text-white p-3 rounded-xl font-black">Envoyer au salarié</button>
         </div>
-        <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-premium border-t-4 border-t-restev-blue">
-          <h3 class="text-sm font-black dark:text-white mb-4"><i class="fa-solid fa-list-check text-restev-blue mr-1"></i> Priorités d’intervention proposées</h3>
-          <div id="stats-actions-list" class="space-y-3"><p class="text-xs text-slate-400 italic">Chargez les données pour afficher les priorités.</p></div>
-        </div>
-      </div>
-      <div class="bg-blue-50 dark:bg-slate-900 border border-blue-100 dark:border-slate-700 p-4 rounded-2xl">
-        <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed"><b>Principe de confiance :</b> ce tableau affiche des tendances agrégées. Les noms de salariés, commentaires détaillés, géolocalisations précises et noms d'entreprises ne sont pas utilisés dans cette vue collective.</p>
-      </div>
-    </section>
-    <!-- STUDIO --> 
 
-    <section id="scr-studio" class="screen max-w-2xl mx-auto w-full space-y-6 py-6"> 
-
-      <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-premium border-t-4 border-t-amber-500"> 
-
-        <h2 class="text-xl font-black dark:text-white mb-2">Éditeur DUERP</h2> 
-
-        <p class="text-xs text-slate-400 mb-4">Cochez ou décochez les risques applicables.</p> 
-
-        <div class="p-4 bg-blue-50/50 dark:bg-slate-900/50 border rounded-2xl space-y-2 mb-4"> 
-
-          <label class="block text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300"><i class="fa-solid fa-map-pin text-restev-magenta mr-1"></i> Pré-réglage sectoriel :</label> 
-
-          <select id="manager-sector-select" onchange="applySectorPreset()" class="w-full p-3 bg-white dark:bg-slate-800 border rounded-xl text-xs font-bold dark:text-white"></select> 
-
-        </div> 
-
-        <div id="studio-rules-list" class="space-y-2.5 max-h-[500px] overflow-y-auto pr-2"></div> 
-
-        <div class="mt-6 grid grid-cols-2 gap-3"> 
-
-          <button onclick="switchScreen('scr-manager')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl font-bold">Retour</button> 
-
-          <button onclick="saveCustomQCM()" class="bg-restev-blue text-white py-3 rounded-xl font-bold shadow-md">Enregistrer</button> 
-
-        </div> 
-
-      </div> 
-
-    </section> 
-
- 
-
-    <!-- MANAGER --> 
-
-    <section id="scr-manager" class="screen space-y-6">   
-      <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border shadow-premium flex flex-col sm:flex-row justify-between items-center gap-4 border-l-4 border-l-restev-blue">   
-        <div class="flex items-center space-x-2.5">   
-          <div class="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>   
-          <h2 class="text-xs font-black dark:text-white uppercase tracking-wide">Console Adhérent : <span id="lbl-manager-comp-name" class="text-restev-blue font-black"></span></h2>   
-        </div>   
-        <div class="flex items-center gap-2">   
-          <button onclick="toggleAlertSound()" id="btn-alert-sound" class="text-xs bg-slate-100 dark:bg-slate-700 dark:text-white px-3 py-2 rounded-xl font-bold"><i class="fa-solid fa-volume-high mr-1"></i> Son ON</button>   
-          
-          <button onclick="enableManagerNotifications()" id="btn-manager-notif" class="text-xs bg-blue-50 text-restev-blue dark:bg-slate-700 dark:text-blue-300 px-3 py-2 rounded-xl font-bold"><i class="fa-solid fa-bell mr-1"></i> Notifications</button>     <button onclick="quitManager()" class="text-xs bg-red-50 text-red-600 hover:bg-red-100 font-extrabold px-4 py-2 rounded-xl"><i class="fa-solid fa-right-from-bracket mr-1"></i> Quitter</button>   
-        </div>   
-      </div>   
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6"> 
-
-        <div class="space-y-6"> 
-
-          <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-premium border-t-4 border-t-restev-gold"> 
-
-            <h3 class="text-xs font-black uppercase tracking-wider dark:text-white mb-4"><i class="fa-solid fa-sliders text-restev-gold mr-1"></i> 1. Matrice des Risques</h3> 
-
-            <button onclick="openStudio()" class="w-full bg-slate-900 dark:bg-slate-700 text-white py-2.5 rounded-xl text-xs font-bold"><i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> Ajuster les risques</button> 
-
-          </div> 
-
- 
-
-           
-
- 
-
-          <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-premium border-t-4 border-t-emerald-500 space-y-3"> 
-
-            <h3 class="font-black dark:text-white text-xs uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-box-open text-emerald-500"></i> 2. Dotation EPI</h3> 
-
-            <p class="text-[10px] text-slate-500 dark:text-slate-400">Sélectionnez le matériel remis au salarié :</p> 
-
-            <div id="epi-grid" class="grid grid-cols-2 gap-2"></div> 
-
-            <button onclick="saveEPIKit()" class="w-full bg-emerald-500 text-white py-2 rounded-xl text-[10px] font-black uppercase">Valider la remise du kit</button> 
-
-          </div> 
-
-         
-
- 
-
-          <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-premium border-t-4 border-t-restev-magenta space-y-4"> 
-
-            <h3 class="text-xs font-black uppercase tracking-wider dark:text-white"><i class="fa-solid fa-qrcode text-restev-magenta mr-1"></i> 3. Accueil Nouvel Arrivant</h3> 
-
-            <input type="text" id="reg-emp-name" placeholder="Nom & Prénom du travailleur" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white" />
-            <select id="reg-emp-profile" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white">
-              <option value="CDI">CDI</option>
-              <option value="CDD">CDD</option>
-              <option value="Intérimaire">Intérimaire</option>
-              <option value="Apprenti">Apprenti</option>
-              <option value="Stagiaire">Stagiaire</option>
-              <option value="Saisonnier">Saisonnier</option>
-            </select> 
-
-            <button onclick="generateEmployeeAccess()" class="w-full bg-gradient-to-r from-restev-magenta to-restev-magenta-dark text-white py-3 rounded-xl text-xs font-extrabold shadow-md"><i class="fa-solid fa-bolt mr-1.5"></i> Générer le QR salarié</button> 
-
-            <div id="qr-area" class="hidden flex flex-col items-center justify-center p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-dashed space-y-3"> 
-
-              <canvas id="qr-canvas" class="mx-auto bg-white p-2 rounded-xl shadow-md border"></canvas> 
-
-              <span class="text-[10px] font-extrabold text-restev-magenta uppercase tracking-wider">Scanner pour démarrer sur mobile</span> 
-
-            </div> 
-
-          </div> 
-
- 
-
-          </div> 
-
- 
-
-        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border-t-4 border-t-red-500 shadow-premium flex flex-col"> 
-
-          <div class="flex items-center justify-between gap-2"> 
-
-            <h3 class="font-black dark:text-white text-xs uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-bell text-red-500 animate-bounce"></i> Signalements Dangers</h3> 
-
-            <button onclick="loadManagerReports()" class="text-[10px] bg-slate-100 dark:bg-slate-700 dark:text-white px-2 py-1 rounded-lg font-black">Actualiser</button> 
-
-          </div> 
-
-          <div id="manager-risk-box" class="space-y-3 max-h-[580px] overflow-y-auto pt-4 flex-1"><p class="text-xs text-slate-400 italic text-center py-8">Aucun danger signalé pour le moment.</p></div> 
-
-        </div> 
-
-      </div> 
-
- 
-
-      <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border-t-4 border-t-emerald-500 shadow-premium space-y-3"> 
-
-        <div class="flex items-center justify-between gap-2"><h3 class="font-black dark:text-white text-xs uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-id-card text-emerald-500"></i> Registre des Passeports Validés</h3><button id="btn-refresh-registry" onclick="loadPassportRegistry()" class="text-[10px] bg-slate-100 dark:bg-slate-700 dark:text-white px-3 py-2 rounded-xl font-black">Actualiser</button></div> 
-
-        <div class="overflow-x-auto"> 
-
-          <table class="w-full text-left text-xs text-slate-500 dark:text-slate-400"> 
-
-            <thead class="bg-slate-50 dark:bg-slate-900 text-[10px] font-black uppercase text-slate-700 dark:text-slate-300"><tr><th class="p-3">Travailleur</th><th class="p-3">Profil</th><th class="p-3">Date / Heure</th><th class="p-3">Résultat QCM</th><th class="p-3">EPI remis</th><th class="p-3">Statut</th></tr></thead> 
-
-            <tbody id="manager-emargements-list"><tr><td colspan="6" class="p-4 text-center italic text-slate-400">Aucun passeport validé pour le moment.</td></tr></tbody> 
-
-          </table> 
-
-        </div> 
-
-      </div> 
-
-    </section> 
-
- 
-
-    <!-- TRAINING --> 
-
-    <section id="scr-training" class="screen hidden max-w-md mx-auto w-full p-4 space-y-4"> 
-
-      <div class="flex items-center justify-between mb-4"> 
-
-        <button onclick="backFromTraining()" class="text-xs bg-white dark:bg-slate-800 border px-4 py-2 rounded-xl font-bold flex items-center gap-1.5 shadow-sm"><i class="fa-solid fa-arrow-left"></i> Retour</button> 
-
-        <h2 class="text-lg font-black dark:text-white">Formation INRS</h2> 
-
-      </div> 
-
-      <div id="menu-list" class="grid grid-cols-1 gap-3"><p class="text-xs text-slate-500 italic">Sélectionnez votre secteur pour accéder au tutoriel :</p></div> 
-
-      <div id="tuto-container" class="hidden space-y-3"> 
-
-        <div class="flex items-center justify-between gap-2"> 
-
-          <button onclick="backToTrainingMenu()" class="text-xs text-restev-blue font-bold flex items-center gap-1 bg-white dark:bg-slate-800 border px-3 py-2 rounded-xl shadow-sm"><i class="fa-solid fa-chevron-left"></i> Retour secteurs</button> 
-
-          <button onclick="openTutoFullscreen()" class="text-xs bg-restev-blue text-white font-bold flex items-center gap-1 px-3 py-2 rounded-xl shadow-sm"><i class="fa-solid fa-expand"></i> Plein écran</button> 
-
-        </div> 
-
-        <div class="bg-blue-50 dark:bg-slate-900 border rounded-2xl p-3"><p id="tuto-orientation-help" class="text-[11px] font-bold text-slate-600 dark:text-slate-300 leading-relaxed">Astuce : tournez votre smartphone en mode paysage si le module paraît trop petit.</p></div> 
-
-        <div id="tuto-frame-wrapper" class="tuto-frame-wrapper"><iframe id="tuto-viewer" class="tuto-iframe" src="" allowfullscreen loading="lazy"></iframe></div> 
-
-      </div> 
-
-    </section> 
-
- 
-
-    <!-- EMPLOYEE --> 
-
-    <section id="scr-employee" class="screen max-w-md mx-auto w-full space-y-4"> 
-
-      <div class="bg-gradient-to-br from-restev-blue via-blue-600 to-restev-magenta text-white p-6 rounded-3xl shadow-xl space-y-2 relative overflow-hidden"> 
-
-        <span class="bg-gradient-to-r from-red-500 to-rose-600 text-white text-[9px] font-black px-2.5 py-0.5 rounded uppercase tracking-wider shadow-md flex items-center w-max gap-1.5"><i class="fa-solid fa-lock text-[8px]"></i> Session Verrouillée</span> 
-
-        <h2 class="text-xl font-black tracking-tight pt-1" id="lbl-emp-welcome">Bonjour</h2> 
-
-        <p class="text-xs text-blue-50 font-medium" id="lbl-emp-company">Chargement des données...</p>
-        <p class="text-[11px] text-blue-50 font-black uppercase tracking-wider" id="lbl-emp-profile">Profil : Non renseigné</p> 
-
-      </div> 
-
-      <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border shadow-premium space-y-3"> 
-
-        <button onclick="startEmployeeQCM()" class="w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-restev-blue p-4 rounded-xl text-left flex items-center justify-between group shadow-sm"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-restev-blue/10 text-restev-blue rounded-xl flex items-center justify-center"><i class="fa-solid fa-book-open-reader"></i></div><div><p class="text-xs font-black dark:text-white">1. Validation des Acquis</p><p class="text-[10px] text-slate-400 mt-0.5">Vérification interactive des connaissances HSE.</p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i></button> 
-
-        <button onclick="switchScreen('scr-report')" class="w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-restev-magenta p-4 rounded-xl text-left flex items-center justify-between group shadow-sm"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-restev-magenta/10 text-restev-magenta rounded-xl flex items-center justify-center"><i class="fa-solid fa-triangle-exclamation"></i></div><div><p class="text-xs font-black dark:text-white">2. Signaler une Situation</p><p class="text-[10px] text-slate-400 mt-0.5">Remonter immédiatement un risque terrain.</p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i></button> 
-
-        <button onclick="openEmployeeResources()" class="w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-emerald-500 p-4 rounded-xl text-left flex items-center justify-between group shadow-sm"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-emerald-500/10 text-emerald-500 rounded-xl flex items-center justify-center"><i class="fa-solid fa-book-medical"></i></div><div><p class="text-xs font-black dark:text-white">3. Fiches Conseils Sécurité</p><p class="text-[10px] text-slate-400 mt-0.5">Ressources INRS, CARSAT & OPPBTP.</p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i></button> 
-
-        <button onclick="switchScreen('scr-training')" class="w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-restev-gold p-4 rounded-xl text-left flex items-center justify-between group shadow-sm"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-restev-gold/10 text-restev-gold rounded-xl flex items-center justify-center"><i class="fa-solid fa-graduation-cap"></i></div><div><p class="text-xs font-black dark:text-white">4. Modules INRS</p><p class="text-[10px] text-slate-400 mt-0.5">Tutoriels prévention adaptés aux métiers.</p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i></button> 
-
-        <button onclick="openEmployeeMessages()" class="w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-cyan-500 p-4 rounded-xl text-left flex items-center justify-between group shadow-sm"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-cyan-500/10 text-cyan-500 rounded-xl flex items-center justify-center"><i class="fa-solid fa-comments"></i></div><div><p class="text-xs font-black dark:text-white">5. Messages du responsable</p><p class="text-[10px] text-slate-400 mt-0.5">Suivre les réponses à vos signalements.</p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i></button> 
-
-      </div> 
-
-    </section> 
-
- 
-
-    <!-- QCM --> 
-
-    <section id="scr-qcm" class="screen max-w-md mx-auto w-full bg-white dark:bg-slate-800 p-5 rounded-3xl border shadow-premium space-y-4"> 
-
-      <div class="flex justify-between items-center border-b pb-3"><h3 class="text-sm font-black dark:text-white flex items-center gap-2"><i class="fa-solid fa-graduation-cap text-restev-blue"></i> Validation des Acquis adaptée au secteur</h3><span id="qcm-progress" class="text-[10px] bg-blue-50 text-restev-blue font-black px-2.5 py-1 rounded-lg uppercase tracking-wider">Question 1</span></div> 
-
-      <div class="space-y-4 py-2"><div id="qcm-question-text" class="text-xs font-bold dark:text-white bg-slate-50 dark:bg-slate-900 p-3.5 rounded-xl border"></div><div id="qcm-options-box" class="space-y-2"></div></div> 
-
-      <button onclick="submitQCMAnswer()" class="w-full bg-restev-blue text-white py-3.5 rounded-xl text-xs font-extrabold shadow-md">Valider la réponse</button> 
-
-    </section> 
-
- 
-
-    <!-- CERTIFICAT --> 
-
-    <section id="scr-qcm-success" class="screen max-w-2xl mx-auto w-full bg-white dark:bg-slate-800 p-8 rounded-3xl border shadow-premium space-y-6 print:shadow-none print:border-none print:p-0 print:m-0 print:bg-white print:text-black"> 
-
-      <div class="text-center space-y-2 border-b-2 border-slate-200 pb-6 print:border-slate-800 print:pb-4"><div class="hidden print:block font-extrabold text-2xl tracking-tight text-slate-800 mb-4">RESTEV <span class="text-restev-magenta">85</span></div><h2 id="qcm-result-title" class="text-2xl font-black text-emerald-600 print:text-slate-900">Attestation de Formation Sécurité</h2><p class="text-sm font-bold text-slate-500 print:text-slate-600">Délivrée dans le cadre du Passeport Prévention</p></div> 
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border print:bg-transparent print:border-none print:p-0"> 
-
-        <div><label class="block text-[10px] font-black uppercase text-slate-500">Entreprise / Établissement :</label><input type="text" id="cert-company" class="w-full bg-white dark:bg-slate-800 border p-2 rounded-lg text-sm font-bold dark:text-white print:border-none print:bg-transparent print:p-0 print:text-base print:border-b print:text-black"></div> 
-
-        <div><label class="block text-[10px] font-black uppercase text-slate-500">Formateur / Manager :</label><input type="text" id="cert-manager" class="w-full bg-white dark:bg-slate-800 border p-2 rounded-lg text-sm font-bold dark:text-white print:border-none print:bg-transparent print:p-0 print:text-base print:border-b print:text-black"></div> 
-
-        <div><label class="block text-[10px] font-black uppercase text-slate-500">Salarié / Agent :</label><input type="text" id="cert-employee" class="w-full bg-white dark:bg-slate-800 border p-2 rounded-lg text-sm font-bold dark:text-white print:border-none print:bg-transparent print:p-0 print:text-base print:border-b print:text-black"></div>
-        <div><label class="block text-[10px] font-black uppercase text-slate-500">Profil salarié :</label><input type="text" id="cert-profile" class="w-full bg-white dark:bg-slate-800 border p-2 rounded-lg text-sm font-bold dark:text-white print:border-none print:bg-transparent print:p-0 print:text-base print:border-b print:text-black" readonly></div> 
-
-        <div><label class="block text-[10px] font-black uppercase text-slate-500">Score QCM & Date :</label><div class="flex items-center gap-2 p-2 print:p-0"><span id="lbl-qcm-score-final" class="font-extrabold text-emerald-600 text-lg"></span><span class="text-xs font-medium text-slate-400 print:text-slate-600" id="lbl-cert-date"></span></div></div> 
-
-      </div> 
-
-      <div class="bg-amber-50 dark:bg-amber-900/20 border p-4 rounded-xl print:bg-transparent print:border-slate-300"><p class="text-xs text-justify text-slate-700 dark:text-slate-300 print:text-slate-800 font-medium leading-relaxed">Par la présente, les signataires attestent que l'agent a suivi son parcours d'intégration à la sécurité. Les risques spécifiques au poste de travail ont été présentés et les EPI requis ont été remis et expliqués.</p></div> 
-
-      <div class="bg-emerald-50 dark:bg-emerald-900/20 border p-4 rounded-xl print:bg-transparent print:border-slate-300"><h4 class="text-[11px] font-black uppercase text-emerald-600 mb-2"><i class="fa-solid fa-helmet-safety"></i> Équipements de Protection Individuelle remis</h4><div id="cert-epi-list" class="text-xs text-slate-700 dark:text-slate-300 print:text-slate-800 font-bold leading-relaxed">Aucun EPI renseigné.</div></div> 
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="border rounded-xl p-4 text-center space-y-3 bg-slate-50 dark:bg-slate-900 print:bg-transparent">
-          <h4 class="text-[11px] font-black uppercase text-slate-500">Signature réelle du Salarié</h4>
-          <canvas id="sig-canvas-emp" class="signature-pad bg-white border-2 border-dashed rounded-lg border-slate-300 w-full h-32 touch-none"></canvas>
-          <div class="no-print flex gap-2">
-            <button onclick="clearSignature('emp')" class="flex-1 bg-slate-100 text-slate-600 py-2 rounded-lg text-[10px] font-black uppercase">Effacer</button>
+        <div class="bg-white p-5 rounded-2xl shadow border-t-4 border-green-600">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="font-black"><i class="fa-solid fa-id-card text-green-600"></i> Registre passeports</h3>
+            <button onclick="loadPassportRegistry()" class="text-xs bg-slate-100 px-3 py-2 rounded-xl font-bold">Actualiser</button>
           </div>
-          <p id="sig-status-emp" class="text-[10px] text-slate-400 italic">Signature salarié attendue.</p>
+          <div id="passportList" class="space-y-2 max-h-[300px] overflow-y-auto"><p class="text-xs text-slate-400 italic">Aucun passeport.</p></div>
         </div>
-        <div class="border rounded-xl p-4 text-center space-y-3 bg-slate-50 dark:bg-slate-900 print:bg-transparent">
-          <h4 class="text-[11px] font-black uppercase text-slate-500">Signature réelle du Manager</h4>
-          <canvas id="sig-canvas-mgr" class="signature-pad bg-white border-2 border-dashed rounded-lg border-slate-300 w-full h-32 touch-none"></canvas>
-          <div class="no-print flex gap-2">
-            <button onclick="clearSignature('mgr')" class="flex-1 bg-slate-100 text-slate-600 py-2 rounded-lg text-[10px] font-black uppercase">Effacer</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="employee-login" class="screen max-w-xl mx-auto">
+    <div class="bg-white p-6 rounded-3xl shadow space-y-4 border-t-4 border-pink-600">
+      <h2 class="text-xl font-black">Connexion Salarié</h2>
+      <input id="employeeName" class="w-full p-3 border rounded-xl font-bold" placeholder="Nom et prénom du salarié">
+      <input id="employeeCompany" class="w-full p-3 border rounded-xl font-bold uppercase" placeholder="Code établissement ex : RSTV-DEMO-1234">
+      <button onclick="employeeLogin()" class="w-full bg-pink-600 text-white p-3 rounded-xl font-black">Entrer dans mon espace</button>
+    </div>
+  </section>
+
+  <section id="employee" class="screen space-y-5 max-w-3xl mx-auto">
+    <div class="bg-gradient-to-br from-blue-700 to-pink-600 text-white p-6 rounded-3xl shadow-xl">
+      <p class="text-xs font-black uppercase">Espace salarié</p>
+      <h2 class="text-2xl font-black" id="employeeWelcome">Bonjour</h2>
+      <p class="text-sm" id="employeeCompanyLbl"></p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-5">
+      <div class="bg-white p-5 rounded-2xl shadow border-t-4 border-red-600 space-y-3">
+        <h3 class="font-black"><i class="fa-solid fa-triangle-exclamation text-red-600"></i> Signaler un risque terrain</h3>
+        <select id="riskCategory" class="w-full p-3 border rounded-xl font-bold text-sm">
+          <option>Risques de chute de plain-pied</option>
+          <option>Risques de chute de hauteur</option>
+          <option>Risques routiers en mission</option>
+          <option>Risques liés à la manutention</option>
+          <option>Risques liés aux produits chimiques</option>
+          <option>Risques psychosociaux</option>
+          <option>Risque électrique</option>
+          <option>Incendie / Explosion</option>
+        </select>
+        <select id="riskLevel" class="w-full p-3 border rounded-xl font-bold text-sm">
+          <option>Critique 🔴</option><option>Modéré 🟠</option><option>Faible 🟢</option>
+        </select>
+        <select id="riskFrequency" class="w-full p-3 border rounded-xl font-bold text-sm">
+          <option>Ponctuelle</option><option>Régulière</option><option>Permanente</option>
+        </select>
+        <textarea id="riskDescription" rows="5" class="w-full p-3 border rounded-xl font-bold text-sm" placeholder="Décrire la situation dangereuse..."></textarea>
+        <button onclick="submitRiskReport()" class="w-full bg-red-600 text-white p-3 rounded-xl font-black pulse-red">Envoyer l'alerte au manager</button>
+      </div>
+
+      <div class="space-y-5">
+        <div class="bg-white p-5 rounded-2xl shadow border-t-4 border-green-600 space-y-3">
+          <h3 class="font-black"><i class="fa-solid fa-id-card text-green-600"></i> Passeport Prévention</h3>
+          <p class="text-xs text-slate-500">Bouton de test : enregistre un passeport validé et alimente le Centre RESTEV.</p>
+          <button onclick="validatePassport()" class="w-full bg-green-600 text-white p-3 rounded-xl font-black">Valider mon passeport test</button>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl shadow border-t-4 border-cyan-500">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="font-black"><i class="fa-solid fa-comments text-cyan-600"></i> Messages du responsable</h3>
+            <button onclick="loadEmployeeMessages()" class="text-xs bg-slate-100 px-3 py-2 rounded-xl font-bold">Actualiser</button>
           </div>
-          <p id="sig-status-mgr" class="text-[10px] text-slate-400 italic">Signature manager attendue.</p>
+          <div id="employeeMessagesList" class="space-y-3"><p class="text-xs text-slate-400 italic">Aucun message.</p></div>
         </div>
       </div>
-      <div class="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 no-print"><button onclick="prepareAndPrint()" class="w-full bg-slate-800 dark:bg-slate-700 text-white py-3.5 rounded-xl text-sm font-bold flex justify-center items-center gap-2"><i class="fa-solid fa-print"></i> PDF / Impression</button><button onclick="finalizeAndClose()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-3.5 rounded-xl text-sm font-extrabold flex justify-center items-center gap-2"><i class="fa-solid fa-door-open"></i> Clôturer & Quitter</button></div> 
-
-    </section> 
-
- 
-
-    <!-- RESOURCES --> 
-
-    <section id="scr-resources" class="screen max-w-md mx-auto w-full space-y-4 py-4"><button onclick="switchScreen('scr-employee')" class="text-xs bg-white dark:bg-slate-800 border px-4 py-2 rounded-xl font-bold flex items-center gap-1.5 shadow-sm"><i class="fa-solid fa-arrow-left"></i> Retour au portail</button><div class="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-3xl text-white shadow-xl"><h2 class="text-xl font-black tracking-tight mb-2">Fiches Prévention</h2><p class="text-emerald-50 text-xs leading-relaxed font-medium">Recommandations officielles adaptées aux risques du poste.</p></div><div id="resources-list" class="space-y-3 pb-8"></div></section> 
-
- 
-
-    <!-- REPORT --> 
-
-    <section id="scr-report" class="screen max-w-md mx-auto w-full bg-white dark:bg-slate-800 p-5 rounded-3xl border shadow-premium space-y-4"> 
-
-      <h3 class="text-base font-black dark:text-white flex items-center space-x-2"><i class="fa-solid fa-triangle-exclamation text-restev-magenta animate-pulse"></i><span>Signalement Incident</span></h3> 
-
-      <div class="p-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border text-center"><p id="geo-status" class="text-[11px] font-bold text-slate-500">Recherche GPS...</p></div> 
-
-      <div id="map" class="h-44 w-full rounded-2xl border shadow-inner bg-slate-100 z-0"></div> 
-
-      <div class="space-y-2"><label class="block text-xs font-black text-slate-700 dark:text-slate-300">Type de Risque :</label><select id="risk-category-select" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white"></select></div> 
-
-      <div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-black text-slate-700 dark:text-slate-300">Gravité :</label><select id="risk-level" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold text-red-600"><option value="Critique 🔴">Danger Grave</option><option value="Modéré 🟠">Anomalie Simple</option></select></div><div><label class="block text-xs font-black text-slate-700 dark:text-slate-300">Fréquence :</label><select id="risk-frequency" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white"><option value="Ponctuelle">Ponctuelle</option><option value="Régulière">Régulière</option><option value="Permanente">Permanente</option></select></div></div> 
-
-      <div><label class="block text-xs font-black text-slate-700 dark:text-slate-300">Commentaires :</label><textarea id="risk-description" rows="3" placeholder="Décrivez la situation..." class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white"></textarea></div> 
-
-      <div class="bg-blue-50 dark:bg-slate-900 border border-blue-100 dark:border-slate-700 p-3 rounded-xl"><p class="text-[10px] text-slate-600 dark:text-slate-300 leading-relaxed"><i class="fa-solid fa-user-shield text-restev-blue mr-1"></i>Ce signalement sert d’abord à traiter une situation terrain. Une copie anonymisée alimente uniquement les tendances collectives RESTEV.</p></div>
-      <button onclick="submitRiskReport()" class="w-full bg-gradient-to-r from-red-600 to-pink-600 text-white py-3.5 rounded-xl text-sm font-extrabold shadow-lg">Envoyer le Signalement</button> 
-
-      <button onclick="switchScreen('scr-employee')" class="w-full text-center text-xs text-slate-400 font-bold py-2">Annuler</button> 
-
-    </section> 
-
- 
-
-    <!-- EMPLOYEE MESSAGES --> 
-
-    <section id="scr-employee-messages" class="screen max-w-md mx-auto w-full space-y-4 py-4"> 
-
-      <button onclick="switchScreen('scr-employee')" class="text-xs bg-white dark:bg-slate-800 border px-4 py-2 rounded-xl font-bold flex items-center gap-1.5 shadow-sm"><i class="fa-solid fa-arrow-left"></i> Retour</button> 
-
-      <div class="bg-gradient-to-br from-cyan-500 to-blue-600 p-6 rounded-3xl text-white shadow-xl"><h2 class="text-xl font-black tracking-tight mb-2">Messages du responsable</h2><p class="text-cyan-50 text-xs leading-relaxed font-medium">Consultez les suites données à vos signalements prévention.</p></div> 
-
-      <div id="employee-messages-list" class="space-y-3"><p class="text-xs text-slate-400 italic text-center py-6">Aucun message pour le moment.</p></div> 
-
-    </section> 
-
-  </main> 
-
- 
-
-  <script> 
-
-   const SUPABASE_URL = "https://qahamxdomftqodziluci.supabase.co"; 
-
- 
-
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhaGFteGRvbWZ0cW9kemlsdWNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5MDI2NDEsImV4cCI6MjA5ODQ3ODY0MX0.VUjKmNc9UsOoBSNatZoOnxGExVQji9L05BiU5SlvnOc"; 
-
- 
-
- 
-
-const supabaseClient = window.supabase 
-
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
-
-  : null; 
-
- 
-
- 
-
-    const RISKS_DATABASE = [ 
-
-      { id: '1', name: 'Risques de chute de plain-pied', active: true, question: 'Sur un sol glissant ou encombré, quelle est la bonne attitude ?', options: ['Je cours pour passer vite', 'Je contourne et je signale la zone', "J'attends que quelqu'un d'autre nettoie"], answer: 1 }, 
-
-      { id: '2', name: 'Risques de chute de hauteur', active: true, question: 'Pour travailler à 3 mètres de haut de façon sécurisée, j’utilise :', options: ['Une chaise sur une table', 'Une échelle simple non fixée', 'Un échafaudage ou une PIRL adaptée'], answer: 2 }, 
-
-      { id: '3', name: 'Risques liés aux circulations internes', active: false, question: 'Dans une zone de circulation d’engins, qui a la priorité absolue ?', options: ['Le piéton sans gilet', 'L’engin ou le chariot élévateur', 'La voiture du directeur'], answer: 1 }, 
-
-      { id: '4', name: 'Risques routiers en mission', active: true, question: 'Avant de prendre la route pour une mission professionnelle, je dois :', options: ['Régler mon GPS en conduisant', 'Vérifier l’état de mon véhicule et arrimer les charges', 'Téléphoner en conduisant'], answer: 1 }, 
-
-      { id: '5', name: 'Risques liés à la charge physique de travail', active: true, question: 'Pour ramasser un colis lourd par terre, la méthode ergonomique est :', options: ['Fléchir les genoux en gardant le dos droit', 'Courber le dos sans plier les jambes', 'Tirer d’un coup sec avec les bras'], answer: 0 }, 
-
-      { id: '6', name: 'Risques liés à la manutention mécanique', active: false, question: 'Suis-je autorisé à conduire un transpalette électrique sans autorisation ?', options: ['Oui si c’est pour 2 minutes', 'Non, il faut une autorisation de conduite interne', 'Oui si je sais démarrer'], answer: 1 }, 
-
-      { id: '7', name: 'Risques liés aux produits chimiques', active: true, question: 'Que signifie une flamme sur un bidon ?', options: ['Produit inoffensif', 'Produit inflammable à éloigner du feu', 'Produit à base d’eau'], answer: 1 }, 
-
-      { id: '13', name: 'Risques d’incendie et d’explosion', active: true, question: 'En cas d’alarme incendie, quelle est l’action immédiate ?', options: ['Finir mon mail', 'Évacuer calmement vers le point de rassemblement', 'Prendre l’ascenseur'], answer: 1 }, 
-
-      { id: '14', name: 'Risques liés à l’électricité', active: true, question: 'Un câble électrique est dénudé au sol. Que faites-vous ?', options: ['Je mets du scotch classique', 'Je n’y touche pas, j’isole et je signale', 'Je passe dessus'], answer: 1 }, 
-
-      { id: '17', name: 'Risques psychosociaux', active: true, question: 'En situation d’isolement ou de stress intense, je peux :', options: ['Garder tout pour moi', 'En parler au manager, RH ou médecin du travail', 'Attendre que ça passe'], answer: 1 } 
-
-    ]; 
-
- 
-
-    const VENDEE_SECTORS = { 
-
-      agro: { name: 'Industrie Agroalimentaire', risks: ['1','5','6','7'] }, 
-
-      wood: { name: 'Menuiserie, Mobilier & Ossature Bois', risks: ['1','3','5','13'] }, 
-
-      outdoor: { name: 'Hôtellerie de Plein Air & Campings', risks: ['1','4','14','17'] }, 
-
-      agri: { name: 'Agriculture, Maraîchage & Élevage', risks: ['1','5','6','7'] }, 
-
-      btp: { name: 'Bâtiment et Travaux Publics', risks: ['1','2','5','14'] }, 
-
-      log: { name: 'Transport, Logistique', risks: ['3','4','5','6'] }, 
-
-      metal: { name: 'Métallurgie, Mécanique industrielle', risks: ['3','6','7','13'] }, 
-
-      retail: { name: 'Grande Distribution & Commerces', risks: ['1','3','5','17'] }, 
-
-      health: { name: 'Santé, Services à la personne', risks: ['1','4','5','17'] }, 
-
-      tertiaire: { name: 'Tertiaire & Bureaux', risks: ['1','5','17'] } 
-
-    }; 
-
- 
-
-    const SECTOR_QCM_DATABASE = {
-      "btp": [
-            {
-                  "id": "btp-1",
-                  "sector": "BTP",
-                  "name": "BTP - Travail en hauteur",
-                  "question": "Sur un chantier, avant d’utiliser une plateforme ou un échafaudage, je dois :",
-                  "options": [
-                        "Monter rapidement si le travail dure peu",
-                        "Vérifier la stabilité, les protections collectives et l’autorisation d’utilisation",
-                        "Retirer le garde-corps pour gagner de la place"
-                  ],
-                  "answer": 1
-            },
-            {
-                  "id": "btp-2",
-                  "sector": "BTP",
-                  "name": "BTP - Coactivité",
-                  "question": "En cas de coactivité avec une autre entreprise, la bonne attitude est :",
-                  "options": [
-                        "Improviser sur place",
-                        "Respecter les zones, le balisage et les consignes de coordination",
-                        "Passer dans la zone interdite si je fais vite"
-                  ],
-                  "answer": 1
-            },
-            {
-                  "id": "btp-3",
-                  "sector": "BTP",
-                  "name": "BTP - Électricité chantier",
-                  "question": "Un câble ou coffret électrique semble endommagé sur chantier. Je dois :",
-                  "options": [
-                        "Le réparer moi-même sans habilitation",
-                        "Ne pas toucher, baliser et alerter le responsable",
-                        "Continuer à travailler autour"
-                  ],
-                  "answer": 1
-            }
-      ],
-      "commerce": [
-            {
-                  "id": "com-1",
-                  "sector": "Commerce",
-                  "name": "Commerce - Manutention rayon",
-                  "question": "Lors de la mise en rayon, la priorité est de :",
-                  "options": [
-                        "Porter le plus possible en une seule fois",
-                        "Utiliser les aides disponibles et éviter les torsions répétées",
-                        "Laisser les cartons dans les allées"
-                  ],
-                  "answer": 1
-            },
-            {
-                  "id": "com-2",
-                  "sector": "Commerce",
-                  "name": "Commerce - Chutes",
-                  "question": "Un carton ou un liquide encombre une allée client. Je dois :",
-                  "options": [
-                        "Attendre la fermeture",
-                        "Sécuriser ou signaler immédiatement la zone",
-                        "Le pousser discrètement sur le côté"
-                  ],
-                  "answer": 1
-            },
-            {
-                  "id": "com-3",
-                  "sector": "Commerce",
-                  "name": "Commerce - Agressivité client",
-                  "question": "Face à un client agressif, je dois en priorité :",
-                  "options": [
-                        "Répondre sur le même ton",
-                        "Garder une distance, alerter et appliquer la procédure interne",
-                        "Rester seul pour régler la situation"
-                  ],
-                  "answer": 1
-            }
-      ],
-      "industrie": [
-            {
-                  "id": "ind-1",
-                  "sector": "Industrie",
-                  "name": "Industrie - Machine",
-                  "question": "Avant d’intervenir sur une machine en fonctionnement anormal, je dois :",
-                  "options": [
-                        "Passer la main pour débloquer rapidement",
-                        "Arrêter, sécuriser et respecter la procédure de consignation si nécessaire",
-                        "Demander à un collègue de surveiller seulement"
-                  ],
-                  "answer": 1
-            },
-            {
-                  "id": "ind-2",
-                  "sector": "Industrie",
-                  "name": "Industrie - Circulation engins",
-                  "question": "Dans une zone avec chariots ou engins, je dois :",
-                  "options": [
-                        "Traverser sans regarder si j’ai priorité",
-                        "Respecter les cheminements piétons et rester visible",
-                        "Marcher derrière un engin en manœuvre"
-                  ],
-                  "answer": 1
-            },
-            {
-                  "id": "ind-3",
-                  "sector": "Industrie",
-                  "name": "Industrie - Produits chimiques",
-                  "question": "Avant d’utiliser un produit chimique inconnu, je dois :",
-                  "options": [
-                        "Sentir le produit pour l’identifier",
-                        "Lire l’étiquette/FDS et appliquer les protections prévues",
-                        "Le mélanger avec un autre produit pour tester"
-                  ],
-                  "answer": 1
-            }
-      ],
-      "logistique": [
-            {
-                  "id": "log-1",
-                  "sector": "Transport / Logistique",
-                  "name": "Logistique - Quai",
-                  "question": "Sur un quai de chargement, le risque principal à surveiller est :",
-                  "options": [
-                        "La couleur des palettes",
-                        "La chute de hauteur, l’écrasement et la circulation des engins",
-                        "Le rangement administratif"
-                  ],
-                  "answer": 1
-            },
-            {
-                  "id": "log-2",
-                  "sector": "Transport / Logistique",
-                  "name": "Logistique - Arrimage",
-                  "question": "Avant un départ en livraison, je dois vérifier :",
-                  "options": [
-                        "Uniquement le GPS",
-                        "L’arrimage, la charge et l’état du véhicule",
-                        "Seulement le niveau de carburant"
-                  ],
-                  "answer": 1
-            },
-            {
-                  "id": "log-3",
-                  "sector": "Transport / Logistique",
-                  "name": "Logistique - Chariot",
-                  "question": "Puis-je conduire un chariot sans autorisation interne ?",
-                  "options": [
-                        "Oui si je sais conduire",
-                        "Non, une autorisation et une formation adaptées sont nécessaires",
-                        "Oui en dépannage uniquement"
-                  ],
-                  "answer": 1
-            }
-      ],
-      "sante": [
-            {
-                  "id": "san-1",
-                  "sector": "Aide à domicile / Santé",
-                  "name": "Santé - Manutention personne",
-                  "question": "Lors de l’aide au transfert d’une personne, je dois :",
-                  "options": [
-                        "Forcer avec le dos",
-                        "Utiliser les aides techniques et demander de l’aide si besoin",
-                        "Agir seul même si la situation est instable"
-                  ],
-                  "answer": 1
-            },
-            {
-                  "id": "san-2",
-                  "sector": "Aide à domicile / Santé",
-                  "name": "Santé - Risque biologique",
-                  "question": "En présence d’un risque de contact avec du sang ou des liquides biologiques, je dois :",
-                  "options": [
-                        "Mettre les protections prévues et respecter l’hygiène des mains",
-                        "Continuer sans gant si c’est rapide",
-                        "Nettoyer uniquement à l’eau"
-                  ],
-                  "answer": 0
-            },
-            {
-                  "id": "san-3",
-                  "sector": "Aide à domicile / Santé",
-                  "name": "Santé - Isolement",
-                  "question": "En intervention isolée chez un bénéficiaire, je dois :",
-                  "options": [
-                        "Ne prévenir personne de mon planning",
-                        "Respecter les procédures de contact/alerte prévues",
-                        "Improviser en cas de difficulté"
-                  ],
-                  "answer": 1
-            }
-      ],
-      "agriculture": [
-            {
-                  "id": "agr-1",
-                  "sector": "Agriculture",
-                  "name": "Agriculture - Machines",
-                  "question": "Avant d’intervenir sur une machine agricole, je dois :",
-                  "options": [
-                        "Laisser le moteur tourner au ralenti",
-                        "Arrêter, sécuriser et éviter toute remise en marche intempestive",
-                        "Passer rapidement la main dans l’organe mobile"
-                  ],
-                  "answer": 1
-            },
-            {
-                  "id": "agr-2",
-                  "sector": "Agriculture",
-                  "name": "Agriculture - Produits phytosanitaires",
-                  "question": "Avant d’utiliser un produit phytosanitaire, je dois :",
-                  "options": [
-                        "Lire l’étiquette et porter les protections prévues",
-                        "Me fier uniquement à l’habitude",
-                        "Mélanger les produits sans consigne"
-                  ],
-                  "answer": 0
-            },
-            {
-                  "id": "agr-3",
-                  "sector": "Agriculture",
-                  "name": "Agriculture - Chaleur",
-                  "question": "En période de forte chaleur, je dois :",
-                  "options": [
-                        "Attendre d’avoir très soif",
-                        "M’hydrater, adapter le rythme et signaler tout malaise",
-                        "Travailler plus vite pour finir tôt"
-                  ],
-                  "answer": 1
-            }
-      ],
-      "tertiaire": [
-            {
-                  "id": "ter-1",
-                  "sector": "Tertiaire",
-                  "name": "Tertiaire - Écran",
-                  "question": "Pour limiter les troubles liés au travail sur écran, je dois :",
-                  "options": [
-                        "Garder toujours la même posture",
-                        "Régler mon poste, varier les postures et faire des pauses visuelles",
-                        "Travailler dans le noir pour mieux voir l’écran"
-                  ],
-                  "answer": 1
-            },
-            {
-                  "id": "ter-2",
-                  "sector": "Tertiaire",
-                  "name": "Tertiaire - RPS",
-                  "question": "En cas de surcharge ou de stress durable, je peux :",
-                  "options": [
-                        "Garder la situation pour moi",
-                        "En parler au manager/RH/médecin du travail ou utiliser les canaux d’alerte",
-                        "Attendre que cela passe plusieurs mois"
-                  ],
-                  "answer": 1
-            },
-            {
-                  "id": "ter-3",
-                  "sector": "Tertiaire",
-                  "name": "Tertiaire - Chutes",
-                  "question": "Dans un bureau, le risque de chute peut être réduit en :",
-                  "options": [
-                        "Laissant les câbles au sol",
-                        "Rangeant les passages et signalant les obstacles",
-                        "Courant dans les escaliers"
-                  ],
-                  "answer": 1
-            }
-      ],
-      "hotellerie": [
-            {
-                  "id": "hot-1",
-                  "sector": "Hôtellerie / Restauration",
-                  "name": "Hôtellerie - Coupure",
-                  "question": "En cuisine, pour limiter les coupures, je dois :",
-                  "options": [
-                        "Utiliser un couteau abîmé",
-                        "Utiliser l’outil adapté, stable et rangé après usage",
-                        "Couper en direction de la main"
-                  ],
-                  "answer": 1
-            },
-            {
-                  "id": "hot-2",
-                  "sector": "Hôtellerie / Restauration",
-                  "name": "Hôtellerie - Brûlure",
-                  "question": "Face au risque de brûlure, je dois :",
-                  "options": [
-                        "Manipuler les plats chauds sans protection",
-                        "Utiliser les protections et annoncer les déplacements avec éléments chauds",
-                        "Poser les plats chauds au bord des plans"
-                  ],
-                  "answer": 1
-            },
-            {
-                  "id": "hot-3",
-                  "sector": "Hôtellerie / Restauration",
-                  "name": "Hôtellerie - Sol glissant",
-                  "question": "Un sol mouillé en salle ou cuisine doit être :",
-                  "options": [
-                        "Ignoré si le service est chargé",
-                        "Signalé, nettoyé ou balisé immédiatement",
-                        "Recouvert avec un carton"
-                  ],
-                  "answer": 1
-            }
-      ],
-      "autre": [
-            {
-                  "id": "aut-1",
-                  "sector": "Autre",
-                  "name": "Général - Signalement",
-                  "question": "Si je constate une situation dangereuse, je dois :",
-                  "options": [
-                        "La garder pour moi",
-                        "La signaler rapidement par le canal prévu",
-                        "Attendre un accident pour agir"
-                  ],
-                  "answer": 1
-            },
-            {
-                  "id": "aut-2",
-                  "sector": "Autre",
-                  "name": "Général - Consignes",
-                  "question": "Une consigne de sécurité que je ne comprends pas doit être :",
-                  "options": [
-                        "Ignorée",
-                        "Clarifiée auprès du responsable avant d’agir",
-                        "Remplacée par mon habitude"
-                  ],
-                  "answer": 1
-            },
-            {
-                  "id": "aut-3",
-                  "sector": "Autre",
-                  "name": "Général - EPI",
-                  "question": "Les EPI remis doivent être :",
-                  "options": [
-                        "Portés uniquement lors des visites",
-                        "Utilisés selon les consignes et signalés s’ils sont abîmés",
-                        "Échangés sans prévenir"
-                  ],
-                  "answer": 1
-            }
-      ]
-};
-    const modulesTuto = [ 
-
-      { titre: 'Aide à domicile', url: 'https://ressources.inrs.fr/tutoprev/content/Aide_personne_domicile_etablissement/story.html' }, 
-
-      { titre: 'BTP', url: 'https://ressources.inrs.fr/tutoprev/content/BTP/story.html' }, 
-
-      { titre: 'Travail de bureau', url: 'https://ressources.inrs.fr/tutoprev/content/Travail-de-bureau/story.html' }, 
-
-      { titre: 'Commerce', url: 'https://ressources.inrs.fr/tutoprev/content/Commerce/story.html' }, 
-
-      { titre: 'Hôtellerie/Restauration', url: 'https://ressources.inrs.fr/tutoprev/content/Hotellerie-Restauration/story.html' }, 
-
-      { titre: 'Logistique', url: 'https://ressources.inrs.fr/tutoprev/content/Logistique/story.html' }, 
-
-      { titre: 'Maintenance industrielle', url: 'https://ressources.inrs.fr/tutoprev/content/Maintenance-industrielle/story.html' }, 
-
-      { titre: 'Métiers de la beauté', url: 'https://ressources.inrs.fr/tutoprev/content/Metiers-de-la-beaute/story.html' }, 
-
-      { titre: 'Métiers de la propreté', url: 'https://ressources.inrs.fr/tutoprev/content/Metiers-de-la-proprete/story.html' }, 
-
-      { titre: 'Énergie du bâtiment', url: 'https://ressources.inrs.fr/tutoprev/content/Metiers-de-l-energie-du-batiment/story.html' }, 
-
-      { titre: 'Métiers du bois', url: 'https://ressources.inrs.fr/tutoprev/content/Metiers-du-bois/story.html' }, 
-
-      { titre: 'Métiers de bouche', url: 'https://ressources.inrs.fr/tutoprev/content/Metiers-de-bouche/story.html' }, 
-
-      { titre: 'Réparation automobile', url: 'https://ressources.inrs.fr/tutoprev/content/Reparation-automobile/story.html' }, 
-
-      { titre: 'Transport routier', url: 'https://ressources.inrs.fr/tutoprev/content/Transport-routier-de-marchandises/story.html' } 
-
-    ]; 
-
- 
-
-    const EPI_LIST = [ 
-
-      ['epi-casque','Casque de protection','Casque'], ['epi-gants','Gants de protection','Gants'], ['epi-chaussures','Chaussures de sécurité','Chaussures'], ['epi-lunettes','Lunettes de protection','Lunettes'], ['epi-gilet','Gilet haute visibilité','Gilet HV'], ['epi-auditif','Protection auditive','Protection auditive'], ['epi-masque','Masque / protection respiratoire','Masque'], ['epi-harnais','Harnais antichute','Harnais'] 
-
-    ]; 
-
- 
-
-    const OFFICIAL_RESOURCES = { 
-
-      '1': { org:'INRS', title:'Prévenir les chutes de plain-pied', link:'https://www.inrs.fr/risques/chutes-de-plain-pied/ce-qu-il-faut-retenir.html', color:'bg-blue-50 text-blue-600 border-blue-200' }, 
-
-      '2': { org:'OPPBTP', title:'Travaux en hauteur : règles et matériels', link:'https://www.preventionbtp.fr/', color:'bg-amber-50 text-amber-600 border-amber-200' }, 
-
-      '3': { org:'INRS', title:'Circulation interne et signalisation', link:'https://www.inrs.fr/risques/circulation-entreprise/ce-qu-il-faut-retenir.html', color:'bg-slate-100 text-slate-700 border-slate-300' }, 
-
-      '4': { org:'CARSAT', title:'Prévention du risque routier', link:'https://www.carsat-pl.fr/entreprises/prevenir-vos-risques-professionnels.html', color:'bg-emerald-50 text-emerald-600 border-emerald-200' }, 
-
-      '5': { org:'AMELI', title:'Agir contre les TMS', link:'https://www.ameli.fr/entreprise/sante-travail/risques/troubles-musculosquelettiques-tms', color:'bg-teal-50 text-teal-600 border-teal-200' }, 
-
-      '6': { org:'INRS', title:'Manutention mécanique', link:'https://www.inrs.fr/risques/manutention-mecanique/ce-qu-il-faut-retenir.html', color:'bg-blue-50 text-blue-600 border-blue-200' }, 
-
-      '7': { org:'INRS', title:'Produits chimiques', link:'https://www.inrs.fr/risques/chimiques/ce-qu-il-faut-retenir.html', color:'bg-purple-50 text-purple-600 border-purple-200' }, 
-
-      '13': { org:'INRS', title:'Incendie et explosion', link:'https://www.inrs.fr/risques/incendie-lieu-travail/ce-qu-il-faut-retenir.html', color:'bg-red-50 text-red-600 border-red-200' }, 
-
-      '14': { org:'INRS', title:'Risque électrique', link:'https://www.inrs.fr/risques/electriques/ce-qu-il-faut-retenir.html', color:'bg-blue-50 text-blue-600 border-blue-200' }, 
-
-      '17': { org:'INRS', title:'Risques psychosociaux', link:'https://www.inrs.fr/risques/psychosociaux/ce-qu-il-faut-retenir.html', color:'bg-pink-50 text-pink-600 border-pink-200' } 
-
-    }; 
-
- 
-
-    let currentEmployeeSession = null; 
-
-    let mapInstance = null; 
-
-    let soundMuted = false; 
-
-    let qcmActiveQuestions = []; 
-
-    let qcmCurrentIndex = 0; 
-
-    let qcmScore = 0; 
-
-    let selectedEPIList = []; 
-
-    let currentTutoUrl = ''; 
-
-    let managerPollingInterval = null; 
-    let alertAudioCtx = null;
-let managerRealtimeChannel = null;
-let lastReportAlertAt = 0;
-let signaturePads = {};
-let managerNotificationsEnabled = false;
-let restevStatsChart = null;
-let managerSector = 'Non renseigné';
-let managerCompanySize = 'Non renseigné';
-
- 
-
-    document.addEventListener('DOMContentLoaded', () => { 
-
-      populateSectorDropdown(); 
-
-      renderStudioRisks(); 
-
-      populateRiskSelectors(); 
-
-      renderEPIGrid(); 
-
-      generateTrainingMenu(); 
-
-      initLeafletMap(); 
-
-      initChart(); 
-
-      checkUrlParameters();
-      initSignaturePads(); 
-
-    }); 
-
- 
-
-    window.addEventListener('resize', adjustTutoViewer); 
-
-    window.addEventListener('orientationchange', () => setTimeout(adjustTutoViewer, 300)); 
-
- 
-
-    function toggleDarkMode(){ document.documentElement.classList.toggle('dark'); } 
-
-    function showToast(text){ const toast=document.getElementById('toast'); document.getElementById('toast-text').innerText=text; toast.classList.remove('translate-y-20','opacity-0'); setTimeout(()=>toast.classList.add('translate-y-20','opacity-0'),3500); } 
-function unlockAlertSound() {
-  try {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) return;
-
-    if (!alertAudioCtx) {
-      alertAudioCtx = new AudioContext();
-    }
-
-    if (alertAudioCtx.state === 'suspended') {
-      alertAudioCtx.resume();
-    }
-  } catch (e) {
-    console.warn('Son non disponible :', e);
-  }
-}
-
-function playAlertSound() {
-  try {
-    if (soundMuted) return;
-
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) return;
-
-    if (!alertAudioCtx) {
-      alertAudioCtx = new AudioContext();
-    }
-
-    if (alertAudioCtx.state === 'suspended') {
-      alertAudioCtx.resume();
-    }
-
-    const now = alertAudioCtx.currentTime;
-
-    const osc = alertAudioCtx.createOscillator();
-    const gain = alertAudioCtx.createGain();
-
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(880, now);
-
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.25, now + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
-
-    osc.connect(gain);
-    gain.connect(alertAudioCtx.destination);
-
-    osc.start(now);
-    osc.stop(now + 0.38);
-  } catch (e) {
-    console.warn('Erreur alerte sonore :', e);
-  }
-}
-
-function vibrateAlert() {
-  try {
-    if ('vibrate' in navigator) {
-      navigator.vibrate([250, 120, 250, 120, 400]);
-    }
-  } catch (e) {
-    console.warn('Vibration non disponible :', e);
-  }
-}
-
-function triggerNewReportAlert(report) {
-  const now = Date.now();
-
-  // Anti-spam : évite 10 sons si plusieurs événements arrivent ensemble.
-  if (now - lastReportAlertAt < 1500) return;
-  lastReportAlertAt = now;
-
-  playAlertSound();
-  vibrateAlert();
-
-  const employee = report?.employee_name || 'Un salarié';
-  const category = report?.category || 'un danger';
-
-  showToast(`Nouveau signalement : ${employee} - ${category}`);
-}
-    function toggleAlertSound(){
-      soundMuted = !soundMuted;
-      const btn=document.getElementById('btn-alert-sound');
-      if(btn){
-        btn.innerHTML = soundMuted ? '<i class="fa-solid fa-volume-xmark mr-1"></i> Son OFF' : '<i class="fa-solid fa-volume-high mr-1"></i> Son ON';
-      }
-      if(!soundMuted) unlockAlertSound();
-      showToast(soundMuted ? 'Alertes sonores désactivées.' : 'Alertes sonores activées.');
-    }
-
-    function switchScreen(screenId){
-      document.querySelectorAll('.screen').forEach(s=>{
-        s.classList.remove('active');
-        s.style.display='none';
-      });
-      const t=document.getElementById(screenId);
-      if(t){
-        t.classList.add('active');
-        t.style.display='block';
-        window.scrollTo({top:0,behavior:'smooth'});
-        if(screenId==='scr-report') setTimeout(fixMapSize,250);
-        if(screenId==='scr-qcm-success') setTimeout(initSignaturePads,250);
-        if(screenId==='scr-direction') setTimeout(loadRestevStats,250);
-      }
-    } 
-
- function startManagerRealtime() {
-  if (!supabaseClient) {
-    showToast('Supabase non chargé.');
-    return;
-  }
-
-  const companyCode = document.getElementById('lbl-manager-comp-name')?.innerText?.trim();
-
-  if (!companyCode) {
-    return;
-  }
-
-  // Sécurité : on coupe l'ancien abonnement s'il existe.
-  if (managerRealtimeChannel) {
-    supabaseClient.removeChannel(managerRealtimeChannel);
-    managerRealtimeChannel = null;
-  }
-
-  managerRealtimeChannel = supabaseClient
-    .channel(`prevention_reports_${companyCode}`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'prevention_reports',
-        filter: `company_code=eq.${companyCode}`
-      },
-      payload => {
-        console.log('Nouveau signalement reçu en temps réel :', payload.new);
-
-        triggerNewReportAlert(payload.new);
-        showBrowserNotification(payload.new);
-        loadManagerReports();
-      }
-    )
-    .subscribe(status => {
-      console.log('Realtime Supabase :', status);
-
-      if (status === 'SUBSCRIBED') {
-        showToast('Alertes temps réel activées.');
-      }
-    });
-}
-
-    function checkUrlParameters(){
-      const p=new URLSearchParams(window.location.search);
-      const emp=p.get('emp');
-      const comp=p.get('comp');
-      const epis=p.get('epis');
-      const sector=p.get('sector') || p.get('secteur');
-      if(epis){
-        try{ selectedEPIList=JSON.parse(decodeURIComponent(epis)); if(!Array.isArray(selectedEPIList)) selectedEPIList=[]; }
-        catch(e){ console.warn('EPI non lisibles depuis le QR Code :', e); selectedEPIList=[]; }
-      }
-      if(emp && comp){
-        currentEmployeeSession={name:emp, company:comp, epis:selectedEPIList, sector: sector || 'Autre'};
-        document.getElementById('lbl-emp-welcome').innerText=`Bonjour, ${emp}`;
-        document.getElementById('lbl-emp-company').innerText=`Établissement : ${comp}${sector ? ' | Secteur : '+sector : ''}`;
-        switchScreen('scr-employee');
-        showToast('Passeport Prévention activé via QR Code !');
-      }
-    } 
-
- 
-
-    function createNewCompany(){ const name=document.getElementById('new-company-name').value.trim(); if(!name) return showToast("Veuillez saisir un nom d'établissement"); const code='RSTV-'+name.substring(0,4).toUpperCase().replace(/[^A-Z0-9]/g,'')+'-'+Math.floor(1000+Math.random()*9000); document.getElementById('generated-code-box').classList.remove('hidden'); document.getElementById('lbl-generated-code').innerText=code; document.getElementById('manager-company-code').value=code; showToast('Code généré et inscrit dans la console !'); } 
-
-    function copyGeneratedCode(){ const code=document.getElementById('lbl-generated-code').innerText; navigator.clipboard?.writeText(code); showToast('Code copié !'); } 
-
- 
-
-    function handleManagerLogin() {
-  const code = document.getElementById('manager-company-code').value.trim().toUpperCase();
-
-  if (!code) {
-    return showToast("Veuillez saisir un code établissement");
-  }
-
-  // Débloque le son grâce au clic utilisateur sur le bouton de connexion.
-  unlockAlertSound();
-
-  document.getElementById('lbl-manager-comp-name').innerText = code;
-  showToast("Identification validée.");
-  switchScreen('scr-manager');
-
-  // Chargement initial.
-  loadManagerReports();
-
-  // Alertes quasi instantanées.
-  startManagerRealtime();
-  loadPassportRegistry();
-}
-    function quitManager(){
-      if(managerPollingInterval) clearInterval(managerPollingInterval);
-      managerPollingInterval=null;
-      if(managerRealtimeChannel && supabaseClient){
-        supabaseClient.removeChannel(managerRealtimeChannel);
-        managerRealtimeChannel=null;
-      }
-      switchScreen('scr-home');
-    } 
-
- 
-
-    function populateSectorDropdown(){ const select=document.getElementById('manager-sector-select'); if(!select) return; select.innerHTML='<option value="">-- Sélectionner un profil métier --</option>'; Object.entries(VENDEE_SECTORS).forEach(([key,sector])=>{ const opt=document.createElement('option'); opt.value=key; opt.innerText=sector.name; select.appendChild(opt); }); } 
-
-    function applySectorPreset(){ const key=document.getElementById('manager-sector-select').value; if(!key) return; const ids=VENDEE_SECTORS[key].risks; RISKS_DATABASE.forEach(r=>r.active=ids.includes(r.id)); renderStudioRisks(); populateRiskSelectors(); showToast('Matrice pré-remplie : '+VENDEE_SECTORS[key].name); } 
-
-    function renderStudioRisks(){ const c=document.getElementById('studio-rules-list'); if(!c) return; c.innerHTML=''; RISKS_DATABASE.forEach((risk,index)=>{ const row=document.createElement('div'); row.className='flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border hover:border-blue-300'; row.innerHTML=`<label class="flex items-center gap-3 cursor-pointer flex-1"><input type="checkbox" ${risk.active?'checked':''} onchange="toggleRiskItem(${index})" class="w-4 h-4 rounded text-restev-blue"><span class="text-xs font-bold text-slate-700 dark:text-slate-300">${escapeHtml(risk.name)}</span></label><span class="text-[10px] font-black ${risk.active?'text-emerald-500':'text-slate-400'} uppercase">${risk.active?'Concerné':'Non concerné'}</span>`; c.appendChild(row); }); } 
-
-    function toggleRiskItem(index){ RISKS_DATABASE[index].active=!RISKS_DATABASE[index].active; renderStudioRisks(); populateRiskSelectors(); } 
-
-    function openStudio(){ renderStudioRisks(); switchScreen('scr-studio'); } 
-
-    function saveCustomQCM(){ showToast('Matrice DUERP mise à jour.'); switchScreen('scr-manager'); } 
-
-    function populateRiskSelectors(){ const select=document.getElementById('risk-category-select'); if(!select) return; select.innerHTML=''; RISKS_DATABASE.filter(r=>r.active).forEach(r=>{ const opt=document.createElement('option'); opt.value=r.name; opt.innerText=r.name; select.appendChild(opt); }); } 
-
- 
-
-    function renderEPIGrid(){ const grid=document.getElementById('epi-grid'); if(!grid) return; grid.innerHTML=''; EPI_LIST.forEach(([id,value,label])=>{ const lab=document.createElement('label'); lab.className='flex items-center gap-2 bg-slate-50 dark:bg-slate-900 p-2 rounded-lg text-[10px] font-bold dark:text-white'; lab.innerHTML=`<input type="checkbox" id="${id}" value="${escapeHtml(value)}" class="text-emerald-500"> ${escapeHtml(label)}`; grid.appendChild(lab); }); } 
-
-    function getSelectedEPI(){ return EPI_LIST.map(([id])=>document.getElementById(id)).filter(i=>i && i.checked).map(i=>i.value); } 
-
-    function saveEPIKit(){ selectedEPIList=getSelectedEPI(); showToast(selectedEPIList.length ? 'Dotation EPI enregistrée au dossier salarié.' : 'Aucun EPI sélectionné.'); } 
-
-    function updateCertificateEPI(){
-      const box=document.getElementById('cert-epi-list');
-      if(!box) return;
-      const checkedEPI=getSelectedEPI();
-      if(checkedEPI.length) selectedEPIList=checkedEPI;
-      else if(currentEmployeeSession && Array.isArray(currentEmployeeSession.epis) && currentEmployeeSession.epis.length) selectedEPIList=currentEmployeeSession.epis;
-      box.innerHTML = selectedEPIList.length ? `<ul class="list-disc list-inside space-y-1">${selectedEPIList.map(e=>`<li>${escapeHtml(e)}</li>`).join('')}</ul>` : '<span class="italic text-slate-400">Aucun EPI déclaré comme remis.</span>';
-    } 
-
- 
-
-    function generateEmployeeAccess(){
-      const name=document.getElementById('reg-emp-name').value.trim();
-      const code=document.getElementById('lbl-manager-comp-name').innerText.trim();
-      if(!name) return showToast('Veuillez saisir un nom et un prénom !');
-      if(!code) return showToast('Code établissement manquant.');
-      selectedEPIList=getSelectedEPI();
-      const baseUrl=window.location.origin+window.location.pathname;
-      const episParam=encodeURIComponent(JSON.stringify(selectedEPIList));
-      const sectorLabel = managerSector || document.getElementById('manager-login-sector')?.value || 'Autre';
-      const url=`${baseUrl}?emp=${encodeURIComponent(name)}&comp=${encodeURIComponent(code)}&epis=${episParam}&sector=${encodeURIComponent(sectorLabel)}`;
-      QRCode.toCanvas(document.getElementById('qr-canvas'), url, {width:180, margin:2, color:{dark:'#245ca6', light:'#ffffff'}}, err=>{
-        if(err){ console.error(err); showToast('Erreur QR Code.'); }
-        else { document.getElementById('qr-area').classList.remove('hidden'); showToast(selectedEPIList.length ? 'QR salarié généré avec les EPI.' : 'QR salarié généré sans EPI.'); }
-      });
-    } 
-
- 
-
-    async function submitRiskReport(){ 
-
-      if(!supabaseClient) return showToast('Supabase non chargé. Vérifiez internet.'); 
-
-      const category=document.getElementById('risk-category-select').value; 
-
-      const desc=document.getElementById('risk-description').value.trim(); 
-
-      const lvl=document.getElementById('risk-level').value; 
-
-      const freq=document.getElementById('risk-frequency').value; 
-
-      if(!desc) return showToast('Veuillez saisir une description du danger.'); 
-
-      const employeeName=currentEmployeeSession ? currentEmployeeSession.name : 'Salarié terrain'; 
-
-      const companyCode=currentEmployeeSession ? currentEmployeeSession.company : (document.getElementById('lbl-manager-comp-name')?.innerText || 'Établissement non renseigné'); 
-
-      const { error } = await supabaseClient.from('prevention_reports').insert([{ company_code: companyCode, employee_name: employeeName, category, level: lvl, frequency: freq, description: desc, status:'Nouveau' }]); 
-
-      if(error){ console.error('Erreur Supabase insertion:', error); return showToast('Erreur Supabase : '+error.message); } 
-
-      document.getElementById('risk-description').value=''; 
-
-      showToast('Signalement envoyé au responsable.'); 
-
-      switchScreen('scr-employee'); 
-
-    } 
-
- 
-
-    function startManagerPolling(){ loadManagerReports(); if(managerPollingInterval) clearInterval(managerPollingInterval); managerPollingInterval=setInterval(loadManagerReports,30000); } 
-
-    async function loadManagerReports() { 
-
-  if (!supabaseClient) { 
-
-    return showToast('Supabase non chargé.'); 
-
-  } 
-
- 
-
-  const companyCode = document.getElementById('lbl-manager-comp-name')?.innerText?.trim(); 
-
- 
-
-  if (!companyCode) { 
-
-    return; 
-
-  } 
-
- 
-
-  const { data, error } = await supabaseClient 
-
-    .from('prevention_reports') 
-
-    .select('id,company_code,employee_name,category,level,frequency,description,status,manager_response,corrective_action,created_at') 
-
-    .eq('company_code', companyCode) 
-
-    .order('created_at', { ascending: false }) 
-
-    .limit(20); 
-
- 
-
-  if (error) { 
-
-    console.error('Erreur chargement signalements:', error); 
-
-    return showToast('Erreur Supabase : ' + error.message); 
-
-  } 
-
- 
-
-  renderManagerReports(data || []); 
-
-} 
-
-    function renderManagerReports(reports){ const c=document.getElementById('manager-risk-box'); if(!c) return; c.innerHTML=''; if(!reports.length){ c.innerHTML='<p class="text-xs text-slate-400 italic text-center py-8">Aucun danger signalé pour le moment.</p>'; return; } reports.forEach(r=>{ const card=document.createElement('div'); card.className='p-3 bg-red-50 dark:bg-slate-900 border border-red-200 dark:border-red-800 rounded-xl space-y-2 text-xs'; card.innerHTML=`<div class="flex justify-between items-start gap-2"><div><p class="font-black text-slate-900 dark:text-white">${escapeHtml(r.category || 'Signalement')}</p><p class="text-[10px] text-slate-400">Par ${escapeHtml(r.employee_name || '')} - ${new Date(r.created_at).toLocaleString('fr-FR')}</p></div><span class="text-[10px] font-black px-2 py-1 rounded bg-white dark:bg-slate-800 text-red-600">${escapeHtml(r.level || 'Non défini')}</span></div><p class="text-slate-600 dark:text-slate-300 font-medium">${escapeHtml(r.description || '')}</p><select onchange="updateReportStatus('${r.id}', this.value)" class="w-full p-2 rounded-lg border text-xs font-bold dark:bg-slate-900 dark:text-white"><option value="Nouveau" ${r.status==='Nouveau'?'selected':''}>Nouveau</option><option value="Vu par le responsable" ${r.status==='Vu par le responsable'?'selected':''}>Vu par le responsable</option><option value="En cours de traitement" ${r.status==='En cours de traitement'?'selected':''}>En cours de traitement</option><option value="Traité" ${r.status==='Traité'?'selected':''}>Traité</option></select><textarea id="response-${r.id}" rows="2" placeholder="Réponse au salarié..." class="w-full p-2 rounded-lg border text-xs dark:bg-slate-900 dark:text-white">${escapeHtml(r.manager_response || '')}</textarea><textarea id="action-${r.id}" rows="2" placeholder="Action corrective..." class="w-full p-2 rounded-lg border text-xs dark:bg-slate-900 dark:text-white">${escapeHtml(r.corrective_action || '')}</textarea><button onclick="sendManagerResponse('${r.id}')" class="w-full bg-restev-blue text-white py-2 rounded-lg text-[10px] font-black uppercase">Répondre / enregistrer</button>`; c.appendChild(card); }); } 
-
-    async function sendManagerResponse(id){ const response=document.getElementById(`response-${id}`).value.trim(); const action=document.getElementById(`action-${id}`).value.trim(); const {error}=await supabaseClient.from('prevention_reports').update({manager_response:response, corrective_action:action, status:'En cours de traitement'}).eq('id',id); if(error){ console.error(error); return showToast('Erreur Supabase : '+error.message); } showToast('Réponse enregistrée.'); loadManagerReports(); } 
-
-    async function updateReportStatus(id,status){ const {error}=await supabaseClient.from('prevention_reports').update({status}).eq('id',id); if(error){ console.error(error); return showToast('Erreur Supabase : '+error.message); } showToast('Statut mis à jour.'); } 
-
- 
-
-    async function openEmployeeMessages(){ if(!currentEmployeeSession) return showToast('Session salarié non reconnue.'); if(!supabaseClient) return showToast('Supabase non chargé. Vérifiez internet.'); const {data,error}=await supabaseClient.from('prevention_reports').select('*').eq('company_code',currentEmployeeSession.company).eq('employee_name',currentEmployeeSession.name).order('created_at',{ascending:false}).limit(20); if(error){ console.error(error); return showToast('Erreur Supabase : '+error.message); } renderEmployeeMessages(data||[]); switchScreen('scr-employee-messages'); } 
-
-    function renderEmployeeMessages(msgs){ const c=document.getElementById('employee-messages-list'); c.innerHTML=''; if(!msgs.length){ c.innerHTML='<p class="text-xs text-slate-400 italic text-center py-6">Aucun message pour le moment.</p>'; return; } msgs.forEach(m=>{ const card=document.createElement('div'); card.className='bg-white dark:bg-slate-800 p-4 rounded-2xl border shadow-sm space-y-2'; card.innerHTML=`<div class="flex justify-between items-start gap-2"><div><p class="text-xs font-black dark:text-white">${escapeHtml(m.category||'Signalement')}</p><p class="text-[10px] text-slate-400">${new Date(m.created_at).toLocaleString('fr-FR')}</p></div><span class="text-[10px] font-black px-2 py-1 rounded bg-blue-50 text-blue-600">${escapeHtml(m.status||'Nouveau')}</span></div><div class="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl"><p class="text-[10px] font-black uppercase text-slate-400 mb-1">Votre signalement</p><p class="text-xs text-slate-700 dark:text-slate-300">${escapeHtml(m.description||'')}</p></div><div class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-xl border"><p class="text-[10px] font-black uppercase text-emerald-600 mb-1">Réponse du responsable</p><p class="text-xs text-slate-700 dark:text-slate-300">${escapeHtml(m.manager_response || 'Aucune réponse pour le moment.')}</p></div><div class="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-xl border"><p class="text-[10px] font-black uppercase text-amber-600 mb-1">Action corrective</p><p class="text-xs text-slate-700 dark:text-slate-300">${escapeHtml(m.corrective_action || 'Aucune action corrective renseignée.')}</p></div>`; c.appendChild(card); }); } 
-
- 
-
-
-    function getSectorKey(label){
-      const s=String(label || '').toLowerCase();
-      if(s.includes('btp') || s.includes('bâtiment') || s.includes('batiment')) return 'btp';
-      if(s.includes('commerce') || s.includes('distribution')) return 'commerce';
-      if(s.includes('transport') || s.includes('logistique')) return 'logistique';
-      if(s.includes('aide') || s.includes('santé') || s.includes('sante')) return 'sante';
-      if(s.includes('agri') || s.includes('maraîchage') || s.includes('maraichage') || s.includes('élevage') || s.includes('elevage')) return 'agriculture';
-      if(s.includes('tertiaire') || s.includes('bureau')) return 'tertiaire';
-      if(s.includes('hôtel') || s.includes('hotel') || s.includes('restauration') || s.includes('camping')) return 'hotellerie';
-      if(s.includes('industrie') || s.includes('métallurgie') || s.includes('metallurgie') || s.includes('maintenance')) return 'industrie';
-      return 'autre';
-    }
-
-    function getCurrentQCMSectorLabel(){
-      return currentEmployeeSession?.sector || managerSector || document.getElementById('manager-login-sector')?.value || 'Autre';
-    }
-
-    function getSectorQuestionsForCurrentSession(){
-      const key=getSectorKey(getCurrentQCMSectorLabel());
-      return SECTOR_QCM_DATABASE[key] || SECTOR_QCM_DATABASE.autre || [];
-    }
-
-    function buildSectorAdaptedQCM(){
-      const sectorQuestions=getSectorQuestionsForCurrentSession();
-      const activeRiskQuestions=RISKS_DATABASE.filter(r=>r.active && r.question);
-      const used=new Set();
-      const finalQuestions=[];
-      [...sectorQuestions, ...activeRiskQuestions].forEach(q=>{
-        const qKey=q.id || q.question;
-        if(!used.has(qKey)){
-          used.add(qKey);
-          finalQuestions.push(q);
-        }
-      });
-      return finalQuestions.slice(0, 12);
-    }
-
-    function startEmployeeQCM(){
-      qcmActiveQuestions=buildSectorAdaptedQCM();
-      if(!qcmActiveQuestions.length) return showToast('Aucun questionnaire configuré.');
-      qcmCurrentIndex=0;
-      qcmScore=0;
-      const sectorLabel=getCurrentQCMSectorLabel();
-      showToast(`Questionnaire adapté au secteur : ${sectorLabel}`);
-      renderQCMQuestion();
-      switchScreen('scr-qcm');
-    } 
-
-    function renderQCMQuestion(){ const q=qcmActiveQuestions[qcmCurrentIndex]; document.getElementById('qcm-progress').innerText=`Question ${qcmCurrentIndex+1} / ${qcmActiveQuestions.length}`; document.getElementById('qcm-question-text').innerText=q.question; const box=document.getElementById('qcm-options-box'); box.innerHTML=''; q.options.forEach((opt,i)=>{ const div=document.createElement('div'); div.className='flex items-center p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl hover:bg-blue-50/50'; div.innerHTML=`<label class="flex items-center gap-3 w-full cursor-pointer text-xs font-semibold dark:text-slate-300"><input type="radio" name="qcm-opt" value="${i}" class="w-4 h-4 text-restev-blue"><span>${escapeHtml(opt)}</span></label>`; box.appendChild(div); }); } 
-
-    function submitQCMAnswer(){ const checked=document.querySelector('input[name="qcm-opt"]:checked'); if(!checked) return showToast('Veuillez sélectionner une réponse !'); const q=qcmActiveQuestions[qcmCurrentIndex]; if(parseInt(checked.value,10)===q.answer) qcmScore++; qcmCurrentIndex++; if(qcmCurrentIndex<qcmActiveQuestions.length) return renderQCMQuestion(); const total=qcmActiveQuestions.length; document.getElementById('lbl-qcm-score-final').innerText=`${qcmScore} / ${total}`; const now=new Date(); document.getElementById('lbl-cert-date').innerText='- '+now.toLocaleDateString('fr-FR')+' à '+now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); if(currentEmployeeSession){ document.getElementById('cert-company').value=currentEmployeeSession.company; document.getElementById('cert-employee').value=currentEmployeeSession.name; } updateCertificateEPI(); clearSignature('emp'); clearSignature('mgr'); const title=document.getElementById('qcm-result-title'); title.innerText=qcmScore===total?'Attestation de Formation Sécurité':'Attestation de Suivi (Avec Réserves)'; title.className=qcmScore===total?'text-2xl font-black text-emerald-600 print:text-slate-900':'text-2xl font-black text-amber-600 print:text-slate-900'; switchScreen('scr-qcm-success'); } 
-
-    function updateSignStatus(type){ const checked=document.getElementById(`chk-sign-${type}`).checked; const box=document.getElementById(`sign-box-${type}`); if(checked){ box.innerHTML=`<div class="text-center p-2"><p class="font-black text-lg ${type==='mgr'?'text-emerald-600':'text-restev-blue'}" style="font-family: 'Brush Script MT', cursive; transform: rotate(-3deg);">Validé</p><p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">Le ${new Date().toLocaleDateString('fr-FR')}</p></div>`; } else { box.innerHTML='<span class="text-xs italic text-slate-400 print:hidden">En attente...</span>'; } } 
-
-
-    function enableManagerNotifications(){
-      if(!('Notification' in window)) return showToast('Notifications navigateur non compatibles.');
-      Notification.requestPermission().then(permission=>{
-        managerNotificationsEnabled = permission === 'granted';
-        const btn=document.getElementById('btn-manager-notif');
-        if(btn) btn.innerHTML = managerNotificationsEnabled ? '<i class="fa-solid fa-bell mr-1"></i> Notifications ON' : '<i class="fa-solid fa-bell-slash mr-1"></i> Refusées';
-        showToast(managerNotificationsEnabled ? 'Notifications navigateur activées.' : 'Notifications refusées par le navigateur.');
-      });
-    }
-
-    function showBrowserNotification(report){
-      if(!('Notification' in window) || Notification.permission !== 'granted') return;
-      try{
-        const title='Nouveau signalement prévention';
-        const body=`${report?.employee_name || 'Un salarié'} - ${report?.category || 'Danger signalé'}`;
-        new Notification(title,{body, icon:'logo.png', badge:'logo.png'});
-      }catch(e){ console.warn('Notification navigateur impossible :', e); }
-    }
-
-    function resizeSignatureCanvas(canvas){
-      if(!canvas) return;
-      const data = canvas.toDataURL();
-      const ratio=Math.max(window.devicePixelRatio || 1, 1);
-      const rect=canvas.getBoundingClientRect();
-      if(rect.width === 0 || rect.height === 0) return;
-      canvas.width=rect.width*ratio;
-      canvas.height=rect.height*ratio;
-      const ctx=canvas.getContext('2d');
-      ctx.scale(ratio, ratio);
-      ctx.lineWidth=2;
-      ctx.lineCap='round';
-      ctx.strokeStyle='#0f172a';
-      if(data && !isBlankDataUrl(data)){
-        const img=new Image();
-        img.onload=()=>ctx.drawImage(img,0,0,rect.width,rect.height);
-        img.src=data;
-      }
-    }
-
-    function initSignaturePads(){
-      ['emp','mgr'].forEach(type=>{
-        const canvas=document.getElementById(`sig-canvas-${type}`);
-        if(!canvas || canvas.dataset.ready==='1') return;
-        resizeSignatureCanvas(canvas);
-        const ctx=canvas.getContext('2d');
-        signaturePads[type]={canvas, signed:false, drawing:false};
-        const pos=(e)=>{
-          const rect=canvas.getBoundingClientRect();
-          const touch=e.touches && e.touches[0] ? e.touches[0] : e;
-          return {x:touch.clientX-rect.left, y:touch.clientY-rect.top};
-        };
-        const start=(e)=>{ e.preventDefault(); signaturePads[type].drawing=true; const p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); };
-        const move=(e)=>{ if(!signaturePads[type].drawing) return; e.preventDefault(); const p=pos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); signaturePads[type].signed=true; const st=document.getElementById(`sig-status-${type}`); if(st) st.innerText='Signature enregistrée.'; };
-        const stop=()=>{ signaturePads[type].drawing=false; };
-        canvas.addEventListener('mousedown',start); canvas.addEventListener('mousemove',move); window.addEventListener('mouseup',stop);
-        canvas.addEventListener('touchstart',start,{passive:false}); canvas.addEventListener('touchmove',move,{passive:false}); canvas.addEventListener('touchend',stop);
-        canvas.dataset.ready='1';
-      });
-    }
-
-    function clearSignature(type){
-      const pad=signaturePads[type];
-      const canvas=document.getElementById(`sig-canvas-${type}`);
-      if(!canvas) return;
-      const ctx=canvas.getContext('2d');
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      if(pad) pad.signed=false;
-      const st=document.getElementById(`sig-status-${type}`);
-      if(st) st.innerText = type==='emp' ? 'Signature salarié attendue.' : 'Signature manager attendue.';
-    }
-
-    function isSignatureDone(type){
-      return signaturePads[type] && signaturePads[type].signed;
-    }
-
-    function isBlankDataUrl(data){ return !data || data.length < 500; }
-
-    function getSignatureData(type){
-      const canvas=document.getElementById(`sig-canvas-${type}`);
-      return canvas ? canvas.toDataURL('image/png') : '';
-    }
-
-    function getRegistryKey(){
-      const companyCode=document.getElementById('lbl-manager-comp-name')?.innerText?.trim() || (currentEmployeeSession?.company || 'default');
-      return `restev_passport_registry_${companyCode}`;
-    }
-
-    function getLocalPassportRegistry(){
-      try{return JSON.parse(safeStorage.getItem(getRegistryKey()) || '[]');}
-      catch(e){return [];}
-    }
-
-    function saveLocalPassportRegistry(entries){
-      safeStorage.setItem(getRegistryKey(), JSON.stringify(entries));
-    }
-
-    function renderPassportRegistry(entries){
-      const table=document.getElementById('manager-emargements-list');
-      if(!table) return;
-      table.innerHTML='';
-      if(!entries.length){
-        table.innerHTML='<tr><td colspan="6" class="p-4 text-center italic text-slate-400">Aucun passeport validé pour le moment.</td></tr>';
-        return;
-      }
-      entries.forEach(entry=>{
-        const row=document.createElement('tr');
-        row.className='border-b border-slate-100 dark:border-slate-700';
-        const epiText=(entry.epis && entry.epis.length) ? entry.epis.join(', ') : 'Aucun EPI renseigné';
-        row.innerHTML=`<td class="p-3 font-bold dark:text-white">${escapeHtml(entry.employee_name || entry.employee || 'Salarié')}</td><td class="p-3 text-slate-500">${escapeHtml(entry.validated_at || entry.date || '')}</td><td class="p-3"><span class="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded font-bold">${escapeHtml(entry.score || '')}</span></td><td class="p-3 text-slate-500">${escapeHtml(epiText)}</td><td class="p-3 text-emerald-500 font-extrabold text-[11px] uppercase">${escapeHtml(entry.status || 'Validé et signé')}</td>`;
-        table.appendChild(row);
-      });
-    }
-
-    async function loadPassportRegistry(){
-      const companyCode=document.getElementById('lbl-manager-comp-name')?.innerText?.trim();
-      if(!companyCode) return;
-      let entries=getLocalPassportRegistry();
-      renderPassportRegistry(entries);
-      if(!supabaseClient) return;
-      try{
-        const {data,error}=await supabaseClient.from('passport_registry').select('*').eq('company_code',companyCode).order('created_at',{ascending:false}).limit(100);
-        if(error){ console.warn('Registre Supabase non disponible :', error.message); return; }
-        entries=(data || []).map(r=>({employee_name:r.employee_name, validated_at:new Date(r.created_at).toLocaleString('fr-FR'), score:`${r.score}/${r.total}`, epis:r.epis || [], status:r.status || 'Validé et signé'}));
-        renderPassportRegistry(entries);
-      }catch(e){ console.warn('Chargement registre local uniquement :', e); }
-    }
-
-    async function savePassportEntry(entry){
-      const entries=getLocalPassportRegistry();
-      entries.unshift(entry);
-      saveLocalPassportRegistry(entries.slice(0,100));
-      if(supabaseClient){
-        try{
-          const {error}=await supabaseClient.from('passport_registry').insert([{
-            company_code: entry.company_code,
-            employee_name: entry.employee_name,
-            score: qcmScore,
-            total: qcmActiveQuestions.length,
-            epis: entry.epis,
-            status: entry.status,
-            signature_employee: entry.signature_employee,
-            signature_manager: entry.signature_manager
-          }]);
-          if(error) console.warn('Sauvegarde Supabase registre impossible :', error.message);
-        }catch(e){ console.warn('Sauvegarde registre locale uniquement :', e); }
-      }
-      loadPassportRegistry();
-    }
-
-    function prepareAndPrint(){ window.print(); } 
-
-    async function finalizeAndClose(){
-      updateCertificateEPI();
-      if(!isSignatureDone('emp') || !isSignatureDone('mgr')) return showToast('Les deux signatures réelles sont obligatoires.');
-      const name=document.getElementById('cert-employee').value || (currentEmployeeSession?currentEmployeeSession.name:'Salarié');
-      const companyCode=(currentEmployeeSession?.company || document.getElementById('cert-company').value || document.getElementById('lbl-manager-comp-name')?.innerText || 'Établissement non renseigné').trim();
-      const now=new Date().toLocaleString('fr-FR');
-      const entry={
-        company_code: companyCode,
-        employee_name: name,
-        validated_at: now,
-        score: `${qcmScore}/${qcmActiveQuestions.length}`,
-        epis: selectedEPIList,
-        status:'Validé et signé',
-        signature_employee:getSignatureData('emp'),
-        signature_manager:getSignatureData('mgr')
-      };
-      await savePassportEntry(entry);
-      showToast('Passeport clôturé et enregistré dans le registre.');
-      switchScreen('scr-employee');
-    } 
-
- 
-
-    function generateTrainingMenu(){ const c=document.getElementById('menu-list'); if(!c) return; c.innerHTML='<p class="text-xs text-slate-500 italic">Sélectionnez votre secteur pour accéder au tutoriel :</p>'; modulesTuto.forEach(m=>{ const btn=document.createElement('button'); btn.className='p-4 bg-white dark:bg-slate-800 border-l-4 border-restev-blue shadow-sm rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-700 transition w-full flex items-center justify-between'; btn.onclick=()=>loadTrainingModule(m.url); btn.innerHTML=`<span class="font-semibold text-slate-700 dark:text-white text-sm">${escapeHtml(m.titre)}</span><i class="fa-solid fa-chevron-right text-slate-300"></i>`; c.appendChild(btn); }); } 
-
-    function loadTrainingModule(url){ currentTutoUrl=url; const iframe=document.getElementById('tuto-viewer'); iframe.src=url; document.getElementById('menu-list').classList.add('hidden'); document.getElementById('tuto-container').classList.remove('hidden'); adjustTutoViewer(); setTimeout(()=>window.scrollTo({top:0,behavior:'smooth'}),100); } 
-
-    function backToTrainingMenu(){ document.getElementById('tuto-viewer').src=''; currentTutoUrl=''; document.getElementById('menu-list').classList.remove('hidden'); document.getElementById('tuto-container').classList.add('hidden'); } 
-
-    function openTutoFullscreen(){ if(!currentTutoUrl) return showToast('Aucun tutoriel sélectionné.'); const iframe=document.getElementById('tuto-viewer'); if(iframe.requestFullscreen) iframe.requestFullscreen().catch(()=>window.open(currentTutoUrl,'_blank')); else window.open(currentTutoUrl,'_blank'); } 
-
-    function adjustTutoViewer(){ const help=document.getElementById('tuto-orientation-help'); if(!help) return; const isMobile=window.innerWidth<=900; const isLandscape=window.innerWidth>window.innerHeight; help.innerText = isMobile && isLandscape ? 'Mode paysage détecté : affichage optimisé.' : isMobile ? 'Astuce : tournez votre smartphone en paysage ou utilisez Plein écran.' : 'Module chargé. Vous pouvez utiliser Plein écran.'; } 
-
-    function backFromTraining(){ if(currentEmployeeSession) switchScreen('scr-employee'); else switchScreen('scr-home'); } 
-
- 
-
-    function openEmployeeResources(){ const c=document.getElementById('resources-list'); c.innerHTML=''; const active=RISKS_DATABASE.filter(r=>r.active); if(!active.length){ c.innerHTML='<p class="text-xs text-slate-500 text-center italic py-4">Aucun risque spécifique paramétré.</p>'; } active.forEach(r=>{ const res=OFFICIAL_RESOURCES[r.id]; if(!res) return; const a=document.createElement('a'); a.href=res.link; a.target='_blank'; a.className='block bg-white dark:bg-slate-800 p-4 rounded-2xl border shadow-sm hover:shadow-md transition group'; a.innerHTML=`<div class="flex items-center justify-between gap-3"><div class="space-y-1.5 flex-1"><span class="inline-block text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${res.color} border">${res.org}</span><h4 class="text-sm font-bold dark:text-white group-hover:text-emerald-500 transition leading-tight">${escapeHtml(res.title)}</h4><p class="text-[10px] font-medium text-slate-400 italic">Lié à : ${escapeHtml(r.name)}</p></div><div class="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center text-slate-400"><i class="fa-solid fa-arrow-up-right-from-square text-sm"></i></div></div>`; c.appendChild(a); }); switchScreen('scr-resources'); } 
-
- 
-
-    function initLeafletMap(){ try{ if(document.getElementById('map') && window.L && !mapInstance){ mapInstance=L.map('map',{zoomControl:false}).setView([46.670,-1.426],13); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance); if(navigator.geolocation){ navigator.geolocation.getCurrentPosition(pos=>{ const lat=pos.coords.latitude,lng=pos.coords.longitude; mapInstance.setView([lat,lng],15); L.marker([lat,lng]).addTo(mapInstance).bindPopup('Position terrain').openPopup(); document.getElementById('geo-status').innerText='📍 Coordonnées GPS verrouillées'; },()=>{ document.getElementById('geo-status').innerText='GPS non disponible'; }); } } }catch(e){ console.warn(e); } } 
-
-    function fixMapSize(){ if(mapInstance) mapInstance.invalidateSize(); } 
-
-
-    function getCurrentSectorLabel(){
-      const companyCode = (currentEmployeeSession?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
-      return managerSector || safeStorage.getItem('restev_manager_sector_' + companyCode) || 'Non renseigné';
-    }
-
-    function getCurrentCompanySizeLabel(){
-      const companyCode = (currentEmployeeSession?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
-      return managerCompanySize || safeStorage.getItem('restev_manager_size_' + companyCode) || 'Non renseigné';
-    }
-
-    function getPeriodMonth(){
-      return new Date().toISOString().slice(0,7);
-    }
-
-    async function submitAnonymizedPreventionStat(evt){
-      if(!supabaseClient) return;
-      try{
-        const anonymized = {
-          period_month: getPeriodMonth(),
-          sector: getCurrentSectorLabel(),
-          company_size_range: getCurrentCompanySizeLabel(),
-          risk_category: evt.category || 'Non renseigné',
-          risk_level: evt.level || 'Non renseigné',
-          frequency: evt.frequency || 'Non renseigné',
-          event_type: 'Signalement prévention',
-          corrective_action_type: 'À définir'
-        };
-        const { error } = await supabaseClient.from('prevention_stats').insert([anonymized]);
-        if(error) console.warn('Stat anonymisée non enregistrée :', error.message);
-      }catch(e){ console.warn('Stat anonymisée ignorée :', e); }
-    }
-
-    function countBy(list, key){
-      return list.reduce((acc,item)=>{ const v=item[key] || 'Non renseigné'; acc[v]=(acc[v]||0)+1; return acc; },{});
-    }
-
-    function topEntries(obj, limit=5){
-      return Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,limit);
-    }
-
-    async function loadRestevStats(){
-      const totalEl=document.getElementById('stats-total');
-      if(!totalEl) return;
-      if(!supabaseClient){ showToast('Supabase non chargé : statistiques indisponibles.'); return; }
-      try{
-        const { data, error } = await supabaseClient
-          .from('prevention_stats')
-          .select('period_month,sector,company_size_range,risk_category,risk_level,frequency,event_type,created_at')
-          .order('created_at',{ascending:false})
-          .limit(500);
-        if(error){ console.error(error); showToast('Statistiques non disponibles : '+error.message); return; }
-        renderRestevStats(data || []);
-      }catch(e){ console.error(e); showToast('Erreur chargement statistiques.'); }
-    }
-
-    function renderRestevStats(rows){
-      const total=rows.length;
-      const riskCounts=countBy(rows,'risk_category');
-      const sectorCounts=countBy(rows,'sector');
-      const topRisk=topEntries(riskCounts,1)[0]?.[0] || '—';
-      document.getElementById('stats-total').innerText=String(total);
-      document.getElementById('stats-top-risk').innerText=topRisk;
-      document.getElementById('stats-sector-count').innerText=String(Object.keys(sectorCounts).filter(s=>s!=='Non renseigné').length || Object.keys(sectorCounts).length);
-
-      const topRisks=topEntries(riskCounts,6);
-      const labels=topRisks.map(e=>e[0]);
-      const values=topRisks.map(e=>e[1]);
-      const ctx=document.getElementById('chart-restev-risks');
-      if(ctx && window.Chart){
-        if(restevStatsChart) restevStatsChart.destroy();
-        restevStatsChart=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data:values,backgroundColor:['#3a7bd5','#e0248a','#ffb007','#4ec3b1','#245ca6','#b31269']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
-      }
-
-      const actionBox=document.getElementById('stats-actions-list');
-      if(!actionBox) return;
-      if(!topRisks.length){ actionBox.innerHTML='<p class="text-xs text-slate-400 italic">Aucune donnée anonymisée disponible.</p>'; return; }
-      actionBox.innerHTML=topRisks.map(([risk,count],idx)=>{
-        const suggestion = getPreventionSuggestion(risk);
-        return `<div class="p-3 rounded-2xl border bg-slate-50 dark:bg-slate-900"><div class="flex justify-between gap-2"><p class="text-xs font-black dark:text-white">${idx+1}. ${escapeHtml(risk)}</p><span class="text-[10px] font-black text-restev-blue bg-blue-50 px-2 py-1 rounded-lg">${count}</span></div><p class="text-[11px] text-slate-500 dark:text-slate-300 mt-1 leading-relaxed">${escapeHtml(suggestion)}</p></div>`;
-      }).join('');
-    }
-
-    function getPreventionSuggestion(risk){
-      const r=String(risk||'').toLowerCase();
-      if(r.includes('chute')) return 'Proposer une action ciblée sur les chutes : ordre/propreté, circulation, travail en hauteur, choix des équipements.';
-      if(r.includes('charge') || r.includes('manutention') || r.includes('tms')) return 'Proposer un atelier TMS/manutention : analyse des postes, aides techniques, organisation des flux.';
-      if(r.includes('routier')) return 'Proposer une campagne risque routier : préparation mission, téléphone, fatigue, arrimage, entretien véhicule.';
-      if(r.includes('chimique')) return 'Proposer un appui produits chimiques : FDS, étiquetage, stockage, substitution, EPI adaptés.';
-      if(r.includes('psycho') || r.includes('rps')) return 'Proposer un accompagnement RPS : charge, isolement, alerte précoce, dialogue du travail.';
-      if(r.includes('élect') || r.includes('elect')) return 'Proposer une vérification ciblée : habilitations, consignation, câbles, signalement des anomalies.';
-      return 'Proposer un contact prévention pour analyser les causes récurrentes et prioriser des actions simples.';
-    }
-
-    function initChart(){ const ctx=document.getElementById('chart-restev-risks'); if(!ctx || !window.Chart) return; new Chart(ctx,{type:'doughnut',data:{labels:['Chutes','Manutention','RPS'],datasets:[{data:[45,30,25],backgroundColor:['#3a7bd5','#e0248a','#ffb007']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}}); } 
-
-    function escapeHtml(str){ return String(str ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); } 
-
-  
-
-/* =========================================================
-   PATCH ALERTES MANAGER + CARTE
-   - Son plus long + vibration répétée
-   - Pop-up visuel très visible
-   - Notifications navigateur mieux déclenchées
-   - Carte Leaflet initialisée quand l'écran est visible
-   ========================================================= */
-let managerAlertsUnlocked = false;
-let managerLastSeenReportId = safeStorage.getItem('restev_last_report_id') || '';
-let managerAlertPolling = null;
-let managerAlertOscillators = [];
-
-function setupManagerAlertOverlay(){
-  if(document.getElementById('manager-alert-overlay')) return;
-  const overlay=document.createElement('div');
-  overlay.id='manager-alert-overlay';
-  overlay.innerHTML=`
-    <div class="manager-alert-card">
-      <div class="manager-alert-top">
-        <div class="manager-alert-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        <div>
-          <p class="manager-alert-title">Nouveau signalement prévention</p>
-          <p id="manager-alert-sub" class="manager-alert-sub">Une situation dangereuse vient d’être déclarée.</p>
-        </div>
+    </div>
+  </section>
+
+  <section id="center" class="screen space-y-5">
+    <div class="bg-gradient-to-br from-slate-900 to-amber-600 text-white p-7 rounded-3xl shadow-xl">
+      <h2 class="text-3xl font-black">Centre RESTEV</h2>
+      <p class="text-sm text-amber-50">Vue collective : tendances anonymisées et nombre de passeports prévention.</p>
+    </div>
+    <div class="grid md:grid-cols-4 gap-4">
+      <div class="bg-white p-5 rounded-2xl shadow border-t-4 border-blue-600"><p class="text-xs font-black text-slate-400">Signalements anonymisés</p><p id="centerReports" class="text-4xl font-black text-blue-600">0</p></div>
+      <div class="bg-white p-5 rounded-2xl shadow border-t-4 border-green-600"><p class="text-xs font-black text-slate-400">Passeports validés</p><p id="centerPassports" class="text-4xl font-black text-green-600">0</p></div>
+      <div class="bg-white p-5 rounded-2xl shadow border-t-4 border-red-600"><p class="text-xs font-black text-slate-400">Risques critiques</p><p id="centerCritical" class="text-4xl font-black text-red-600">0</p></div>
+      <div class="bg-white p-5 rounded-2xl shadow border-t-4 border-amber-500"><p class="text-xs font-black text-slate-400">Risque dominant</p><p id="centerTopRisk" class="text-lg font-black text-amber-600">—</p></div>
+    </div>
+    <div class="bg-white p-5 rounded-2xl shadow">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="font-black">Dernières tendances anonymisées</h3>
+        <button onclick="loadCenterStats()" class="text-xs bg-slate-900 text-white px-3 py-2 rounded-xl font-bold">Actualiser</button>
       </div>
-      <div class="manager-alert-body">
-        <div id="manager-alert-detail" class="manager-alert-detail">Chargement du détail...</div>
-        <div id="manager-alert-permission">Pour recevoir les notifications hors écran, cliquez sur “Activer notifications”.</div>
-        <div class="manager-alert-actions">
-          <button class="manager-alert-btn secondary" onclick="stopManagerAlertEffects();hideManagerAlertOverlay()">Fermer</button>
-          <button class="manager-alert-btn primary" onclick="stopManagerAlertEffects();hideManagerAlertOverlay();appNavigate('scr-manager', true);loadManagerReports();">Voir le signalement</button>
-        </div>
-      </div>
-    </div>`;
-  document.body.appendChild(overlay);
-}
-function hideManagerAlertOverlay(){
-  document.getElementById('manager-alert-overlay')?.classList.remove('show');
-  document.body.classList.remove('manager-alert-flash');
-}
-function unlockManagerAlerts(){
-  managerAlertsUnlocked = true;
-  unlockAlertSound();
-  try{
-    if('Notification' in window && Notification.permission === 'default'){
-      Notification.requestPermission().then(permission=>{
-        managerNotificationsEnabled = permission === 'granted';
-        const btn=document.getElementById('btn-manager-notif');
-        if(btn) btn.innerHTML = managerNotificationsEnabled ? '<i class="fa-solid fa-bell mr-1"></i> Notifications ON' : '<i class="fa-solid fa-bell-slash mr-1"></i> Refusées';
-      });
-    }
-  }catch(e){console.warn('Permission notifications impossible', e);}
-}
-function stopManagerAlertEffects(){
-  try{ managerAlertOscillators.forEach(o=>{try{o.stop()}catch(e){}}); managerAlertOscillators=[]; }catch(e){}
-}
-function playManagerAlertSound(){
-  try{
+      <div id="centerList" class="space-y-2"><p class="text-xs text-slate-400 italic">Aucune donnée.</p></div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  // =====================================================
+  // 1) CONFIG SUPABASE - À ADAPTER SI BESOIN
+  // =====================================================
+  const SUPABASE_URL = "https://qahamxdomftqodziluci.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXAiLCJyZWYiOiJxYWhhbXhkb21mdHFvZHppbHVjaSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzgyOTAyNjQxLCJleHAiOjIwOTg0Nzg2NDF9.VUjKmNc9UsOoBSNatZoOnxGExVQji9L05BiU5SlvnOc";
+  const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+  let currentManager = { company:null, sector:'Non renseigné', size:'Non renseigné' };
+  let currentEmployee = { name:null, company:null };
+  let soundMuted = false;
+  let audioCtx = null;
+  let realtimeChannel = null;
+
+  // =====================================================
+  // 2) OUTILS
+  // =====================================================
+  function showScreen(id){
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+  function toast(msg){
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.classList.remove('hidden');
+    setTimeout(()=>t.classList.add('hidden'), 3500);
+  }
+  function esc(v){ return String(v ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+  function unlockSound(){
+    try { const AC = window.AudioContext || window.webkitAudioContext; if(!AC) return; if(!audioCtx) audioCtx = new AC(); if(audioCtx.state === 'suspended') audioCtx.resume(); } catch(e) {}
+  }
+  function playAlertSound(){
     if(soundMuted) return;
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if(!AudioContext) return;
-    if(!alertAudioCtx) alertAudioCtx = new AudioContext();
-    if(alertAudioCtx.state === 'suspended') alertAudioCtx.resume();
-    const pattern=[880,660,990,660,1040,780];
-    pattern.forEach((freq,i)=>{
-      const start=alertAudioCtx.currentTime + i*0.22;
-      const osc=alertAudioCtx.createOscillator();
-      const gain=alertAudioCtx.createGain();
-      osc.type='sine';
-      osc.frequency.setValueAtTime(freq,start);
-      gain.gain.setValueAtTime(0.0001,start);
-      gain.gain.exponentialRampToValueAtTime(0.35,start+0.03);
-      gain.gain.exponentialRampToValueAtTime(0.0001,start+0.18);
-      osc.connect(gain); gain.connect(alertAudioCtx.destination);
-      osc.start(start); osc.stop(start+0.2);
-      managerAlertOscillators.push(osc);
+    unlockSound();
+    if(!audioCtx) return;
+    [0, .22, .44].forEach(delay => {
+      const now = audioCtx.currentTime + delay;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(880, now);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.22, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+      osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now); osc.stop(now + 0.18);
     });
-  }catch(e){ console.warn('Erreur son alerte manager', e); }
-}
-function vibrateManagerAlert(){
-  try{
-    if('vibrate' in navigator) navigator.vibrate([450,160,450,160,750,220,450]);
-  }catch(e){ console.warn('Vibration indisponible', e); }
-}
-function showManagerAlertOverlay(report){
-  setupManagerAlertOverlay();
-  const employee=report?.employee_name || 'Un salarié';
-  const category=report?.category || 'Danger signalé';
-  const level=report?.level || 'Niveau non précisé';
-  const desc=report?.description || 'Aucun commentaire.';
-  const sub=document.getElementById('manager-alert-sub');
-  const detail=document.getElementById('manager-alert-detail');
-  if(sub) sub.innerText=`${employee} — ${category}`;
-  if(detail) detail.innerHTML=`<b>${escapeHtml(level)}</b><br>${escapeHtml(desc)}`;
-  const perm=document.getElementById('manager-alert-permission');
-  if(perm) perm.classList.toggle('show', !('Notification' in window) || Notification.permission !== 'granted');
-  document.getElementById('manager-alert-overlay')?.classList.add('show');
-  document.body.classList.add('manager-alert-flash');
-  setTimeout(()=>document.body.classList.remove('manager-alert-flash'), 2200);
-}
-function showBrowserNotification(report){
-  if(!('Notification' in window)) return;
-  if(Notification.permission !== 'granted') return;
-  try{
-    const title='🚨 Nouveau signalement prévention';
-    const body=`${report?.employee_name || 'Un salarié'} — ${report?.category || 'Danger signalé'}${report?.level ? ' — '+report.level : ''}`;
-    const n=new Notification(title,{body, icon:'logo.png', badge:'logo.png', requireInteraction:true, silent:false});
-    n.onclick=()=>{ window.focus(); appNavigate('scr-manager', true); loadManagerReports(); n.close(); };
-  }catch(e){ console.warn('Notification navigateur impossible :', e); }
-}
-function triggerNewReportAlert(report){
-  const now=Date.now();
-  if(now - lastReportAlertAt < 1200) return;
-  lastReportAlertAt=now;
-  playManagerAlertSound();
-  vibrateManagerAlert();
-  showManagerAlertOverlay(report);
-  showBrowserNotification(report);
-  const employee=report?.employee_name || 'Un salarié';
-  const category=report?.category || 'un danger';
-  showToast(`🚨 Nouveau signalement : ${employee} - ${category}`);
-}
-function enableManagerNotifications(){
-  unlockManagerAlerts();
-  if(!('Notification' in window)) return showToast('Notifications navigateur non compatibles.');
-  Notification.requestPermission().then(permission=>{
-    managerNotificationsEnabled = permission === 'granted';
-    const btn=document.getElementById('btn-manager-notif');
-    if(btn) btn.innerHTML = managerNotificationsEnabled ? '<i class="fa-solid fa-bell mr-1"></i> Notifications ON' : '<i class="fa-solid fa-bell-slash mr-1"></i> Refusées';
-    showToast(managerNotificationsEnabled ? 'Notifications activées. Gardez l’application ouverte pour les alertes.' : 'Notifications refusées par le navigateur.');
-  });
-}
-// Renforce le login manager : déverrouille audio, notifs, realtime + polling secours
-// Ancien wrapper handleManagerLogin neutralisé : remplacé par le HOTFIX_FINAL plus bas.
-function startManagerAlertPolling(){
-  if(managerAlertPolling) clearInterval(managerAlertPolling);
-  pollLatestManagerReport(true);
-  managerAlertPolling=setInterval(()=>pollLatestManagerReport(false), 12000);
-}
-async function pollLatestManagerReport(initial=false){
-  if(!supabaseClient) return;
-  const companyCode=document.getElementById('lbl-manager-comp-name')?.innerText?.trim();
-  if(!companyCode) return;
-  try{
-    const {data,error}=await supabaseClient.from('prevention_reports')
-      .select('id,employee_name,category,level,description,created_at,status')
-      .eq('company_code', companyCode)
-      .neq('category','Validation passeport prévention')
-      .order('created_at',{ascending:false})
-      .limit(1);
-    if(error || !data || !data.length) return;
-    const latest=data[0];
-    if(initial){ managerLastSeenReportId=latest.id; safeStorage.setItem('restev_last_report_id', latest.id); return; }
-    if(latest.id && latest.id !== managerLastSeenReportId){
-      managerLastSeenReportId=latest.id;
-      safeStorage.setItem('restev_last_report_id', latest.id);
-      triggerNewReportAlert(latest);
-      loadManagerReports();
+  }
+  function vibrateAlert(){ try { navigator.vibrate && navigator.vibrate([250,100,250,100,400]); } catch(e){} }
+  function toggleSound(){ soundMuted = !soundMuted; document.getElementById('soundBtn').innerHTML = soundMuted ? '<i class="fa-solid fa-volume-xmark"></i> Son OFF' : '<i class="fa-solid fa-volume-high"></i> Son ON'; if(!soundMuted) unlockSound(); }
+  function askNotifications(){ if(!('Notification' in window)) return toast('Notifications non compatibles.'); Notification.requestPermission().then(p => toast(p === 'granted' ? 'Notifications activées.' : 'Notifications refusées.')); }
+  function browserNotif(title, body){ if('Notification' in window && Notification.permission === 'granted') new Notification(title, { body }); }
+
+  // =====================================================
+  // 3) MANAGER
+  // =====================================================
+  function managerLogin(){
+    const code = document.getElementById('managerCompany').value.trim().toUpperCase();
+    if(!code) return toast('Saisir le code établissement.');
+    unlockSound();
+    currentManager.company = code;
+    currentManager.sector = document.getElementById('managerSector').value;
+    currentManager.size = document.getElementById('managerSize').value;
+    document.getElementById('currentManagerCompany').innerText = code;
+    showScreen('manager');
+    loadManagerReports();
+    loadPassportRegistry();
+    startRealtimeManager();
+    toast('Console manager connectée.');
+  }
+
+  function startRealtimeManager(){
+    if(!supabaseClient || !currentManager.company) return;
+    if(realtimeChannel) supabaseClient.removeChannel(realtimeChannel);
+    realtimeChannel = supabaseClient
+      .channel('restev_manager_' + currentManager.company)
+      .on('postgres_changes', { event:'INSERT', schema:'public', table:'prevention_reports', filter:'company_code=eq.' + currentManager.company }, payload => {
+        document.getElementById('bigAlertBanner').classList.remove('hidden');
+        setTimeout(()=>document.getElementById('bigAlertBanner').classList.add('hidden'), 12000);
+        playAlertSound(); vibrateAlert(); browserNotif('Nouveau signalement prévention', (payload.new.employee_name || 'Salarié') + ' - ' + payload.new.category);
+        toast('🚨 Nouveau signalement terrain reçu !');
+        loadManagerReports();
+      })
+      .on('postgres_changes', { event:'INSERT', schema:'public', table:'passport_registry', filter:'company_code=eq.' + currentManager.company }, payload => {
+        toast('✅ Nouveau passeport prévention validé.');
+        loadPassportRegistry();
+      })
+      .subscribe(status => { if(status === 'SUBSCRIBED') toast('Temps réel manager activé.'); });
+  }
+
+  async function loadManagerReports(){
+    if(!supabaseClient || !currentManager.company) return;
+    const { data, error } = await supabaseClient.from('prevention_reports')
+      .select('id,company_code,employee_name,category,level,frequency,description,status,manager_response,corrective_action,created_at')
+      .eq('company_code', currentManager.company).order('created_at', {ascending:false}).limit(50);
+    if(error) return toast('Erreur signalements : ' + error.message);
+    renderManagerReports(data || []);
+  }
+
+  function renderManagerReports(rows){
+    document.getElementById('statTotal').innerText = rows.length;
+    document.getElementById('statNew').innerText = rows.filter(r => r.status === 'Nouveau').length;
+    document.getElementById('statProgress').innerText = rows.filter(r => r.status === 'En cours de traitement').length;
+    document.getElementById('statDone').innerText = rows.filter(r => r.status === 'Traité').length;
+    const box = document.getElementById('managerReportsList');
+    if(!rows.length){ box.innerHTML = '<p class="text-xs text-slate-400 italic">Aucun signalement.</p>'; return; }
+    box.innerHTML = rows.map(r => `
+      <div class="p-4 rounded-2xl border ${String(r.level).includes('Critique') ? 'bg-red-50 border-red-300' : 'bg-orange-50 border-orange-200'} space-y-3">
+        <div class="flex justify-between gap-3">
+          <div>
+            <p class="font-black">${esc(r.category)}</p>
+            <p class="text-xs text-slate-500">${esc(r.employee_name)} - ${new Date(r.created_at).toLocaleString('fr-FR')}</p>
+          </div>
+          <span class="text-xs font-black bg-white px-2 py-1 rounded-lg text-red-600">${esc(r.level)}</span>
+        </div>
+        <p class="text-sm font-medium">${esc(r.description)}</p>
+        <select onchange="updateReportStatus('${r.id}', this.value)" class="w-full p-2 border rounded-xl text-sm font-bold">
+          ${['Nouveau','Vu par le responsable','En cours de traitement','Traité'].map(s => `<option ${r.status===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+        <textarea id="resp_${r.id}" class="w-full p-2 border rounded-xl text-sm" rows="2" placeholder="Réponse au salarié...">${esc(r.manager_response)}</textarea>
+        <textarea id="act_${r.id}" class="w-full p-2 border rounded-xl text-sm" rows="2" placeholder="Action corrective...">${esc(r.corrective_action)}</textarea>
+        <button onclick="saveManagerResponse('${r.id}', '${esc(r.employee_name)}')" class="w-full bg-blue-600 text-white p-2 rounded-xl font-black text-xs">Répondre / enregistrer</button>
+      </div>`).join('');
+  }
+
+  async function updateReportStatus(id, status){
+    const { error } = await supabaseClient.from('prevention_reports').update({status}).eq('id', id);
+    if(error) return toast(error.message);
+    toast('Statut mis à jour.');
+    loadManagerReports();
+  }
+
+  async function saveManagerResponse(id, employeeName){
+    const manager_response = document.getElementById('resp_' + id).value.trim();
+    const corrective_action = document.getElementById('act_' + id).value.trim();
+    const { error } = await supabaseClient.from('prevention_reports').update({ manager_response, corrective_action, status:'En cours de traitement' }).eq('id', id);
+    if(error) return toast(error.message);
+    if(manager_response){
+      await supabaseClient.from('manager_messages').insert([{ company_code: currentManager.company, employee_name: employeeName, title:'Réponse à votre signalement', message: manager_response + (corrective_action ? '\nAction prévue : ' + corrective_action : ''), priority:'Important' }]);
     }
-  }catch(e){ console.warn('Polling alertes impossible', e); }
-}
-
-/* Carte : initialisation fiable quand la page Signalement devient visible */
-function initLeafletMap(){
-  const mapEl=document.getElementById('map');
-  if(!mapEl) return;
-  if(!window.L){
-    mapEl.classList.add('map-error');
-    mapEl.innerHTML='Carte indisponible : Leaflet n’est pas chargé. Vérifiez la connexion internet.';
-    return;
-  }
-  try{
-    if(mapInstance){ setTimeout(()=>mapInstance.invalidateSize(),200); return; }
-    mapInstance=L.map('map',{zoomControl:true}).setView([46.670,-1.426],13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19, attribution:'© OpenStreetMap'}).addTo(mapInstance);
-    L.marker([46.670,-1.426]).addTo(mapInstance).bindPopup('Vendée — position par défaut');
-    setTimeout(()=>mapInstance.invalidateSize(),300);
-    const geo=document.getElementById('geo-status');
-    if(!window.isSecureContext && location.hostname !== 'localhost'){
-      if(geo) geo.innerText='GPS bloqué : ouvrez l’application en HTTPS pour autoriser la géolocalisation.';
-      return;
-    }
-    if(navigator.geolocation){
-      if(geo) geo.innerText='Recherche GPS...';
-      navigator.geolocation.getCurrentPosition(pos=>{
-        const lat=pos.coords.latitude, lng=pos.coords.longitude;
-        mapInstance.setView([lat,lng],16);
-        L.marker([lat,lng]).addTo(mapInstance).bindPopup('Position terrain').openPopup();
-        if(geo) geo.innerText='📍 Coordonnées GPS verrouillées';
-        setTimeout(()=>mapInstance.invalidateSize(),200);
-      },err=>{
-        if(geo) geo.innerText='GPS non autorisé ou indisponible. La carte reste utilisable.';
-        console.warn('GPS indisponible', err);
-      },{enableHighAccuracy:true,timeout:10000,maximumAge:60000});
-    }
-  }catch(e){
-    console.warn('Erreur carte', e);
-    mapEl.classList.add('map-error');
-    mapEl.innerHTML='Carte indisponible : rechargez la page ou vérifiez la connexion internet.';
-  }
-}
-function fixMapSize(){
-  if(!mapInstance) initLeafletMap();
-  else setTimeout(()=>mapInstance.invalidateSize(),250);
-}
-// Ré-init map quand on ouvre l'écran signalement via le shell app
-// HOTFIX : navigation sûre même si appNavigate n'existait pas.
-window.appNavigate = function(screenId, remember=true, restoreScroll=false){
-  if (typeof switchScreen === 'function') switchScreen(screenId);
-  if(screenId==='scr-report') setTimeout(()=>{ initLeafletMap(); fixMapSize(); },450);
-};
-
-
-
-/* =========================================================
-   HOTFIX FINAL — VERSION SANS ERREURS BLOQUANTES
-   - Tailwind absent : aucune erreur bloquante
-   - localStorage sandboxé : safeStorage prend le relais
-   - Connexion manager : ouverture forcée de scr-manager
-   ========================================================= */
-window.addEventListener('error', function(e){
-  console.error('Erreur JS détectée :', e.message, e.filename, e.lineno);
-  try {
-    const t = document.getElementById('toast-text');
-    const toast = document.getElementById('toast');
-    if (t && toast) {
-      t.innerText = 'Erreur app : ' + e.message;
-      toast.classList.remove('translate-y-20','opacity-0');
-    }
-  } catch (_) {}
-});
-
-window.forceOpenManagerSpace = function(){
-  const input = document.getElementById('manager-company-code');
-  const rawCode = (input && input.value ? input.value : '').trim();
-  const code = rawCode ? rawCode.toUpperCase() : 'RSTV-DEMO-0000';
-
-  const lbl = document.getElementById('lbl-manager-comp-name');
-  if (lbl) lbl.innerText = code;
-
-  const sectorValue = document.getElementById('manager-login-sector')?.value || 'Non renseigné';
-  const sizeValue = document.getElementById('manager-login-size')?.value || 'Non renseigné';
-  try {
-    managerSector = sectorValue;
-    managerCompanySize = sizeValue;
-    safeStorage.setItem('restev_manager_sector_' + code, sectorValue);
-    safeStorage.setItem('restev_manager_size_' + code, sizeValue);
-  } catch(e) { console.warn('Stockage secteur/taille ignoré', e); }
-
-  // Navigation directe, sans dépendre des autres fonctions.
-  document.querySelectorAll('.screen').forEach(function(s){
-    s.classList.remove('active');
-    s.style.display = 'none';
-  });
-  const manager = document.getElementById('scr-manager');
-  if (manager) {
-    manager.classList.add('active');
-    manager.style.display = 'block';
-    try { window.scrollTo({top:0, behavior:'smooth'}); } catch(e) { window.scrollTo(0,0); }
+    toast('Réponse enregistrée et envoyée au salarié.');
+    loadManagerReports();
   }
 
-  try { if (typeof unlockAlertSound === 'function') unlockAlertSound(); } catch(e) {}
-  try { if (typeof loadManagerReports === 'function') loadManagerReports(); } catch(e) { console.warn('Signalements non chargés', e); }
-  try { if (typeof loadPassportRegistry === 'function') loadPassportRegistry(); } catch(e) { console.warn('Registre non chargé', e); }
-  try { if (typeof startManagerRealtime === 'function') startManagerRealtime(); } catch(e) { console.warn('Realtime non activé', e); }
-  try { if (typeof unlockManagerAlerts === 'function') unlockManagerAlerts(); } catch(e) { console.warn('Alertes non déverrouillées', e); }
-  try { if (typeof startManagerAlertPolling === 'function') startManagerAlertPolling(); } catch(e) { console.warn('Polling alertes non activé', e); }
-
-  if (typeof showToast === 'function') showToast('Espace Management ouvert.');
-};
-
-handleManagerLogin = function(){
-  const code = (document.getElementById('manager-company-code')?.value || '').trim();
-  if (!code) return showToast('Veuillez saisir un code établissement');
-  window.forceOpenManagerSpace();
-};
-
-setTimeout(function(){
-  const btn = document.getElementById('btn-manager-login') || Array.from(document.querySelectorAll('button')).find(b => (b.textContent || '').includes("Accéder à l'Espace"));
-  if (btn) {
-    btn.id = 'btn-manager-login';
-    btn.type = 'button';
-    btn.onclick = function(ev){
-      if (ev) ev.preventDefault();
-      handleManagerLogin();
-      return false;
-    };
+  async function sendManagerMessage(){
+    const employee_name = document.getElementById('msgEmployee').value.trim();
+    const title = document.getElementById('msgTitle').value.trim();
+    const message = document.getElementById('msgContent').value.trim();
+    const priority = document.getElementById('msgPriority').value;
+    if(!employee_name || !title || !message) return toast('Compléter salarié, titre et message.');
+    const { error } = await supabaseClient.from('manager_messages').insert([{ company_code: currentManager.company, employee_name, title, message, priority }]);
+    if(error) return toast('Erreur message : ' + error.message);
+    document.getElementById('msgTitle').value = ''; document.getElementById('msgContent').value = '';
+    toast('Message envoyé au salarié.');
   }
-}, 100);
 
-
-/* =========================================================
-   PATCH V4 — PROFILS SALARIÉS
-   Ajout des profils : CDI, CDD, Intérimaire, Apprenti,
-   Stagiaire, Saisonnier.
-   ========================================================= */
-const RESTEV_EMPLOYEE_PROFILES = ['CDI','CDD','Intérimaire','Apprenti','Stagiaire','Saisonnier'];
-
-function getSelectedEmployeeProfile(){
-  const select = document.getElementById('reg-emp-profile');
-  return select?.value || 'CDI';
-}
-
-function ensureEmployeeProfileSelect(){
-  const nameInput = document.getElementById('reg-emp-name');
-  if(!nameInput || document.getElementById('reg-emp-profile')) return;
-  const select = document.createElement('select');
-  select.id = 'reg-emp-profile';
-  select.className = 'w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white';
-  RESTEV_EMPLOYEE_PROFILES.forEach(profile => {
-    const opt = document.createElement('option');
-    opt.value = profile;
-    opt.textContent = profile;
-    select.appendChild(opt);
-  });
-  nameInput.insertAdjacentElement('afterend', select);
-}
-
-function setEmployeeProfileDisplay(profile){
-  const cleanProfile = profile || currentEmployeeSession?.profile || 'Non renseigné';
-  const profileLabel = document.getElementById('lbl-emp-profile');
-  if(profileLabel) profileLabel.innerText = 'Profil : ' + cleanProfile;
-  const certProfile = document.getElementById('cert-profile');
-  if(certProfile) certProfile.value = cleanProfile;
-}
-
-// Lecture QR enrichie : emp + comp + epis + sector + profile.
-const previousCheckUrlParametersV4 = typeof checkUrlParameters === 'function' ? checkUrlParameters : null;
-checkUrlParameters = function(){
-  const p = new URLSearchParams(window.location.search);
-  const emp = p.get('emp');
-  const comp = p.get('comp');
-  const epis = p.get('epis');
-  const sector = p.get('sector') || p.get('secteur');
-  const profile = p.get('profile') || p.get('profil') || 'Non renseigné';
-  if(epis){
-    try{
-      selectedEPIList = JSON.parse(decodeURIComponent(epis));
-      if(!Array.isArray(selectedEPIList)) selectedEPIList = [];
-    } catch(e){
-      console.warn('EPI non lisibles depuis le QR Code :', e);
-      selectedEPIList = [];
-    }
+  async function loadPassportRegistry(){
+    if(!supabaseClient || !currentManager.company) return;
+    const { data, error } = await supabaseClient.from('passport_registry')
+      .select('employee_name,score,total,epis,status,created_at').eq('company_code', currentManager.company).order('created_at',{ascending:false}).limit(50);
+    if(error) return toast('Erreur passeports : ' + error.message);
+    const box = document.getElementById('passportList');
+    if(!data || !data.length){ box.innerHTML = '<p class="text-xs text-slate-400 italic">Aucun passeport.</p>'; return; }
+    box.innerHTML = data.map(p => `<div class="p-3 bg-green-50 border border-green-200 rounded-xl text-sm"><b>${esc(p.employee_name)}</b><br><span class="text-xs">Score : ${esc(p.score)}/${esc(p.total)} - ${new Date(p.created_at).toLocaleString('fr-FR')}</span></div>`).join('');
   }
-  if(emp && comp){
-    currentEmployeeSession = {name:emp, company:comp, epis:selectedEPIList, sector: sector || 'Autre', profile};
-    const welcome = document.getElementById('lbl-emp-welcome');
-    const company = document.getElementById('lbl-emp-company');
-    if(welcome) welcome.innerText = `Bonjour, ${emp}`;
-    if(company) company.innerText = `Établissement : ${comp}${sector ? ' | Secteur : '+sector : ''}`;
-    setEmployeeProfileDisplay(profile);
-    switchScreen('scr-employee');
-    showToast('Passeport Prévention activé via QR Code !');
-  } else if(previousCheckUrlParametersV4) {
-    previousCheckUrlParametersV4();
+
+  // =====================================================
+  // 4) SALARIÉ
+  // =====================================================
+  function employeeLogin(){
+    const name = document.getElementById('employeeName').value.trim();
+    const company = document.getElementById('employeeCompany').value.trim().toUpperCase();
+    if(!name || !company) return toast('Saisir nom salarié et code établissement.');
+    currentEmployee = { name, company };
+    document.getElementById('employeeWelcome').innerText = 'Bonjour, ' + name;
+    document.getElementById('employeeCompanyLbl').innerText = 'Établissement : ' + company;
+    showScreen('employee');
+    loadEmployeeMessages();
+    toast('Espace salarié connecté.');
   }
-};
 
-// Génération QR enrichie avec profil salarié.
-generateEmployeeAccess = function(){
-  ensureEmployeeProfileSelect();
-  const name = document.getElementById('reg-emp-name')?.value.trim();
-  const code = document.getElementById('lbl-manager-comp-name')?.innerText.trim();
-  if(!name) return showToast('Veuillez saisir un nom et un prénom !');
-  if(!code) return showToast('Code établissement manquant.');
-  selectedEPIList = getSelectedEPI();
-  const baseUrl = window.location.origin + window.location.pathname;
-  const episParam = encodeURIComponent(JSON.stringify(selectedEPIList));
-  const sectorLabel = managerSector || document.getElementById('manager-login-sector')?.value || 'Autre';
-  const profile = getSelectedEmployeeProfile();
-  const url = `${baseUrl}?emp=${encodeURIComponent(name)}&comp=${encodeURIComponent(code)}&epis=${episParam}&sector=${encodeURIComponent(sectorLabel)}&profile=${encodeURIComponent(profile)}`;
-  QRCode.toCanvas(document.getElementById('qr-canvas'), url, {width:180, margin:2, color:{dark:'#245ca6', light:'#ffffff'}}, err => {
-    if(err){ console.error(err); showToast('Erreur QR Code.'); }
-    else {
-      document.getElementById('qr-area')?.classList.remove('hidden');
-      showToast(`QR salarié généré — Profil : ${profile}`);
-    }
-  });
-};
-
-// Ajout du profil dans l'attestation quand le QCM est terminé.
-const previousSubmitQCMAnswerV4 = typeof submitQCMAnswer === 'function' ? submitQCMAnswer : null;
-submitQCMAnswer = function(){
-  if(previousSubmitQCMAnswerV4) previousSubmitQCMAnswerV4();
-  setTimeout(() => setEmployeeProfileDisplay(currentEmployeeSession?.profile || getSelectedEmployeeProfile()), 80);
-};
-
-// Registre : rendu compatible avec une colonne Profil.
-renderPassportRegistry = function(entries){
-  const table = document.getElementById('manager-emargements-list');
-  if(!table) return;
-  table.innerHTML = '';
-  if(!entries || !entries.length){
-    table.innerHTML = '<tr><td colspan="6" class="p-4 text-center italic text-slate-400">Aucun passeport validé pour le moment.</td></tr>';
-    return;
+  async function submitRiskReport(){
+    if(!supabaseClient) return toast('Supabase non chargé.');
+    if(!currentEmployee.company) return toast('Connecter le salarié.');
+    const category = document.getElementById('riskCategory').value;
+    const level = document.getElementById('riskLevel').value;
+    const frequency = document.getElementById('riskFrequency').value;
+    const description = document.getElementById('riskDescription').value.trim();
+    if(!description) return toast('Décrire la situation.');
+    const { error } = await supabaseClient.from('prevention_reports').insert([{ company_code: currentEmployee.company, employee_name: currentEmployee.name, category, level, frequency, description, status:'Nouveau' }]);
+    if(error) return toast('Erreur signalement : ' + error.message);
+    await supabaseClient.from('prevention_stats').insert([{ period_month:new Date().toISOString().slice(0,7), sector:'Non renseigné', company_size_range:'Non renseigné', risk_category:category, risk_level:level, frequency, event_type:'Signalement prévention', corrective_action_type:'À définir' }]);
+    document.getElementById('riskDescription').value = '';
+    toast('Signalement envoyé au manager.');
   }
-  entries.forEach(entry => {
-    const row = document.createElement('tr');
-    row.className = 'border-b border-slate-100 dark:border-slate-700';
-    const epiText = (entry.epis && entry.epis.length) ? entry.epis.join(', ') : 'Aucun EPI renseigné';
-    const profile = entry.employee_profile || entry.profile || 'Non renseigné';
-    row.innerHTML = `<td class="p-3 font-bold dark:text-white">${escapeHtml(entry.employee_name || entry.employee || 'Salarié')}</td><td class="p-3 text-slate-500 font-bold">${escapeHtml(profile)}</td><td class="p-3 text-slate-500">${escapeHtml(entry.validated_at || entry.date || '')}</td><td class="p-3"><span class="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded font-bold">${escapeHtml(entry.score || '')}</span></td><td class="p-3 text-slate-500">${escapeHtml(epiText)}</td><td class="p-3 text-emerald-500 font-extrabold text-[11px] uppercase">${escapeHtml(entry.status || 'Validé et signé')}</td>`;
-    table.appendChild(row);
-  });
-};
 
-// Normalisation registre avec profil.
-if(typeof normalizeRegistryRow === 'function'){
-  const previousNormalizeRegistryRowV4 = normalizeRegistryRow;
-  normalizeRegistryRow = function(r){
-    const row = previousNormalizeRegistryRowV4(r);
-    row.profile = r.employee_profile || r.profile || 'Non renseigné';
-    row.employee_profile = row.profile;
-    return row;
-  };
-}
-
-// Sauvegarde du profil dans l'entrée finale.
-const previousFinalizeAndCloseV4 = typeof finalizeAndClose === 'function' ? finalizeAndClose : null;
-finalizeAndClose = async function(){
-  updateCertificateEPI();
-  if(!isSignatureDone('emp') || !isSignatureDone('mgr')) return showToast('Les deux signatures réelles sont obligatoires.');
-  const name = document.getElementById('cert-employee').value || (currentEmployeeSession?currentEmployeeSession.name:'Salarié');
-  const companyCode = (currentEmployeeSession?.company || document.getElementById('cert-company').value || document.getElementById('lbl-manager-comp-name')?.innerText || 'Établissement non renseigné').trim();
-  const profile = currentEmployeeSession?.profile || document.getElementById('cert-profile')?.value || getSelectedEmployeeProfile();
-  const now = new Date().toLocaleString('fr-FR');
-  const entry = {
-    company_code: companyCode,
-    employee_name: name,
-    employee_profile: profile,
-    profile: profile,
-    validated_at: now,
-    score: `${qcmScore}/${qcmActiveQuestions.length}`,
-    epis: selectedEPIList,
-    sector: getCurrentSectorLabel(),
-    status:'Validé et signé',
-    signature_employee:getSignatureData('emp'),
-    signature_manager:getSignatureData('mgr')
-  };
-  await savePassportEntry(entry);
-  showToast('Passeport clôturé et enregistré dans le registre avec profil salarié.');
-  switchScreen('scr-employee');
-};
-
-// Sauvegarde Supabase enrichie si la colonne employee_profile existe.
-const previousSavePassportEntryV4 = typeof savePassportEntry === 'function' ? savePassportEntry : null;
-savePassportEntry = async function(entry){
-  let entries = [];
-  try { entries = JSON.parse(safeStorage.getItem(getRegistryKey()) || '[]'); } catch(e){ entries = []; }
-  entries.unshift(entry);
-  safeStorage.setItem(getRegistryKey(), JSON.stringify(entries.slice(0,100)));
-
-  if(supabaseClient){
-    try{
-      const payload = {
-        company_code: entry.company_code,
-        employee_name: entry.employee_name,
-        employee_profile: entry.employee_profile || entry.profile || 'Non renseigné',
-        score: qcmScore,
-        total: qcmActiveQuestions.length,
-        epis: entry.epis || [],
-        status: entry.status || 'Validé et signé',
-        signature_employee: entry.signature_employee || null,
-        signature_manager: entry.signature_manager || null
-      };
-      const {error} = await supabaseClient.from('passport_registry').insert([payload]);
-      if(error){
-        console.warn('Sauvegarde Supabase avec profil impossible, tentative sans employee_profile :', error.message);
-        delete payload.employee_profile;
-        await supabaseClient.from('passport_registry').insert([payload]);
-      }
-    }catch(e){ console.warn('Sauvegarde registre locale uniquement :', e); }
+  async function loadEmployeeMessages(){
+    if(!supabaseClient || !currentEmployee.company) return;
+    const { data, error } = await supabaseClient.from('manager_messages')
+      .select('id,title,message,priority,read_by_employee,created_at')
+      .eq('company_code', currentEmployee.company).eq('employee_name', currentEmployee.name)
+      .order('created_at',{ascending:false}).limit(30);
+    if(error) return toast('Erreur messages : ' + error.message);
+    const box = document.getElementById('employeeMessagesList');
+    if(!data || !data.length){ box.innerHTML = '<p class="text-xs text-slate-400 italic">Aucun message.</p>'; return; }
+    box.innerHTML = data.map(m => `<div class="p-4 rounded-2xl border ${m.priority==='Urgent'?'bg-red-50 border-red-300':'bg-cyan-50 border-cyan-200'}"><div class="flex justify-between"><b>${esc(m.title)}</b><span class="text-xs font-black">${esc(m.priority)}</span></div><p class="text-sm mt-2 whitespace-pre-line">${esc(m.message)}</p><p class="text-xs text-slate-400 mt-2">${new Date(m.created_at).toLocaleString('fr-FR')}</p></div>`).join('');
   }
-  if(document.getElementById('manager-emargements-list')) loadPassportRegistry();
-};
 
-// Initialisation écran.
-document.addEventListener('DOMContentLoaded', () => {
-  ensureEmployeeProfileSelect();
-  setEmployeeProfileDisplay('Non renseigné');
-});
-// FIN PATCH V4 — PROFILS SALARIÉS
-</script> 
+  async function validatePassport(){
+    if(!supabaseClient || !currentEmployee.company) return toast('Connecter le salarié.');
+    const score = 8, total = 10;
+    const { error } = await supabaseClient.from('passport_registry').insert([{ company_code: currentEmployee.company, employee_name: currentEmployee.name, score, total, epis:['Chaussures de sécurité','Gilet haute visibilité'], status:'Validé et signé' }]);
+    if(error) return toast('Erreur passeport : ' + error.message);
+    await supabaseClient.from('prevention_stats').insert([{ period_month:new Date().toISOString().slice(0,7), sector:'Non renseigné', company_size_range:'Non renseigné', risk_category:'Validation passeport prévention', risk_level:'Points à renforcer', frequency:'Ponctuelle', event_type:'Passeport validé', corrective_action_type:'Reprise des points faibles' }]);
+    toast('Passeport prévention enregistré.');
+  }
 
-</body> 
-
+  // =====================================================
+  // 5) CENTRE RESTEV
+  // =====================================================
+  async function loadCenterStats(){
+    if(!supabaseClient) return toast('Supabase non chargé.');
+    const statRes = await supabaseClient.from('prevention_stats').select('*').order('created_at',{ascending:false}).limit(500);
+    const passRes = await supabaseClient.from('passport_registry').select('id').limit(1000);
+    if(statRes.error) return toast('Erreur stats : ' + statRes.error.message);
+    const rows = statRes.data || [];
+    const passCount = passRes.data ? passRes.data.length : 0;
+    const reportRows = rows.filter(r => r.event_type === 'Signalement prévention');
+    const critical = rows.filter(r => String(r.risk_level).includes('Critique')).length;
+    const counts = {};
+    rows.forEach(r => counts[r.risk_category || 'Non renseigné'] = (counts[r.risk_category || 'Non renseigné'] || 0) + 1);
+    const top = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
+    document.getElementById('centerReports').innerText = reportRows.length;
+    document.getElementById('centerPassports').innerText = passCount;
+    document.getElementById('centerCritical').innerText = critical;
+    document.getElementById('centerTopRisk').innerText = top ? top[0] : '—';
+    const box = document.getElementById('centerList');
+    if(!rows.length){ box.innerHTML = '<p class="text-xs text-slate-400 italic">Aucune donnée.</p>'; return; }
+    box.innerHTML = rows.slice(0,30).map(r => `<div class="p-3 bg-slate-50 border rounded-xl text-sm"><b>${esc(r.event_type)}</b> - ${esc(r.risk_category)}<br><span class="text-xs text-slate-500">${esc(r.risk_level)} - ${esc(r.frequency)} - ${new Date(r.created_at).toLocaleString('fr-FR')}</span></div>`).join('');
+  }
+</script>
+</body>
 </html>
