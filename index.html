@@ -2710,320 +2710,297 @@ document.addEventListener('DOMContentLoaded', () => {
      À coller juste avant 
 
 <!-- =========================================================
-     PATCH RESTEV 85 — CARTE RÉELLE + ZONES DE TRAVAIL + MODE SALARIÉ + MAINTENANCE + NETTOYAGE POPUP
+     PATCH RESTEV 85 — GPS GOOGLE MAPS SIMPLE + ZOOM MAX
      À coller juste avant </body>
 
-     Corrections :
-     1) Le salarié voit une vraie carte avec marqueur, pas seulement des coordonnées.
-     2) Le manager peut créer des zones / secteurs de travail.
-     3) Le salarié ne voit que son portail salarié via QR Code.
-     4) Ajout d’un panneau maintenance pour remettre à zéro des données.
-     5) Suppression définitive de l’ancien popup parasite “Nouveau signalement prévention”.
+     Objectif :
+     - Remplacer l'affichage GPS par une carte Google Maps simple.
+     - Zoom fort sur la position du signalement.
+     - Bouton pour ouvrir Google Maps en grand.
+     - Ne plus afficher les coordonnées dans la description.
+     - Permettre au manager de voir la zone et d'ouvrir la carte.
      ========================================================= -->
-<style id="r85-zones-map-maintenance-style">
-  #r85-report-map-real { height: 260px; width: 100%; border-radius: 1.25rem; border: 1px solid rgba(148,163,184,.45); overflow:hidden; background:#e2e8f0; }
-  html.dark #r85-report-map-real { filter: brightness(.78) contrast(1.08); }
-  .r85-maint-danger { background: linear-gradient(135deg,#991b1b,#dc2626); }
-  .r85-zone-chip { display:inline-flex; align-items:center; gap:.35rem; padding:.45rem .65rem; border-radius:.85rem; font-size:10px; font-weight:900; border:1px solid rgba(148,163,184,.35); }
+<style id="r85-google-map-gps-style">
+  #r85-google-map-frame {
+    width: 100%;
+    height: 300px;
+    border: 0;
+    border-radius: 1.25rem;
+    background: #e2e8f0;
+  }
+  html.dark #r85-google-map-frame { filter: brightness(.82) contrast(1.05); }
+  .r85-map-card {
+    border: 1px solid rgba(148,163,184,.45);
+    border-radius: 1.35rem;
+    overflow: hidden;
+    background: white;
+  }
+  html.dark .r85-map-card { background: #0f172a; border-color: #334155; }
 </style>
 
 <script>
 (function(){
-  const PATCH_VERSION = 'RESTEV85_REAL_MAP_ZONES_EMPLOYEE_ONLY_MAINTENANCE_2026_07_06';
-  let r85ReportMap = null;
-  let r85ReportMarker = null;
-  let r85TerrainGps = null;
-  let r85GeoWatchId = null;
-  let r85EmployeeLocked = false;
+  const PATCH_VERSION = 'RESTEV85_GOOGLE_MAPS_GPS_SIMPLE_2026_07_06';
+  let r85GoogleGps = null;
+  let r85GoogleGeoWatch = null;
 
   function toast(msg){ if(typeof showToast === 'function') showToast(msg); else alert(msg); }
   function esc(v){ if(typeof escapeHtml === 'function') return escapeHtml(v || ''); return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   function session(){ try{return currentEmployeeSession || window.currentEmployeeSession || null;}catch(e){return window.currentEmployeeSession || null;} }
   function company(){ return (session()?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim(); }
 
-  /* =========================================================
-     1) SUPPRESSION DÉFINITIVE DU POPUP PARASITE
-     ========================================================= */
-  function removeParasitePopups(){
-    const badTexts = [
-      'Nouveau signalement prévention',
-      'Pour recevoir les notifications hors écran',
-      '========================================================',
-      '-->'
-    ];
-    document.querySelectorAll('body *').forEach(el => {
-      if(['SCRIPT','STYLE','TEXTAREA','INPUT','SELECT','OPTION'].includes(el.tagName)) return;
-      const txt = (el.innerText || '').trim();
-      if(!txt) return;
-      const hit = badTexts.some(t => txt.includes(t));
-      const looksLikePopup = (el.className || '').toString().includes('fixed') || (el.style && (el.style.position === 'fixed' || el.style.zIndex));
-      if(hit && looksLikePopup) el.remove();
-      if(txt === '-->' || txt.startsWith('<!--')) el.remove();
-    });
+  function googleEmbedUrl(lat, lng, zoom){
+    return `https://maps.google.com/maps?q=${encodeURIComponent(lat + ',' + lng)}&z=${zoom || 21}&output=embed`;
   }
 
-  const oldShowBrowserNotification = window.showBrowserNotification;
-  window.showBrowserNotification = function(report){
-    // On garde uniquement la notification native navigateur. Aucun popup HTML parasite.
-    try{
-      if(!('Notification' in window) || Notification.permission !== 'granted') return;
-      new Notification('RESTEV 85 — Signalement terrain', {
-        body: `${report?.employee_name || 'Salarié'} — ${report?.category || 'Danger signalé'}`,
-        icon:'logo.png', badge:'logo.png', requireInteraction:true, tag:'restev85-signalement'
-      });
-    }catch(e){}
-  };
-
-  new MutationObserver(removeParasitePopups).observe(document.documentElement, {childList:true, subtree:true});
-
-  /* =========================================================
-     2) MODE SALARIÉ SEUL VIA QR CODE
-     ========================================================= */
-  function detectEmployeeLock(){
-    const params = new URLSearchParams(window.location.search);
-    if(params.get('emp') && params.get('comp')) r85EmployeeLocked = true;
-    if(session()?.name && session()?.company) r85EmployeeLocked = true;
+  function googleOpenUrl(lat, lng){
+    return `https://www.google.com/maps?q=${encodeURIComponent(lat + ',' + lng)}`;
   }
 
-  function applyEmployeeOnlyUI(){
-    detectEmployeeLock();
-    if(!r85EmployeeLocked) return;
-    // Cache les voies d’accès manager / centre sur la page accueil si elles existent.
-    document.querySelectorAll("button[onclick*='scr-auth'], button[onclick*='scr-direction'], button[onclick*='scr-manager'], button[onclick*='createNewCompany']").forEach(b => {
-      const txt = (b.innerText || '').toLowerCase();
-      if(txt.includes('management') || txt.includes('restev') || txt.includes('établissement') || txt.includes('manager') || txt.includes('centre')) b.style.display = 'none';
-    });
-    // Si un salarié tente un écran non autorisé, on le renvoie sur son portail.
-    const active = document.querySelector('.screen.active')?.id;
-    const allowed = ['scr-employee','scr-report','scr-qcm','scr-qcm-success','scr-resources','scr-training','scr-employee-messages'];
-    if(active && !allowed.includes(active)){
-      if(typeof switchScreen === 'function') switchScreen('scr-employee');
-    }
-  }
-
-  /* =========================================================
-     3) ZONES DE TRAVAIL MANAGER
-     ========================================================= */
   async function fetchWorkZones(companyCode){
     if(!supabaseClient || !companyCode) return [];
     try{
-      const {data,error} = await supabaseClient.from('work_zones').select('id,name,description,created_at').eq('company_code', companyCode).order('name',{ascending:true});
-      if(error){ console.warn('Zones indisponibles:', error.message); return []; }
+      const {data,error} = await supabaseClient
+        .from('work_zones')
+        .select('id,name,description')
+        .eq('company_code', companyCode)
+        .order('name',{ascending:true});
+      if(error){ console.warn('Zones non chargées:', error.message); return []; }
       return data || [];
-    }catch(e){ console.warn(e); return []; }
+    }catch(e){ return []; }
   }
 
-  async function installManagerZonesPanel(){
-    const screen = document.getElementById('scr-manager');
-    if(!screen || document.getElementById('r85-manager-zones-panel')) return;
-    const panel = document.createElement('div');
-    panel.id = 'r85-manager-zones-panel';
-    panel.className = 'bg-white dark:bg-slate-800 p-5 rounded-2xl border-t-4 border-t-cyan-500 shadow-premium space-y-4';
-    panel.innerHTML = `
-      <div class="flex items-center justify-between gap-2">
-        <h3 class="font-black dark:text-white text-xs uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-location-dot text-cyan-500"></i> Zones / secteurs de travail</h3>
-        <button onclick="loadR85WorkZonesManager()" class="text-[10px] bg-slate-100 dark:bg-slate-700 dark:text-white px-3 py-2 rounded-xl font-black">Actualiser</button>
-      </div>
-      <p class="text-[11px] text-slate-500 dark:text-slate-300 leading-relaxed">Créez des zones comme Atelier, Réserve, Quai, Ligne 1, Chantier A… Le salarié choisira la zone lors du signalement.</p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <input id="r85-zone-name" placeholder="Nom de la zone / secteur" class="p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white">
-        <input id="r85-zone-desc" placeholder="Description optionnelle" class="p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white">
-      </div>
-      <button onclick="createR85WorkZone()" class="w-full bg-cyan-600 text-white py-3 rounded-xl text-xs font-black"><i class="fa-solid fa-plus mr-1"></i> Ajouter la zone</button>
-      <div id="r85-manager-zones-list" class="flex flex-wrap gap-2"><span class="text-xs text-slate-400 italic">Aucune zone chargée.</span></div>
-    `;
-    const first = screen.querySelector('.grid.grid-cols-1.md\\:grid-cols-2') || screen.querySelector('.bg-white');
-    if(first) screen.insertBefore(panel, first);
-    else screen.prepend(panel);
-    loadR85WorkZonesManager();
-  }
-
-  window.loadR85WorkZonesManager = async function(){
-    const box = document.getElementById('r85-manager-zones-list');
-    if(!box) return;
+  async function loadZonesIntoGoogleReportSelect(){
+    const select = document.getElementById('r85-google-work-zone');
+    if(!select) return;
     const zones = await fetchWorkZones(company());
-    if(!zones.length){ box.innerHTML = '<span class="text-xs text-slate-400 italic">Aucune zone créée.</span>'; return; }
-    box.innerHTML = zones.map(z => `<span class="r85-zone-chip bg-cyan-50 dark:bg-slate-900 text-cyan-700 dark:text-cyan-300"><i class="fa-solid fa-location-dot"></i>${esc(z.name)} <button onclick="deleteR85WorkZone('${z.id}')" class="ml-1 text-red-500 font-black">×</button></span>`).join('');
-  };
+    const previous = select.value;
+    select.innerHTML = '<option value="">Zone de travail non renseignée</option>' + zones.map(z => `<option value="${esc(z.name)}">${esc(z.name)}</option>`).join('');
+    if(previous) select.value = previous;
+  }
 
-  window.createR85WorkZone = async function(){
-    if(!supabaseClient) return toast('Supabase non chargé.');
-    const c = company(); if(!c) return toast('Code établissement manquant.');
-    const name = document.getElementById('r85-zone-name')?.value.trim();
-    const description = document.getElementById('r85-zone-desc')?.value.trim() || '';
-    if(!name) return toast('Saisissez un nom de zone.');
-    const {error} = await supabaseClient.from('work_zones').insert([{company_code:c, name, description}]);
-    if(error) return toast('Erreur création zone : '+error.message);
-    document.getElementById('r85-zone-name').value=''; document.getElementById('r85-zone-desc').value='';
-    toast('Zone créée.'); loadR85WorkZonesManager();
-  };
-
-  window.deleteR85WorkZone = async function(id){
-    if(!supabaseClient) return;
-    const {error} = await supabaseClient.from('work_zones').delete().eq('id', id);
-    if(error) return toast('Erreur suppression zone : '+error.message);
-    toast('Zone supprimée.'); loadR85WorkZonesManager();
-  };
-
-  /* =========================================================
-     4) CARTE RÉELLE + GPS TERRAIN SALARIÉ
-     ========================================================= */
-  function ensureReportMap(){
+  window.installR85GoogleGpsBlock = function(){
     const screen = document.getElementById('scr-report');
     if(!screen) return;
-    const oldMap = document.getElementById('map');
-    if(oldMap) oldMap.style.display = 'none';
-    if(document.getElementById('r85-report-map-real')) return;
+
+    // On masque les anciennes cartes pour éviter les doublons.
+    ['map','r85-report-map-real','r85-real-map-block','r85-gps-permission-block'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.style.display = 'none';
+    });
+
+    if(document.getElementById('r85-google-gps-block')){
+      setTimeout(() => refreshR85GoogleMapFrame(), 100);
+      return;
+    }
 
     const block = document.createElement('div');
-    block.id='r85-real-map-block';
-    block.className='space-y-3 bg-blue-50 dark:bg-slate-900 border border-blue-100 dark:border-slate-700 p-4 rounded-2xl';
+    block.id = 'r85-google-gps-block';
+    block.className = 'space-y-3 bg-blue-50 dark:bg-slate-900 border border-blue-100 dark:border-slate-700 p-4 rounded-2xl';
     block.innerHTML = `
       <div class="flex items-start gap-3">
         <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-slate-800 text-restev-blue flex items-center justify-center"><i class="fa-solid fa-map-location-dot"></i></div>
-        <div class="flex-1"><p class="text-xs font-black dark:text-white">Lieu du signalement</p><p class="text-[11px] text-slate-500 dark:text-slate-300">Choisissez une zone de travail et/ou autorisez la localisation pour afficher la position sur la carte.</p></div>
+        <div class="flex-1">
+          <p class="text-xs font-black dark:text-white">Lieu du signalement</p>
+          <p class="text-[11px] text-slate-500 dark:text-slate-300 leading-relaxed">Choisissez une zone de travail et affichez la position sur Google Maps. Vous pouvez zoomer directement dans la carte.</p>
+        </div>
       </div>
-      <select id="r85-report-work-zone" class="w-full p-3 bg-white dark:bg-slate-800 border rounded-xl text-xs font-black dark:text-white"><option value="">Zone de travail non renseignée</option></select>
-      <button type="button" onclick="requestTerrainGeolocation()" class="w-full bg-restev-blue text-white py-3 rounded-xl text-xs font-black"><i class="fa-solid fa-location-crosshairs mr-1"></i> Autoriser / actualiser ma position sur la carte</button>
-      <div id="r85-report-map-real"></div>
-      <div id="r85-gps-map-status" class="text-[11px] font-bold text-slate-500 dark:text-slate-300 bg-white dark:bg-slate-800 border rounded-xl p-3">Carte prête. Position non autorisée.</div>
+      <select id="r85-google-work-zone" class="w-full p-3 bg-white dark:bg-slate-800 border rounded-xl text-xs font-black dark:text-white">
+        <option value="">Zone de travail non renseignée</option>
+      </select>
+      <button type="button" onclick="requestR85GoogleGeolocation()" class="w-full bg-restev-blue text-white py-3 rounded-xl text-xs font-black">
+        <i class="fa-solid fa-location-crosshairs mr-1"></i> Autoriser / actualiser ma position Google Maps
+      </button>
+      <div class="r85-map-card">
+        <iframe id="r85-google-map-frame" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=46.670,-1.426&z=13&output=embed"></iframe>
+      </div>
+      <div id="r85-google-gps-status" class="text-[11px] font-bold text-slate-500 dark:text-slate-300 bg-white dark:bg-slate-800 border rounded-xl p-3">Carte Google prête. Position non autorisée.</div>
+      <a id="r85-google-map-open" href="https://www.google.com/maps?q=46.670,-1.426" target="_blank" class="block text-center bg-white dark:bg-slate-800 border text-restev-blue dark:text-blue-300 py-2 rounded-xl text-[10px] font-black">
+        Ouvrir dans Google Maps
+      </a>
     `;
+
     const target = document.getElementById('risk-category-select')?.closest('div') || screen.querySelector('h3')?.nextSibling;
     if(target) screen.insertBefore(block, target);
     else screen.prepend(block);
 
-    setTimeout(initRealReportMap, 200);
-    loadZonesIntoReportSelect();
+    loadZonesIntoGoogleReportSelect();
+    refreshR85GoogleMapFrame();
+  };
+
+  function refreshR85GoogleMapFrame(){
+    const frame = document.getElementById('r85-google-map-frame');
+    const link = document.getElementById('r85-google-map-open');
+    if(!frame || !r85GoogleGps) return;
+    frame.src = googleEmbedUrl(r85GoogleGps.lat, r85GoogleGps.lng, 21);
+    if(link) link.href = googleOpenUrl(r85GoogleGps.lat, r85GoogleGps.lng);
   }
 
-  async function loadZonesIntoReportSelect(){
-    const select = document.getElementById('r85-report-work-zone');
-    if(!select) return;
-    const zones = await fetchWorkZones(company());
-    const current = select.value;
-    select.innerHTML = '<option value="">Zone de travail non renseignée</option>' + zones.map(z => `<option value="${esc(z.name)}">${esc(z.name)}</option>`).join('');
-    if(current) select.value = current;
-  }
+  window.requestR85GoogleGeolocation = function(){
+    installR85GoogleGpsBlock();
+    const status = document.getElementById('r85-google-gps-status');
+    if(!navigator.geolocation){
+      if(status) status.innerHTML = 'Géolocalisation non compatible avec ce navigateur.';
+      return;
+    }
+    if(status) status.innerHTML = 'Demande d’autorisation GPS en cours…';
 
-  function initRealReportMap(){
-    if(!window.L || !document.getElementById('r85-report-map-real')) return;
-    if(r85ReportMap){ setTimeout(()=>r85ReportMap.invalidateSize(),150); return; }
-    r85ReportMap = L.map('r85-report-map-real', {zoomControl:true}).setView([46.670, -1.426], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19}).addTo(r85ReportMap);
-    setTimeout(()=>r85ReportMap.invalidateSize(),300);
-  }
+    if(r85GoogleGeoWatch !== null){
+      try{ navigator.geolocation.clearWatch(r85GoogleGeoWatch); }catch(e){}
+      r85GoogleGeoWatch = null;
+    }
 
-  window.requestTerrainGeolocation = function(){
-    ensureReportMap(); initRealReportMap();
-    const status = document.getElementById('r85-gps-map-status') || document.getElementById('geo-status');
-    if(!navigator.geolocation){ if(status) status.innerHTML='Géolocalisation non compatible.'; return; }
-    if(status) status.innerHTML='Demande d’autorisation GPS en cours…';
-    if(r85GeoWatchId !== null){ try{navigator.geolocation.clearWatch(r85GeoWatchId);}catch(e){} r85GeoWatchId=null; }
     let best = null;
-    const ok = pos => {
-      const p = {lat:pos.coords.latitude, lng:pos.coords.longitude, accuracy:pos.coords.accuracy, captured_at:new Date().toISOString()};
-      if(!best || p.accuracy < best.accuracy){ best = p; r85TerrainGps = p; }
-      const acc = Math.round(r85TerrainGps.accuracy || 0);
-      if(status) status.innerHTML = `📍 Position affichée sur la carte — précision environ <b>${acc} m</b>`;
-      if(document.getElementById('geo-status')) document.getElementById('geo-status').innerText = `📍 GPS terrain OK — précision env. ${acc} m`;
-      if(r85ReportMap){
-        r85ReportMap.setView([r85TerrainGps.lat, r85TerrainGps.lng], 17);
-        if(r85ReportMarker) r85ReportMarker.remove();
-        r85ReportMarker = L.marker([r85TerrainGps.lat, r85TerrainGps.lng]).addTo(r85ReportMap).bindPopup(`Position du signalement<br>Précision env. ${acc} m`).openPopup();
-        L.circle([r85TerrainGps.lat, r85TerrainGps.lng], {radius: r85TerrainGps.accuracy || 30, color:'#3a7bd5', fillColor:'#3a7bd5', fillOpacity:.12}).addTo(r85ReportMap);
-        setTimeout(()=>r85ReportMap.invalidateSize(),150);
+    const onSuccess = pos => {
+      const point = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        accuracy: pos.coords.accuracy,
+        captured_at: new Date().toISOString()
+      };
+      if(!best || point.accuracy < best.accuracy){
+        best = point;
+        r85GoogleGps = point;
       }
+      const acc = Math.round(r85GoogleGps.accuracy || 0);
+      refreshR85GoogleMapFrame();
+      if(status) status.innerHTML = `📍 Position affichée sur Google Maps — précision environ <b>${acc} m</b>`;
+      const oldStatus = document.getElementById('geo-status');
+      if(oldStatus) oldStatus.innerText = `📍 Google Maps OK — précision env. ${acc} m`;
     };
-    const ko = err => { if(status) status.innerHTML = `<b>GPS refusé ou indisponible.</b><br>${esc(err.message || '')}<br>Vous pouvez quand même choisir une zone de travail.`; };
-    r85GeoWatchId = navigator.geolocation.watchPosition(ok, ko, {enableHighAccuracy:true, timeout:25000, maximumAge:0});
-    setTimeout(()=>{ if(r85GeoWatchId!==null){try{navigator.geolocation.clearWatch(r85GeoWatchId);}catch(e){} r85GeoWatchId=null;} }, 12000);
+
+    const onError = err => {
+      if(status) status.innerHTML = `<b>GPS refusé ou indisponible.</b><br>${esc(err.message || '')}<br>Vous pouvez quand même choisir une zone de travail.`;
+    };
+
+    try{
+      r85GoogleGeoWatch = navigator.geolocation.watchPosition(onSuccess, onError, {
+        enableHighAccuracy: true,
+        timeout: 25000,
+        maximumAge: 0
+      });
+      setTimeout(() => {
+        if(r85GoogleGeoWatch !== null){
+          try{ navigator.geolocation.clearWatch(r85GoogleGeoWatch); }catch(e){}
+          r85GoogleGeoWatch = null;
+        }
+        if(r85GoogleGps) toast('Position Google Maps enregistrée.');
+      }, 12000);
+    }catch(e){ onError({message:e.message || e}); }
   };
 
+  // Envoi du signalement : on stocke latitude/longitude en colonnes mais on ne les affiche plus dans le commentaire.
   window.submitRiskReport = async function(){
-    ensureReportMap();
+    installR85GoogleGpsBlock();
     if(!supabaseClient) return toast('Supabase non chargé. Vérifiez internet.');
-    const category=document.getElementById('risk-category-select')?.value || 'Non renseigné';
-    const desc=document.getElementById('risk-description')?.value.trim();
-    const lvl=document.getElementById('risk-level')?.value || 'À qualifier';
-    const freq=document.getElementById('risk-frequency')?.value || 'Non renseignée';
-    const zone=document.getElementById('r85-report-work-zone')?.value || '';
+
+    const category = document.getElementById('risk-category-select')?.value || 'Non renseigné';
+    const desc = document.getElementById('risk-description')?.value.trim();
+    const lvl = document.getElementById('risk-level')?.value || 'À qualifier';
+    const freq = document.getElementById('risk-frequency')?.value || 'Non renseignée';
+    const zone = document.getElementById('r85-google-work-zone')?.value || '';
     if(!desc) return toast('Veuillez saisir une description du danger.');
-    const s=session();
-    const employeeName=s?s.name:'Salarié terrain';
-    const c=s?s.company:(company() || 'Établissement non renseigné');
-    const cleanDesc = desc; // Plus de coordonnées affichées dans le texte salarié/manager.
-    const payload={company_code:c, employee_name:employeeName, category, level:lvl, frequency:freq, description:cleanDesc, status:'Nouveau', work_zone:zone || null, gps_lat:r85TerrainGps?r85TerrainGps.lat:null, gps_lng:r85TerrainGps?r85TerrainGps.lng:null, gps_accuracy:r85TerrainGps?r85TerrainGps.accuracy:null, gps_captured_at:r85TerrainGps?r85TerrainGps.captured_at:null};
-    let {error}=await supabaseClient.from('prevention_reports').insert([payload]);
-    if(error && /(work_zone|gps_)/i.test(error.message||'')){
-      const fallback={...payload}; delete fallback.work_zone; delete fallback.gps_lat; delete fallback.gps_lng; delete fallback.gps_accuracy; delete fallback.gps_captured_at;
-      const res=await supabaseClient.from('prevention_reports').insert([fallback]); error=res.error;
+
+    const s = session();
+    const employeeName = s ? s.name : 'Salarié terrain';
+    const companyCode = s ? s.company : (company() || 'Établissement non renseigné');
+
+    const payload = {
+      company_code: companyCode,
+      employee_name: employeeName,
+      category,
+      level: lvl,
+      frequency: freq,
+      description: desc,
+      status: 'Nouveau',
+      work_zone: zone || null,
+      gps_lat: r85GoogleGps ? r85GoogleGps.lat : null,
+      gps_lng: r85GoogleGps ? r85GoogleGps.lng : null,
+      gps_accuracy: r85GoogleGps ? r85GoogleGps.accuracy : null,
+      gps_captured_at: r85GoogleGps ? r85GoogleGps.captured_at : null
+    };
+
+    let {error} = await supabaseClient.from('prevention_reports').insert([payload]);
+    if(error && /(work_zone|gps_)/i.test(error.message || '')){
+      const fallback = {...payload};
+      delete fallback.work_zone; delete fallback.gps_lat; delete fallback.gps_lng; delete fallback.gps_accuracy; delete fallback.gps_captured_at;
+      const res = await supabaseClient.from('prevention_reports').insert([fallback]);
+      error = res.error;
     }
-    if(error) return toast('Erreur Supabase signalement : '+error.message);
-    try{ if(typeof submitAnonymizedPreventionStat==='function') await submitAnonymizedPreventionStat({category, level:lvl, frequency:freq, event_type:'Signalement prévention'}); }catch(e){}
-    document.getElementById('risk-description').value=''; r85TerrainGps=null;
+    if(error) return toast('Erreur Supabase signalement : ' + error.message);
+
+    try{
+      if(typeof submitAnonymizedPreventionStat === 'function') await submitAnonymizedPreventionStat({category, level:lvl, frequency:freq, event_type:'Signalement prévention'});
+    }catch(e){}
+
+    document.getElementById('risk-description').value = '';
+    r85GoogleGps = null;
     toast('Signalement envoyé au responsable.');
-    if(typeof switchScreen==='function') switchScreen('scr-employee');
+    if(typeof switchScreen === 'function') switchScreen('scr-employee');
   };
 
-  /* =========================================================
-     5) MAINTENANCE PILOTE : RAZ DONNÉES / MISES À JOUR
-     ========================================================= */
-  function installMaintenancePanel(){
-    const screen = document.getElementById('scr-direction') || document.getElementById('scr-manager');
-    if(!screen || document.getElementById('r85-maintenance-panel')) return;
-    const panel=document.createElement('div');
-    panel.id='r85-maintenance-panel';
-    panel.className='bg-white dark:bg-slate-800 p-5 rounded-2xl border-t-4 border-t-slate-900 shadow-premium space-y-4';
-    panel.innerHTML=`
-      <div><p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Pilotage application</p><h3 class="font-black dark:text-white text-sm flex items-center gap-2"><i class="fa-solid fa-screwdriver-wrench text-slate-700 dark:text-slate-300"></i> Maintenance / remise à zéro</h3></div>
-      <p class="text-[11px] text-slate-500 dark:text-slate-300 leading-relaxed">Pour remettre à zéro des données, saisissez <b>RESET</b>. Pour une mise à jour de l’app, remplacez simplement le fichier HTML publié par la nouvelle version générée.</p>
-      <input id="r85-maint-confirm" placeholder="Tapez RESET pour autoriser" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-black dark:text-white">
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-        <button onclick="r85ResetCurrentCompanyData()" class="r85-maint-danger text-white py-3 rounded-xl text-xs font-black">RAZ établissement courant</button>
-        <button onclick="r85ClearLocalDeviceData()" class="bg-slate-900 dark:bg-slate-700 text-white py-3 rounded-xl text-xs font-black">Vider données locales</button>
-        <button onclick="r85ShowAppUpdateInfo()" class="bg-restev-blue text-white py-3 rounded-xl text-xs font-black">Info mises à jour</button>
-      </div>
-      <div id="r85-maint-info" class="text-[11px] text-slate-500 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 border rounded-xl p-3">Aucune action lancée.</div>
-    `;
-    screen.appendChild(panel);
-  }
-
-  function maintenanceAllowed(){ return document.getElementById('r85-maint-confirm')?.value.trim() === 'RESET'; }
-  window.r85ClearLocalDeviceData=function(){ if(!maintenanceAllowed()) return toast('Tapez RESET pour confirmer.'); try{ safeStorage?.clear(); localStorage?.clear(); sessionStorage?.clear(); }catch(e){} document.getElementById('r85-maint-info').innerText='Données locales de cet appareil vidées.'; toast('Données locales vidées.'); };
-  window.r85ShowAppUpdateInfo=function(){ document.getElementById('r85-maint-info').innerHTML='Mise à jour : téléchargez la nouvelle version HTML, remplacez l’ancien fichier publié, gardez le même nom de fichier si possible, puis faites Ctrl+F5 sur les postes. Les données Supabase ne sont pas effacées par une mise à jour du HTML.'; };
-  window.r85ResetCurrentCompanyData=async function(){
-    if(!maintenanceAllowed()) return toast('Tapez RESET pour confirmer.');
+  // Affichage manager avec bouton Google Maps si GPS disponible.
+  window.loadManagerReports = async function(){
     if(!supabaseClient) return toast('Supabase non chargé.');
-    const c=company(); if(!c) return toast('Code établissement manquant.');
-    const tables=[['prevention_reports','company_code'],['passport_registry','company_code'],['manager_messages','company_code'],['work_zones','company_code']];
-    const results=[];
-    for(const [table,col] of tables){
-      try{ const {error}=await supabaseClient.from(table).delete().eq(col,c); results.push(error?`${table}: ${error.message}`:`${table}: OK`); }
-      catch(e){ results.push(`${table}: ${e.message||e}`); }
-    }
-    document.getElementById('r85-maint-info').innerText='RAZ établissement '+c+' → '+results.join(' | ');
-    toast('Remise à zéro demandée. Vérifiez le détail maintenance.');
+    const c = company();
+    if(!c) return;
+    const {data,error} = await supabaseClient
+      .from('prevention_reports')
+      .select('id,company_code,employee_name,category,level,frequency,description,status,manager_response,corrective_action,work_zone,gps_lat,gps_lng,gps_accuracy,created_at')
+      .eq('company_code', c)
+      .order('created_at',{ascending:false})
+      .limit(30);
+    if(error) return toast('Erreur Supabase : ' + error.message);
+    renderManagerReports(data || []);
   };
 
-  const oldSwitchScreen=window.switchScreen;
-  window.switchScreen=function(screenId){
-    if(typeof oldSwitchScreen==='function') oldSwitchScreen(screenId);
-    detectEmployeeLock();
-    if(r85EmployeeLocked){
-      const allowed=['scr-employee','scr-report','scr-qcm','scr-qcm-success','scr-resources','scr-training','scr-employee-messages'];
-      if(!allowed.includes(screenId)){ setTimeout(()=>oldSwitchScreen ? oldSwitchScreen('scr-employee') : null, 50); return; }
-    }
-    if(screenId==='scr-report') setTimeout(()=>{ensureReportMap(); loadZonesIntoReportSelect();},250);
-    if(screenId==='scr-manager') setTimeout(()=>{installManagerZonesPanel();},350);
-    if(screenId==='scr-direction') setTimeout(()=>{installMaintenancePanel();},350);
+  window.renderManagerReports = function(reports){
+    const c = document.getElementById('manager-risk-box');
+    if(!c) return;
+    c.innerHTML = '';
+    if(!reports.length){ c.innerHTML='<p class="text-xs text-slate-400 italic text-center py-8">Aucun danger signalé pour le moment.</p>'; return; }
+    reports.forEach(r => {
+      const hasGps = r.gps_lat && r.gps_lng;
+      const mapLink = hasGps ? googleOpenUrl(r.gps_lat, r.gps_lng) : '';
+      const zone = r.work_zone || 'Zone non renseignée';
+      const card = document.createElement('div');
+      card.className = 'p-3 bg-red-50 dark:bg-slate-900 border border-red-200 dark:border-red-800 rounded-xl space-y-2 text-xs';
+      card.innerHTML = `
+        <div class="flex justify-between items-start gap-2">
+          <div>
+            <p class="font-black text-slate-900 dark:text-white">${esc(r.category || 'Signalement')}</p>
+            <p class="text-[10px] text-slate-400">Par ${esc(r.employee_name || '')} - ${new Date(r.created_at).toLocaleString('fr-FR')}</p>
+          </div>
+          <span class="text-[10px] font-black px-2 py-1 rounded bg-white dark:bg-slate-800 text-red-600">${esc(r.level || 'Non défini')}</span>
+        </div>
+        <div class="bg-white dark:bg-slate-800 border rounded-lg p-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <p class="text-[11px] font-black text-slate-600 dark:text-slate-300"><i class="fa-solid fa-location-dot text-restev-blue mr-1"></i>${esc(zone)}</p>
+          ${hasGps ? `<a href="${mapLink}" target="_blank" class="bg-restev-blue text-white text-[10px] font-black px-3 py-2 rounded-lg text-center"><i class="fa-solid fa-map-location-dot mr-1"></i>Ouvrir Google Maps</a>` : `<span class="text-[10px] text-slate-400 italic">GPS non transmis</span>`}
+        </div>
+        <p class="text-slate-600 dark:text-slate-300 font-medium">${esc(r.description || '')}</p>
+        <select onchange="updateReportStatus('${r.id}', this.value)" class="w-full p-2 rounded-lg border text-xs font-bold dark:bg-slate-900 dark:text-white">
+          <option value="Nouveau" ${r.status==='Nouveau'?'selected':''}>Nouveau</option>
+          <option value="Vu par le responsable" ${r.status==='Vu par le responsable'?'selected':''}>Vu par le responsable</option>
+          <option value="En cours de traitement" ${r.status==='En cours de traitement'?'selected':''}>En cours de traitement</option>
+          <option value="Traité" ${r.status==='Traité'?'selected':''}>Traité</option>
+        </select>
+        <textarea id="response-${r.id}" rows="2" placeholder="Réponse au salarié..." class="w-full p-2 rounded-lg border text-xs dark:bg-slate-900 dark:text-white">${esc(r.manager_response || '')}</textarea>
+        <textarea id="action-${r.id}" rows="2" placeholder="Action corrective..." class="w-full p-2 rounded-lg border text-xs dark:bg-slate-900 dark:text-white">${esc(r.corrective_action || '')}</textarea>
+        <button onclick="sendManagerResponse('${r.id}')" class="w-full bg-restev-blue text-white py-2 rounded-lg text-[10px] font-black uppercase">Répondre / enregistrer</button>
+      `;
+      c.appendChild(card);
+    });
   };
 
-  const oldHandleManagerLogin=window.handleManagerLogin;
-  window.handleManagerLogin=function(){ if(typeof oldHandleManagerLogin==='function') oldHandleManagerLogin(); setTimeout(()=>{installManagerZonesPanel();},700); };
+  const oldSwitchScreen = window.switchScreen;
+  window.switchScreen = function(screenId){
+    if(typeof oldSwitchScreen === 'function') oldSwitchScreen(screenId);
+    if(screenId === 'scr-report') setTimeout(() => { installR85GoogleGpsBlock(); loadZonesIntoGoogleReportSelect(); }, 250);
+  };
 
-  document.addEventListener('DOMContentLoaded',()=>{
-    removeParasitePopups(); detectEmployeeLock(); setTimeout(applyEmployeeOnlyUI,800); setTimeout(()=>{installManagerZonesPanel(); installMaintenancePanel(); ensureReportMap();},1000);
-    console.log(PATCH_VERSION+' installé');
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => { installR85GoogleGpsBlock(); }, 800);
+    console.log(PATCH_VERSION + ' installé');
   });
 })();
 </script>
@@ -3220,320 +3197,297 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 <!-- =========================================================
-     PATCH RESTEV 85 — CARTE RÉELLE + ZONES DE TRAVAIL + MODE SALARIÉ + MAINTENANCE + NETTOYAGE POPUP
+     PATCH RESTEV 85 — GPS GOOGLE MAPS SIMPLE + ZOOM MAX
      À coller juste avant </body>
 
-     Corrections :
-     1) Le salarié voit une vraie carte avec marqueur, pas seulement des coordonnées.
-     2) Le manager peut créer des zones / secteurs de travail.
-     3) Le salarié ne voit que son portail salarié via QR Code.
-     4) Ajout d’un panneau maintenance pour remettre à zéro des données.
-     5) Suppression définitive de l’ancien popup parasite “Nouveau signalement prévention”.
+     Objectif :
+     - Remplacer l'affichage GPS par une carte Google Maps simple.
+     - Zoom fort sur la position du signalement.
+     - Bouton pour ouvrir Google Maps en grand.
+     - Ne plus afficher les coordonnées dans la description.
+     - Permettre au manager de voir la zone et d'ouvrir la carte.
      ========================================================= -->
-<style id="r85-zones-map-maintenance-style">
-  #r85-report-map-real { height: 260px; width: 100%; border-radius: 1.25rem; border: 1px solid rgba(148,163,184,.45); overflow:hidden; background:#e2e8f0; }
-  html.dark #r85-report-map-real { filter: brightness(.78) contrast(1.08); }
-  .r85-maint-danger { background: linear-gradient(135deg,#991b1b,#dc2626); }
-  .r85-zone-chip { display:inline-flex; align-items:center; gap:.35rem; padding:.45rem .65rem; border-radius:.85rem; font-size:10px; font-weight:900; border:1px solid rgba(148,163,184,.35); }
+<style id="r85-google-map-gps-style">
+  #r85-google-map-frame {
+    width: 100%;
+    height: 300px;
+    border: 0;
+    border-radius: 1.25rem;
+    background: #e2e8f0;
+  }
+  html.dark #r85-google-map-frame { filter: brightness(.82) contrast(1.05); }
+  .r85-map-card {
+    border: 1px solid rgba(148,163,184,.45);
+    border-radius: 1.35rem;
+    overflow: hidden;
+    background: white;
+  }
+  html.dark .r85-map-card { background: #0f172a; border-color: #334155; }
 </style>
 
 <script>
 (function(){
-  const PATCH_VERSION = 'RESTEV85_REAL_MAP_ZONES_EMPLOYEE_ONLY_MAINTENANCE_2026_07_06';
-  let r85ReportMap = null;
-  let r85ReportMarker = null;
-  let r85TerrainGps = null;
-  let r85GeoWatchId = null;
-  let r85EmployeeLocked = false;
+  const PATCH_VERSION = 'RESTEV85_GOOGLE_MAPS_GPS_SIMPLE_2026_07_06';
+  let r85GoogleGps = null;
+  let r85GoogleGeoWatch = null;
 
   function toast(msg){ if(typeof showToast === 'function') showToast(msg); else alert(msg); }
   function esc(v){ if(typeof escapeHtml === 'function') return escapeHtml(v || ''); return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   function session(){ try{return currentEmployeeSession || window.currentEmployeeSession || null;}catch(e){return window.currentEmployeeSession || null;} }
   function company(){ return (session()?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim(); }
 
-  /* =========================================================
-     1) SUPPRESSION DÉFINITIVE DU POPUP PARASITE
-     ========================================================= */
-  function removeParasitePopups(){
-    const badTexts = [
-      'Nouveau signalement prévention',
-      'Pour recevoir les notifications hors écran',
-      '========================================================',
-      '-->'
-    ];
-    document.querySelectorAll('body *').forEach(el => {
-      if(['SCRIPT','STYLE','TEXTAREA','INPUT','SELECT','OPTION'].includes(el.tagName)) return;
-      const txt = (el.innerText || '').trim();
-      if(!txt) return;
-      const hit = badTexts.some(t => txt.includes(t));
-      const looksLikePopup = (el.className || '').toString().includes('fixed') || (el.style && (el.style.position === 'fixed' || el.style.zIndex));
-      if(hit && looksLikePopup) el.remove();
-      if(txt === '-->' || txt.startsWith('<!--')) el.remove();
-    });
+  function googleEmbedUrl(lat, lng, zoom){
+    return `https://maps.google.com/maps?q=${encodeURIComponent(lat + ',' + lng)}&z=${zoom || 21}&output=embed`;
   }
 
-  const oldShowBrowserNotification = window.showBrowserNotification;
-  window.showBrowserNotification = function(report){
-    // On garde uniquement la notification native navigateur. Aucun popup HTML parasite.
-    try{
-      if(!('Notification' in window) || Notification.permission !== 'granted') return;
-      new Notification('RESTEV 85 — Signalement terrain', {
-        body: `${report?.employee_name || 'Salarié'} — ${report?.category || 'Danger signalé'}`,
-        icon:'logo.png', badge:'logo.png', requireInteraction:true, tag:'restev85-signalement'
-      });
-    }catch(e){}
-  };
-
-  new MutationObserver(removeParasitePopups).observe(document.documentElement, {childList:true, subtree:true});
-
-  /* =========================================================
-     2) MODE SALARIÉ SEUL VIA QR CODE
-     ========================================================= */
-  function detectEmployeeLock(){
-    const params = new URLSearchParams(window.location.search);
-    if(params.get('emp') && params.get('comp')) r85EmployeeLocked = true;
-    if(session()?.name && session()?.company) r85EmployeeLocked = true;
+  function googleOpenUrl(lat, lng){
+    return `https://www.google.com/maps?q=${encodeURIComponent(lat + ',' + lng)}`;
   }
 
-  function applyEmployeeOnlyUI(){
-    detectEmployeeLock();
-    if(!r85EmployeeLocked) return;
-    // Cache les voies d’accès manager / centre sur la page accueil si elles existent.
-    document.querySelectorAll("button[onclick*='scr-auth'], button[onclick*='scr-direction'], button[onclick*='scr-manager'], button[onclick*='createNewCompany']").forEach(b => {
-      const txt = (b.innerText || '').toLowerCase();
-      if(txt.includes('management') || txt.includes('restev') || txt.includes('établissement') || txt.includes('manager') || txt.includes('centre')) b.style.display = 'none';
-    });
-    // Si un salarié tente un écran non autorisé, on le renvoie sur son portail.
-    const active = document.querySelector('.screen.active')?.id;
-    const allowed = ['scr-employee','scr-report','scr-qcm','scr-qcm-success','scr-resources','scr-training','scr-employee-messages'];
-    if(active && !allowed.includes(active)){
-      if(typeof switchScreen === 'function') switchScreen('scr-employee');
-    }
-  }
-
-  /* =========================================================
-     3) ZONES DE TRAVAIL MANAGER
-     ========================================================= */
   async function fetchWorkZones(companyCode){
     if(!supabaseClient || !companyCode) return [];
     try{
-      const {data,error} = await supabaseClient.from('work_zones').select('id,name,description,created_at').eq('company_code', companyCode).order('name',{ascending:true});
-      if(error){ console.warn('Zones indisponibles:', error.message); return []; }
+      const {data,error} = await supabaseClient
+        .from('work_zones')
+        .select('id,name,description')
+        .eq('company_code', companyCode)
+        .order('name',{ascending:true});
+      if(error){ console.warn('Zones non chargées:', error.message); return []; }
       return data || [];
-    }catch(e){ console.warn(e); return []; }
+    }catch(e){ return []; }
   }
 
-  async function installManagerZonesPanel(){
-    const screen = document.getElementById('scr-manager');
-    if(!screen || document.getElementById('r85-manager-zones-panel')) return;
-    const panel = document.createElement('div');
-    panel.id = 'r85-manager-zones-panel';
-    panel.className = 'bg-white dark:bg-slate-800 p-5 rounded-2xl border-t-4 border-t-cyan-500 shadow-premium space-y-4';
-    panel.innerHTML = `
-      <div class="flex items-center justify-between gap-2">
-        <h3 class="font-black dark:text-white text-xs uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-location-dot text-cyan-500"></i> Zones / secteurs de travail</h3>
-        <button onclick="loadR85WorkZonesManager()" class="text-[10px] bg-slate-100 dark:bg-slate-700 dark:text-white px-3 py-2 rounded-xl font-black">Actualiser</button>
-      </div>
-      <p class="text-[11px] text-slate-500 dark:text-slate-300 leading-relaxed">Créez des zones comme Atelier, Réserve, Quai, Ligne 1, Chantier A… Le salarié choisira la zone lors du signalement.</p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <input id="r85-zone-name" placeholder="Nom de la zone / secteur" class="p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white">
-        <input id="r85-zone-desc" placeholder="Description optionnelle" class="p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white">
-      </div>
-      <button onclick="createR85WorkZone()" class="w-full bg-cyan-600 text-white py-3 rounded-xl text-xs font-black"><i class="fa-solid fa-plus mr-1"></i> Ajouter la zone</button>
-      <div id="r85-manager-zones-list" class="flex flex-wrap gap-2"><span class="text-xs text-slate-400 italic">Aucune zone chargée.</span></div>
-    `;
-    const first = screen.querySelector('.grid.grid-cols-1.md\\:grid-cols-2') || screen.querySelector('.bg-white');
-    if(first) screen.insertBefore(panel, first);
-    else screen.prepend(panel);
-    loadR85WorkZonesManager();
-  }
-
-  window.loadR85WorkZonesManager = async function(){
-    const box = document.getElementById('r85-manager-zones-list');
-    if(!box) return;
+  async function loadZonesIntoGoogleReportSelect(){
+    const select = document.getElementById('r85-google-work-zone');
+    if(!select) return;
     const zones = await fetchWorkZones(company());
-    if(!zones.length){ box.innerHTML = '<span class="text-xs text-slate-400 italic">Aucune zone créée.</span>'; return; }
-    box.innerHTML = zones.map(z => `<span class="r85-zone-chip bg-cyan-50 dark:bg-slate-900 text-cyan-700 dark:text-cyan-300"><i class="fa-solid fa-location-dot"></i>${esc(z.name)} <button onclick="deleteR85WorkZone('${z.id}')" class="ml-1 text-red-500 font-black">×</button></span>`).join('');
-  };
+    const previous = select.value;
+    select.innerHTML = '<option value="">Zone de travail non renseignée</option>' + zones.map(z => `<option value="${esc(z.name)}">${esc(z.name)}</option>`).join('');
+    if(previous) select.value = previous;
+  }
 
-  window.createR85WorkZone = async function(){
-    if(!supabaseClient) return toast('Supabase non chargé.');
-    const c = company(); if(!c) return toast('Code établissement manquant.');
-    const name = document.getElementById('r85-zone-name')?.value.trim();
-    const description = document.getElementById('r85-zone-desc')?.value.trim() || '';
-    if(!name) return toast('Saisissez un nom de zone.');
-    const {error} = await supabaseClient.from('work_zones').insert([{company_code:c, name, description}]);
-    if(error) return toast('Erreur création zone : '+error.message);
-    document.getElementById('r85-zone-name').value=''; document.getElementById('r85-zone-desc').value='';
-    toast('Zone créée.'); loadR85WorkZonesManager();
-  };
-
-  window.deleteR85WorkZone = async function(id){
-    if(!supabaseClient) return;
-    const {error} = await supabaseClient.from('work_zones').delete().eq('id', id);
-    if(error) return toast('Erreur suppression zone : '+error.message);
-    toast('Zone supprimée.'); loadR85WorkZonesManager();
-  };
-
-  /* =========================================================
-     4) CARTE RÉELLE + GPS TERRAIN SALARIÉ
-     ========================================================= */
-  function ensureReportMap(){
+  window.installR85GoogleGpsBlock = function(){
     const screen = document.getElementById('scr-report');
     if(!screen) return;
-    const oldMap = document.getElementById('map');
-    if(oldMap) oldMap.style.display = 'none';
-    if(document.getElementById('r85-report-map-real')) return;
+
+    // On masque les anciennes cartes pour éviter les doublons.
+    ['map','r85-report-map-real','r85-real-map-block','r85-gps-permission-block'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.style.display = 'none';
+    });
+
+    if(document.getElementById('r85-google-gps-block')){
+      setTimeout(() => refreshR85GoogleMapFrame(), 100);
+      return;
+    }
 
     const block = document.createElement('div');
-    block.id='r85-real-map-block';
-    block.className='space-y-3 bg-blue-50 dark:bg-slate-900 border border-blue-100 dark:border-slate-700 p-4 rounded-2xl';
+    block.id = 'r85-google-gps-block';
+    block.className = 'space-y-3 bg-blue-50 dark:bg-slate-900 border border-blue-100 dark:border-slate-700 p-4 rounded-2xl';
     block.innerHTML = `
       <div class="flex items-start gap-3">
         <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-slate-800 text-restev-blue flex items-center justify-center"><i class="fa-solid fa-map-location-dot"></i></div>
-        <div class="flex-1"><p class="text-xs font-black dark:text-white">Lieu du signalement</p><p class="text-[11px] text-slate-500 dark:text-slate-300">Choisissez une zone de travail et/ou autorisez la localisation pour afficher la position sur la carte.</p></div>
+        <div class="flex-1">
+          <p class="text-xs font-black dark:text-white">Lieu du signalement</p>
+          <p class="text-[11px] text-slate-500 dark:text-slate-300 leading-relaxed">Choisissez une zone de travail et affichez la position sur Google Maps. Vous pouvez zoomer directement dans la carte.</p>
+        </div>
       </div>
-      <select id="r85-report-work-zone" class="w-full p-3 bg-white dark:bg-slate-800 border rounded-xl text-xs font-black dark:text-white"><option value="">Zone de travail non renseignée</option></select>
-      <button type="button" onclick="requestTerrainGeolocation()" class="w-full bg-restev-blue text-white py-3 rounded-xl text-xs font-black"><i class="fa-solid fa-location-crosshairs mr-1"></i> Autoriser / actualiser ma position sur la carte</button>
-      <div id="r85-report-map-real"></div>
-      <div id="r85-gps-map-status" class="text-[11px] font-bold text-slate-500 dark:text-slate-300 bg-white dark:bg-slate-800 border rounded-xl p-3">Carte prête. Position non autorisée.</div>
+      <select id="r85-google-work-zone" class="w-full p-3 bg-white dark:bg-slate-800 border rounded-xl text-xs font-black dark:text-white">
+        <option value="">Zone de travail non renseignée</option>
+      </select>
+      <button type="button" onclick="requestR85GoogleGeolocation()" class="w-full bg-restev-blue text-white py-3 rounded-xl text-xs font-black">
+        <i class="fa-solid fa-location-crosshairs mr-1"></i> Autoriser / actualiser ma position Google Maps
+      </button>
+      <div class="r85-map-card">
+        <iframe id="r85-google-map-frame" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=46.670,-1.426&z=13&output=embed"></iframe>
+      </div>
+      <div id="r85-google-gps-status" class="text-[11px] font-bold text-slate-500 dark:text-slate-300 bg-white dark:bg-slate-800 border rounded-xl p-3">Carte Google prête. Position non autorisée.</div>
+      <a id="r85-google-map-open" href="https://www.google.com/maps?q=46.670,-1.426" target="_blank" class="block text-center bg-white dark:bg-slate-800 border text-restev-blue dark:text-blue-300 py-2 rounded-xl text-[10px] font-black">
+        Ouvrir dans Google Maps
+      </a>
     `;
+
     const target = document.getElementById('risk-category-select')?.closest('div') || screen.querySelector('h3')?.nextSibling;
     if(target) screen.insertBefore(block, target);
     else screen.prepend(block);
 
-    setTimeout(initRealReportMap, 200);
-    loadZonesIntoReportSelect();
+    loadZonesIntoGoogleReportSelect();
+    refreshR85GoogleMapFrame();
+  };
+
+  function refreshR85GoogleMapFrame(){
+    const frame = document.getElementById('r85-google-map-frame');
+    const link = document.getElementById('r85-google-map-open');
+    if(!frame || !r85GoogleGps) return;
+    frame.src = googleEmbedUrl(r85GoogleGps.lat, r85GoogleGps.lng, 21);
+    if(link) link.href = googleOpenUrl(r85GoogleGps.lat, r85GoogleGps.lng);
   }
 
-  async function loadZonesIntoReportSelect(){
-    const select = document.getElementById('r85-report-work-zone');
-    if(!select) return;
-    const zones = await fetchWorkZones(company());
-    const current = select.value;
-    select.innerHTML = '<option value="">Zone de travail non renseignée</option>' + zones.map(z => `<option value="${esc(z.name)}">${esc(z.name)}</option>`).join('');
-    if(current) select.value = current;
-  }
+  window.requestR85GoogleGeolocation = function(){
+    installR85GoogleGpsBlock();
+    const status = document.getElementById('r85-google-gps-status');
+    if(!navigator.geolocation){
+      if(status) status.innerHTML = 'Géolocalisation non compatible avec ce navigateur.';
+      return;
+    }
+    if(status) status.innerHTML = 'Demande d’autorisation GPS en cours…';
 
-  function initRealReportMap(){
-    if(!window.L || !document.getElementById('r85-report-map-real')) return;
-    if(r85ReportMap){ setTimeout(()=>r85ReportMap.invalidateSize(),150); return; }
-    r85ReportMap = L.map('r85-report-map-real', {zoomControl:true}).setView([46.670, -1.426], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19}).addTo(r85ReportMap);
-    setTimeout(()=>r85ReportMap.invalidateSize(),300);
-  }
+    if(r85GoogleGeoWatch !== null){
+      try{ navigator.geolocation.clearWatch(r85GoogleGeoWatch); }catch(e){}
+      r85GoogleGeoWatch = null;
+    }
 
-  window.requestTerrainGeolocation = function(){
-    ensureReportMap(); initRealReportMap();
-    const status = document.getElementById('r85-gps-map-status') || document.getElementById('geo-status');
-    if(!navigator.geolocation){ if(status) status.innerHTML='Géolocalisation non compatible.'; return; }
-    if(status) status.innerHTML='Demande d’autorisation GPS en cours…';
-    if(r85GeoWatchId !== null){ try{navigator.geolocation.clearWatch(r85GeoWatchId);}catch(e){} r85GeoWatchId=null; }
     let best = null;
-    const ok = pos => {
-      const p = {lat:pos.coords.latitude, lng:pos.coords.longitude, accuracy:pos.coords.accuracy, captured_at:new Date().toISOString()};
-      if(!best || p.accuracy < best.accuracy){ best = p; r85TerrainGps = p; }
-      const acc = Math.round(r85TerrainGps.accuracy || 0);
-      if(status) status.innerHTML = `📍 Position affichée sur la carte — précision environ <b>${acc} m</b>`;
-      if(document.getElementById('geo-status')) document.getElementById('geo-status').innerText = `📍 GPS terrain OK — précision env. ${acc} m`;
-      if(r85ReportMap){
-        r85ReportMap.setView([r85TerrainGps.lat, r85TerrainGps.lng], 17);
-        if(r85ReportMarker) r85ReportMarker.remove();
-        r85ReportMarker = L.marker([r85TerrainGps.lat, r85TerrainGps.lng]).addTo(r85ReportMap).bindPopup(`Position du signalement<br>Précision env. ${acc} m`).openPopup();
-        L.circle([r85TerrainGps.lat, r85TerrainGps.lng], {radius: r85TerrainGps.accuracy || 30, color:'#3a7bd5', fillColor:'#3a7bd5', fillOpacity:.12}).addTo(r85ReportMap);
-        setTimeout(()=>r85ReportMap.invalidateSize(),150);
+    const onSuccess = pos => {
+      const point = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        accuracy: pos.coords.accuracy,
+        captured_at: new Date().toISOString()
+      };
+      if(!best || point.accuracy < best.accuracy){
+        best = point;
+        r85GoogleGps = point;
       }
+      const acc = Math.round(r85GoogleGps.accuracy || 0);
+      refreshR85GoogleMapFrame();
+      if(status) status.innerHTML = `📍 Position affichée sur Google Maps — précision environ <b>${acc} m</b>`;
+      const oldStatus = document.getElementById('geo-status');
+      if(oldStatus) oldStatus.innerText = `📍 Google Maps OK — précision env. ${acc} m`;
     };
-    const ko = err => { if(status) status.innerHTML = `<b>GPS refusé ou indisponible.</b><br>${esc(err.message || '')}<br>Vous pouvez quand même choisir une zone de travail.`; };
-    r85GeoWatchId = navigator.geolocation.watchPosition(ok, ko, {enableHighAccuracy:true, timeout:25000, maximumAge:0});
-    setTimeout(()=>{ if(r85GeoWatchId!==null){try{navigator.geolocation.clearWatch(r85GeoWatchId);}catch(e){} r85GeoWatchId=null;} }, 12000);
+
+    const onError = err => {
+      if(status) status.innerHTML = `<b>GPS refusé ou indisponible.</b><br>${esc(err.message || '')}<br>Vous pouvez quand même choisir une zone de travail.`;
+    };
+
+    try{
+      r85GoogleGeoWatch = navigator.geolocation.watchPosition(onSuccess, onError, {
+        enableHighAccuracy: true,
+        timeout: 25000,
+        maximumAge: 0
+      });
+      setTimeout(() => {
+        if(r85GoogleGeoWatch !== null){
+          try{ navigator.geolocation.clearWatch(r85GoogleGeoWatch); }catch(e){}
+          r85GoogleGeoWatch = null;
+        }
+        if(r85GoogleGps) toast('Position Google Maps enregistrée.');
+      }, 12000);
+    }catch(e){ onError({message:e.message || e}); }
   };
 
+  // Envoi du signalement : on stocke latitude/longitude en colonnes mais on ne les affiche plus dans le commentaire.
   window.submitRiskReport = async function(){
-    ensureReportMap();
+    installR85GoogleGpsBlock();
     if(!supabaseClient) return toast('Supabase non chargé. Vérifiez internet.');
-    const category=document.getElementById('risk-category-select')?.value || 'Non renseigné';
-    const desc=document.getElementById('risk-description')?.value.trim();
-    const lvl=document.getElementById('risk-level')?.value || 'À qualifier';
-    const freq=document.getElementById('risk-frequency')?.value || 'Non renseignée';
-    const zone=document.getElementById('r85-report-work-zone')?.value || '';
+
+    const category = document.getElementById('risk-category-select')?.value || 'Non renseigné';
+    const desc = document.getElementById('risk-description')?.value.trim();
+    const lvl = document.getElementById('risk-level')?.value || 'À qualifier';
+    const freq = document.getElementById('risk-frequency')?.value || 'Non renseignée';
+    const zone = document.getElementById('r85-google-work-zone')?.value || '';
     if(!desc) return toast('Veuillez saisir une description du danger.');
-    const s=session();
-    const employeeName=s?s.name:'Salarié terrain';
-    const c=s?s.company:(company() || 'Établissement non renseigné');
-    const cleanDesc = desc; // Plus de coordonnées affichées dans le texte salarié/manager.
-    const payload={company_code:c, employee_name:employeeName, category, level:lvl, frequency:freq, description:cleanDesc, status:'Nouveau', work_zone:zone || null, gps_lat:r85TerrainGps?r85TerrainGps.lat:null, gps_lng:r85TerrainGps?r85TerrainGps.lng:null, gps_accuracy:r85TerrainGps?r85TerrainGps.accuracy:null, gps_captured_at:r85TerrainGps?r85TerrainGps.captured_at:null};
-    let {error}=await supabaseClient.from('prevention_reports').insert([payload]);
-    if(error && /(work_zone|gps_)/i.test(error.message||'')){
-      const fallback={...payload}; delete fallback.work_zone; delete fallback.gps_lat; delete fallback.gps_lng; delete fallback.gps_accuracy; delete fallback.gps_captured_at;
-      const res=await supabaseClient.from('prevention_reports').insert([fallback]); error=res.error;
+
+    const s = session();
+    const employeeName = s ? s.name : 'Salarié terrain';
+    const companyCode = s ? s.company : (company() || 'Établissement non renseigné');
+
+    const payload = {
+      company_code: companyCode,
+      employee_name: employeeName,
+      category,
+      level: lvl,
+      frequency: freq,
+      description: desc,
+      status: 'Nouveau',
+      work_zone: zone || null,
+      gps_lat: r85GoogleGps ? r85GoogleGps.lat : null,
+      gps_lng: r85GoogleGps ? r85GoogleGps.lng : null,
+      gps_accuracy: r85GoogleGps ? r85GoogleGps.accuracy : null,
+      gps_captured_at: r85GoogleGps ? r85GoogleGps.captured_at : null
+    };
+
+    let {error} = await supabaseClient.from('prevention_reports').insert([payload]);
+    if(error && /(work_zone|gps_)/i.test(error.message || '')){
+      const fallback = {...payload};
+      delete fallback.work_zone; delete fallback.gps_lat; delete fallback.gps_lng; delete fallback.gps_accuracy; delete fallback.gps_captured_at;
+      const res = await supabaseClient.from('prevention_reports').insert([fallback]);
+      error = res.error;
     }
-    if(error) return toast('Erreur Supabase signalement : '+error.message);
-    try{ if(typeof submitAnonymizedPreventionStat==='function') await submitAnonymizedPreventionStat({category, level:lvl, frequency:freq, event_type:'Signalement prévention'}); }catch(e){}
-    document.getElementById('risk-description').value=''; r85TerrainGps=null;
+    if(error) return toast('Erreur Supabase signalement : ' + error.message);
+
+    try{
+      if(typeof submitAnonymizedPreventionStat === 'function') await submitAnonymizedPreventionStat({category, level:lvl, frequency:freq, event_type:'Signalement prévention'});
+    }catch(e){}
+
+    document.getElementById('risk-description').value = '';
+    r85GoogleGps = null;
     toast('Signalement envoyé au responsable.');
-    if(typeof switchScreen==='function') switchScreen('scr-employee');
+    if(typeof switchScreen === 'function') switchScreen('scr-employee');
   };
 
-  /* =========================================================
-     5) MAINTENANCE PILOTE : RAZ DONNÉES / MISES À JOUR
-     ========================================================= */
-  function installMaintenancePanel(){
-    const screen = document.getElementById('scr-direction') || document.getElementById('scr-manager');
-    if(!screen || document.getElementById('r85-maintenance-panel')) return;
-    const panel=document.createElement('div');
-    panel.id='r85-maintenance-panel';
-    panel.className='bg-white dark:bg-slate-800 p-5 rounded-2xl border-t-4 border-t-slate-900 shadow-premium space-y-4';
-    panel.innerHTML=`
-      <div><p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Pilotage application</p><h3 class="font-black dark:text-white text-sm flex items-center gap-2"><i class="fa-solid fa-screwdriver-wrench text-slate-700 dark:text-slate-300"></i> Maintenance / remise à zéro</h3></div>
-      <p class="text-[11px] text-slate-500 dark:text-slate-300 leading-relaxed">Pour remettre à zéro des données, saisissez <b>RESET</b>. Pour une mise à jour de l’app, remplacez simplement le fichier HTML publié par la nouvelle version générée.</p>
-      <input id="r85-maint-confirm" placeholder="Tapez RESET pour autoriser" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-black dark:text-white">
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-        <button onclick="r85ResetCurrentCompanyData()" class="r85-maint-danger text-white py-3 rounded-xl text-xs font-black">RAZ établissement courant</button>
-        <button onclick="r85ClearLocalDeviceData()" class="bg-slate-900 dark:bg-slate-700 text-white py-3 rounded-xl text-xs font-black">Vider données locales</button>
-        <button onclick="r85ShowAppUpdateInfo()" class="bg-restev-blue text-white py-3 rounded-xl text-xs font-black">Info mises à jour</button>
-      </div>
-      <div id="r85-maint-info" class="text-[11px] text-slate-500 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 border rounded-xl p-3">Aucune action lancée.</div>
-    `;
-    screen.appendChild(panel);
-  }
-
-  function maintenanceAllowed(){ return document.getElementById('r85-maint-confirm')?.value.trim() === 'RESET'; }
-  window.r85ClearLocalDeviceData=function(){ if(!maintenanceAllowed()) return toast('Tapez RESET pour confirmer.'); try{ safeStorage?.clear(); localStorage?.clear(); sessionStorage?.clear(); }catch(e){} document.getElementById('r85-maint-info').innerText='Données locales de cet appareil vidées.'; toast('Données locales vidées.'); };
-  window.r85ShowAppUpdateInfo=function(){ document.getElementById('r85-maint-info').innerHTML='Mise à jour : téléchargez la nouvelle version HTML, remplacez l’ancien fichier publié, gardez le même nom de fichier si possible, puis faites Ctrl+F5 sur les postes. Les données Supabase ne sont pas effacées par une mise à jour du HTML.'; };
-  window.r85ResetCurrentCompanyData=async function(){
-    if(!maintenanceAllowed()) return toast('Tapez RESET pour confirmer.');
+  // Affichage manager avec bouton Google Maps si GPS disponible.
+  window.loadManagerReports = async function(){
     if(!supabaseClient) return toast('Supabase non chargé.');
-    const c=company(); if(!c) return toast('Code établissement manquant.');
-    const tables=[['prevention_reports','company_code'],['passport_registry','company_code'],['manager_messages','company_code'],['work_zones','company_code']];
-    const results=[];
-    for(const [table,col] of tables){
-      try{ const {error}=await supabaseClient.from(table).delete().eq(col,c); results.push(error?`${table}: ${error.message}`:`${table}: OK`); }
-      catch(e){ results.push(`${table}: ${e.message||e}`); }
-    }
-    document.getElementById('r85-maint-info').innerText='RAZ établissement '+c+' → '+results.join(' | ');
-    toast('Remise à zéro demandée. Vérifiez le détail maintenance.');
+    const c = company();
+    if(!c) return;
+    const {data,error} = await supabaseClient
+      .from('prevention_reports')
+      .select('id,company_code,employee_name,category,level,frequency,description,status,manager_response,corrective_action,work_zone,gps_lat,gps_lng,gps_accuracy,created_at')
+      .eq('company_code', c)
+      .order('created_at',{ascending:false})
+      .limit(30);
+    if(error) return toast('Erreur Supabase : ' + error.message);
+    renderManagerReports(data || []);
   };
 
-  const oldSwitchScreen=window.switchScreen;
-  window.switchScreen=function(screenId){
-    if(typeof oldSwitchScreen==='function') oldSwitchScreen(screenId);
-    detectEmployeeLock();
-    if(r85EmployeeLocked){
-      const allowed=['scr-employee','scr-report','scr-qcm','scr-qcm-success','scr-resources','scr-training','scr-employee-messages'];
-      if(!allowed.includes(screenId)){ setTimeout(()=>oldSwitchScreen ? oldSwitchScreen('scr-employee') : null, 50); return; }
-    }
-    if(screenId==='scr-report') setTimeout(()=>{ensureReportMap(); loadZonesIntoReportSelect();},250);
-    if(screenId==='scr-manager') setTimeout(()=>{installManagerZonesPanel();},350);
-    if(screenId==='scr-direction') setTimeout(()=>{installMaintenancePanel();},350);
+  window.renderManagerReports = function(reports){
+    const c = document.getElementById('manager-risk-box');
+    if(!c) return;
+    c.innerHTML = '';
+    if(!reports.length){ c.innerHTML='<p class="text-xs text-slate-400 italic text-center py-8">Aucun danger signalé pour le moment.</p>'; return; }
+    reports.forEach(r => {
+      const hasGps = r.gps_lat && r.gps_lng;
+      const mapLink = hasGps ? googleOpenUrl(r.gps_lat, r.gps_lng) : '';
+      const zone = r.work_zone || 'Zone non renseignée';
+      const card = document.createElement('div');
+      card.className = 'p-3 bg-red-50 dark:bg-slate-900 border border-red-200 dark:border-red-800 rounded-xl space-y-2 text-xs';
+      card.innerHTML = `
+        <div class="flex justify-between items-start gap-2">
+          <div>
+            <p class="font-black text-slate-900 dark:text-white">${esc(r.category || 'Signalement')}</p>
+            <p class="text-[10px] text-slate-400">Par ${esc(r.employee_name || '')} - ${new Date(r.created_at).toLocaleString('fr-FR')}</p>
+          </div>
+          <span class="text-[10px] font-black px-2 py-1 rounded bg-white dark:bg-slate-800 text-red-600">${esc(r.level || 'Non défini')}</span>
+        </div>
+        <div class="bg-white dark:bg-slate-800 border rounded-lg p-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <p class="text-[11px] font-black text-slate-600 dark:text-slate-300"><i class="fa-solid fa-location-dot text-restev-blue mr-1"></i>${esc(zone)}</p>
+          ${hasGps ? `<a href="${mapLink}" target="_blank" class="bg-restev-blue text-white text-[10px] font-black px-3 py-2 rounded-lg text-center"><i class="fa-solid fa-map-location-dot mr-1"></i>Ouvrir Google Maps</a>` : `<span class="text-[10px] text-slate-400 italic">GPS non transmis</span>`}
+        </div>
+        <p class="text-slate-600 dark:text-slate-300 font-medium">${esc(r.description || '')}</p>
+        <select onchange="updateReportStatus('${r.id}', this.value)" class="w-full p-2 rounded-lg border text-xs font-bold dark:bg-slate-900 dark:text-white">
+          <option value="Nouveau" ${r.status==='Nouveau'?'selected':''}>Nouveau</option>
+          <option value="Vu par le responsable" ${r.status==='Vu par le responsable'?'selected':''}>Vu par le responsable</option>
+          <option value="En cours de traitement" ${r.status==='En cours de traitement'?'selected':''}>En cours de traitement</option>
+          <option value="Traité" ${r.status==='Traité'?'selected':''}>Traité</option>
+        </select>
+        <textarea id="response-${r.id}" rows="2" placeholder="Réponse au salarié..." class="w-full p-2 rounded-lg border text-xs dark:bg-slate-900 dark:text-white">${esc(r.manager_response || '')}</textarea>
+        <textarea id="action-${r.id}" rows="2" placeholder="Action corrective..." class="w-full p-2 rounded-lg border text-xs dark:bg-slate-900 dark:text-white">${esc(r.corrective_action || '')}</textarea>
+        <button onclick="sendManagerResponse('${r.id}')" class="w-full bg-restev-blue text-white py-2 rounded-lg text-[10px] font-black uppercase">Répondre / enregistrer</button>
+      `;
+      c.appendChild(card);
+    });
   };
 
-  const oldHandleManagerLogin=window.handleManagerLogin;
-  window.handleManagerLogin=function(){ if(typeof oldHandleManagerLogin==='function') oldHandleManagerLogin(); setTimeout(()=>{installManagerZonesPanel();},700); };
+  const oldSwitchScreen = window.switchScreen;
+  window.switchScreen = function(screenId){
+    if(typeof oldSwitchScreen === 'function') oldSwitchScreen(screenId);
+    if(screenId === 'scr-report') setTimeout(() => { installR85GoogleGpsBlock(); loadZonesIntoGoogleReportSelect(); }, 250);
+  };
 
-  document.addEventListener('DOMContentLoaded',()=>{
-    removeParasitePopups(); detectEmployeeLock(); setTimeout(applyEmployeeOnlyUI,800); setTimeout(()=>{installManagerZonesPanel(); installMaintenancePanel(); ensureReportMap();},1000);
-    console.log(PATCH_VERSION+' installé');
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => { installR85GoogleGpsBlock(); }, 800);
+    console.log(PATCH_VERSION + ' installé');
   });
 })();
 </script>
