@@ -2708,41 +2708,602 @@ document.addEventListener('DOMContentLoaded', () => {
      Inspiré du logo RESTEV : rubans bleus, magenta, teal, jaune/orange.
      Fond lisible, glassmorphism, page d'accueil modernisée.
      À coller juste avant 
-<!-- PATCH RESTEV 85 — ALERTE MANAGER MAXI VISUELLE + VIBRATION + MODE GARDE -->
-<style id="r85-max-alert-style">
-@keyframes r85MegaFlash{0%{background:radial-gradient(circle at 20% 20%,#ef4444,#7f1d1d 60%)}25%{background:radial-gradient(circle at 80% 20%,#2563eb,#7f1d1d 62%)}50%{background:radial-gradient(circle at 80% 80%,#dc2626,#111827 68%)}75%{background:radial-gradient(circle at 20% 80%,#e11d48,#1e1b4b 65%)}100%{background:radial-gradient(circle at 20% 20%,#ef4444,#7f1d1d 60%)}}
-@keyframes r85Shake{0%,100%{transform:translate(0,0) scale(1)}15%{transform:translate(-8px,2px) scale(1.01)}30%{transform:translate(8px,-2px) scale(1.01)}45%{transform:translate(-5px,3px) scale(1.01)}60%{transform:translate(5px,-3px) scale(1.01)}}
-@keyframes r85Beacon{0%{box-shadow:0 0 0 0 rgba(255,255,255,.95),0 0 28px rgba(255,255,255,.75)}70%{box-shadow:0 0 0 34px rgba(255,255,255,0),0 0 60px rgba(255,255,255,.95)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0),0 0 28px rgba(255,255,255,.75)}}
-@keyframes r85Badge{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
-#r85-max-alert-overlay.r85-show{display:flex!important}.r85-mega-bg{animation:r85MegaFlash .55s infinite}.r85-mega-card{animation:r85Shake .6s ease-in-out infinite}.r85-mega-beacon{animation:r85Beacon .85s infinite}#r85-max-alert-badge{animation:r85Badge .95s infinite}
+
+<!-- =========================================================
+     PATCH RESTEV 85 — ALERTE PLUS SOBRE + DARK MODE GLOBAL + GPS TERRAIN
+     À coller juste avant </body>
+
+     Corrections demandées :
+     1) Alerte manager moins agressive : plus de secousses, plus de flash violent.
+     2) Mode nuit appliqué à toute l'application, pas seulement aux boutons.
+     3) Demande claire d'autorisation géolocalisation pour les alertes terrain.
+     4) GPS smartphone haute précision, avec affichage précision + lien carte.
+     ========================================================= -->
+<style id="r85-sober-dark-gps-style">
+  /* ===== Dark mode global fiable ===== */
+  html.dark body,
+  body.dark,
+  html.dark body.r85-modern-design {
+    background: linear-gradient(135deg, #020617, #0f172a 45%, #111827) !important;
+    color: #e5e7eb !important;
+  }
+
+  html.dark header {
+    background: rgba(15,23,42,.92) !important;
+    border-bottom-color: rgba(51,65,85,.9) !important;
+  }
+
+  html.dark .bg-white,
+  html.dark .r85-action-card,
+  html.dark .r85-glass-panel,
+  html.dark .r85-pill {
+    background: rgba(15,23,42,.88) !important;
+    color: #e5e7eb !important;
+    border-color: rgba(51,65,85,.95) !important;
+    backdrop-filter: blur(14px);
+  }
+
+  html.dark .bg-slate-50,
+  html.dark .bg-blue-50,
+  html.dark .bg-emerald-50,
+  html.dark .bg-red-50,
+  html.dark .bg-orange-50,
+  html.dark .bg-amber-50,
+  html.dark .bg-pink-50,
+  html.dark .bg-cyan-50,
+  html.dark .bg-teal-50 {
+    background: rgba(2,6,23,.72) !important;
+    color: #e5e7eb !important;
+    border-color: rgba(51,65,85,.9) !important;
+  }
+
+  html.dark input,
+  html.dark select,
+  html.dark textarea {
+    background: rgba(2,6,23,.85) !important;
+    color: #f8fafc !important;
+    border-color: #475569 !important;
+  }
+
+  html.dark input::placeholder,
+  html.dark textarea::placeholder {
+    color: #94a3b8 !important;
+  }
+
+  html.dark .text-slate-500,
+  html.dark .text-slate-600,
+  html.dark .text-slate-700,
+  html.dark .text-slate-400 {
+    color: #cbd5e1 !important;
+  }
+
+  html.dark table,
+  html.dark td,
+  html.dark th {
+    color: #e5e7eb !important;
+    border-color: #334155 !important;
+  }
+
+  html.dark #map {
+    filter: brightness(.75) contrast(1.05);
+  }
+
+  /* ===== Alerte manager sobre mais très visible ===== */
+  @keyframes r85SoberPulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,.46), 0 24px 70px rgba(127,29,29,.22); }
+    50% { box-shadow: 0 0 0 18px rgba(239,68,68,0), 0 24px 70px rgba(127,29,29,.33); }
+  }
+  @keyframes r85SoberBadge {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
+  #r85-sober-alert-overlay.r85-show { display:flex !important; }
+  .r85-sober-card { animation: r85SoberPulse 1.8s ease-in-out infinite; }
+  #r85-sober-alert-badge { animation: r85SoberBadge 1.4s ease-in-out infinite; }
 </style>
+
 <script>
 (function(){
-  let audioCtx=null, alarmInterval=null, wakeLock=null, rtChannel=null, clockInterval=null;
-  function toast(m){ if(typeof showToast==='function') showToast(m); else alert(m); }
-  function company(){ return (document.getElementById('lbl-manager-comp-name')?.innerText||'').trim(); }
-  function unlockAudio(){ try{ const AC=window.AudioContext||window.webkitAudioContext; if(!AC)return; if(!audioCtx)audioCtx=new AC(); if(audioCtx.state==='suspended')audioCtx.resume(); }catch(e){} }
-  function vibrate(){ try{ if(navigator.vibrate) navigator.vibrate([500,120,500,120,900,180,900,180,500]); }catch(e){} }
-  function siren(){ try{ unlockAudio(); if(!audioCtx)return; [0,.10,.20,.36,.46,.56,.80,.90,1.0,1.26,1.42].forEach((delay,i)=>{ const now=audioCtx.currentTime+delay; const o=audioCtx.createOscillator(); const g=audioCtx.createGain(); o.type=i%2?'sawtooth':'square'; o.frequency.setValueAtTime(i%2?620:1080,now); g.gain.setValueAtTime(.0001,now); g.gain.exponentialRampToValueAtTime(.32,now+.02); g.gain.exponentialRampToValueAtTime(.0001,now+.13); o.connect(g); g.connect(audioCtx.destination); o.start(now); o.stop(now+.15); }); }catch(e){} }
-  async function askNotif(){ try{ if(!('Notification'in window))return false; if(Notification.permission==='granted')return true; return (await Notification.requestPermission())==='granted'; }catch(e){return false;} }
-  function notify(report){ try{ if(!('Notification'in window)||Notification.permission!=='granted')return; new Notification('🚨 RESTEV 85 — ALERTE MANAGER',{body:`${report?.category||'Signalement'} — ${report?.work_zone||'Zone non précisée'}`,icon:'logo.png',badge:'logo.png',requireInteraction:true,tag:'restev85-alerte-manager',renotify:true,vibrate:[500,120,500,120,900]}); }catch(e){} }
-  function installUI(){
-    if(!document.getElementById('r85-max-alert-overlay')){ const div=document.createElement('div'); div.id='r85-max-alert-overlay'; div.className='hidden fixed inset-0 z-[99999] items-center justify-center p-3 bg-black/85 backdrop-blur-md no-print'; div.innerHTML=`<div class="r85-mega-bg relative overflow-hidden w-full max-w-3xl text-white rounded-[2.2rem] shadow-2xl border-[6px] border-white p-5 md:p-8 text-center space-y-5"><div class="absolute top-4 left-4 bg-white text-red-700 px-3 py-2 rounded-xl font-black text-xs uppercase tracking-widest">Alerte active</div><div class="absolute top-4 right-4 bg-black/35 text-white px-3 py-2 rounded-xl font-black text-xs"><span id="r85-alert-clock">--:--:--</span></div><div class="r85-mega-card space-y-5"><div class="mx-auto w-28 h-28 md:w-32 md:h-32 rounded-full bg-white/20 border-[6px] border-white flex items-center justify-center r85-mega-beacon"><i class="fa-solid fa-triangle-exclamation text-6xl"></i></div><div><p class="text-xs md:text-sm font-black uppercase tracking-[.45em] text-red-100">RESTEV 85 — Signalement terrain</p><h2 class="text-4xl md:text-6xl font-black mt-2 leading-none">🚨 ALERTE MANAGER 🚨</h2><p class="text-sm md:text-base font-bold mt-3 text-red-100">Une situation terrain vient d'être signalée. Action attendue.</p></div><div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-left"><div class="bg-white/18 border border-white/35 rounded-2xl p-4"><p class="text-[10px] font-black uppercase text-red-100">Risque</p><p id="r85-max-risk" class="text-lg font-black">—</p></div><div class="bg-white/18 border border-white/35 rounded-2xl p-4"><p class="text-[10px] font-black uppercase text-red-100">Salarié</p><p id="r85-max-employee" class="text-lg font-black">—</p></div><div class="bg-white/18 border border-white/35 rounded-2xl p-4"><p class="text-[10px] font-black uppercase text-red-100">Zone</p><p id="r85-max-zone" class="text-lg font-black">—</p></div></div><div class="bg-black/25 border border-white/30 rounded-2xl p-4 text-left"><p class="text-[10px] font-black uppercase text-red-100 mb-1">Description</p><p id="r85-max-desc" class="text-sm md:text-base font-bold leading-relaxed whitespace-pre-line">—</p></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><button onclick="acknowledgeR85MaxAlert()" class="bg-white text-red-700 py-4 rounded-2xl font-black shadow-xl text-sm">J'ai vu</button><button onclick="openR85MaxAlertsPanel()" class="bg-slate-950 text-white py-4 rounded-2xl font-black shadow-xl text-sm">Ouvrir les signalements</button></div></div></div>`; document.body.appendChild(div); }
-    if(!document.getElementById('r85-max-alert-badge')){ const b=document.createElement('button'); b.id='r85-max-alert-badge'; b.className='hidden fixed bottom-5 left-5 z-[99998] bg-red-700 text-white rounded-2xl shadow-2xl border-[5px] border-white px-5 py-4 font-black no-print'; b.onclick=()=>openR85MaxAlertsPanel(); b.innerHTML='<i class="fa-solid fa-bell mr-2"></i><span id="r85-max-alert-count">0</span> ALERTE(S) ACTIVE(S)'; document.body.appendChild(b); }
+  const PATCH_VERSION = 'RESTEV85_SOBER_ALERT_DARKMODE_GPS_2026_07_06';
+  let r85AudioCtx = null;
+  let r85SoberAlarmInterval = null;
+  let r85RealtimeChannel = null;
+  let r85TerrainGps = null;
+  let r85GeoWatchId = null;
+  let r85WakeLock = null;
+
+  function toast(message){
+    if(typeof showToast === 'function') showToast(message);
+    else alert(message);
   }
-  function stopAlarm(){ if(alarmInterval){clearInterval(alarmInterval); alarmInterval=null;} if(clockInterval){clearInterval(clockInterval); clockInterval=null;} try{if(navigator.vibrate)navigator.vibrate(0);}catch(e){} }
-  window.acknowledgeR85MaxAlert=function(){ document.getElementById('r85-max-alert-overlay')?.classList.remove('r85-show'); document.getElementById('r85-max-alert-overlay')?.classList.add('hidden'); stopAlarm(); updateR85MaxAlertBadge(); };
-  window.openR85MaxAlertsPanel=function(){ acknowledgeR85MaxAlert(); if(typeof switchScreen==='function')switchScreen('scr-manager'); setTimeout(()=>document.getElementById('manager-risk-box')?.scrollIntoView({behavior:'smooth',block:'start'}),300); if(typeof loadManagerReports==='function')loadManagerReports(); };
-  window.updateR85MaxAlertBadge=async function(){ if(!supabaseClient)return; const c=company(); if(!c)return; const {data,error}=await supabaseClient.from('prevention_reports').select('id,status').eq('company_code',c).neq('status','Traité').limit(200); if(error)return; const n=(data||[]).length; const badge=document.getElementById('r85-max-alert-badge'); const count=document.getElementById('r85-max-alert-count'); if(count)count.innerText=String(n); if(n>0)badge?.classList.remove('hidden'); else{badge?.classList.add('hidden'); document.getElementById('r85-max-alert-overlay')?.classList.remove('r85-show'); document.getElementById('r85-max-alert-overlay')?.classList.add('hidden'); stopAlarm();} };
-  function trigger(report){ installUI(); const set=(id,v)=>{const el=document.getElementById(id); if(el)el.innerText=v||'—'}; set('r85-max-risk',report?.category); set('r85-max-employee',report?.employee_name); set('r85-max-zone',report?.work_zone||'Zone non précisée'); set('r85-max-desc',report?.description); document.getElementById('r85-max-alert-overlay')?.classList.remove('hidden'); document.getElementById('r85-max-alert-overlay')?.classList.add('r85-show'); clockInterval=setInterval(()=>{const el=document.getElementById('r85-alert-clock'); if(el)el.innerText=new Date().toLocaleTimeString('fr-FR');},1000); siren(); vibrate(); notify(report); updateR85MaxAlertBadge(); if(alarmInterval)clearInterval(alarmInterval); alarmInterval=setInterval(()=>{siren(); vibrate();},6500); }
-  window.activateR85ManagerGuardMode=async function(){ installUI(); unlockAudio(); await askNotif(); try{ if('wakeLock'in navigator){ wakeLock=await navigator.wakeLock.request('screen'); toast('Mode garde activé : écran maintenu éveillé.'); } else toast('Wake Lock non compatible : gardez l’écran allumé manuellement.'); }catch(e){ toast('Maintien écran impossible : '+(e.message||e)); } if(typeof startManagerRealtime==='function')startManagerRealtime(); updateR85MaxAlertBadge(); };
-  function installPanel(){ const screen=document.getElementById('scr-manager'); if(!screen||document.getElementById('r85-guard-panel'))return; const p=document.createElement('div'); p.id='r85-guard-panel'; p.className='bg-white dark:bg-slate-800 p-5 rounded-2xl border-t-4 border-t-red-600 shadow-premium space-y-4'; p.innerHTML='<div class="flex items-center justify-between gap-2"><h3 class="font-black dark:text-white text-xs uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-tower-broadcast text-red-600"></i> Poste d’alerte manager</h3><span class="text-[10px] bg-red-50 text-red-700 px-2 py-1 rounded-lg font-black">MAX VISUEL</span></div><p class="text-[11px] text-slate-500 leading-relaxed">Activez ce mode pour garder l’écran éveillé, demander les notifications, et déclencher son + vibration.</p><div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><button onclick="activateR85ManagerGuardMode()" class="bg-red-600 text-white py-3 rounded-xl text-xs font-black">Activer mode garde</button><button onclick="testR85MaxAlert()" class="bg-slate-900 text-white py-3 rounded-xl text-xs font-black">Tester l’alerte</button></div><p class="text-[10px] text-slate-400">Écran verrouillé/application fermée : nécessite une future PWA + Web Push serveur.</p>'; const first=screen.querySelector('.bg-white, .dark\\:bg-slate-800'); if(first&&first.nextSibling)screen.insertBefore(p,first.nextSibling); else screen.prepend(p); }
-  window.testR85MaxAlert=function(){ trigger({category:'Test alerte visuelle RESTEV',employee_name:'Test manager',work_zone:'Zone test',description:'Test : flash visuel, sonnerie et vibration si compatible.'}); };
-  window.startManagerRealtime=function(){ if(!supabaseClient)return toast('Supabase non chargé.'); const c=company(); if(!c)return; installUI(); unlockAudio(); if(rtChannel){try{supabaseClient.removeChannel(rtChannel)}catch(e){} rtChannel=null;} rtChannel=supabaseClient.channel('r85_max_visual_alert_'+c).on('postgres_changes',{event:'INSERT',schema:'public',table:'prevention_reports',filter:'company_code=eq.'+c},payload=>{trigger(payload.new); if(typeof loadManagerReports==='function')loadManagerReports();}).subscribe(status=>{if(status==='SUBSCRIBED')toast('Alerte manager max activée.');}); };
-  const oldUpdate=window.updateReportStatus; window.updateReportStatus=async function(id,status){ if(!supabaseClient){ if(typeof oldUpdate==='function')return oldUpdate(id,status); return;} const {error}=await supabaseClient.from('prevention_reports').update({status}).eq('id',id); if(error)return toast('Erreur statut : '+error.message); toast(status==='Traité'?'Alerte traitée.':'Statut mis à jour.'); if(typeof loadManagerReports==='function')await loadManagerReports(); updateR85MaxAlertBadge(); };
-  const oldLogin=window.handleManagerLogin; window.handleManagerLogin=function(){ unlockAudio(); if(typeof oldLogin==='function')oldLogin(); setTimeout(()=>{installUI(); installPanel(); startManagerRealtime(); updateR85MaxAlertBadge();},500); };
-  const oldSwitch=window.switchScreen; window.switchScreen=function(id){ if(typeof oldSwitch==='function')oldSwitch(id); if(id==='scr-manager')setTimeout(()=>{installUI(); installPanel(); updateR85MaxAlertBadge();},300); };
-  document.addEventListener('DOMContentLoaded',()=>{installUI(); setTimeout(installPanel,700); console.log('RESTEV85_MANAGER_MAX_ALERT_WAKELOCK installé');});
+
+  function companyCode(){
+    return (document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
+  }
+
+  function employeeSession(){
+    try { return currentEmployeeSession || window.currentEmployeeSession || null; }
+    catch(e){ return window.currentEmployeeSession || null; }
+  }
+
+  function escapeText(value){
+    if(typeof escapeHtml === 'function') return escapeHtml(value || '');
+    return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  /* ===== Dark mode fiable : on conserve le bouton existant mais on force body aussi ===== */
+  const oldToggleDarkMode = window.toggleDarkMode;
+  window.toggleDarkMode = function(){
+    if(typeof oldToggleDarkMode === 'function') oldToggleDarkMode();
+    else document.documentElement.classList.toggle('dark');
+    const isDark = document.documentElement.classList.contains('dark');
+    document.body.classList.toggle('dark', isDark);
+    try { safeStorage?.setItem('restev_dark_mode', isDark ? '1' : '0'); } catch(e){}
+  };
+
+  function restoreDarkMode(){
+    try{
+      if(safeStorage?.getItem('restev_dark_mode') === '1'){
+        document.documentElement.classList.add('dark');
+        document.body.classList.add('dark');
+      }
+    }catch(e){}
+  }
+
+  /* ===== Alerte sobre ===== */
+  function unlockAudio(){
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return;
+      if(!r85AudioCtx) r85AudioCtx = new AC();
+      if(r85AudioCtx.state === 'suspended') r85AudioCtx.resume();
+    }catch(e){}
+  }
+
+  function playSoberSound(){
+    try{
+      if(typeof soundMuted !== 'undefined' && soundMuted) return;
+      unlockAudio();
+      if(!r85AudioCtx) return;
+      [0, .22, .44].forEach((delay, index) => {
+        const now = r85AudioCtx.currentTime + delay;
+        const osc = r85AudioCtx.createOscillator();
+        const gain = r85AudioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(index === 1 ? 740 : 560, now);
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.18, now + 0.025);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+        osc.connect(gain);
+        gain.connect(r85AudioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.20);
+      });
+    }catch(e){}
+  }
+
+  function vibrateSober(){
+    try{
+      if(navigator.vibrate) navigator.vibrate([260,100,260,100,420]);
+    }catch(e){}
+  }
+
+  function notifySober(report){
+    try{
+      if(!('Notification' in window) || Notification.permission !== 'granted') return;
+      new Notification('RESTEV 85 — Nouveau signalement', {
+        body: `${report?.category || 'Signalement'} — ${report?.work_zone || 'Zone non précisée'}`,
+        icon: 'logo.png',
+        badge: 'logo.png',
+        requireInteraction: true,
+        tag: 'restev85-signalement-manager',
+        renotify: true,
+        vibrate: [260,100,260]
+      });
+    }catch(e){}
+  }
+
+  async function requestBrowserNotifications(){
+    try{
+      if(!('Notification' in window)) return false;
+      if(Notification.permission === 'granted') return true;
+      return (await Notification.requestPermission()) === 'granted';
+    }catch(e){ return false; }
+  }
+
+  function installSoberAlertUI(){
+    // Supprime visuellement l'ancien overlay trop flash s'il est présent.
+    document.getElementById('r85-max-alert-overlay')?.classList.add('hidden');
+    document.getElementById('r85-max-alert-badge')?.classList.add('hidden');
+
+    if(!document.getElementById('r85-sober-alert-overlay')){
+      const overlay = document.createElement('div');
+      overlay.id = 'r85-sober-alert-overlay';
+      overlay.className = 'hidden fixed inset-0 z-[99999] items-center justify-center p-4 bg-slate-950/72 backdrop-blur-sm no-print';
+      overlay.innerHTML = `
+        <div class="r85-sober-card w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[2rem] border border-red-200 dark:border-red-900 shadow-2xl overflow-hidden">
+          <div class="bg-gradient-to-r from-red-600 via-red-500 to-orange-500 p-4 text-white flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center text-2xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
+              <div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-red-100">Signalement terrain</p>
+                <h2 class="text-xl md:text-2xl font-black">Alerte manager</h2>
+              </div>
+            </div>
+            <span class="bg-white/18 border border-white/30 px-3 py-1 rounded-full text-[10px] font-black uppercase">À traiter</span>
+          </div>
+          <div class="p-5 md:p-6 space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div class="bg-red-50 dark:bg-slate-950 border border-red-100 dark:border-red-900 rounded-2xl p-3"><p class="text-[10px] font-black uppercase text-red-500">Risque</p><p id="r85-sober-risk" class="text-sm font-black dark:text-white">—</p></div>
+              <div class="bg-slate-50 dark:bg-slate-950 border rounded-2xl p-3"><p class="text-[10px] font-black uppercase text-slate-400">Salarié</p><p id="r85-sober-employee" class="text-sm font-black dark:text-white">—</p></div>
+              <div class="bg-slate-50 dark:bg-slate-950 border rounded-2xl p-3"><p class="text-[10px] font-black uppercase text-slate-400">Zone / GPS</p><p id="r85-sober-zone" class="text-sm font-black dark:text-white">—</p></div>
+            </div>
+            <div class="bg-slate-50 dark:bg-slate-950 border rounded-2xl p-4">
+              <p class="text-[10px] font-black uppercase text-slate-400 mb-1">Description</p>
+              <p id="r85-sober-desc" class="text-sm text-slate-700 dark:text-slate-200 font-semibold leading-relaxed whitespace-pre-line">—</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button onclick="acknowledgeR85SoberAlert()" class="bg-slate-900 dark:bg-white dark:text-slate-900 text-white py-3 rounded-xl text-sm font-black"><i class="fa-solid fa-check mr-1"></i> J’ai vu</button>
+              <button onclick="openR85SoberAlertsPanel()" class="bg-red-600 text-white py-3 rounded-xl text-sm font-black"><i class="fa-solid fa-list-check mr-1"></i> Ouvrir les signalements</button>
+            </div>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+    }
+
+    if(!document.getElementById('r85-sober-alert-badge')){
+      const badge = document.createElement('button');
+      badge.id = 'r85-sober-alert-badge';
+      badge.className = 'hidden fixed bottom-5 left-5 z-[99998] bg-red-600 text-white rounded-2xl shadow-2xl border-4 border-white px-4 py-3 font-black no-print';
+      badge.onclick = () => openR85SoberAlertsPanel();
+      badge.innerHTML = `<i class="fa-solid fa-bell mr-2"></i><span id="r85-sober-alert-count">0</span> alerte(s)`;
+      document.body.appendChild(badge);
+    }
+  }
+
+  function stopSoberAlarm(){
+    if(r85SoberAlarmInterval){ clearInterval(r85SoberAlarmInterval); r85SoberAlarmInterval = null; }
+    try{ if(navigator.vibrate) navigator.vibrate(0); }catch(e){}
+  }
+
+  window.acknowledgeR85SoberAlert = function(){
+    document.getElementById('r85-sober-alert-overlay')?.classList.remove('r85-show');
+    document.getElementById('r85-sober-alert-overlay')?.classList.add('hidden');
+    stopSoberAlarm();
+    updateR85SoberAlertBadge();
+  };
+
+  window.openR85SoberAlertsPanel = function(){
+    acknowledgeR85SoberAlert();
+    if(typeof switchScreen === 'function') switchScreen('scr-manager');
+    setTimeout(() => document.getElementById('manager-risk-box')?.scrollIntoView({behavior:'smooth', block:'start'}), 300);
+    if(typeof loadManagerReports === 'function') loadManagerReports();
+  };
+
+  function triggerSoberAlert(report){
+    installSoberAlertUI();
+    const set = (id, value) => { const el = document.getElementById(id); if(el) el.innerText = value || '—'; };
+    set('r85-sober-risk', report?.category);
+    set('r85-sober-employee', report?.employee_name);
+    set('r85-sober-zone', report?.work_zone || 'Zone non précisée');
+    set('r85-sober-desc', report?.description);
+
+    const overlay = document.getElementById('r85-sober-alert-overlay');
+    overlay?.classList.remove('hidden');
+    overlay?.classList.add('r85-show');
+
+    playSoberSound();
+    vibrateSober();
+    notifySober(report);
+    updateR85SoberAlertBadge();
+
+    stopSoberAlarm();
+    r85SoberAlarmInterval = setInterval(() => {
+      playSoberSound();
+      vibrateSober();
+    }, 12000);
+  }
+
+  window.updateR85SoberAlertBadge = async function(){
+    if(!supabaseClient) return;
+    const company = companyCode();
+    if(!company) return;
+    const { data, error } = await supabaseClient
+      .from('prevention_reports')
+      .select('id,status')
+      .eq('company_code', company)
+      .neq('status', 'Traité')
+      .limit(200);
+    if(error) return;
+    const count = (data || []).length;
+    const badge = document.getElementById('r85-sober-alert-badge');
+    const countEl = document.getElementById('r85-sober-alert-count');
+    if(countEl) countEl.innerText = String(count);
+    if(count > 0) badge?.classList.remove('hidden');
+    else {
+      badge?.classList.add('hidden');
+      document.getElementById('r85-sober-alert-overlay')?.classList.remove('r85-show');
+      document.getElementById('r85-sober-alert-overlay')?.classList.add('hidden');
+      stopSoberAlarm();
+    }
+  };
+
+  window.activateR85ManagerGuardMode = async function(){
+    installSoberAlertUI();
+    unlockAudio();
+    await requestBrowserNotifications();
+    try{
+      if('wakeLock' in navigator){
+        r85WakeLock = await navigator.wakeLock.request('screen');
+        toast('Mode garde activé : écran maintenu éveillé.');
+      } else {
+        toast('Wake Lock non compatible : gardez l’écran allumé manuellement.');
+      }
+    }catch(e){
+      toast('Maintien écran impossible : ' + (e.message || e));
+    }
+    if(typeof startManagerRealtime === 'function') startManagerRealtime();
+    updateR85SoberAlertBadge();
+  };
+
+  window.testR85SoberAlert = function(){
+    triggerSoberAlert({
+      category:'Test alerte sobre RESTEV',
+      employee_name:'Test manager',
+      work_zone:'Zone test',
+      description:'Test : alerte visible, sans flash agressif, avec son et vibration si compatibles.'
+    });
+  };
+
+  function installGuardPanel(){
+    const screen = document.getElementById('scr-manager');
+    if(!screen) return;
+    const oldMax = document.getElementById('r85-guard-panel');
+    if(oldMax) oldMax.remove();
+    if(document.getElementById('r85-sober-guard-panel')) return;
+
+    const panel = document.createElement('div');
+    panel.id = 'r85-sober-guard-panel';
+    panel.className = 'bg-white dark:bg-slate-800 p-5 rounded-2xl border-t-4 border-t-red-500 shadow-premium space-y-4';
+    panel.innerHTML = `
+      <div class="flex items-center justify-between gap-2">
+        <h3 class="font-black dark:text-white text-xs uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-bell text-red-500"></i> Poste d’alerte manager</h3>
+        <span class="text-[10px] bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 px-2 py-1 rounded-lg font-black">SOBRE</span>
+      </div>
+      <p class="text-[11px] text-slate-500 dark:text-slate-300 leading-relaxed">Activez ce mode pour maintenir l’écran éveillé, autoriser les notifications, et déclencher son + vibration sur les signalements.</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <button onclick="activateR85ManagerGuardMode()" class="bg-red-600 text-white py-3 rounded-xl text-xs font-black"><i class="fa-solid fa-bell mr-1"></i> Activer mode garde</button>
+        <button onclick="testR85SoberAlert()" class="bg-slate-900 dark:bg-white dark:text-slate-900 text-white py-3 rounded-xl text-xs font-black"><i class="fa-solid fa-vial mr-1"></i> Tester l’alerte</button>
+      </div>
+      <p class="text-[10px] text-slate-400">Écran verrouillé / application fermée : nécessite une future PWA + Web Push serveur.</p>
+    `;
+    const first = screen.querySelector('.bg-white, .dark\\:bg-slate-800');
+    if(first && first.nextSibling) screen.insertBefore(panel, first.nextSibling);
+    else screen.prepend(panel);
+  }
+
+  window.startManagerRealtime = function(){
+    if(!supabaseClient) return toast('Supabase non chargé.');
+    const company = companyCode();
+    if(!company) return;
+    installSoberAlertUI();
+    unlockAudio();
+    if(r85RealtimeChannel){
+      try{ supabaseClient.removeChannel(r85RealtimeChannel); }catch(e){}
+      r85RealtimeChannel = null;
+    }
+    r85RealtimeChannel = supabaseClient
+      .channel('r85_sober_alert_' + company)
+      .on('postgres_changes', {event:'INSERT', schema:'public', table:'prevention_reports', filter:'company_code=eq.' + company}, payload => {
+        triggerSoberAlert(payload.new);
+        if(typeof loadManagerReports === 'function') loadManagerReports();
+      })
+      .subscribe(status => { if(status === 'SUBSCRIBED') toast('Alertes manager sobres activées.'); });
+  };
+
+  const oldUpdateReportStatus = window.updateReportStatus;
+  window.updateReportStatus = async function(id, status){
+    if(!supabaseClient){
+      if(typeof oldUpdateReportStatus === 'function') return oldUpdateReportStatus(id, status);
+      return;
+    }
+    const { error } = await supabaseClient.from('prevention_reports').update({status}).eq('id', id);
+    if(error) return toast('Erreur statut : ' + error.message);
+    toast(status === 'Traité' ? 'Alerte traitée.' : 'Statut mis à jour.');
+    if(typeof loadManagerReports === 'function') await loadManagerReports();
+    updateR85SoberAlertBadge();
+  };
+
+  /* ===== GPS terrain ===== */
+  function installGpsPermissionBlock(){
+    const screen = document.getElementById('scr-report');
+    const desc = document.getElementById('risk-description');
+    if(!screen || !desc) return;
+
+    // Masque l'ancien bloc GPS approximatif si nécessaire.
+    const oldStatus = document.getElementById('geo-status');
+    if(oldStatus) oldStatus.innerText = 'GPS terrain : autorisation requise';
+
+    if(document.getElementById('r85-gps-permission-block')) return;
+
+    const block = document.createElement('div');
+    block.id = 'r85-gps-permission-block';
+    block.className = 'space-y-3 bg-blue-50 dark:bg-slate-900 border border-blue-100 dark:border-slate-700 p-4 rounded-2xl';
+    block.innerHTML = `
+      <div class="flex items-start gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-slate-800 text-restev-blue flex items-center justify-center"><i class="fa-solid fa-location-crosshairs"></i></div>
+        <div class="flex-1">
+          <p class="text-xs font-black dark:text-white">Localisation du signalement terrain</p>
+          <p class="text-[11px] text-slate-500 dark:text-slate-300 leading-relaxed mt-1">Autorisez la géolocalisation uniquement pour associer une position au signalement. La précision dépend du smartphone et du lieu.</p>
+        </div>
+      </div>
+      <button type="button" onclick="requestTerrainGeolocation()" class="w-full bg-restev-blue text-white py-3 rounded-xl text-xs font-black"><i class="fa-solid fa-location-dot mr-1"></i> Autoriser / actualiser ma position</button>
+      <div id="r85-gps-permission-status" class="text-[11px] font-bold text-slate-500 dark:text-slate-300 bg-white dark:bg-slate-800 border rounded-xl p-3">Position non autorisée pour le moment.</div>
+      <a id="r85-gps-map-link" href="#" target="_blank" class="hidden block text-center bg-white dark:bg-slate-800 border text-restev-blue dark:text-blue-300 py-2 rounded-xl text-[10px] font-black">Voir la position sur la carte</a>
+    `;
+    const riskBlock = document.getElementById('risk-category-select')?.closest('div') || desc.closest('div');
+    if(riskBlock) screen.insertBefore(block, riskBlock);
+    else screen.prepend(block);
+
+    checkGeolocationPermissionLabel();
+  }
+
+  async function checkGeolocationPermissionLabel(){
+    const status = document.getElementById('r85-gps-permission-status');
+    if(!status) return;
+    if(!navigator.geolocation){
+      status.innerHTML = 'Géolocalisation non compatible avec ce navigateur.';
+      return;
+    }
+    try{
+      if(navigator.permissions && navigator.permissions.query){
+        const p = await navigator.permissions.query({name:'geolocation'});
+        if(p.state === 'granted') status.innerHTML = 'Autorisation GPS déjà accordée. Cliquez pour actualiser la position.';
+        if(p.state === 'prompt') status.innerHTML = 'Cliquez sur le bouton pour demander l’autorisation GPS.';
+        if(p.state === 'denied') status.innerHTML = '<b>GPS refusé.</b> Autorisez la localisation dans les réglages du navigateur / smartphone.';
+      }
+    }catch(e){}
+  }
+
+  window.requestTerrainGeolocation = function(){
+    const status = document.getElementById('r85-gps-permission-status');
+    if(!navigator.geolocation){
+      if(status) status.innerHTML = 'Géolocalisation non compatible avec ce navigateur.';
+      return;
+    }
+    if(status) status.innerHTML = 'Demande d’autorisation GPS en cours...';
+
+    if(r85GeoWatchId !== null){
+      try{ navigator.geolocation.clearWatch(r85GeoWatchId); }catch(e){}
+      r85GeoWatchId = null;
+    }
+
+    let best = null;
+    const onSuccess = pos => {
+      const point = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        accuracy: pos.coords.accuracy,
+        captured_at: new Date().toISOString()
+      };
+      if(!best || point.accuracy < best.accuracy){
+        best = point;
+        r85TerrainGps = point;
+      }
+      const acc = Math.round(r85TerrainGps.accuracy || 0);
+      if(status){
+        status.innerHTML = `📍 Position terrain enregistrée — précision environ <b>${acc} m</b><br>Lat ${r85TerrainGps.lat.toFixed(6)} / Lng ${r85TerrainGps.lng.toFixed(6)}`;
+      }
+      const oldStatus = document.getElementById('geo-status');
+      if(oldStatus) oldStatus.innerText = `📍 GPS terrain OK — précision env. ${acc} m`;
+      const link = document.getElementById('r85-gps-map-link');
+      if(link){
+        link.href = `https://www.google.com/maps?q=${r85TerrainGps.lat},${r85TerrainGps.lng}`;
+        link.classList.remove('hidden');
+      }
+      try{
+        if(window.mapInstance && window.L){
+          mapInstance.setView([r85TerrainGps.lat, r85TerrainGps.lng], 16);
+          L.marker([r85TerrainGps.lat, r85TerrainGps.lng]).addTo(mapInstance).bindPopup('Position du signalement').openPopup();
+        }
+      }catch(e){}
+    };
+
+    const onError = err => {
+      if(status) status.innerHTML = `<b>GPS non autorisé ou indisponible.</b><br>${escapeText(err.message || '')}<br>Vérifiez les autorisations de localisation du navigateur.`;
+      const oldStatus = document.getElementById('geo-status');
+      if(oldStatus) oldStatus.innerText = 'GPS refusé ou indisponible';
+    };
+
+    try{
+      r85GeoWatchId = navigator.geolocation.watchPosition(onSuccess, onError, {
+        enableHighAccuracy: true,
+        timeout: 25000,
+        maximumAge: 0
+      });
+      setTimeout(() => {
+        if(r85GeoWatchId !== null){
+          try{ navigator.geolocation.clearWatch(r85GeoWatchId); }catch(e){}
+          r85GeoWatchId = null;
+        }
+        if(r85TerrainGps) toast('Position GPS terrain enregistrée.');
+      }, 12000);
+    }catch(e){ onError({message:e.message || e}); }
+  };
+
+  // Surcharge submitRiskReport : demande GPS conseillée + enregistrement GPS si autorisé.
+  window.submitRiskReport = async function(){
+    installGpsPermissionBlock();
+    if(!supabaseClient) return toast('Supabase non chargé. Vérifiez internet.');
+    const category = document.getElementById('risk-category-select')?.value || 'Non renseigné';
+    const desc = document.getElementById('risk-description')?.value.trim();
+    const lvl = document.getElementById('risk-level')?.value || 'À qualifier';
+    const freq = document.getElementById('risk-frequency')?.value || 'Non renseignée';
+    if(!desc) return toast('Veuillez saisir une description du danger.');
+
+    if(!r85TerrainGps){
+      toast('Vous pouvez autoriser la géolocalisation avant envoi. Envoi possible sans GPS si refusé.');
+    }
+
+    const session = employeeSession();
+    const employeeName = session ? session.name : 'Salarié terrain';
+    const company = session ? session.company : (companyCode() || 'Établissement non renseigné');
+    const gpsText = r85TerrainGps ? `\n\n[GPS terrain] précision env. ${Math.round(r85TerrainGps.accuracy)} m — ${r85TerrainGps.lat.toFixed(6)}, ${r85TerrainGps.lng.toFixed(6)}` : '';
+    const fullDesc = desc + gpsText;
+
+    const payloadWithGps = {
+      company_code: company,
+      employee_name: employeeName,
+      category,
+      level: lvl,
+      frequency: freq,
+      description: fullDesc,
+      status: 'Nouveau',
+      gps_lat: r85TerrainGps ? r85TerrainGps.lat : null,
+      gps_lng: r85TerrainGps ? r85TerrainGps.lng : null,
+      gps_accuracy: r85TerrainGps ? r85TerrainGps.accuracy : null,
+      gps_captured_at: r85TerrainGps ? r85TerrainGps.captured_at : null
+    };
+
+    let { error } = await supabaseClient.from('prevention_reports').insert([payloadWithGps]);
+    if(error && String(error.message || '').toLowerCase().includes('gps')){
+      const payloadNoGps = {...payloadWithGps};
+      delete payloadNoGps.gps_lat; delete payloadNoGps.gps_lng; delete payloadNoGps.gps_accuracy; delete payloadNoGps.gps_captured_at;
+      const fallback = await supabaseClient.from('prevention_reports').insert([payloadNoGps]);
+      error = fallback.error;
+    }
+    if(error) return toast('Erreur Supabase signalement : ' + error.message);
+
+    try{
+      if(typeof submitAnonymizedPreventionStat === 'function') await submitAnonymizedPreventionStat({category, level:lvl, frequency:freq, event_type:'Signalement prévention'});
+    }catch(e){}
+
+    document.getElementById('risk-description').value = '';
+    r85TerrainGps = null;
+    toast('Signalement envoyé au responsable.');
+    if(typeof switchScreen === 'function') switchScreen('scr-employee');
+  };
+
+  const oldHandleManagerLogin = window.handleManagerLogin;
+  window.handleManagerLogin = function(){
+    unlockAudio();
+    if(typeof oldHandleManagerLogin === 'function') oldHandleManagerLogin();
+    setTimeout(() => { installSoberAlertUI(); installGuardPanel(); startManagerRealtime(); updateR85SoberAlertBadge(); }, 500);
+  };
+
+  const oldSwitchScreen = window.switchScreen;
+  window.switchScreen = function(screenId){
+    if(typeof oldSwitchScreen === 'function') oldSwitchScreen(screenId);
+    if(screenId === 'scr-manager') setTimeout(() => { installSoberAlertUI(); installGuardPanel(); updateR85SoberAlertBadge(); }, 300);
+    if(screenId === 'scr-report') setTimeout(() => { installGpsPermissionBlock(); }, 250);
+  };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    restoreDarkMode();
+    installSoberAlertUI();
+    setTimeout(() => { installGuardPanel(); installGpsPermissionBlock(); }, 700);
+    console.log(PATCH_VERSION + ' installé');
+  });
 })();
 </script>
 
@@ -2936,41 +3497,602 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 </script>
 
-<!-- PATCH RESTEV 85 — ALERTE MANAGER MAXI VISUELLE + VIBRATION + MODE GARDE -->
-<style id="r85-max-alert-style">
-@keyframes r85MegaFlash{0%{background:radial-gradient(circle at 20% 20%,#ef4444,#7f1d1d 60%)}25%{background:radial-gradient(circle at 80% 20%,#2563eb,#7f1d1d 62%)}50%{background:radial-gradient(circle at 80% 80%,#dc2626,#111827 68%)}75%{background:radial-gradient(circle at 20% 80%,#e11d48,#1e1b4b 65%)}100%{background:radial-gradient(circle at 20% 20%,#ef4444,#7f1d1d 60%)}}
-@keyframes r85Shake{0%,100%{transform:translate(0,0) scale(1)}15%{transform:translate(-8px,2px) scale(1.01)}30%{transform:translate(8px,-2px) scale(1.01)}45%{transform:translate(-5px,3px) scale(1.01)}60%{transform:translate(5px,-3px) scale(1.01)}}
-@keyframes r85Beacon{0%{box-shadow:0 0 0 0 rgba(255,255,255,.95),0 0 28px rgba(255,255,255,.75)}70%{box-shadow:0 0 0 34px rgba(255,255,255,0),0 0 60px rgba(255,255,255,.95)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0),0 0 28px rgba(255,255,255,.75)}}
-@keyframes r85Badge{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
-#r85-max-alert-overlay.r85-show{display:flex!important}.r85-mega-bg{animation:r85MegaFlash .55s infinite}.r85-mega-card{animation:r85Shake .6s ease-in-out infinite}.r85-mega-beacon{animation:r85Beacon .85s infinite}#r85-max-alert-badge{animation:r85Badge .95s infinite}
+
+<!-- =========================================================
+     PATCH RESTEV 85 — ALERTE PLUS SOBRE + DARK MODE GLOBAL + GPS TERRAIN
+     À coller juste avant </body>
+
+     Corrections demandées :
+     1) Alerte manager moins agressive : plus de secousses, plus de flash violent.
+     2) Mode nuit appliqué à toute l'application, pas seulement aux boutons.
+     3) Demande claire d'autorisation géolocalisation pour les alertes terrain.
+     4) GPS smartphone haute précision, avec affichage précision + lien carte.
+     ========================================================= -->
+<style id="r85-sober-dark-gps-style">
+  /* ===== Dark mode global fiable ===== */
+  html.dark body,
+  body.dark,
+  html.dark body.r85-modern-design {
+    background: linear-gradient(135deg, #020617, #0f172a 45%, #111827) !important;
+    color: #e5e7eb !important;
+  }
+
+  html.dark header {
+    background: rgba(15,23,42,.92) !important;
+    border-bottom-color: rgba(51,65,85,.9) !important;
+  }
+
+  html.dark .bg-white,
+  html.dark .r85-action-card,
+  html.dark .r85-glass-panel,
+  html.dark .r85-pill {
+    background: rgba(15,23,42,.88) !important;
+    color: #e5e7eb !important;
+    border-color: rgba(51,65,85,.95) !important;
+    backdrop-filter: blur(14px);
+  }
+
+  html.dark .bg-slate-50,
+  html.dark .bg-blue-50,
+  html.dark .bg-emerald-50,
+  html.dark .bg-red-50,
+  html.dark .bg-orange-50,
+  html.dark .bg-amber-50,
+  html.dark .bg-pink-50,
+  html.dark .bg-cyan-50,
+  html.dark .bg-teal-50 {
+    background: rgba(2,6,23,.72) !important;
+    color: #e5e7eb !important;
+    border-color: rgba(51,65,85,.9) !important;
+  }
+
+  html.dark input,
+  html.dark select,
+  html.dark textarea {
+    background: rgba(2,6,23,.85) !important;
+    color: #f8fafc !important;
+    border-color: #475569 !important;
+  }
+
+  html.dark input::placeholder,
+  html.dark textarea::placeholder {
+    color: #94a3b8 !important;
+  }
+
+  html.dark .text-slate-500,
+  html.dark .text-slate-600,
+  html.dark .text-slate-700,
+  html.dark .text-slate-400 {
+    color: #cbd5e1 !important;
+  }
+
+  html.dark table,
+  html.dark td,
+  html.dark th {
+    color: #e5e7eb !important;
+    border-color: #334155 !important;
+  }
+
+  html.dark #map {
+    filter: brightness(.75) contrast(1.05);
+  }
+
+  /* ===== Alerte manager sobre mais très visible ===== */
+  @keyframes r85SoberPulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,.46), 0 24px 70px rgba(127,29,29,.22); }
+    50% { box-shadow: 0 0 0 18px rgba(239,68,68,0), 0 24px 70px rgba(127,29,29,.33); }
+  }
+  @keyframes r85SoberBadge {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
+  #r85-sober-alert-overlay.r85-show { display:flex !important; }
+  .r85-sober-card { animation: r85SoberPulse 1.8s ease-in-out infinite; }
+  #r85-sober-alert-badge { animation: r85SoberBadge 1.4s ease-in-out infinite; }
 </style>
+
 <script>
 (function(){
-  let audioCtx=null, alarmInterval=null, wakeLock=null, rtChannel=null, clockInterval=null;
-  function toast(m){ if(typeof showToast==='function') showToast(m); else alert(m); }
-  function company(){ return (document.getElementById('lbl-manager-comp-name')?.innerText||'').trim(); }
-  function unlockAudio(){ try{ const AC=window.AudioContext||window.webkitAudioContext; if(!AC)return; if(!audioCtx)audioCtx=new AC(); if(audioCtx.state==='suspended')audioCtx.resume(); }catch(e){} }
-  function vibrate(){ try{ if(navigator.vibrate) navigator.vibrate([500,120,500,120,900,180,900,180,500]); }catch(e){} }
-  function siren(){ try{ unlockAudio(); if(!audioCtx)return; [0,.10,.20,.36,.46,.56,.80,.90,1.0,1.26,1.42].forEach((delay,i)=>{ const now=audioCtx.currentTime+delay; const o=audioCtx.createOscillator(); const g=audioCtx.createGain(); o.type=i%2?'sawtooth':'square'; o.frequency.setValueAtTime(i%2?620:1080,now); g.gain.setValueAtTime(.0001,now); g.gain.exponentialRampToValueAtTime(.32,now+.02); g.gain.exponentialRampToValueAtTime(.0001,now+.13); o.connect(g); g.connect(audioCtx.destination); o.start(now); o.stop(now+.15); }); }catch(e){} }
-  async function askNotif(){ try{ if(!('Notification'in window))return false; if(Notification.permission==='granted')return true; return (await Notification.requestPermission())==='granted'; }catch(e){return false;} }
-  function notify(report){ try{ if(!('Notification'in window)||Notification.permission!=='granted')return; new Notification('🚨 RESTEV 85 — ALERTE MANAGER',{body:`${report?.category||'Signalement'} — ${report?.work_zone||'Zone non précisée'}`,icon:'logo.png',badge:'logo.png',requireInteraction:true,tag:'restev85-alerte-manager',renotify:true,vibrate:[500,120,500,120,900]}); }catch(e){} }
-  function installUI(){
-    if(!document.getElementById('r85-max-alert-overlay')){ const div=document.createElement('div'); div.id='r85-max-alert-overlay'; div.className='hidden fixed inset-0 z-[99999] items-center justify-center p-3 bg-black/85 backdrop-blur-md no-print'; div.innerHTML=`<div class="r85-mega-bg relative overflow-hidden w-full max-w-3xl text-white rounded-[2.2rem] shadow-2xl border-[6px] border-white p-5 md:p-8 text-center space-y-5"><div class="absolute top-4 left-4 bg-white text-red-700 px-3 py-2 rounded-xl font-black text-xs uppercase tracking-widest">Alerte active</div><div class="absolute top-4 right-4 bg-black/35 text-white px-3 py-2 rounded-xl font-black text-xs"><span id="r85-alert-clock">--:--:--</span></div><div class="r85-mega-card space-y-5"><div class="mx-auto w-28 h-28 md:w-32 md:h-32 rounded-full bg-white/20 border-[6px] border-white flex items-center justify-center r85-mega-beacon"><i class="fa-solid fa-triangle-exclamation text-6xl"></i></div><div><p class="text-xs md:text-sm font-black uppercase tracking-[.45em] text-red-100">RESTEV 85 — Signalement terrain</p><h2 class="text-4xl md:text-6xl font-black mt-2 leading-none">🚨 ALERTE MANAGER 🚨</h2><p class="text-sm md:text-base font-bold mt-3 text-red-100">Une situation terrain vient d'être signalée. Action attendue.</p></div><div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-left"><div class="bg-white/18 border border-white/35 rounded-2xl p-4"><p class="text-[10px] font-black uppercase text-red-100">Risque</p><p id="r85-max-risk" class="text-lg font-black">—</p></div><div class="bg-white/18 border border-white/35 rounded-2xl p-4"><p class="text-[10px] font-black uppercase text-red-100">Salarié</p><p id="r85-max-employee" class="text-lg font-black">—</p></div><div class="bg-white/18 border border-white/35 rounded-2xl p-4"><p class="text-[10px] font-black uppercase text-red-100">Zone</p><p id="r85-max-zone" class="text-lg font-black">—</p></div></div><div class="bg-black/25 border border-white/30 rounded-2xl p-4 text-left"><p class="text-[10px] font-black uppercase text-red-100 mb-1">Description</p><p id="r85-max-desc" class="text-sm md:text-base font-bold leading-relaxed whitespace-pre-line">—</p></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><button onclick="acknowledgeR85MaxAlert()" class="bg-white text-red-700 py-4 rounded-2xl font-black shadow-xl text-sm">J'ai vu</button><button onclick="openR85MaxAlertsPanel()" class="bg-slate-950 text-white py-4 rounded-2xl font-black shadow-xl text-sm">Ouvrir les signalements</button></div></div></div>`; document.body.appendChild(div); }
-    if(!document.getElementById('r85-max-alert-badge')){ const b=document.createElement('button'); b.id='r85-max-alert-badge'; b.className='hidden fixed bottom-5 left-5 z-[99998] bg-red-700 text-white rounded-2xl shadow-2xl border-[5px] border-white px-5 py-4 font-black no-print'; b.onclick=()=>openR85MaxAlertsPanel(); b.innerHTML='<i class="fa-solid fa-bell mr-2"></i><span id="r85-max-alert-count">0</span> ALERTE(S) ACTIVE(S)'; document.body.appendChild(b); }
+  const PATCH_VERSION = 'RESTEV85_SOBER_ALERT_DARKMODE_GPS_2026_07_06';
+  let r85AudioCtx = null;
+  let r85SoberAlarmInterval = null;
+  let r85RealtimeChannel = null;
+  let r85TerrainGps = null;
+  let r85GeoWatchId = null;
+  let r85WakeLock = null;
+
+  function toast(message){
+    if(typeof showToast === 'function') showToast(message);
+    else alert(message);
   }
-  function stopAlarm(){ if(alarmInterval){clearInterval(alarmInterval); alarmInterval=null;} if(clockInterval){clearInterval(clockInterval); clockInterval=null;} try{if(navigator.vibrate)navigator.vibrate(0);}catch(e){} }
-  window.acknowledgeR85MaxAlert=function(){ document.getElementById('r85-max-alert-overlay')?.classList.remove('r85-show'); document.getElementById('r85-max-alert-overlay')?.classList.add('hidden'); stopAlarm(); updateR85MaxAlertBadge(); };
-  window.openR85MaxAlertsPanel=function(){ acknowledgeR85MaxAlert(); if(typeof switchScreen==='function')switchScreen('scr-manager'); setTimeout(()=>document.getElementById('manager-risk-box')?.scrollIntoView({behavior:'smooth',block:'start'}),300); if(typeof loadManagerReports==='function')loadManagerReports(); };
-  window.updateR85MaxAlertBadge=async function(){ if(!supabaseClient)return; const c=company(); if(!c)return; const {data,error}=await supabaseClient.from('prevention_reports').select('id,status').eq('company_code',c).neq('status','Traité').limit(200); if(error)return; const n=(data||[]).length; const badge=document.getElementById('r85-max-alert-badge'); const count=document.getElementById('r85-max-alert-count'); if(count)count.innerText=String(n); if(n>0)badge?.classList.remove('hidden'); else{badge?.classList.add('hidden'); document.getElementById('r85-max-alert-overlay')?.classList.remove('r85-show'); document.getElementById('r85-max-alert-overlay')?.classList.add('hidden'); stopAlarm();} };
-  function trigger(report){ installUI(); const set=(id,v)=>{const el=document.getElementById(id); if(el)el.innerText=v||'—'}; set('r85-max-risk',report?.category); set('r85-max-employee',report?.employee_name); set('r85-max-zone',report?.work_zone||'Zone non précisée'); set('r85-max-desc',report?.description); document.getElementById('r85-max-alert-overlay')?.classList.remove('hidden'); document.getElementById('r85-max-alert-overlay')?.classList.add('r85-show'); clockInterval=setInterval(()=>{const el=document.getElementById('r85-alert-clock'); if(el)el.innerText=new Date().toLocaleTimeString('fr-FR');},1000); siren(); vibrate(); notify(report); updateR85MaxAlertBadge(); if(alarmInterval)clearInterval(alarmInterval); alarmInterval=setInterval(()=>{siren(); vibrate();},6500); }
-  window.activateR85ManagerGuardMode=async function(){ installUI(); unlockAudio(); await askNotif(); try{ if('wakeLock'in navigator){ wakeLock=await navigator.wakeLock.request('screen'); toast('Mode garde activé : écran maintenu éveillé.'); } else toast('Wake Lock non compatible : gardez l’écran allumé manuellement.'); }catch(e){ toast('Maintien écran impossible : '+(e.message||e)); } if(typeof startManagerRealtime==='function')startManagerRealtime(); updateR85MaxAlertBadge(); };
-  function installPanel(){ const screen=document.getElementById('scr-manager'); if(!screen||document.getElementById('r85-guard-panel'))return; const p=document.createElement('div'); p.id='r85-guard-panel'; p.className='bg-white dark:bg-slate-800 p-5 rounded-2xl border-t-4 border-t-red-600 shadow-premium space-y-4'; p.innerHTML='<div class="flex items-center justify-between gap-2"><h3 class="font-black dark:text-white text-xs uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-tower-broadcast text-red-600"></i> Poste d’alerte manager</h3><span class="text-[10px] bg-red-50 text-red-700 px-2 py-1 rounded-lg font-black">MAX VISUEL</span></div><p class="text-[11px] text-slate-500 leading-relaxed">Activez ce mode pour garder l’écran éveillé, demander les notifications, et déclencher son + vibration.</p><div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><button onclick="activateR85ManagerGuardMode()" class="bg-red-600 text-white py-3 rounded-xl text-xs font-black">Activer mode garde</button><button onclick="testR85MaxAlert()" class="bg-slate-900 text-white py-3 rounded-xl text-xs font-black">Tester l’alerte</button></div><p class="text-[10px] text-slate-400">Écran verrouillé/application fermée : nécessite une future PWA + Web Push serveur.</p>'; const first=screen.querySelector('.bg-white, .dark\\:bg-slate-800'); if(first&&first.nextSibling)screen.insertBefore(p,first.nextSibling); else screen.prepend(p); }
-  window.testR85MaxAlert=function(){ trigger({category:'Test alerte visuelle RESTEV',employee_name:'Test manager',work_zone:'Zone test',description:'Test : flash visuel, sonnerie et vibration si compatible.'}); };
-  window.startManagerRealtime=function(){ if(!supabaseClient)return toast('Supabase non chargé.'); const c=company(); if(!c)return; installUI(); unlockAudio(); if(rtChannel){try{supabaseClient.removeChannel(rtChannel)}catch(e){} rtChannel=null;} rtChannel=supabaseClient.channel('r85_max_visual_alert_'+c).on('postgres_changes',{event:'INSERT',schema:'public',table:'prevention_reports',filter:'company_code=eq.'+c},payload=>{trigger(payload.new); if(typeof loadManagerReports==='function')loadManagerReports();}).subscribe(status=>{if(status==='SUBSCRIBED')toast('Alerte manager max activée.');}); };
-  const oldUpdate=window.updateReportStatus; window.updateReportStatus=async function(id,status){ if(!supabaseClient){ if(typeof oldUpdate==='function')return oldUpdate(id,status); return;} const {error}=await supabaseClient.from('prevention_reports').update({status}).eq('id',id); if(error)return toast('Erreur statut : '+error.message); toast(status==='Traité'?'Alerte traitée.':'Statut mis à jour.'); if(typeof loadManagerReports==='function')await loadManagerReports(); updateR85MaxAlertBadge(); };
-  const oldLogin=window.handleManagerLogin; window.handleManagerLogin=function(){ unlockAudio(); if(typeof oldLogin==='function')oldLogin(); setTimeout(()=>{installUI(); installPanel(); startManagerRealtime(); updateR85MaxAlertBadge();},500); };
-  const oldSwitch=window.switchScreen; window.switchScreen=function(id){ if(typeof oldSwitch==='function')oldSwitch(id); if(id==='scr-manager')setTimeout(()=>{installUI(); installPanel(); updateR85MaxAlertBadge();},300); };
-  document.addEventListener('DOMContentLoaded',()=>{installUI(); setTimeout(installPanel,700); console.log('RESTEV85_MANAGER_MAX_ALERT_WAKELOCK installé');});
+
+  function companyCode(){
+    return (document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
+  }
+
+  function employeeSession(){
+    try { return currentEmployeeSession || window.currentEmployeeSession || null; }
+    catch(e){ return window.currentEmployeeSession || null; }
+  }
+
+  function escapeText(value){
+    if(typeof escapeHtml === 'function') return escapeHtml(value || '');
+    return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  /* ===== Dark mode fiable : on conserve le bouton existant mais on force body aussi ===== */
+  const oldToggleDarkMode = window.toggleDarkMode;
+  window.toggleDarkMode = function(){
+    if(typeof oldToggleDarkMode === 'function') oldToggleDarkMode();
+    else document.documentElement.classList.toggle('dark');
+    const isDark = document.documentElement.classList.contains('dark');
+    document.body.classList.toggle('dark', isDark);
+    try { safeStorage?.setItem('restev_dark_mode', isDark ? '1' : '0'); } catch(e){}
+  };
+
+  function restoreDarkMode(){
+    try{
+      if(safeStorage?.getItem('restev_dark_mode') === '1'){
+        document.documentElement.classList.add('dark');
+        document.body.classList.add('dark');
+      }
+    }catch(e){}
+  }
+
+  /* ===== Alerte sobre ===== */
+  function unlockAudio(){
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return;
+      if(!r85AudioCtx) r85AudioCtx = new AC();
+      if(r85AudioCtx.state === 'suspended') r85AudioCtx.resume();
+    }catch(e){}
+  }
+
+  function playSoberSound(){
+    try{
+      if(typeof soundMuted !== 'undefined' && soundMuted) return;
+      unlockAudio();
+      if(!r85AudioCtx) return;
+      [0, .22, .44].forEach((delay, index) => {
+        const now = r85AudioCtx.currentTime + delay;
+        const osc = r85AudioCtx.createOscillator();
+        const gain = r85AudioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(index === 1 ? 740 : 560, now);
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.18, now + 0.025);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+        osc.connect(gain);
+        gain.connect(r85AudioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.20);
+      });
+    }catch(e){}
+  }
+
+  function vibrateSober(){
+    try{
+      if(navigator.vibrate) navigator.vibrate([260,100,260,100,420]);
+    }catch(e){}
+  }
+
+  function notifySober(report){
+    try{
+      if(!('Notification' in window) || Notification.permission !== 'granted') return;
+      new Notification('RESTEV 85 — Nouveau signalement', {
+        body: `${report?.category || 'Signalement'} — ${report?.work_zone || 'Zone non précisée'}`,
+        icon: 'logo.png',
+        badge: 'logo.png',
+        requireInteraction: true,
+        tag: 'restev85-signalement-manager',
+        renotify: true,
+        vibrate: [260,100,260]
+      });
+    }catch(e){}
+  }
+
+  async function requestBrowserNotifications(){
+    try{
+      if(!('Notification' in window)) return false;
+      if(Notification.permission === 'granted') return true;
+      return (await Notification.requestPermission()) === 'granted';
+    }catch(e){ return false; }
+  }
+
+  function installSoberAlertUI(){
+    // Supprime visuellement l'ancien overlay trop flash s'il est présent.
+    document.getElementById('r85-max-alert-overlay')?.classList.add('hidden');
+    document.getElementById('r85-max-alert-badge')?.classList.add('hidden');
+
+    if(!document.getElementById('r85-sober-alert-overlay')){
+      const overlay = document.createElement('div');
+      overlay.id = 'r85-sober-alert-overlay';
+      overlay.className = 'hidden fixed inset-0 z-[99999] items-center justify-center p-4 bg-slate-950/72 backdrop-blur-sm no-print';
+      overlay.innerHTML = `
+        <div class="r85-sober-card w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[2rem] border border-red-200 dark:border-red-900 shadow-2xl overflow-hidden">
+          <div class="bg-gradient-to-r from-red-600 via-red-500 to-orange-500 p-4 text-white flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center text-2xl"><i class="fa-solid fa-triangle-exclamation"></i></div>
+              <div>
+                <p class="text-[10px] font-black uppercase tracking-widest text-red-100">Signalement terrain</p>
+                <h2 class="text-xl md:text-2xl font-black">Alerte manager</h2>
+              </div>
+            </div>
+            <span class="bg-white/18 border border-white/30 px-3 py-1 rounded-full text-[10px] font-black uppercase">À traiter</span>
+          </div>
+          <div class="p-5 md:p-6 space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div class="bg-red-50 dark:bg-slate-950 border border-red-100 dark:border-red-900 rounded-2xl p-3"><p class="text-[10px] font-black uppercase text-red-500">Risque</p><p id="r85-sober-risk" class="text-sm font-black dark:text-white">—</p></div>
+              <div class="bg-slate-50 dark:bg-slate-950 border rounded-2xl p-3"><p class="text-[10px] font-black uppercase text-slate-400">Salarié</p><p id="r85-sober-employee" class="text-sm font-black dark:text-white">—</p></div>
+              <div class="bg-slate-50 dark:bg-slate-950 border rounded-2xl p-3"><p class="text-[10px] font-black uppercase text-slate-400">Zone / GPS</p><p id="r85-sober-zone" class="text-sm font-black dark:text-white">—</p></div>
+            </div>
+            <div class="bg-slate-50 dark:bg-slate-950 border rounded-2xl p-4">
+              <p class="text-[10px] font-black uppercase text-slate-400 mb-1">Description</p>
+              <p id="r85-sober-desc" class="text-sm text-slate-700 dark:text-slate-200 font-semibold leading-relaxed whitespace-pre-line">—</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button onclick="acknowledgeR85SoberAlert()" class="bg-slate-900 dark:bg-white dark:text-slate-900 text-white py-3 rounded-xl text-sm font-black"><i class="fa-solid fa-check mr-1"></i> J’ai vu</button>
+              <button onclick="openR85SoberAlertsPanel()" class="bg-red-600 text-white py-3 rounded-xl text-sm font-black"><i class="fa-solid fa-list-check mr-1"></i> Ouvrir les signalements</button>
+            </div>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+    }
+
+    if(!document.getElementById('r85-sober-alert-badge')){
+      const badge = document.createElement('button');
+      badge.id = 'r85-sober-alert-badge';
+      badge.className = 'hidden fixed bottom-5 left-5 z-[99998] bg-red-600 text-white rounded-2xl shadow-2xl border-4 border-white px-4 py-3 font-black no-print';
+      badge.onclick = () => openR85SoberAlertsPanel();
+      badge.innerHTML = `<i class="fa-solid fa-bell mr-2"></i><span id="r85-sober-alert-count">0</span> alerte(s)`;
+      document.body.appendChild(badge);
+    }
+  }
+
+  function stopSoberAlarm(){
+    if(r85SoberAlarmInterval){ clearInterval(r85SoberAlarmInterval); r85SoberAlarmInterval = null; }
+    try{ if(navigator.vibrate) navigator.vibrate(0); }catch(e){}
+  }
+
+  window.acknowledgeR85SoberAlert = function(){
+    document.getElementById('r85-sober-alert-overlay')?.classList.remove('r85-show');
+    document.getElementById('r85-sober-alert-overlay')?.classList.add('hidden');
+    stopSoberAlarm();
+    updateR85SoberAlertBadge();
+  };
+
+  window.openR85SoberAlertsPanel = function(){
+    acknowledgeR85SoberAlert();
+    if(typeof switchScreen === 'function') switchScreen('scr-manager');
+    setTimeout(() => document.getElementById('manager-risk-box')?.scrollIntoView({behavior:'smooth', block:'start'}), 300);
+    if(typeof loadManagerReports === 'function') loadManagerReports();
+  };
+
+  function triggerSoberAlert(report){
+    installSoberAlertUI();
+    const set = (id, value) => { const el = document.getElementById(id); if(el) el.innerText = value || '—'; };
+    set('r85-sober-risk', report?.category);
+    set('r85-sober-employee', report?.employee_name);
+    set('r85-sober-zone', report?.work_zone || 'Zone non précisée');
+    set('r85-sober-desc', report?.description);
+
+    const overlay = document.getElementById('r85-sober-alert-overlay');
+    overlay?.classList.remove('hidden');
+    overlay?.classList.add('r85-show');
+
+    playSoberSound();
+    vibrateSober();
+    notifySober(report);
+    updateR85SoberAlertBadge();
+
+    stopSoberAlarm();
+    r85SoberAlarmInterval = setInterval(() => {
+      playSoberSound();
+      vibrateSober();
+    }, 12000);
+  }
+
+  window.updateR85SoberAlertBadge = async function(){
+    if(!supabaseClient) return;
+    const company = companyCode();
+    if(!company) return;
+    const { data, error } = await supabaseClient
+      .from('prevention_reports')
+      .select('id,status')
+      .eq('company_code', company)
+      .neq('status', 'Traité')
+      .limit(200);
+    if(error) return;
+    const count = (data || []).length;
+    const badge = document.getElementById('r85-sober-alert-badge');
+    const countEl = document.getElementById('r85-sober-alert-count');
+    if(countEl) countEl.innerText = String(count);
+    if(count > 0) badge?.classList.remove('hidden');
+    else {
+      badge?.classList.add('hidden');
+      document.getElementById('r85-sober-alert-overlay')?.classList.remove('r85-show');
+      document.getElementById('r85-sober-alert-overlay')?.classList.add('hidden');
+      stopSoberAlarm();
+    }
+  };
+
+  window.activateR85ManagerGuardMode = async function(){
+    installSoberAlertUI();
+    unlockAudio();
+    await requestBrowserNotifications();
+    try{
+      if('wakeLock' in navigator){
+        r85WakeLock = await navigator.wakeLock.request('screen');
+        toast('Mode garde activé : écran maintenu éveillé.');
+      } else {
+        toast('Wake Lock non compatible : gardez l’écran allumé manuellement.');
+      }
+    }catch(e){
+      toast('Maintien écran impossible : ' + (e.message || e));
+    }
+    if(typeof startManagerRealtime === 'function') startManagerRealtime();
+    updateR85SoberAlertBadge();
+  };
+
+  window.testR85SoberAlert = function(){
+    triggerSoberAlert({
+      category:'Test alerte sobre RESTEV',
+      employee_name:'Test manager',
+      work_zone:'Zone test',
+      description:'Test : alerte visible, sans flash agressif, avec son et vibration si compatibles.'
+    });
+  };
+
+  function installGuardPanel(){
+    const screen = document.getElementById('scr-manager');
+    if(!screen) return;
+    const oldMax = document.getElementById('r85-guard-panel');
+    if(oldMax) oldMax.remove();
+    if(document.getElementById('r85-sober-guard-panel')) return;
+
+    const panel = document.createElement('div');
+    panel.id = 'r85-sober-guard-panel';
+    panel.className = 'bg-white dark:bg-slate-800 p-5 rounded-2xl border-t-4 border-t-red-500 shadow-premium space-y-4';
+    panel.innerHTML = `
+      <div class="flex items-center justify-between gap-2">
+        <h3 class="font-black dark:text-white text-xs uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-bell text-red-500"></i> Poste d’alerte manager</h3>
+        <span class="text-[10px] bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 px-2 py-1 rounded-lg font-black">SOBRE</span>
+      </div>
+      <p class="text-[11px] text-slate-500 dark:text-slate-300 leading-relaxed">Activez ce mode pour maintenir l’écran éveillé, autoriser les notifications, et déclencher son + vibration sur les signalements.</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <button onclick="activateR85ManagerGuardMode()" class="bg-red-600 text-white py-3 rounded-xl text-xs font-black"><i class="fa-solid fa-bell mr-1"></i> Activer mode garde</button>
+        <button onclick="testR85SoberAlert()" class="bg-slate-900 dark:bg-white dark:text-slate-900 text-white py-3 rounded-xl text-xs font-black"><i class="fa-solid fa-vial mr-1"></i> Tester l’alerte</button>
+      </div>
+      <p class="text-[10px] text-slate-400">Écran verrouillé / application fermée : nécessite une future PWA + Web Push serveur.</p>
+    `;
+    const first = screen.querySelector('.bg-white, .dark\\:bg-slate-800');
+    if(first && first.nextSibling) screen.insertBefore(panel, first.nextSibling);
+    else screen.prepend(panel);
+  }
+
+  window.startManagerRealtime = function(){
+    if(!supabaseClient) return toast('Supabase non chargé.');
+    const company = companyCode();
+    if(!company) return;
+    installSoberAlertUI();
+    unlockAudio();
+    if(r85RealtimeChannel){
+      try{ supabaseClient.removeChannel(r85RealtimeChannel); }catch(e){}
+      r85RealtimeChannel = null;
+    }
+    r85RealtimeChannel = supabaseClient
+      .channel('r85_sober_alert_' + company)
+      .on('postgres_changes', {event:'INSERT', schema:'public', table:'prevention_reports', filter:'company_code=eq.' + company}, payload => {
+        triggerSoberAlert(payload.new);
+        if(typeof loadManagerReports === 'function') loadManagerReports();
+      })
+      .subscribe(status => { if(status === 'SUBSCRIBED') toast('Alertes manager sobres activées.'); });
+  };
+
+  const oldUpdateReportStatus = window.updateReportStatus;
+  window.updateReportStatus = async function(id, status){
+    if(!supabaseClient){
+      if(typeof oldUpdateReportStatus === 'function') return oldUpdateReportStatus(id, status);
+      return;
+    }
+    const { error } = await supabaseClient.from('prevention_reports').update({status}).eq('id', id);
+    if(error) return toast('Erreur statut : ' + error.message);
+    toast(status === 'Traité' ? 'Alerte traitée.' : 'Statut mis à jour.');
+    if(typeof loadManagerReports === 'function') await loadManagerReports();
+    updateR85SoberAlertBadge();
+  };
+
+  /* ===== GPS terrain ===== */
+  function installGpsPermissionBlock(){
+    const screen = document.getElementById('scr-report');
+    const desc = document.getElementById('risk-description');
+    if(!screen || !desc) return;
+
+    // Masque l'ancien bloc GPS approximatif si nécessaire.
+    const oldStatus = document.getElementById('geo-status');
+    if(oldStatus) oldStatus.innerText = 'GPS terrain : autorisation requise';
+
+    if(document.getElementById('r85-gps-permission-block')) return;
+
+    const block = document.createElement('div');
+    block.id = 'r85-gps-permission-block';
+    block.className = 'space-y-3 bg-blue-50 dark:bg-slate-900 border border-blue-100 dark:border-slate-700 p-4 rounded-2xl';
+    block.innerHTML = `
+      <div class="flex items-start gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-slate-800 text-restev-blue flex items-center justify-center"><i class="fa-solid fa-location-crosshairs"></i></div>
+        <div class="flex-1">
+          <p class="text-xs font-black dark:text-white">Localisation du signalement terrain</p>
+          <p class="text-[11px] text-slate-500 dark:text-slate-300 leading-relaxed mt-1">Autorisez la géolocalisation uniquement pour associer une position au signalement. La précision dépend du smartphone et du lieu.</p>
+        </div>
+      </div>
+      <button type="button" onclick="requestTerrainGeolocation()" class="w-full bg-restev-blue text-white py-3 rounded-xl text-xs font-black"><i class="fa-solid fa-location-dot mr-1"></i> Autoriser / actualiser ma position</button>
+      <div id="r85-gps-permission-status" class="text-[11px] font-bold text-slate-500 dark:text-slate-300 bg-white dark:bg-slate-800 border rounded-xl p-3">Position non autorisée pour le moment.</div>
+      <a id="r85-gps-map-link" href="#" target="_blank" class="hidden block text-center bg-white dark:bg-slate-800 border text-restev-blue dark:text-blue-300 py-2 rounded-xl text-[10px] font-black">Voir la position sur la carte</a>
+    `;
+    const riskBlock = document.getElementById('risk-category-select')?.closest('div') || desc.closest('div');
+    if(riskBlock) screen.insertBefore(block, riskBlock);
+    else screen.prepend(block);
+
+    checkGeolocationPermissionLabel();
+  }
+
+  async function checkGeolocationPermissionLabel(){
+    const status = document.getElementById('r85-gps-permission-status');
+    if(!status) return;
+    if(!navigator.geolocation){
+      status.innerHTML = 'Géolocalisation non compatible avec ce navigateur.';
+      return;
+    }
+    try{
+      if(navigator.permissions && navigator.permissions.query){
+        const p = await navigator.permissions.query({name:'geolocation'});
+        if(p.state === 'granted') status.innerHTML = 'Autorisation GPS déjà accordée. Cliquez pour actualiser la position.';
+        if(p.state === 'prompt') status.innerHTML = 'Cliquez sur le bouton pour demander l’autorisation GPS.';
+        if(p.state === 'denied') status.innerHTML = '<b>GPS refusé.</b> Autorisez la localisation dans les réglages du navigateur / smartphone.';
+      }
+    }catch(e){}
+  }
+
+  window.requestTerrainGeolocation = function(){
+    const status = document.getElementById('r85-gps-permission-status');
+    if(!navigator.geolocation){
+      if(status) status.innerHTML = 'Géolocalisation non compatible avec ce navigateur.';
+      return;
+    }
+    if(status) status.innerHTML = 'Demande d’autorisation GPS en cours...';
+
+    if(r85GeoWatchId !== null){
+      try{ navigator.geolocation.clearWatch(r85GeoWatchId); }catch(e){}
+      r85GeoWatchId = null;
+    }
+
+    let best = null;
+    const onSuccess = pos => {
+      const point = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        accuracy: pos.coords.accuracy,
+        captured_at: new Date().toISOString()
+      };
+      if(!best || point.accuracy < best.accuracy){
+        best = point;
+        r85TerrainGps = point;
+      }
+      const acc = Math.round(r85TerrainGps.accuracy || 0);
+      if(status){
+        status.innerHTML = `📍 Position terrain enregistrée — précision environ <b>${acc} m</b><br>Lat ${r85TerrainGps.lat.toFixed(6)} / Lng ${r85TerrainGps.lng.toFixed(6)}`;
+      }
+      const oldStatus = document.getElementById('geo-status');
+      if(oldStatus) oldStatus.innerText = `📍 GPS terrain OK — précision env. ${acc} m`;
+      const link = document.getElementById('r85-gps-map-link');
+      if(link){
+        link.href = `https://www.google.com/maps?q=${r85TerrainGps.lat},${r85TerrainGps.lng}`;
+        link.classList.remove('hidden');
+      }
+      try{
+        if(window.mapInstance && window.L){
+          mapInstance.setView([r85TerrainGps.lat, r85TerrainGps.lng], 16);
+          L.marker([r85TerrainGps.lat, r85TerrainGps.lng]).addTo(mapInstance).bindPopup('Position du signalement').openPopup();
+        }
+      }catch(e){}
+    };
+
+    const onError = err => {
+      if(status) status.innerHTML = `<b>GPS non autorisé ou indisponible.</b><br>${escapeText(err.message || '')}<br>Vérifiez les autorisations de localisation du navigateur.`;
+      const oldStatus = document.getElementById('geo-status');
+      if(oldStatus) oldStatus.innerText = 'GPS refusé ou indisponible';
+    };
+
+    try{
+      r85GeoWatchId = navigator.geolocation.watchPosition(onSuccess, onError, {
+        enableHighAccuracy: true,
+        timeout: 25000,
+        maximumAge: 0
+      });
+      setTimeout(() => {
+        if(r85GeoWatchId !== null){
+          try{ navigator.geolocation.clearWatch(r85GeoWatchId); }catch(e){}
+          r85GeoWatchId = null;
+        }
+        if(r85TerrainGps) toast('Position GPS terrain enregistrée.');
+      }, 12000);
+    }catch(e){ onError({message:e.message || e}); }
+  };
+
+  // Surcharge submitRiskReport : demande GPS conseillée + enregistrement GPS si autorisé.
+  window.submitRiskReport = async function(){
+    installGpsPermissionBlock();
+    if(!supabaseClient) return toast('Supabase non chargé. Vérifiez internet.');
+    const category = document.getElementById('risk-category-select')?.value || 'Non renseigné';
+    const desc = document.getElementById('risk-description')?.value.trim();
+    const lvl = document.getElementById('risk-level')?.value || 'À qualifier';
+    const freq = document.getElementById('risk-frequency')?.value || 'Non renseignée';
+    if(!desc) return toast('Veuillez saisir une description du danger.');
+
+    if(!r85TerrainGps){
+      toast('Vous pouvez autoriser la géolocalisation avant envoi. Envoi possible sans GPS si refusé.');
+    }
+
+    const session = employeeSession();
+    const employeeName = session ? session.name : 'Salarié terrain';
+    const company = session ? session.company : (companyCode() || 'Établissement non renseigné');
+    const gpsText = r85TerrainGps ? `\n\n[GPS terrain] précision env. ${Math.round(r85TerrainGps.accuracy)} m — ${r85TerrainGps.lat.toFixed(6)}, ${r85TerrainGps.lng.toFixed(6)}` : '';
+    const fullDesc = desc + gpsText;
+
+    const payloadWithGps = {
+      company_code: company,
+      employee_name: employeeName,
+      category,
+      level: lvl,
+      frequency: freq,
+      description: fullDesc,
+      status: 'Nouveau',
+      gps_lat: r85TerrainGps ? r85TerrainGps.lat : null,
+      gps_lng: r85TerrainGps ? r85TerrainGps.lng : null,
+      gps_accuracy: r85TerrainGps ? r85TerrainGps.accuracy : null,
+      gps_captured_at: r85TerrainGps ? r85TerrainGps.captured_at : null
+    };
+
+    let { error } = await supabaseClient.from('prevention_reports').insert([payloadWithGps]);
+    if(error && String(error.message || '').toLowerCase().includes('gps')){
+      const payloadNoGps = {...payloadWithGps};
+      delete payloadNoGps.gps_lat; delete payloadNoGps.gps_lng; delete payloadNoGps.gps_accuracy; delete payloadNoGps.gps_captured_at;
+      const fallback = await supabaseClient.from('prevention_reports').insert([payloadNoGps]);
+      error = fallback.error;
+    }
+    if(error) return toast('Erreur Supabase signalement : ' + error.message);
+
+    try{
+      if(typeof submitAnonymizedPreventionStat === 'function') await submitAnonymizedPreventionStat({category, level:lvl, frequency:freq, event_type:'Signalement prévention'});
+    }catch(e){}
+
+    document.getElementById('risk-description').value = '';
+    r85TerrainGps = null;
+    toast('Signalement envoyé au responsable.');
+    if(typeof switchScreen === 'function') switchScreen('scr-employee');
+  };
+
+  const oldHandleManagerLogin = window.handleManagerLogin;
+  window.handleManagerLogin = function(){
+    unlockAudio();
+    if(typeof oldHandleManagerLogin === 'function') oldHandleManagerLogin();
+    setTimeout(() => { installSoberAlertUI(); installGuardPanel(); startManagerRealtime(); updateR85SoberAlertBadge(); }, 500);
+  };
+
+  const oldSwitchScreen = window.switchScreen;
+  window.switchScreen = function(screenId){
+    if(typeof oldSwitchScreen === 'function') oldSwitchScreen(screenId);
+    if(screenId === 'scr-manager') setTimeout(() => { installSoberAlertUI(); installGuardPanel(); updateR85SoberAlertBadge(); }, 300);
+    if(screenId === 'scr-report') setTimeout(() => { installGpsPermissionBlock(); }, 250);
+  };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    restoreDarkMode();
+    installSoberAlertUI();
+    setTimeout(() => { installGuardPanel(); installGpsPermissionBlock(); }, 700);
+    console.log(PATCH_VERSION + ' installé');
+  });
 })();
 </script>
 
