@@ -2709,160 +2709,278 @@ document.addEventListener('DOMContentLoaded', () => {
      Fond lisible, glassmorphism, page d'accueil modernisée.
      À coller juste avant 
 
-<!-- PATCH RESTEV 85 — CORRECTION QR SALARIÉ SEUL + ALERTE PLUS VISIBLE + MODE SOMBRE GLOBAL -->
-<style id="r85-final-polish-style">
-  /* Mode sombre global renforcé, sans toucher aux fonctions métier */
-  html.dark body, body.dark {
-    background: linear-gradient(135deg, #020617, #0f172a 48%, #111827) !important;
-    color: #e5e7eb !important;
+<!-- =========================================================
+PATCH FINAL RESTEV 85 — APP DESIGN + DARK MODE TOTAL + QR SALARIÉ VERROUILLÉ + ALERTE VISUELLE RENFORCÉE
+À coller juste avant </body>. Ne modifie pas la logique métier existante.
+========================================================= -->
+<style id="r85-app-final-polish-style">
+  :root{
+    --r85-bg-a:#f8fbff;
+    --r85-bg-b:#eef7ff;
+    --r85-bg-c:#fff3fa;
+    --r85-card:rgba(255,255,255,.88);
+    --r85-card-strong:rgba(255,255,255,.96);
+    --r85-text:#0f172a;
+    --r85-muted:#64748b;
+    --r85-border:rgba(148,163,184,.26);
+    --r85-shadow:0 18px 45px rgba(15,23,42,.10);
+    --r85-shadow-strong:0 25px 70px rgba(15,23,42,.16);
+    --r85-blue:#3a7bd5;
+    --r85-blue-dark:#245ca6;
+    --r85-magenta:#e0248a;
+    --r85-teal:#4ec3b1;
+    --r85-gold:#ffb007;
   }
-  html.dark header { background: rgba(15,23,42,.94) !important; border-color:#334155 !important; }
-  html.dark main, html.dark section, html.dark .screen { color:#e5e7eb !important; }
-  html.dark .bg-white,
-  html.dark .bg-slate-50,
-  html.dark .bg-blue-50,
-  html.dark .bg-emerald-50,
-  html.dark .bg-red-50,
-  html.dark .bg-amber-50,
-  html.dark .bg-pink-50,
-  html.dark .bg-cyan-50,
-  html.dark .bg-teal-50,
-  html.dark .bg-orange-50 {
-    background: rgba(15,23,42,.92) !important;
-    color: #e5e7eb !important;
-    border-color: #334155 !important;
-  }
-  html.dark input, html.dark select, html.dark textarea {
-    background: rgba(2,6,23,.92) !important;
-    color:#f8fafc !important;
-    border-color:#475569 !important;
-  }
-  html.dark input::placeholder, html.dark textarea::placeholder { color:#94a3b8 !important; }
-  html.dark .text-slate-400, html.dark .text-slate-500, html.dark .text-slate-600, html.dark .text-slate-700 { color:#cbd5e1 !important; }
-  html.dark table, html.dark th, html.dark td { color:#e5e7eb !important; border-color:#334155 !important; }
-  html.dark #r85-google-map-frame { filter: brightness(.82) contrast(1.08); }
 
-  /* Verrouillage salarié : masque vraiment tous les accès non salariés */
+  html.dark{
+    --r85-bg-a:#020617;
+    --r85-bg-b:#0f172a;
+    --r85-bg-c:#111827;
+    --r85-card:rgba(15,23,42,.86);
+    --r85-card-strong:rgba(15,23,42,.96);
+    --r85-text:#f8fafc;
+    --r85-muted:#cbd5e1;
+    --r85-border:rgba(71,85,105,.82);
+    --r85-shadow:0 18px 45px rgba(0,0,0,.34);
+    --r85-shadow-strong:0 25px 75px rgba(0,0,0,.46);
+  }
+
+  body{
+    color:var(--r85-text)!important;
+    background:
+      radial-gradient(circle at 15% 12%, rgba(58,123,213,.20), transparent 32%),
+      radial-gradient(circle at 86% 18%, rgba(224,36,138,.16), transparent 30%),
+      radial-gradient(circle at 40% 90%, rgba(78,195,177,.13), transparent 34%),
+      linear-gradient(135deg,var(--r85-bg-a),var(--r85-bg-b) 48%,var(--r85-bg-c))!important;
+    min-height:100dvh;
+  }
+
+  html.dark body,
+  body.dark{
+    color:var(--r85-text)!important;
+    background:
+      radial-gradient(circle at 12% 10%, rgba(58,123,213,.22), transparent 32%),
+      radial-gradient(circle at 87% 17%, rgba(224,36,138,.18), transparent 30%),
+      radial-gradient(circle at 50% 95%, rgba(78,195,177,.10), transparent 34%),
+      linear-gradient(135deg,#020617,#0f172a 48%,#111827)!important;
+  }
+
+  header{
+    background:rgba(255,255,255,.72)!important;
+    border-color:var(--r85-border)!important;
+    backdrop-filter:blur(22px)!important;
+    box-shadow:0 8px 28px rgba(15,23,42,.06)!important;
+  }
+  html.dark header{background:rgba(15,23,42,.82)!important;box-shadow:0 8px 30px rgba(0,0,0,.28)!important;}
+
+  main{max-width:1120px!important;}
+
+  .screen{border-radius:30px;}
+  .screen.active{animation:r85AppIn .28s ease both!important;}
+  @keyframes r85AppIn{from{opacity:0;transform:translateY(8px) scale(.993)}to{opacity:1;transform:none}}
+
+  .bg-white,
+  .bg-slate-50,
+  .bg-blue-50,
+  .bg-emerald-50,
+  .bg-red-50,
+  .bg-amber-50,
+  .bg-pink-50,
+  .bg-cyan-50,
+  .bg-teal-50,
+  .bg-orange-50,
+  .dark\:bg-slate-800,
+  .dark\:bg-slate-900{
+    background:var(--r85-card)!important;
+    color:var(--r85-text)!important;
+    border-color:var(--r85-border)!important;
+    box-shadow:var(--r85-shadow)!important;
+    backdrop-filter:blur(20px)!important;
+  }
+
+  #scr-manager > .bg-white,
+  #scr-manager .rounded-2xl,
+  #scr-manager .rounded-3xl,
+  #scr-employee .rounded-2xl,
+  #scr-employee .rounded-3xl,
+  #scr-report.rounded-3xl,
+  #scr-qcm.rounded-3xl,
+  #scr-qcm-success.rounded-3xl{
+    border-radius:28px!important;
+  }
+
+  input,select,textarea{
+    border-radius:16px!important;
+    border-color:var(--r85-border)!important;
+    background:rgba(255,255,255,.72)!important;
+    color:var(--r85-text)!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.25)!important;
+  }
+  html.dark input,html.dark select,html.dark textarea,
+  body.dark input,body.dark select,body.dark textarea{
+    background:rgba(2,6,23,.72)!important;
+    color:#f8fafc!important;
+    border-color:#475569!important;
+  }
+  input::placeholder,textarea::placeholder{color:#94a3b8!important;}
+
+  button{
+    border-radius:16px!important;
+    transition:transform .18s ease, box-shadow .18s ease, filter .18s ease!important;
+  }
+  button:hover{transform:translateY(-1px);filter:brightness(1.03);}
+  button:active{transform:scale(.985);}
+
+  .shadow-premium{box-shadow:var(--r85-shadow)!important;}
+  .text-slate-400,.text-slate-500,.text-slate-600,.text-slate-700{color:var(--r85-muted)!important;}
+  html.dark .dark\:text-white,html.dark .text-slate-900,html.dark .text-slate-800{color:#f8fafc!important;}
+
+  table,td,th{color:var(--r85-text)!important;border-color:var(--r85-border)!important;}
+
+  #manager-risk-box{
+    scrollbar-color:rgba(58,123,213,.65) transparent;
+    scrollbar-width:thin;
+  }
+  #manager-risk-box > div{
+    background:rgba(15,23,42,.96)!important;
+    color:#f8fafc!important;
+    border:2px solid rgba(239,68,68,.75)!important;
+    box-shadow:0 15px 40px rgba(127,29,29,.22)!important;
+  }
+  #manager-risk-box input,#manager-risk-box select,#manager-risk-box textarea{
+    background:rgba(2,6,23,.78)!important;
+    color:#f8fafc!important;
+    border-color:rgba(226,232,240,.75)!important;
+  }
+
+  #r85-google-map-frame{filter:none!important;}
+  html.dark #r85-google-map-frame{filter:brightness(.82) contrast(1.08)!important;}
+
+  /* Salarié uniquement : verrouillage impératif des écrans non autorisés */
   body.r85-employee-only #scr-home,
   body.r85-employee-only #scr-auth,
   body.r85-employee-only #scr-manager,
   body.r85-employee-only #scr-direction,
   body.r85-employee-only #scr-studio,
+  body.r85-employee-only button[onclick*="scr-home"],
   body.r85-employee-only button[onclick*="scr-auth"],
   body.r85-employee-only button[onclick*="scr-manager"],
   body.r85-employee-only button[onclick*="scr-direction"],
-  body.r85-employee-only button[onclick*="createNewCompany"] {
-    display:none !important;
-    visibility:hidden !important;
-    pointer-events:none !important;
+  body.r85-employee-only button[onclick*="createNewCompany"],
+  body.r85-employee-only #generated-code-box,
+  body.r85-employee-only #r85-maintenance-panel,
+  body.r85-employee-only #r85-manager-zones-panel{
+    display:none!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
   }
 
-  /* Alerte visuelle plus visible, mais sans effet désordonné */
-  @keyframes r85StrongPulse {
-    0%,100% { transform: scale(1); box-shadow:0 0 0 0 rgba(239,68,68,.55), 0 24px 70px rgba(127,29,29,.32); }
-    50% { transform: scale(1.015); box-shadow:0 0 0 22px rgba(239,68,68,0), 0 24px 90px rgba(127,29,29,.45); }
+  /* Alerte visuelle plus visible et professionnelle */
+  @keyframes r85AlertStrongPulse{
+    0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(239,68,68,.62),0 28px 90px rgba(127,29,29,.36)}
+    50%{transform:scale(1.018);box-shadow:0 0 0 24px rgba(239,68,68,0),0 32px 105px rgba(127,29,29,.52)}
   }
-  @keyframes r85SoftFlashBar {
-    0%,100% { filter: brightness(1); }
-    50% { filter: brightness(1.22); }
-  }
-  #r85-clean-alert-overlay.r85-show { display:flex !important; }
-  .r85-clean-alert-card { animation: r85StrongPulse 1.25s ease-in-out infinite !important; border-width:3px !important; border-color:#ef4444 !important; }
-  #r85-clean-alert-head { animation: r85SoftFlashBar 1s ease-in-out infinite !important; }
+  @keyframes r85AlertHeaderPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.28)}}
+  #r85-clean-alert-overlay.r85-show{display:flex!important;background:rgba(2,6,23,.76)!important;backdrop-filter:blur(9px)!important;}
+  .r85-clean-alert-card{animation:r85AlertStrongPulse 1.18s ease-in-out infinite!important;border:4px solid #ef4444!important;box-shadow:var(--r85-shadow-strong)!important;}
+  #r85-clean-alert-head{animation:r85AlertHeaderPulse .95s ease-in-out infinite!important;}
+  #r85-clean-alert-title{font-size:1.55rem!important;letter-spacing:-.03em;}
 </style>
 
 <script>
 (function(){
-  const PATCH_VERSION = 'RESTEV85_QR_EMPLOYEE_ONLY_STRONG_ALERT_DARK_2026_07_06';
+  const PATCH_VERSION='RESTEV85_APP_STORE_DARK_EMPLOYEE_LOCK_2026_07_06';
 
-  function toast(msg){ if(typeof showToast === 'function') showToast(msg); else alert(msg); }
-  function isEmployeeUrl(){ const p = new URLSearchParams(location.search); return !!(p.get('emp') && p.get('comp')); }
-  function hasEmployeeSession(){ try { return !!(currentEmployeeSession && currentEmployeeSession.name && currentEmployeeSession.company); } catch(e){ return !!(window.currentEmployeeSession && window.currentEmployeeSession.name && window.currentEmployeeSession.company); } }
-  function isEmployeeMode(){ return isEmployeeUrl() || hasEmployeeSession(); }
+  function isEmployeeUrl(){const p=new URLSearchParams(location.search);return !!(p.get('emp')&&p.get('comp'));}
+  function hasEmployeeSession(){try{return !!(currentEmployeeSession&&currentEmployeeSession.name&&currentEmployeeSession.company)}catch(e){return !!(window.currentEmployeeSession&&window.currentEmployeeSession.name&&window.currentEmployeeSession.company)}}
+  function isEmployeeMode(){return isEmployeeUrl()||hasEmployeeSession();}
 
-  // Mode sombre renforcé et mémorisé.
-  const oldToggleDarkMode = window.toggleDarkMode;
-  window.toggleDarkMode = function(){
-    if(typeof oldToggleDarkMode === 'function') oldToggleDarkMode();
-    else document.documentElement.classList.toggle('dark');
-    const isDark = document.documentElement.classList.contains('dark');
-    document.body.classList.toggle('dark', isDark);
-    try { safeStorage?.setItem('restev_dark_mode', isDark ? '1' : '0'); } catch(e){}
-  };
-
-  function restoreDark(){
+  function applyDarkFromStorage(){
     try{
-      if(safeStorage?.getItem('restev_dark_mode') === '1'){
+      if((safeStorage&&safeStorage.getItem('restev_dark_mode')==='1')||localStorage.getItem('restev_dark_mode')==='1'){
         document.documentElement.classList.add('dark');
         document.body.classList.add('dark');
       }
     }catch(e){}
   }
 
-  function hardLockEmployee(){
-    if(!isEmployeeMode()) return;
+  const oldToggleDarkMode=window.toggleDarkMode;
+  window.toggleDarkMode=function(){
+    const before=document.documentElement.classList.contains('dark')||document.body.classList.contains('dark');
+    if(typeof oldToggleDarkMode==='function')oldToggleDarkMode();
+    const afterOld=document.documentElement.classList.contains('dark');
+    const next=afterOld!==before?afterOld:!before;
+    document.documentElement.classList.toggle('dark',next);
+    document.body.classList.toggle('dark',next);
+    try{safeStorage?.setItem('restev_dark_mode',next?'1':'0');localStorage.setItem('restev_dark_mode',next?'1':'0')}catch(e){}
+  };
+
+  function fillEmployeeLabelsFromUrl(){
+    if(!isEmployeeUrl())return;
+    const p=new URLSearchParams(location.search);
+    const emp=p.get('emp'),comp=p.get('comp'),sector=p.get('sector')||p.get('secteur')||'';
+    const welcome=document.getElementById('lbl-emp-welcome');
+    const company=document.getElementById('lbl-emp-company');
+    if(welcome&&emp)welcome.innerText='Bonjour, '+emp;
+    if(company&&comp)company.innerText='Établissement : '+comp+(sector?' | Secteur : '+sector:'');
+  }
+
+  function hardEmployeeLock(){
+    if(!isEmployeeMode())return;
     document.body.classList.add('r85-employee-only');
-
-    // Cache les boutons/sections manager même si une règle précédente les réaffiche.
-    ['scr-home','scr-auth','scr-manager','scr-direction','scr-studio'].forEach(id => {
-      const el = document.getElementById(id);
-      if(el){ el.classList.remove('active'); el.style.display = 'none'; }
+    fillEmployeeLabelsFromUrl();
+    const allowed=['scr-employee','scr-report','scr-qcm','scr-qcm-success','scr-resources','scr-training','scr-employee-messages'];
+    document.querySelectorAll('.screen').forEach(s=>{
+      if(!allowed.includes(s.id)){s.classList.remove('active');s.style.display='none';}
     });
-    document.querySelectorAll("button[onclick*='scr-auth'],button[onclick*='scr-manager'],button[onclick*='scr-direction'],button[onclick*='createNewCompany']").forEach(el => {
-      el.style.display='none'; el.style.visibility='hidden'; el.style.pointerEvents='none';
-    });
-  }
-
-  function openEmployeeOnlyNow(){
-    if(!isEmployeeMode()) return;
-    hardLockEmployee();
-    const emp = document.getElementById('scr-employee');
-    if(emp){
-      document.querySelectorAll('.screen').forEach(s => { s.classList.remove('active'); s.style.display='none'; });
-      emp.classList.add('active');
-      emp.style.display='block';
-      window.scrollTo({top:0, behavior:'instant'});
+    const active=document.querySelector('.screen.active');
+    if(!active||!allowed.includes(active.id)){
+      const emp=document.getElementById('scr-employee');
+      if(emp){
+        document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.style.display='none';});
+        emp.classList.add('active');emp.style.display='block';
+      }
     }
+    document.querySelectorAll("button[onclick*='scr-home'],button[onclick*='scr-auth'],button[onclick*='scr-manager'],button[onclick*='scr-direction'],button[onclick*='createNewCompany']").forEach(b=>{b.style.display='none';b.style.visibility='hidden';b.style.pointerEvents='none';});
   }
 
-  // Surcharge checkUrlParameters pour forcer l'ouverture directe portail salarié.
-  const oldCheckUrlParameters = window.checkUrlParameters;
-  window.checkUrlParameters = function(){
-    if(typeof oldCheckUrlParameters === 'function') oldCheckUrlParameters();
-    if(isEmployeeUrl()) setTimeout(openEmployeeOnlyNow, 80);
+  const oldCheck=window.checkUrlParameters;
+  window.checkUrlParameters=function(){
+    if(typeof oldCheck==='function')oldCheck();
+    if(isEmployeeUrl())setTimeout(hardEmployeeLock,20);
   };
 
-  // Surcharge extrêmement stricte de switchScreen en mode salarié.
-  const oldSwitchScreen = window.switchScreen;
-  window.switchScreen = function(screenId){
+  const oldSwitch=window.switchScreen;
+  window.switchScreen=function(screenId){
     if(isEmployeeMode()){
-      const allowed = ['scr-employee','scr-report','scr-qcm','scr-qcm-success','scr-resources','scr-training','scr-employee-messages'];
-      if(!allowed.includes(screenId)) screenId = 'scr-employee';
+      const allowed=['scr-employee','scr-report','scr-qcm','scr-qcm-success','scr-resources','scr-training','scr-employee-messages'];
+      if(!allowed.includes(screenId))screenId='scr-employee';
     }
-    if(typeof oldSwitchScreen === 'function') oldSwitchScreen(screenId);
-    if(isEmployeeMode()) setTimeout(hardLockEmployee, 30);
+    if(typeof oldSwitch==='function')oldSwitch(screenId);
+    if(isEmployeeMode())setTimeout(hardEmployeeLock,20);
   };
 
-  // Rend l'alerte existante plus visible sans changer le reste.
-  function strengthenCleanAlert(){
-    const action = document.getElementById('r85-clean-alert-action');
-    if(action) action.className = 'bg-red-600 text-white py-3 rounded-xl text-xs font-black shadow-lg';
-    const close = document.querySelector('#r85-clean-alert-overlay button[onclick="closeR85CleanAlert()"]');
-    if(close) close.className = 'bg-slate-200 dark:bg-slate-700 dark:text-white py-3 rounded-xl text-xs font-black';
+  const oldLogin=window.handleManagerLogin;
+  window.handleManagerLogin=function(){
+    if(isEmployeeMode())return hardEmployeeLock();
+    if(typeof oldLogin==='function')oldLogin();
+  };
+
+  function strengthenAlert(){
+    const overlay=document.getElementById('r85-clean-alert-overlay');
+    if(!overlay)return;
+    const action=document.getElementById('r85-clean-alert-action');
+    if(action)action.className='bg-red-600 text-white py-3 rounded-xl text-xs font-black shadow-xl';
   }
 
-  // Si un ancien système ouvre une alerte, on la rend plus présente visuellement.
-  const mo = new MutationObserver(() => {
-    if(document.getElementById('r85-clean-alert-overlay')?.classList.contains('r85-show')) strengthenCleanAlert();
-    if(isEmployeeMode()) hardLockEmployee();
-  });
-
-  document.addEventListener('DOMContentLoaded', () => {
-    restoreDark();
-    if(isEmployeeMode()) setTimeout(openEmployeeOnlyNow, 120);
-    setTimeout(hardLockEmployee, 500);
-    setTimeout(() => { try{ mo.observe(document.documentElement,{childList:true,subtree:true,attributes:true}); }catch(e){} }, 300);
-    console.log(PATCH_VERSION + ' installé');
+  document.addEventListener('DOMContentLoaded',()=>{
+    applyDarkFromStorage();
+    setTimeout(hardEmployeeLock,30);
+    setTimeout(hardEmployeeLock,300);
+    setTimeout(hardEmployeeLock,900);
+    const mo=new MutationObserver(()=>{if(isEmployeeMode())hardEmployeeLock();strengthenAlert();applyDarkFromStorage();});
+    try{mo.observe(document.documentElement,{childList:true,subtree:true,attributes:true});}catch(e){}
+    console.log(PATCH_VERSION+' installé');
   });
 })();
 </script>
@@ -3058,160 +3176,278 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 
-<!-- PATCH RESTEV 85 — CORRECTION QR SALARIÉ SEUL + ALERTE PLUS VISIBLE + MODE SOMBRE GLOBAL -->
-<style id="r85-final-polish-style">
-  /* Mode sombre global renforcé, sans toucher aux fonctions métier */
-  html.dark body, body.dark {
-    background: linear-gradient(135deg, #020617, #0f172a 48%, #111827) !important;
-    color: #e5e7eb !important;
+<!-- =========================================================
+PATCH FINAL RESTEV 85 — APP DESIGN + DARK MODE TOTAL + QR SALARIÉ VERROUILLÉ + ALERTE VISUELLE RENFORCÉE
+À coller juste avant </body>. Ne modifie pas la logique métier existante.
+========================================================= -->
+<style id="r85-app-final-polish-style">
+  :root{
+    --r85-bg-a:#f8fbff;
+    --r85-bg-b:#eef7ff;
+    --r85-bg-c:#fff3fa;
+    --r85-card:rgba(255,255,255,.88);
+    --r85-card-strong:rgba(255,255,255,.96);
+    --r85-text:#0f172a;
+    --r85-muted:#64748b;
+    --r85-border:rgba(148,163,184,.26);
+    --r85-shadow:0 18px 45px rgba(15,23,42,.10);
+    --r85-shadow-strong:0 25px 70px rgba(15,23,42,.16);
+    --r85-blue:#3a7bd5;
+    --r85-blue-dark:#245ca6;
+    --r85-magenta:#e0248a;
+    --r85-teal:#4ec3b1;
+    --r85-gold:#ffb007;
   }
-  html.dark header { background: rgba(15,23,42,.94) !important; border-color:#334155 !important; }
-  html.dark main, html.dark section, html.dark .screen { color:#e5e7eb !important; }
-  html.dark .bg-white,
-  html.dark .bg-slate-50,
-  html.dark .bg-blue-50,
-  html.dark .bg-emerald-50,
-  html.dark .bg-red-50,
-  html.dark .bg-amber-50,
-  html.dark .bg-pink-50,
-  html.dark .bg-cyan-50,
-  html.dark .bg-teal-50,
-  html.dark .bg-orange-50 {
-    background: rgba(15,23,42,.92) !important;
-    color: #e5e7eb !important;
-    border-color: #334155 !important;
-  }
-  html.dark input, html.dark select, html.dark textarea {
-    background: rgba(2,6,23,.92) !important;
-    color:#f8fafc !important;
-    border-color:#475569 !important;
-  }
-  html.dark input::placeholder, html.dark textarea::placeholder { color:#94a3b8 !important; }
-  html.dark .text-slate-400, html.dark .text-slate-500, html.dark .text-slate-600, html.dark .text-slate-700 { color:#cbd5e1 !important; }
-  html.dark table, html.dark th, html.dark td { color:#e5e7eb !important; border-color:#334155 !important; }
-  html.dark #r85-google-map-frame { filter: brightness(.82) contrast(1.08); }
 
-  /* Verrouillage salarié : masque vraiment tous les accès non salariés */
+  html.dark{
+    --r85-bg-a:#020617;
+    --r85-bg-b:#0f172a;
+    --r85-bg-c:#111827;
+    --r85-card:rgba(15,23,42,.86);
+    --r85-card-strong:rgba(15,23,42,.96);
+    --r85-text:#f8fafc;
+    --r85-muted:#cbd5e1;
+    --r85-border:rgba(71,85,105,.82);
+    --r85-shadow:0 18px 45px rgba(0,0,0,.34);
+    --r85-shadow-strong:0 25px 75px rgba(0,0,0,.46);
+  }
+
+  body{
+    color:var(--r85-text)!important;
+    background:
+      radial-gradient(circle at 15% 12%, rgba(58,123,213,.20), transparent 32%),
+      radial-gradient(circle at 86% 18%, rgba(224,36,138,.16), transparent 30%),
+      radial-gradient(circle at 40% 90%, rgba(78,195,177,.13), transparent 34%),
+      linear-gradient(135deg,var(--r85-bg-a),var(--r85-bg-b) 48%,var(--r85-bg-c))!important;
+    min-height:100dvh;
+  }
+
+  html.dark body,
+  body.dark{
+    color:var(--r85-text)!important;
+    background:
+      radial-gradient(circle at 12% 10%, rgba(58,123,213,.22), transparent 32%),
+      radial-gradient(circle at 87% 17%, rgba(224,36,138,.18), transparent 30%),
+      radial-gradient(circle at 50% 95%, rgba(78,195,177,.10), transparent 34%),
+      linear-gradient(135deg,#020617,#0f172a 48%,#111827)!important;
+  }
+
+  header{
+    background:rgba(255,255,255,.72)!important;
+    border-color:var(--r85-border)!important;
+    backdrop-filter:blur(22px)!important;
+    box-shadow:0 8px 28px rgba(15,23,42,.06)!important;
+  }
+  html.dark header{background:rgba(15,23,42,.82)!important;box-shadow:0 8px 30px rgba(0,0,0,.28)!important;}
+
+  main{max-width:1120px!important;}
+
+  .screen{border-radius:30px;}
+  .screen.active{animation:r85AppIn .28s ease both!important;}
+  @keyframes r85AppIn{from{opacity:0;transform:translateY(8px) scale(.993)}to{opacity:1;transform:none}}
+
+  .bg-white,
+  .bg-slate-50,
+  .bg-blue-50,
+  .bg-emerald-50,
+  .bg-red-50,
+  .bg-amber-50,
+  .bg-pink-50,
+  .bg-cyan-50,
+  .bg-teal-50,
+  .bg-orange-50,
+  .dark\:bg-slate-800,
+  .dark\:bg-slate-900{
+    background:var(--r85-card)!important;
+    color:var(--r85-text)!important;
+    border-color:var(--r85-border)!important;
+    box-shadow:var(--r85-shadow)!important;
+    backdrop-filter:blur(20px)!important;
+  }
+
+  #scr-manager > .bg-white,
+  #scr-manager .rounded-2xl,
+  #scr-manager .rounded-3xl,
+  #scr-employee .rounded-2xl,
+  #scr-employee .rounded-3xl,
+  #scr-report.rounded-3xl,
+  #scr-qcm.rounded-3xl,
+  #scr-qcm-success.rounded-3xl{
+    border-radius:28px!important;
+  }
+
+  input,select,textarea{
+    border-radius:16px!important;
+    border-color:var(--r85-border)!important;
+    background:rgba(255,255,255,.72)!important;
+    color:var(--r85-text)!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.25)!important;
+  }
+  html.dark input,html.dark select,html.dark textarea,
+  body.dark input,body.dark select,body.dark textarea{
+    background:rgba(2,6,23,.72)!important;
+    color:#f8fafc!important;
+    border-color:#475569!important;
+  }
+  input::placeholder,textarea::placeholder{color:#94a3b8!important;}
+
+  button{
+    border-radius:16px!important;
+    transition:transform .18s ease, box-shadow .18s ease, filter .18s ease!important;
+  }
+  button:hover{transform:translateY(-1px);filter:brightness(1.03);}
+  button:active{transform:scale(.985);}
+
+  .shadow-premium{box-shadow:var(--r85-shadow)!important;}
+  .text-slate-400,.text-slate-500,.text-slate-600,.text-slate-700{color:var(--r85-muted)!important;}
+  html.dark .dark\:text-white,html.dark .text-slate-900,html.dark .text-slate-800{color:#f8fafc!important;}
+
+  table,td,th{color:var(--r85-text)!important;border-color:var(--r85-border)!important;}
+
+  #manager-risk-box{
+    scrollbar-color:rgba(58,123,213,.65) transparent;
+    scrollbar-width:thin;
+  }
+  #manager-risk-box > div{
+    background:rgba(15,23,42,.96)!important;
+    color:#f8fafc!important;
+    border:2px solid rgba(239,68,68,.75)!important;
+    box-shadow:0 15px 40px rgba(127,29,29,.22)!important;
+  }
+  #manager-risk-box input,#manager-risk-box select,#manager-risk-box textarea{
+    background:rgba(2,6,23,.78)!important;
+    color:#f8fafc!important;
+    border-color:rgba(226,232,240,.75)!important;
+  }
+
+  #r85-google-map-frame{filter:none!important;}
+  html.dark #r85-google-map-frame{filter:brightness(.82) contrast(1.08)!important;}
+
+  /* Salarié uniquement : verrouillage impératif des écrans non autorisés */
   body.r85-employee-only #scr-home,
   body.r85-employee-only #scr-auth,
   body.r85-employee-only #scr-manager,
   body.r85-employee-only #scr-direction,
   body.r85-employee-only #scr-studio,
+  body.r85-employee-only button[onclick*="scr-home"],
   body.r85-employee-only button[onclick*="scr-auth"],
   body.r85-employee-only button[onclick*="scr-manager"],
   body.r85-employee-only button[onclick*="scr-direction"],
-  body.r85-employee-only button[onclick*="createNewCompany"] {
-    display:none !important;
-    visibility:hidden !important;
-    pointer-events:none !important;
+  body.r85-employee-only button[onclick*="createNewCompany"],
+  body.r85-employee-only #generated-code-box,
+  body.r85-employee-only #r85-maintenance-panel,
+  body.r85-employee-only #r85-manager-zones-panel{
+    display:none!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
   }
 
-  /* Alerte visuelle plus visible, mais sans effet désordonné */
-  @keyframes r85StrongPulse {
-    0%,100% { transform: scale(1); box-shadow:0 0 0 0 rgba(239,68,68,.55), 0 24px 70px rgba(127,29,29,.32); }
-    50% { transform: scale(1.015); box-shadow:0 0 0 22px rgba(239,68,68,0), 0 24px 90px rgba(127,29,29,.45); }
+  /* Alerte visuelle plus visible et professionnelle */
+  @keyframes r85AlertStrongPulse{
+    0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(239,68,68,.62),0 28px 90px rgba(127,29,29,.36)}
+    50%{transform:scale(1.018);box-shadow:0 0 0 24px rgba(239,68,68,0),0 32px 105px rgba(127,29,29,.52)}
   }
-  @keyframes r85SoftFlashBar {
-    0%,100% { filter: brightness(1); }
-    50% { filter: brightness(1.22); }
-  }
-  #r85-clean-alert-overlay.r85-show { display:flex !important; }
-  .r85-clean-alert-card { animation: r85StrongPulse 1.25s ease-in-out infinite !important; border-width:3px !important; border-color:#ef4444 !important; }
-  #r85-clean-alert-head { animation: r85SoftFlashBar 1s ease-in-out infinite !important; }
+  @keyframes r85AlertHeaderPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.28)}}
+  #r85-clean-alert-overlay.r85-show{display:flex!important;background:rgba(2,6,23,.76)!important;backdrop-filter:blur(9px)!important;}
+  .r85-clean-alert-card{animation:r85AlertStrongPulse 1.18s ease-in-out infinite!important;border:4px solid #ef4444!important;box-shadow:var(--r85-shadow-strong)!important;}
+  #r85-clean-alert-head{animation:r85AlertHeaderPulse .95s ease-in-out infinite!important;}
+  #r85-clean-alert-title{font-size:1.55rem!important;letter-spacing:-.03em;}
 </style>
 
 <script>
 (function(){
-  const PATCH_VERSION = 'RESTEV85_QR_EMPLOYEE_ONLY_STRONG_ALERT_DARK_2026_07_06';
+  const PATCH_VERSION='RESTEV85_APP_STORE_DARK_EMPLOYEE_LOCK_2026_07_06';
 
-  function toast(msg){ if(typeof showToast === 'function') showToast(msg); else alert(msg); }
-  function isEmployeeUrl(){ const p = new URLSearchParams(location.search); return !!(p.get('emp') && p.get('comp')); }
-  function hasEmployeeSession(){ try { return !!(currentEmployeeSession && currentEmployeeSession.name && currentEmployeeSession.company); } catch(e){ return !!(window.currentEmployeeSession && window.currentEmployeeSession.name && window.currentEmployeeSession.company); } }
-  function isEmployeeMode(){ return isEmployeeUrl() || hasEmployeeSession(); }
+  function isEmployeeUrl(){const p=new URLSearchParams(location.search);return !!(p.get('emp')&&p.get('comp'));}
+  function hasEmployeeSession(){try{return !!(currentEmployeeSession&&currentEmployeeSession.name&&currentEmployeeSession.company)}catch(e){return !!(window.currentEmployeeSession&&window.currentEmployeeSession.name&&window.currentEmployeeSession.company)}}
+  function isEmployeeMode(){return isEmployeeUrl()||hasEmployeeSession();}
 
-  // Mode sombre renforcé et mémorisé.
-  const oldToggleDarkMode = window.toggleDarkMode;
-  window.toggleDarkMode = function(){
-    if(typeof oldToggleDarkMode === 'function') oldToggleDarkMode();
-    else document.documentElement.classList.toggle('dark');
-    const isDark = document.documentElement.classList.contains('dark');
-    document.body.classList.toggle('dark', isDark);
-    try { safeStorage?.setItem('restev_dark_mode', isDark ? '1' : '0'); } catch(e){}
-  };
-
-  function restoreDark(){
+  function applyDarkFromStorage(){
     try{
-      if(safeStorage?.getItem('restev_dark_mode') === '1'){
+      if((safeStorage&&safeStorage.getItem('restev_dark_mode')==='1')||localStorage.getItem('restev_dark_mode')==='1'){
         document.documentElement.classList.add('dark');
         document.body.classList.add('dark');
       }
     }catch(e){}
   }
 
-  function hardLockEmployee(){
-    if(!isEmployeeMode()) return;
+  const oldToggleDarkMode=window.toggleDarkMode;
+  window.toggleDarkMode=function(){
+    const before=document.documentElement.classList.contains('dark')||document.body.classList.contains('dark');
+    if(typeof oldToggleDarkMode==='function')oldToggleDarkMode();
+    const afterOld=document.documentElement.classList.contains('dark');
+    const next=afterOld!==before?afterOld:!before;
+    document.documentElement.classList.toggle('dark',next);
+    document.body.classList.toggle('dark',next);
+    try{safeStorage?.setItem('restev_dark_mode',next?'1':'0');localStorage.setItem('restev_dark_mode',next?'1':'0')}catch(e){}
+  };
+
+  function fillEmployeeLabelsFromUrl(){
+    if(!isEmployeeUrl())return;
+    const p=new URLSearchParams(location.search);
+    const emp=p.get('emp'),comp=p.get('comp'),sector=p.get('sector')||p.get('secteur')||'';
+    const welcome=document.getElementById('lbl-emp-welcome');
+    const company=document.getElementById('lbl-emp-company');
+    if(welcome&&emp)welcome.innerText='Bonjour, '+emp;
+    if(company&&comp)company.innerText='Établissement : '+comp+(sector?' | Secteur : '+sector:'');
+  }
+
+  function hardEmployeeLock(){
+    if(!isEmployeeMode())return;
     document.body.classList.add('r85-employee-only');
-
-    // Cache les boutons/sections manager même si une règle précédente les réaffiche.
-    ['scr-home','scr-auth','scr-manager','scr-direction','scr-studio'].forEach(id => {
-      const el = document.getElementById(id);
-      if(el){ el.classList.remove('active'); el.style.display = 'none'; }
+    fillEmployeeLabelsFromUrl();
+    const allowed=['scr-employee','scr-report','scr-qcm','scr-qcm-success','scr-resources','scr-training','scr-employee-messages'];
+    document.querySelectorAll('.screen').forEach(s=>{
+      if(!allowed.includes(s.id)){s.classList.remove('active');s.style.display='none';}
     });
-    document.querySelectorAll("button[onclick*='scr-auth'],button[onclick*='scr-manager'],button[onclick*='scr-direction'],button[onclick*='createNewCompany']").forEach(el => {
-      el.style.display='none'; el.style.visibility='hidden'; el.style.pointerEvents='none';
-    });
-  }
-
-  function openEmployeeOnlyNow(){
-    if(!isEmployeeMode()) return;
-    hardLockEmployee();
-    const emp = document.getElementById('scr-employee');
-    if(emp){
-      document.querySelectorAll('.screen').forEach(s => { s.classList.remove('active'); s.style.display='none'; });
-      emp.classList.add('active');
-      emp.style.display='block';
-      window.scrollTo({top:0, behavior:'instant'});
+    const active=document.querySelector('.screen.active');
+    if(!active||!allowed.includes(active.id)){
+      const emp=document.getElementById('scr-employee');
+      if(emp){
+        document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.style.display='none';});
+        emp.classList.add('active');emp.style.display='block';
+      }
     }
+    document.querySelectorAll("button[onclick*='scr-home'],button[onclick*='scr-auth'],button[onclick*='scr-manager'],button[onclick*='scr-direction'],button[onclick*='createNewCompany']").forEach(b=>{b.style.display='none';b.style.visibility='hidden';b.style.pointerEvents='none';});
   }
 
-  // Surcharge checkUrlParameters pour forcer l'ouverture directe portail salarié.
-  const oldCheckUrlParameters = window.checkUrlParameters;
-  window.checkUrlParameters = function(){
-    if(typeof oldCheckUrlParameters === 'function') oldCheckUrlParameters();
-    if(isEmployeeUrl()) setTimeout(openEmployeeOnlyNow, 80);
+  const oldCheck=window.checkUrlParameters;
+  window.checkUrlParameters=function(){
+    if(typeof oldCheck==='function')oldCheck();
+    if(isEmployeeUrl())setTimeout(hardEmployeeLock,20);
   };
 
-  // Surcharge extrêmement stricte de switchScreen en mode salarié.
-  const oldSwitchScreen = window.switchScreen;
-  window.switchScreen = function(screenId){
+  const oldSwitch=window.switchScreen;
+  window.switchScreen=function(screenId){
     if(isEmployeeMode()){
-      const allowed = ['scr-employee','scr-report','scr-qcm','scr-qcm-success','scr-resources','scr-training','scr-employee-messages'];
-      if(!allowed.includes(screenId)) screenId = 'scr-employee';
+      const allowed=['scr-employee','scr-report','scr-qcm','scr-qcm-success','scr-resources','scr-training','scr-employee-messages'];
+      if(!allowed.includes(screenId))screenId='scr-employee';
     }
-    if(typeof oldSwitchScreen === 'function') oldSwitchScreen(screenId);
-    if(isEmployeeMode()) setTimeout(hardLockEmployee, 30);
+    if(typeof oldSwitch==='function')oldSwitch(screenId);
+    if(isEmployeeMode())setTimeout(hardEmployeeLock,20);
   };
 
-  // Rend l'alerte existante plus visible sans changer le reste.
-  function strengthenCleanAlert(){
-    const action = document.getElementById('r85-clean-alert-action');
-    if(action) action.className = 'bg-red-600 text-white py-3 rounded-xl text-xs font-black shadow-lg';
-    const close = document.querySelector('#r85-clean-alert-overlay button[onclick="closeR85CleanAlert()"]');
-    if(close) close.className = 'bg-slate-200 dark:bg-slate-700 dark:text-white py-3 rounded-xl text-xs font-black';
+  const oldLogin=window.handleManagerLogin;
+  window.handleManagerLogin=function(){
+    if(isEmployeeMode())return hardEmployeeLock();
+    if(typeof oldLogin==='function')oldLogin();
+  };
+
+  function strengthenAlert(){
+    const overlay=document.getElementById('r85-clean-alert-overlay');
+    if(!overlay)return;
+    const action=document.getElementById('r85-clean-alert-action');
+    if(action)action.className='bg-red-600 text-white py-3 rounded-xl text-xs font-black shadow-xl';
   }
 
-  // Si un ancien système ouvre une alerte, on la rend plus présente visuellement.
-  const mo = new MutationObserver(() => {
-    if(document.getElementById('r85-clean-alert-overlay')?.classList.contains('r85-show')) strengthenCleanAlert();
-    if(isEmployeeMode()) hardLockEmployee();
-  });
-
-  document.addEventListener('DOMContentLoaded', () => {
-    restoreDark();
-    if(isEmployeeMode()) setTimeout(openEmployeeOnlyNow, 120);
-    setTimeout(hardLockEmployee, 500);
-    setTimeout(() => { try{ mo.observe(document.documentElement,{childList:true,subtree:true,attributes:true}); }catch(e){} }, 300);
-    console.log(PATCH_VERSION + ' installé');
+  document.addEventListener('DOMContentLoaded',()=>{
+    applyDarkFromStorage();
+    setTimeout(hardEmployeeLock,30);
+    setTimeout(hardEmployeeLock,300);
+    setTimeout(hardEmployeeLock,900);
+    const mo=new MutationObserver(()=>{if(isEmployeeMode())hardEmployeeLock();strengthenAlert();applyDarkFromStorage();});
+    try{mo.observe(document.documentElement,{childList:true,subtree:true,attributes:true});}catch(e){}
+    console.log(PATCH_VERSION+' installé');
   });
 })();
 </script>
