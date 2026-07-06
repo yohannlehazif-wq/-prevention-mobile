@@ -2710,357 +2710,412 @@ document.addEventListener('DOMContentLoaded', () => {
      À coller juste avant 
 
 <!-- =========================================================
-PATCH RESTEV 85 — SIGNALEMENT SALARIÉ SIMPLIFIÉ + GOOGLE MAPS + PHOTO
+PATCH FINAL RESTEV 85 — SALARIÉ UNIQUEMENT + ENVOI COMPLET RISQUE GPS PHOTO
 À coller EN DERNIER juste avant </body>.
-Fonctions ajoutées :
-- Carte Google Maps vue par le salarié pour géolocaliser le risque.
-- Prise de photo du risque avec appareil photo smartphone.
-- Signalement simplifié : le salarié ne choisit plus la gravité.
-- Enregistrement Supabase : work_zone, gps_lat, gps_lng, gps_accuracy, photo_data.
+Objectifs :
+1) QR salarié = accès uniquement aux pages salarié.
+2) Navigation salarié conservée.
+3) Signalement simple : pas de gravité à choisir.
+4) Envoi obligatoire des éléments : description/photo + GPS Google Maps si autorisé + zone.
+5) Manager voit photo + bouton Google Maps.
 ========================================================= -->
-<style id="r85-simple-report-google-photo-style">
-  #r85-simple-report-block {
-    border: 1px solid rgba(148,163,184,.35);
-    border-radius: 1.75rem;
-    padding: 1rem;
-    background: rgba(255,255,255,.88);
-    box-shadow: 0 18px 45px rgba(15,23,42,.10);
-    backdrop-filter: blur(18px);
+<style id="r85-final-employee-only-send-elements-style">
+  /* Pages autorisées en mode salarié */
+  body.r85-employee-only #scr-employee,
+  body.r85-employee-only #scr-report,
+  body.r85-employee-only #scr-qcm,
+  body.r85-employee-only #scr-qcm-success,
+  body.r85-employee-only #scr-resources,
+  body.r85-employee-only #scr-training,
+  body.r85-employee-only #scr-employee-messages,
+  body.r85-employee-only #scr-employee *,
+  body.r85-employee-only #scr-report *,
+  body.r85-employee-only #scr-qcm *,
+  body.r85-employee-only #scr-qcm-success *,
+  body.r85-employee-only #scr-resources *,
+  body.r85-employee-only #scr-training *,
+  body.r85-employee-only #scr-employee-messages * {
+    pointer-events:auto !important;
   }
-  html.dark #r85-simple-report-block,
-  body.dark #r85-simple-report-block {
-    background: rgba(15,23,42,.92);
-    border-color: rgba(71,85,105,.8);
+
+  body.r85-employee-only #scr-employee.active,
+  body.r85-employee-only #scr-report.active,
+  body.r85-employee-only #scr-qcm.active,
+  body.r85-employee-only #scr-qcm-success.active,
+  body.r85-employee-only #scr-resources.active,
+  body.r85-employee-only #scr-training.active,
+  body.r85-employee-only #scr-employee-messages.active {
+    display:block !important;
+    visibility:visible !important;
   }
-  #r85-simple-google-map {
-    width: 100%;
-    height: 310px;
-    border: 0;
-    border-radius: 1.25rem;
-    background: #e2e8f0;
+
+  /* Pages interdites QR salarié */
+  body.r85-employee-only #scr-home,
+  body.r85-employee-only #scr-auth,
+  body.r85-employee-only #scr-manager,
+  body.r85-employee-only #scr-direction,
+  body.r85-employee-only #scr-studio,
+  body.r85-employee-only #r85-maintenance-panel,
+  body.r85-employee-only #r85-manager-zones-panel,
+  body.r85-employee-only #generated-code-box,
+  body.r85-employee-only button[onclick*="scr-home"],
+  body.r85-employee-only button[onclick*="scr-auth"],
+  body.r85-employee-only button[onclick*="scr-manager"],
+  body.r85-employee-only button[onclick*="scr-direction"],
+  body.r85-employee-only button[onclick*="createNewCompany"] {
+    display:none !important;
+    visibility:hidden !important;
+    pointer-events:none !important;
   }
-  html.dark #r85-simple-google-map { filter: brightness(.82) contrast(1.08); }
-  #r85-photo-preview {
-    width: 100%;
-    max-height: 260px;
-    object-fit: cover;
-    border-radius: 1.25rem;
-    border: 1px solid rgba(148,163,184,.5);
-    display: none;
+
+  /* Signalement simplifié */
+  #r85-final-simple-report {
+    border:1px solid rgba(148,163,184,.35);
+    border-radius:1.75rem;
+    padding:1rem;
+    background:rgba(255,255,255,.90);
+    box-shadow:0 18px 45px rgba(15,23,42,.10);
+    backdrop-filter:blur(18px);
   }
-  .r85-clean-field {
-    width: 100%;
-    padding: .85rem;
-    border-radius: 1rem;
-    border: 1px solid rgba(148,163,184,.45);
-    font-size: .78rem;
-    font-weight: 800;
-    background: rgba(248,250,252,.95);
+  html.dark #r85-final-simple-report,
+  body.dark #r85-final-simple-report {
+    background:rgba(15,23,42,.92);
+    border-color:rgba(71,85,105,.82);
   }
-  html.dark .r85-clean-field,
-  body.dark .r85-clean-field {
-    background: rgba(2,6,23,.75) !important;
-    color: #f8fafc !important;
-    border-color: rgba(71,85,105,.85) !important;
+  #r85-final-google-map {
+    width:100%;
+    height:315px;
+    border:0;
+    border-radius:1.25rem;
+    background:#e2e8f0;
   }
-  .r85-photo-btn {
-    display: block;
-    text-align: center;
-    width: 100%;
-    padding: .9rem;
-    border-radius: 1rem;
-    background: linear-gradient(135deg,#3a7bd5,#245ca6);
-    color: white;
-    font-size: .75rem;
-    font-weight: 900;
-    box-shadow: 0 10px 24px rgba(58,123,213,.22);
+  html.dark #r85-final-google-map { filter:brightness(.82) contrast(1.08); }
+  .r85-field-clean {
+    width:100%;
+    padding:.88rem;
+    border-radius:1rem;
+    border:1px solid rgba(148,163,184,.45);
+    font-size:.78rem;
+    font-weight:800;
+    background:rgba(248,250,252,.95);
   }
-  .r85-hidden-old-report { display:none !important; visibility:hidden !important; pointer-events:none !important; }
-  .r85-manager-photo-thumb { width:100%; max-height:220px; object-fit:cover; border-radius:1rem; border:1px solid rgba(148,163,184,.35); }
+  html.dark .r85-field-clean,
+  body.dark .r85-field-clean {
+    background:rgba(2,6,23,.75) !important;
+    color:#f8fafc !important;
+    border-color:rgba(71,85,105,.85) !important;
+  }
+  #r85-final-photo-preview {
+    width:100%;
+    max-height:260px;
+    object-fit:cover;
+    border-radius:1.25rem;
+    border:1px solid rgba(148,163,184,.5);
+    display:none;
+  }
+  .r85-camera-label {
+    display:block;
+    width:100%;
+    text-align:center;
+    padding:.92rem;
+    border-radius:1rem;
+    color:white;
+    font-size:.75rem;
+    font-weight:900;
+    background:linear-gradient(135deg,#3a7bd5,#245ca6);
+    box-shadow:0 10px 24px rgba(58,123,213,.22);
+  }
+  .r85-hide-old-risk { display:none !important; visibility:hidden !important; pointer-events:none !important; }
+  .r85-manager-risk-photo { width:100%; max-height:230px; object-fit:cover; border-radius:1rem; border:1px solid rgba(148,163,184,.35); }
 </style>
 
 <script>
 (function(){
-  const PATCH_VERSION = 'RESTEV85_SIMPLE_REPORT_GOOGLE_PHOTO_2026_07_06';
-  let r85RiskGps = null;
-  let r85GeoWatch = null;
-  let r85RiskPhotoData = null;
+  const PATCH_VERSION='RESTEV85_FINAL_EMPLOYEE_ONLY_SEND_GPS_PHOTO_2026_07_06';
+  const EMPLOYEE_SCREENS=['scr-employee','scr-report','scr-qcm','scr-qcm-success','scr-resources','scr-training','scr-employee-messages'];
+  const BLOCKED_SCREENS=['scr-home','scr-auth','scr-manager','scr-direction','scr-studio'];
+  let r85RiskGps=null;
+  let r85RiskPhoto=null;
+  let r85GpsWatch=null;
 
-  function toast(msg){ if(typeof showToast === 'function') showToast(msg); else alert(msg); }
-  function esc(v){ if(typeof escapeHtml === 'function') return escapeHtml(v || ''); return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-  function session(){ try { return currentEmployeeSession || window.currentEmployeeSession || null; } catch(e){ return window.currentEmployeeSession || null; } }
-  function currentCompany(){ return (session()?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim(); }
+  function client(){ return window.supabaseClient || (typeof supabaseClient !== 'undefined' ? supabaseClient : null); }
+  function toast(m){ if(typeof showToast==='function') showToast(m); else alert(m); }
+  function esc(v){ if(typeof escapeHtml==='function') return escapeHtml(v || ''); return String(v ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function params(){ return new URLSearchParams(location.search); }
+  function isEmployeeUrl(){ const p=params(); return !!(p.get('emp') && p.get('comp')); }
+  function getSession(){ try{return currentEmployeeSession || window.currentEmployeeSession || null;}catch(e){return window.currentEmployeeSession || null;} }
+  function hasEmployeeSession(){ const s=getSession(); return !!(s && s.name && s.company); }
+  function isEmployeeMode(){ return isEmployeeUrl() || hasEmployeeSession(); }
   function googleEmbed(lat,lng,z=21){ return `https://maps.google.com/maps?q=${encodeURIComponent(lat+','+lng)}&z=${z}&output=embed`; }
   function googleOpen(lat,lng){ return `https://www.google.com/maps?q=${encodeURIComponent(lat+','+lng)}`; }
 
-  async function fetchZones(){
-    if(!window.supabaseClient && typeof supabaseClient === 'undefined') return [];
-    const client = window.supabaseClient || supabaseClient;
-    const c = currentCompany();
-    if(!client || !c) return [];
-    try{
-      const {data,error} = await client.from('work_zones').select('id,name,description').eq('company_code', c).order('name',{ascending:true});
-      if(error) return [];
-      return data || [];
-    }catch(e){ return []; }
+  function hydrateEmployeeFromQr(){
+    if(!isEmployeeUrl()) return;
+    const p=params();
+    const emp=p.get('emp');
+    const comp=p.get('comp');
+    const sector=p.get('sector') || p.get('secteur') || 'Autre';
+    let epis=[];
+    try{ epis=JSON.parse(decodeURIComponent(p.get('epis') || '[]')); if(!Array.isArray(epis)) epis=[]; }catch(e){ epis=[]; }
+    try{ currentEmployeeSession={name:emp, company:comp, sector, epis}; }catch(e){ window.currentEmployeeSession={name:emp, company:comp, sector, epis}; }
+    const w=document.getElementById('lbl-emp-welcome');
+    const c=document.getElementById('lbl-emp-company');
+    if(w && emp) w.innerText='Bonjour, '+emp;
+    if(c && comp) c.innerText='Établissement : '+comp+(sector?' | Secteur : '+sector:'');
   }
 
-  async function loadReportZones(){
-    const sel = document.getElementById('r85-simple-work-zone');
-    if(!sel) return;
-    const old = sel.value;
-    const zones = await fetchZones();
-    sel.innerHTML = '<option value="">Lieu / zone non renseigné</option>' + zones.map(z => `<option value="${esc(z.name)}">${esc(z.name)}</option>`).join('');
-    if(old) sel.value = old;
+  function display(el,value){
+    if(!el) return;
+    el.style.setProperty('display',value,'important');
+    el.style.setProperty('visibility',value==='none'?'hidden':'visible','important');
+    el.style.setProperty('pointer-events',value==='none'?'none':'auto','important');
   }
 
-  function hideOldComplexFields(){
-    // Masque les champs qui faisaient réfléchir le salarié : gravité / fréquence / ancienne carte.
-    ['risk-level','risk-frequency','map','geo-status'].forEach(id => {
-      const el = document.getElementById(id);
-      if(el){
-        const wrap = el.closest('.grid') || el.closest('div') || el;
-        wrap.classList.add('r85-hidden-old-report');
-      }
+  function showScreen(id){
+    if(isEmployeeMode() && !EMPLOYEE_SCREENS.includes(id)) id='scr-employee';
+    document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active'); display(s,'none');});
+    const t=document.getElementById(id);
+    if(t){
+      t.classList.add('active'); display(t,'block');
+      if(id==='scr-report') setTimeout(()=>{ installFinalSimpleReport(); },220);
+      if(id==='scr-qcm-success') setTimeout(()=>{ try{ if(typeof initSignaturePads==='function') initSignaturePads(); }catch(e){} },250);
+      if(id==='scr-training') setTimeout(()=>{ try{ if(typeof adjustTutoViewer==='function') adjustTutoViewer(); }catch(e){} },250);
+      scrollTo({top:0,behavior:'smooth'});
+    }
+    if(isEmployeeMode()) setTimeout(lockEmployeeOnly,20);
+  }
+
+  function lockEmployeeOnly(){
+    if(!isEmployeeMode()) return;
+    document.body.classList.add('r85-employee-only');
+    hydrateEmployeeFromQr();
+    BLOCKED_SCREENS.forEach(id=>{const el=document.getElementById(id); if(el){el.classList.remove('active'); display(el,'none');}});
+    document.querySelectorAll("button[onclick*='scr-home'],button[onclick*='scr-auth'],button[onclick*='scr-manager'],button[onclick*='scr-direction'],button[onclick*='createNewCompany']").forEach(b=>display(b,'none'));
+    const active=document.querySelector('.screen.active');
+    if(!active || !EMPLOYEE_SCREENS.includes(active.id)) showScreen('scr-employee');
+  }
+
+  window.switchScreen=function(id){ showScreen(id); };
+
+  // Rebranche les boutons salarié au cas où un ancien verrouillage gêne l'onclick.
+  document.addEventListener('click',function(e){
+    if(!isEmployeeMode()) return;
+    const btn=e.target.closest('button');
+    if(!btn) return;
+    const area=btn.closest('#scr-employee,#scr-report,#scr-qcm,#scr-qcm-success,#scr-resources,#scr-training,#scr-employee-messages');
+    if(!area) return;
+    const on=btn.getAttribute('onclick')||'';
+    if(on.includes("switchScreen('scr-report')") || on.includes('switchScreen("scr-report")')){e.preventDefault();e.stopImmediatePropagation();showScreen('scr-report');return;}
+    if(on.includes("switchScreen('scr-training')") || on.includes('switchScreen("scr-training")')){e.preventDefault();e.stopImmediatePropagation();showScreen('scr-training');return;}
+    if(on.includes("switchScreen('scr-employee')") || on.includes('switchScreen("scr-employee")')){e.preventDefault();e.stopImmediatePropagation();showScreen('scr-employee');return;}
+    if(on.includes('startEmployeeQCM')){e.preventDefault();e.stopImmediatePropagation();try{startEmployeeQCM();}catch(err){console.warn(err);showScreen('scr-qcm');}return;}
+    if(on.includes('openEmployeeResources')){e.preventDefault();e.stopImmediatePropagation();try{openEmployeeResources();}catch(err){console.warn(err);showScreen('scr-resources');}return;}
+    if(on.includes('openEmployeeMessages')){e.preventDefault();e.stopImmediatePropagation();try{openEmployeeMessages();}catch(err){console.warn(err);showScreen('scr-employee-messages');}return;}
+  },true);
+
+  function hideOldRiskFields(){
+    ['risk-level','risk-frequency','map','geo-status'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){ const wrap=el.closest('.grid') || el.closest('div') || el; wrap.classList.add('r85-hide-old-risk'); }
     });
+    document.querySelectorAll('#scr-report button[onclick="submitRiskReport()"],#scr-report button[onclick="submitRiskReport(); return false;"]').forEach(b=>b.classList.add('r85-hide-old-risk'));
   }
 
-  window.installR85SimpleRiskReport = function(){
-    const screen = document.getElementById('scr-report');
+  async function loadZones(){
+    const sel=document.getElementById('r85-final-zone');
+    const c=client();
+    const s=getSession();
+    const company=s?.company || document.getElementById('lbl-manager-comp-name')?.innerText?.trim() || '';
+    if(!sel || !c || !company) return;
+    try{
+      const {data,error}=await c.from('work_zones').select('name').eq('company_code',company).order('name',{ascending:true});
+      if(error) return;
+      const old=sel.value;
+      sel.innerHTML='<option value="">Zone / lieu non renseigné</option>'+(data||[]).map(z=>`<option value="${esc(z.name)}">${esc(z.name)}</option>`).join('');
+      if(old) sel.value=old;
+    }catch(e){}
+  }
+
+  window.installFinalSimpleReport=function(){
+    const screen=document.getElementById('scr-report');
     if(!screen) return;
-    hideOldComplexFields();
-
-    // Cache l'ancien bouton d'envoi pour éviter doublon.
-    document.querySelectorAll('#scr-report button[onclick="submitRiskReport()"], #scr-report button[onclick="submitRiskReport(); return false;"]').forEach(b => b.classList.add('r85-hidden-old-report'));
-
-    if(document.getElementById('r85-simple-report-block')) return;
-
-    const block = document.createElement('div');
-    block.id = 'r85-simple-report-block';
-    block.className = 'space-y-4';
-    block.innerHTML = `
+    hideOldRiskFields();
+    if(document.getElementById('r85-final-simple-report')) return;
+    const block=document.createElement('div');
+    block.id='r85-final-simple-report';
+    block.className='space-y-4';
+    block.innerHTML=`
       <div class="space-y-1">
-        <p class="text-xs font-black dark:text-white flex items-center gap-2"><i class="fa-solid fa-location-dot text-restev-blue"></i> Où se situe le risque ?</p>
-        <p class="text-[11px] text-slate-500 dark:text-slate-300 leading-relaxed">Autorisez la position pour afficher le lieu sur Google Maps. Le manager pourra ouvrir la carte.</p>
+        <p class="text-xs font-black dark:text-white"><i class="fa-solid fa-map-location-dot text-restev-blue mr-1"></i> Localisation du risque</p>
+        <p class="text-[11px] text-slate-500 dark:text-slate-300 leading-relaxed">Le salarié localise le risque. Le responsable reçoit le lien Google Maps.</p>
       </div>
-      <select id="r85-simple-work-zone" class="r85-clean-field"><option value="">Lieu / zone non renseigné</option></select>
-      <button type="button" onclick="requestR85RiskGeolocation()" class="w-full bg-restev-blue text-white py-3 rounded-xl text-xs font-black">
-        <i class="fa-solid fa-location-crosshairs mr-1"></i> Localiser le risque sur Google Maps
-      </button>
-      <iframe id="r85-simple-google-map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=46.670,-1.426&z=13&output=embed"></iframe>
-      <a id="r85-simple-google-open" href="https://www.google.com/maps?q=46.670,-1.426" target="_blank" class="block text-center bg-white dark:bg-slate-900 border text-restev-blue dark:text-blue-300 py-2 rounded-xl text-[10px] font-black">Ouvrir dans Google Maps</a>
-      <div id="r85-simple-gps-status" class="text-[11px] font-bold text-slate-500 dark:text-slate-300 bg-white dark:bg-slate-900 border rounded-xl p-3">Position non transmise pour le moment.</div>
+      <select id="r85-final-zone" class="r85-field-clean"><option value="">Zone / lieu non renseigné</option></select>
+      <button type="button" onclick="r85LocateRisk()" class="w-full bg-restev-blue text-white py-3 rounded-xl text-xs font-black"><i class="fa-solid fa-location-crosshairs mr-1"></i> Localiser avec Google Maps</button>
+      <iframe id="r85-final-google-map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=46.670,-1.426&z=13&output=embed"></iframe>
+      <a id="r85-final-google-link" href="https://www.google.com/maps?q=46.670,-1.426" target="_blank" class="block text-center bg-white dark:bg-slate-900 border text-restev-blue dark:text-blue-300 py-2 rounded-xl text-[10px] font-black">Ouvrir dans Google Maps</a>
+      <div id="r85-final-gps-status" class="text-[11px] font-bold text-slate-500 dark:text-slate-300 bg-white dark:bg-slate-900 border rounded-xl p-3">GPS non transmis pour le moment.</div>
 
       <div class="space-y-2 pt-2">
-        <p class="text-xs font-black dark:text-white flex items-center gap-2"><i class="fa-solid fa-camera text-restev-magenta"></i> Photo du risque identifié</p>
-        <input id="r85-risk-photo-input" type="file" accept="image/*" capture="environment" class="hidden" onchange="handleR85RiskPhoto(event)">
-        <label for="r85-risk-photo-input" class="r85-photo-btn"><i class="fa-solid fa-camera mr-1"></i> Prendre une photo / Ajouter une image</label>
-        <img id="r85-photo-preview" alt="Aperçu du risque identifié">
-        <button type="button" onclick="clearR85RiskPhoto()" id="r85-photo-clear" class="hidden w-full bg-slate-100 dark:bg-slate-700 dark:text-white py-2 rounded-xl text-[10px] font-black">Retirer la photo</button>
+        <p class="text-xs font-black dark:text-white"><i class="fa-solid fa-camera text-restev-magenta mr-1"></i> Photo du risque identifié</p>
+        <input id="r85-final-photo-input" type="file" accept="image/*" capture="environment" class="hidden" onchange="r85HandlePhoto(event)">
+        <label for="r85-final-photo-input" class="r85-camera-label"><i class="fa-solid fa-camera mr-1"></i> Prendre une photo / ajouter une image</label>
+        <img id="r85-final-photo-preview" alt="Photo du risque">
+        <button id="r85-final-photo-clear" type="button" onclick="r85ClearPhoto()" class="hidden w-full bg-slate-100 dark:bg-slate-700 dark:text-white py-2 rounded-xl text-[10px] font-black">Retirer la photo</button>
       </div>
-
-      <button type="button" onclick="submitRiskReport()" class="w-full bg-gradient-to-r from-red-600 to-pink-600 text-white py-3.5 rounded-xl text-sm font-extrabold shadow-lg">
-        <i class="fa-solid fa-paper-plane mr-1"></i> Envoyer le signalement au responsable
-      </button>
+      <button type="button" onclick="submitRiskReport()" class="w-full bg-gradient-to-r from-red-600 to-pink-600 text-white py-3.5 rounded-xl text-sm font-extrabold shadow-lg"><i class="fa-solid fa-paper-plane mr-1"></i> Envoyer le signalement</button>
     `;
-
-    const categoryBlock = document.getElementById('risk-category-select')?.closest('div');
-    if(categoryBlock) screen.insertBefore(block, categoryBlock);
-    else screen.prepend(block);
-    loadReportZones();
+    const categoryBlock=document.getElementById('risk-category-select')?.closest('div');
+    if(categoryBlock) screen.insertBefore(block,categoryBlock); else screen.prepend(block);
+    loadZones();
   };
 
-  window.requestR85RiskGeolocation = function(){
-    installR85SimpleRiskReport();
-    const status = document.getElementById('r85-simple-gps-status');
-    if(!navigator.geolocation){ if(status) status.innerHTML = 'Géolocalisation non compatible avec ce navigateur.'; return; }
-    if(status) status.innerHTML = 'Demande GPS en cours…';
-
-    if(r85GeoWatch !== null){ try{ navigator.geolocation.clearWatch(r85GeoWatch); }catch(e){} r85GeoWatch = null; }
-
-    let best = null;
-    const ok = pos => {
-      const p = {lat:pos.coords.latitude, lng:pos.coords.longitude, accuracy:pos.coords.accuracy, captured_at:new Date().toISOString()};
-      if(!best || p.accuracy < best.accuracy){ best = p; r85RiskGps = p; }
-      const frame = document.getElementById('r85-simple-google-map');
-      const link = document.getElementById('r85-simple-google-open');
-      if(frame) frame.src = googleEmbed(r85RiskGps.lat, r85RiskGps.lng, 21);
-      if(link) link.href = googleOpen(r85RiskGps.lat, r85RiskGps.lng);
-      if(status) status.innerHTML = `📍 Risque localisé sur Google Maps — précision environ <b>${Math.round(r85RiskGps.accuracy || 0)} m</b>`;
+  window.r85LocateRisk=function(){
+    installFinalSimpleReport();
+    const st=document.getElementById('r85-final-gps-status');
+    if(!navigator.geolocation){ if(st) st.innerHTML='GPS non compatible avec ce navigateur.'; return; }
+    if(st) st.innerHTML='Recherche GPS en cours…';
+    if(r85GpsWatch!==null){try{navigator.geolocation.clearWatch(r85GpsWatch);}catch(e){} r85GpsWatch=null;}
+    let best=null;
+    const ok=pos=>{
+      const p={lat:pos.coords.latitude,lng:pos.coords.longitude,accuracy:pos.coords.accuracy,captured_at:new Date().toISOString()};
+      if(!best || p.accuracy<best.accuracy){best=p;r85RiskGps=p;}
+      const frame=document.getElementById('r85-final-google-map');
+      const link=document.getElementById('r85-final-google-link');
+      if(frame) frame.src=googleEmbed(r85RiskGps.lat,r85RiskGps.lng,21);
+      if(link) link.href=googleOpen(r85RiskGps.lat,r85RiskGps.lng);
+      if(st) st.innerHTML=`📍 Position transmise — précision environ <b>${Math.round(r85RiskGps.accuracy||0)} m</b>`;
     };
-    const ko = err => { if(status) status.innerHTML = `<b>GPS refusé ou indisponible.</b><br>${esc(err.message || '')}<br>Le signalement peut quand même être envoyé avec une photo et une description.`; };
-    r85GeoWatch = navigator.geolocation.watchPosition(ok, ko, {enableHighAccuracy:true, timeout:25000, maximumAge:0});
-    setTimeout(()=>{ if(r85GeoWatch !== null){ try{navigator.geolocation.clearWatch(r85GeoWatch);}catch(e){} r85GeoWatch=null; } },12000);
+    const ko=err=>{ if(st) st.innerHTML=`GPS refusé ou indisponible. Le signalement peut être envoyé avec photo et description.<br>${esc(err.message||'')}`; };
+    r85GpsWatch=navigator.geolocation.watchPosition(ok,ko,{enableHighAccuracy:true,timeout:25000,maximumAge:0});
+    setTimeout(()=>{if(r85GpsWatch!==null){try{navigator.geolocation.clearWatch(r85GpsWatch);}catch(e){} r85GpsWatch=null;}},12000);
   };
 
-  function resizeImageToDataUrl(file, cb){
-    const reader = new FileReader();
-    reader.onload = e => {
-      const img = new Image();
-      img.onload = () => {
-        const max = 1100;
-        let w = img.width, h = img.height;
-        if(w > h && w > max){ h = Math.round(h * max / w); w = max; }
-        else if(h >= w && h > max){ w = Math.round(w * max / h); h = max; }
-        const canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img,0,0,w,h);
-        cb(canvas.toDataURL('image/jpeg', .72));
+  function imageToDataUrl(file,cb){
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const max=1100;let w=img.width,h=img.height;
+        if(w>h && w>max){h=Math.round(h*max/w);w=max;} else if(h>=w && h>max){w=Math.round(w*max/h);h=max;}
+        const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        cb(canvas.toDataURL('image/jpeg',0.72));
       };
-      img.src = e.target.result;
+      img.src=e.target.result;
     };
     reader.readAsDataURL(file);
   }
 
-  window.handleR85RiskPhoto = function(event){
-    const file = event.target.files && event.target.files[0];
+  window.r85HandlePhoto=function(event){
+    const file=event.target.files&&event.target.files[0];
     if(!file) return;
-    if(!file.type.startsWith('image/')) return toast('Le fichier sélectionné n’est pas une image.');
-    resizeImageToDataUrl(file, dataUrl => {
-      r85RiskPhotoData = dataUrl;
-      const preview = document.getElementById('r85-photo-preview');
-      const clear = document.getElementById('r85-photo-clear');
-      if(preview){ preview.src = dataUrl; preview.style.display = 'block'; }
+    if(!file.type.startsWith('image/')) return toast('Veuillez sélectionner une image.');
+    imageToDataUrl(file,data=>{
+      r85RiskPhoto=data;
+      const img=document.getElementById('r85-final-photo-preview');
+      const clear=document.getElementById('r85-final-photo-clear');
+      if(img){img.src=data;img.style.display='block';}
       if(clear) clear.classList.remove('hidden');
-      toast('Photo ajoutée au signalement.');
+      toast('Photo ajoutée.');
     });
   };
 
-  window.clearR85RiskPhoto = function(){
-    r85RiskPhotoData = null;
-    const input = document.getElementById('r85-risk-photo-input');
-    const preview = document.getElementById('r85-photo-preview');
-    const clear = document.getElementById('r85-photo-clear');
-    if(input) input.value = '';
-    if(preview){ preview.src = ''; preview.style.display = 'none'; }
+  window.r85ClearPhoto=function(){
+    r85RiskPhoto=null;
+    const input=document.getElementById('r85-final-photo-input');
+    const img=document.getElementById('r85-final-photo-preview');
+    const clear=document.getElementById('r85-final-photo-clear');
+    if(input) input.value='';
+    if(img){img.removeAttribute('src');img.style.display='none';}
     if(clear) clear.classList.add('hidden');
-    toast('Photo retirée.');
   };
 
-  // Signalement ultra simple : plus de choix de gravité/fréquence par le salarié.
-  window.submitRiskReport = async function(){
-    installR85SimpleRiskReport();
-    const client = window.supabaseClient || (typeof supabaseClient !== 'undefined' ? supabaseClient : null);
-    if(!client) return toast('Supabase non chargé. Vérifiez internet.');
+  window.submitRiskReport=async function(){
+    installFinalSimpleReport();
+    const c=client();
+    if(!c) return toast('Supabase non chargé.');
+    const s=getSession();
+    const company=s?.company || document.getElementById('lbl-manager-comp-name')?.innerText?.trim() || '';
+    const employee=s?.name || 'Salarié terrain';
+    if(!company) return toast('Établissement non reconnu. Ouvrez le lien QR salarié.');
+    const category=document.getElementById('risk-category-select')?.value || 'Risque terrain signalé';
+    const desc=document.getElementById('risk-description')?.value.trim() || '';
+    const zone=document.getElementById('r85-final-zone')?.value || '';
+    if(!desc && !r85RiskPhoto) return toast('Ajoutez une courte description ou une photo du risque.');
 
-    const category = document.getElementById('risk-category-select')?.value || 'Risque terrain signalé';
-    const desc = document.getElementById('risk-description')?.value.trim();
-    const zone = document.getElementById('r85-simple-work-zone')?.value || '';
-    if(!desc && !r85RiskPhotoData) return toast('Ajoutez une courte description ou une photo du risque.');
-
-    const s = session();
-    const employeeName = s ? s.name : 'Salarié terrain';
-    const companyCode = s ? s.company : (currentCompany() || 'Établissement non renseigné');
-
-    const payload = {
-      company_code: companyCode,
-      employee_name: employeeName,
+    const payload={
+      company_code:company,
+      employee_name:employee,
       category,
-      level: 'À traiter',
-      frequency: 'Non demandé au salarié',
-      description: desc || 'Photo transmise sans commentaire.',
-      status: 'Nouveau',
-      work_zone: zone || null,
-      gps_lat: r85RiskGps ? r85RiskGps.lat : null,
-      gps_lng: r85RiskGps ? r85RiskGps.lng : null,
-      gps_accuracy: r85RiskGps ? r85RiskGps.accuracy : null,
-      gps_captured_at: r85RiskGps ? r85RiskGps.captured_at : null,
-      photo_data: r85RiskPhotoData || null
+      level:'À traiter',
+      frequency:'Non demandé au salarié',
+      description:desc || 'Photo transmise sans commentaire.',
+      status:'Nouveau',
+      work_zone:zone || null,
+      gps_lat:r85RiskGps ? r85RiskGps.lat : null,
+      gps_lng:r85RiskGps ? r85RiskGps.lng : null,
+      gps_accuracy:r85RiskGps ? r85RiskGps.accuracy : null,
+      gps_captured_at:r85RiskGps ? r85RiskGps.captured_at : null,
+      photo_data:r85RiskPhoto || null
     };
 
-    let {error} = await client.from('prevention_reports').insert([payload]);
-    if(error && /(photo_data|work_zone|gps_)/i.test(error.message || '')){
-      const fallback = {...payload};
-      delete fallback.photo_data; delete fallback.work_zone; delete fallback.gps_lat; delete fallback.gps_lng; delete fallback.gps_accuracy; delete fallback.gps_captured_at;
-      const res = await client.from('prevention_reports').insert([fallback]);
-      error = res.error;
+    const {error}=await c.from('prevention_reports').insert([payload]);
+    if(error){
+      if(/photo_data|work_zone|gps_/i.test(error.message||'')) return toast('Colonnes GPS/photo absentes : lancez le SQL fourni puis réessayez.');
+      return toast('Erreur Supabase : '+error.message);
     }
-    if(error) return toast('Erreur Supabase : ' + error.message);
-
-    try{ if(typeof submitAnonymizedPreventionStat === 'function') await submitAnonymizedPreventionStat({category, level:'À traiter', frequency:'Non demandé au salarié', event_type:'Signalement prévention'}); }catch(e){}
-    const descEl = document.getElementById('risk-description');
-    if(descEl) descEl.value = '';
-    clearR85RiskPhoto();
-    r85RiskGps = null;
-    toast('Signalement envoyé au responsable.');
-    if(typeof switchScreen === 'function') switchScreen('scr-employee');
+    try{ if(typeof submitAnonymizedPreventionStat==='function') await submitAnonymizedPreventionStat({category,level:'À traiter',frequency:'Non demandé au salarié',event_type:'Signalement prévention'}); }catch(e){}
+    const descEl=document.getElementById('risk-description'); if(descEl) descEl.value='';
+    r85ClearPhoto(); r85RiskGps=null;
+    toast('Signalement envoyé avec les éléments disponibles.');
+    showScreen('scr-employee');
   };
 
-  // Vue manager enrichie : photo + bouton Google Maps si disponibles.
-  window.loadManagerReports = async function(){
-    const client = window.supabaseClient || (typeof supabaseClient !== 'undefined' ? supabaseClient : null);
-    if(!client) return toast('Supabase non chargé.');
-    const companyCode = document.getElementById('lbl-manager-comp-name')?.innerText?.trim();
-    if(!companyCode) return;
-    let {data,error} = await client
-      .from('prevention_reports')
+  window.loadManagerReports=async function(){
+    const c=client(); if(!c) return toast('Supabase non chargé.');
+    const company=document.getElementById('lbl-manager-comp-name')?.innerText?.trim(); if(!company) return;
+    const {data,error}=await c.from('prevention_reports')
       .select('id,company_code,employee_name,category,level,frequency,description,status,manager_response,corrective_action,work_zone,gps_lat,gps_lng,gps_accuracy,photo_data,created_at')
-      .eq('company_code', companyCode)
-      .order('created_at',{ascending:false})
-      .limit(30);
-    if(error && /photo_data|work_zone|gps_/i.test(error.message || '')){
-      const res = await client
-        .from('prevention_reports')
-        .select('id,company_code,employee_name,category,level,frequency,description,status,manager_response,corrective_action,created_at')
-        .eq('company_code', companyCode)
-        .order('created_at',{ascending:false})
-        .limit(30);
-      data = res.data; error = res.error;
-    }
-    if(error) return toast('Erreur Supabase : ' + error.message);
-    renderManagerReports(data || []);
+      .eq('company_code',company).order('created_at',{ascending:false}).limit(30);
+    if(error) return toast('Erreur Supabase : '+error.message);
+    renderManagerReports(data||[]);
   };
 
-  window.renderManagerReports = function(reports){
-    const c = document.getElementById('manager-risk-box');
-    if(!c) return;
-    c.innerHTML = '';
-    if(!reports.length){ c.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-8">Aucun danger signalé pour le moment.</p>'; return; }
-    reports.forEach(r => {
-      const hasGps = r.gps_lat && r.gps_lng;
-      const hasPhoto = !!r.photo_data;
-      const zone = r.work_zone || 'Zone non renseignée';
-      const mapLink = hasGps ? googleOpen(r.gps_lat, r.gps_lng) : '';
-      const card = document.createElement('div');
-      card.className = 'p-3 bg-red-50 dark:bg-slate-900 border border-red-200 dark:border-red-800 rounded-xl space-y-3 text-xs';
-      card.innerHTML = `
-        <div class="flex justify-between items-start gap-2">
-          <div>
-            <p class="font-black text-slate-900 dark:text-white">${esc(r.category || 'Signalement terrain')}</p>
-            <p class="text-[10px] text-slate-400">Par ${esc(r.employee_name || '')} - ${new Date(r.created_at).toLocaleString('fr-FR')}</p>
-          </div>
-          <span class="text-[10px] font-black px-2 py-1 rounded bg-white dark:bg-slate-800 text-red-600">À traiter</span>
-        </div>
-        <div class="bg-white dark:bg-slate-800 border rounded-lg p-2 flex flex-col gap-2">
-          <p class="text-[11px] font-black text-slate-600 dark:text-slate-300"><i class="fa-solid fa-location-dot text-restev-blue mr-1"></i>${esc(zone)}</p>
-          ${hasGps ? `<a href="${mapLink}" target="_blank" class="bg-restev-blue text-white text-[10px] font-black px-3 py-2 rounded-lg text-center"><i class="fa-solid fa-map-location-dot mr-1"></i>Ouvrir Google Maps</a>` : `<span class="text-[10px] text-slate-400 italic">GPS non transmis</span>`}
-        </div>
-        ${hasPhoto ? `<img src="${r.photo_data}" class="r85-manager-photo-thumb" alt="Photo du risque signalé">` : ''}
-        <p class="text-slate-600 dark:text-slate-300 font-medium">${esc(r.description || '')}</p>
-        <select onchange="updateReportStatus('${r.id}', this.value)" class="w-full p-2 rounded-lg border text-xs font-bold dark:bg-slate-900 dark:text-white">
-          <option value="Nouveau" ${r.status==='Nouveau'?'selected':''}>Nouveau</option>
-          <option value="Vu par le responsable" ${r.status==='Vu par le responsable'?'selected':''}>Vu par le responsable</option>
-          <option value="En cours de traitement" ${r.status==='En cours de traitement'?'selected':''}>En cours de traitement</option>
-          <option value="Traité" ${r.status==='Traité'?'selected':''}>Traité</option>
-        </select>
-        <textarea id="response-${r.id}" rows="2" placeholder="Réponse au salarié..." class="w-full p-2 rounded-lg border text-xs dark:bg-slate-900 dark:text-white">${esc(r.manager_response || '')}</textarea>
-        <textarea id="action-${r.id}" rows="2" placeholder="Action corrective..." class="w-full p-2 rounded-lg border text-xs dark:bg-slate-900 dark:text-white">${esc(r.corrective_action || '')}</textarea>
-        <button onclick="sendManagerResponse('${r.id}')" class="w-full bg-restev-blue text-white py-2 rounded-lg text-[10px] font-black uppercase">Répondre / enregistrer</button>
-      `;
-      c.appendChild(card);
+  window.renderManagerReports=function(reports){
+    const box=document.getElementById('manager-risk-box'); if(!box) return;
+    box.innerHTML='';
+    if(!reports.length){box.innerHTML='<p class="text-xs text-slate-400 italic text-center py-8">Aucun danger signalé pour le moment.</p>';return;}
+    reports.forEach(r=>{
+      const hasGps=r.gps_lat&&r.gps_lng;
+      const map=hasGps?googleOpen(r.gps_lat,r.gps_lng):'';
+      const card=document.createElement('div');
+      card.className='p-3 bg-red-50 dark:bg-slate-900 border border-red-200 dark:border-red-800 rounded-xl space-y-3 text-xs';
+      card.innerHTML=`
+        <div class="flex justify-between items-start gap-2"><div><p class="font-black text-slate-900 dark:text-white">${esc(r.category||'Signalement terrain')}</p><p class="text-[10px] text-slate-400">Par ${esc(r.employee_name||'')} - ${new Date(r.created_at).toLocaleString('fr-FR')}</p></div><span class="text-[10px] font-black px-2 py-1 rounded bg-white dark:bg-slate-800 text-red-600">À traiter</span></div>
+        <div class="bg-white dark:bg-slate-800 border rounded-lg p-2 flex flex-col gap-2"><p class="text-[11px] font-black text-slate-600 dark:text-slate-300"><i class="fa-solid fa-location-dot text-restev-blue mr-1"></i>${esc(r.work_zone||'Zone non renseignée')}</p>${hasGps?`<a href="${map}" target="_blank" class="bg-restev-blue text-white text-[10px] font-black px-3 py-2 rounded-lg text-center"><i class="fa-solid fa-map-location-dot mr-1"></i>Ouvrir Google Maps</a>`:'<span class="text-[10px] text-slate-400 italic">GPS non transmis</span>'}</div>
+        ${r.photo_data?`<img src="${r.photo_data}" class="r85-manager-risk-photo" alt="Photo du risque">`:''}
+        <p class="text-slate-600 dark:text-slate-300 font-medium">${esc(r.description||'')}</p>
+        <select onchange="updateReportStatus('${r.id}', this.value)" class="w-full p-2 rounded-lg border text-xs font-bold dark:bg-slate-900 dark:text-white"><option value="Nouveau" ${r.status==='Nouveau'?'selected':''}>Nouveau</option><option value="Vu par le responsable" ${r.status==='Vu par le responsable'?'selected':''}>Vu par le responsable</option><option value="En cours de traitement" ${r.status==='En cours de traitement'?'selected':''}>En cours de traitement</option><option value="Traité" ${r.status==='Traité'?'selected':''}>Traité</option></select>
+        <textarea id="response-${r.id}" rows="2" placeholder="Réponse au salarié..." class="w-full p-2 rounded-lg border text-xs dark:bg-slate-900 dark:text-white">${esc(r.manager_response||'')}</textarea>
+        <textarea id="action-${r.id}" rows="2" placeholder="Action corrective..." class="w-full p-2 rounded-lg border text-xs dark:bg-slate-900 dark:text-white">${esc(r.corrective_action||'')}</textarea>
+        <button onclick="sendManagerResponse('${r.id}')" class="w-full bg-restev-blue text-white py-2 rounded-lg text-[10px] font-black uppercase">Répondre / enregistrer</button>`;
+      box.appendChild(card);
     });
   };
 
-  const oldSwitchScreen = window.switchScreen;
-  window.switchScreen = function(screenId){
-    if(typeof oldSwitchScreen === 'function') oldSwitchScreen(screenId);
-    if(screenId === 'scr-report') setTimeout(() => { installR85SimpleRiskReport(); loadReportZones(); }, 250);
+  const previousHandleManagerLogin=window.handleManagerLogin;
+  window.handleManagerLogin=function(){
+    if(isEmployeeMode()){lockEmployeeOnly();toast('Accès manager bloqué depuis le QR salarié.');return;}
+    if(typeof previousHandleManagerLogin==='function') return previousHandleManagerLogin();
   };
 
-  document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => { installR85SimpleRiskReport(); }, 800);
-    console.log(PATCH_VERSION + ' installé');
+  window.backFromTraining=function(){ if(isEmployeeMode()) return showScreen('scr-employee'); showScreen('scr-home'); };
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    hydrateEmployeeFromQr();
+    if(isEmployeeMode()){setTimeout(()=>showScreen('scr-employee'),30);setTimeout(lockEmployeeOnly,150);setTimeout(lockEmployeeOnly,900);} 
+    setTimeout(()=>installFinalSimpleReport(),800);
+    console.log(PATCH_VERSION+' installé');
   });
 })();
 </script>
@@ -3257,357 +3312,412 @@ Fonctions ajoutées :
 
 
 <!-- =========================================================
-PATCH RESTEV 85 — SIGNALEMENT SALARIÉ SIMPLIFIÉ + GOOGLE MAPS + PHOTO
+PATCH FINAL RESTEV 85 — SALARIÉ UNIQUEMENT + ENVOI COMPLET RISQUE GPS PHOTO
 À coller EN DERNIER juste avant </body>.
-Fonctions ajoutées :
-- Carte Google Maps vue par le salarié pour géolocaliser le risque.
-- Prise de photo du risque avec appareil photo smartphone.
-- Signalement simplifié : le salarié ne choisit plus la gravité.
-- Enregistrement Supabase : work_zone, gps_lat, gps_lng, gps_accuracy, photo_data.
+Objectifs :
+1) QR salarié = accès uniquement aux pages salarié.
+2) Navigation salarié conservée.
+3) Signalement simple : pas de gravité à choisir.
+4) Envoi obligatoire des éléments : description/photo + GPS Google Maps si autorisé + zone.
+5) Manager voit photo + bouton Google Maps.
 ========================================================= -->
-<style id="r85-simple-report-google-photo-style">
-  #r85-simple-report-block {
-    border: 1px solid rgba(148,163,184,.35);
-    border-radius: 1.75rem;
-    padding: 1rem;
-    background: rgba(255,255,255,.88);
-    box-shadow: 0 18px 45px rgba(15,23,42,.10);
-    backdrop-filter: blur(18px);
+<style id="r85-final-employee-only-send-elements-style">
+  /* Pages autorisées en mode salarié */
+  body.r85-employee-only #scr-employee,
+  body.r85-employee-only #scr-report,
+  body.r85-employee-only #scr-qcm,
+  body.r85-employee-only #scr-qcm-success,
+  body.r85-employee-only #scr-resources,
+  body.r85-employee-only #scr-training,
+  body.r85-employee-only #scr-employee-messages,
+  body.r85-employee-only #scr-employee *,
+  body.r85-employee-only #scr-report *,
+  body.r85-employee-only #scr-qcm *,
+  body.r85-employee-only #scr-qcm-success *,
+  body.r85-employee-only #scr-resources *,
+  body.r85-employee-only #scr-training *,
+  body.r85-employee-only #scr-employee-messages * {
+    pointer-events:auto !important;
   }
-  html.dark #r85-simple-report-block,
-  body.dark #r85-simple-report-block {
-    background: rgba(15,23,42,.92);
-    border-color: rgba(71,85,105,.8);
+
+  body.r85-employee-only #scr-employee.active,
+  body.r85-employee-only #scr-report.active,
+  body.r85-employee-only #scr-qcm.active,
+  body.r85-employee-only #scr-qcm-success.active,
+  body.r85-employee-only #scr-resources.active,
+  body.r85-employee-only #scr-training.active,
+  body.r85-employee-only #scr-employee-messages.active {
+    display:block !important;
+    visibility:visible !important;
   }
-  #r85-simple-google-map {
-    width: 100%;
-    height: 310px;
-    border: 0;
-    border-radius: 1.25rem;
-    background: #e2e8f0;
+
+  /* Pages interdites QR salarié */
+  body.r85-employee-only #scr-home,
+  body.r85-employee-only #scr-auth,
+  body.r85-employee-only #scr-manager,
+  body.r85-employee-only #scr-direction,
+  body.r85-employee-only #scr-studio,
+  body.r85-employee-only #r85-maintenance-panel,
+  body.r85-employee-only #r85-manager-zones-panel,
+  body.r85-employee-only #generated-code-box,
+  body.r85-employee-only button[onclick*="scr-home"],
+  body.r85-employee-only button[onclick*="scr-auth"],
+  body.r85-employee-only button[onclick*="scr-manager"],
+  body.r85-employee-only button[onclick*="scr-direction"],
+  body.r85-employee-only button[onclick*="createNewCompany"] {
+    display:none !important;
+    visibility:hidden !important;
+    pointer-events:none !important;
   }
-  html.dark #r85-simple-google-map { filter: brightness(.82) contrast(1.08); }
-  #r85-photo-preview {
-    width: 100%;
-    max-height: 260px;
-    object-fit: cover;
-    border-radius: 1.25rem;
-    border: 1px solid rgba(148,163,184,.5);
-    display: none;
+
+  /* Signalement simplifié */
+  #r85-final-simple-report {
+    border:1px solid rgba(148,163,184,.35);
+    border-radius:1.75rem;
+    padding:1rem;
+    background:rgba(255,255,255,.90);
+    box-shadow:0 18px 45px rgba(15,23,42,.10);
+    backdrop-filter:blur(18px);
   }
-  .r85-clean-field {
-    width: 100%;
-    padding: .85rem;
-    border-radius: 1rem;
-    border: 1px solid rgba(148,163,184,.45);
-    font-size: .78rem;
-    font-weight: 800;
-    background: rgba(248,250,252,.95);
+  html.dark #r85-final-simple-report,
+  body.dark #r85-final-simple-report {
+    background:rgba(15,23,42,.92);
+    border-color:rgba(71,85,105,.82);
   }
-  html.dark .r85-clean-field,
-  body.dark .r85-clean-field {
-    background: rgba(2,6,23,.75) !important;
-    color: #f8fafc !important;
-    border-color: rgba(71,85,105,.85) !important;
+  #r85-final-google-map {
+    width:100%;
+    height:315px;
+    border:0;
+    border-radius:1.25rem;
+    background:#e2e8f0;
   }
-  .r85-photo-btn {
-    display: block;
-    text-align: center;
-    width: 100%;
-    padding: .9rem;
-    border-radius: 1rem;
-    background: linear-gradient(135deg,#3a7bd5,#245ca6);
-    color: white;
-    font-size: .75rem;
-    font-weight: 900;
-    box-shadow: 0 10px 24px rgba(58,123,213,.22);
+  html.dark #r85-final-google-map { filter:brightness(.82) contrast(1.08); }
+  .r85-field-clean {
+    width:100%;
+    padding:.88rem;
+    border-radius:1rem;
+    border:1px solid rgba(148,163,184,.45);
+    font-size:.78rem;
+    font-weight:800;
+    background:rgba(248,250,252,.95);
   }
-  .r85-hidden-old-report { display:none !important; visibility:hidden !important; pointer-events:none !important; }
-  .r85-manager-photo-thumb { width:100%; max-height:220px; object-fit:cover; border-radius:1rem; border:1px solid rgba(148,163,184,.35); }
+  html.dark .r85-field-clean,
+  body.dark .r85-field-clean {
+    background:rgba(2,6,23,.75) !important;
+    color:#f8fafc !important;
+    border-color:rgba(71,85,105,.85) !important;
+  }
+  #r85-final-photo-preview {
+    width:100%;
+    max-height:260px;
+    object-fit:cover;
+    border-radius:1.25rem;
+    border:1px solid rgba(148,163,184,.5);
+    display:none;
+  }
+  .r85-camera-label {
+    display:block;
+    width:100%;
+    text-align:center;
+    padding:.92rem;
+    border-radius:1rem;
+    color:white;
+    font-size:.75rem;
+    font-weight:900;
+    background:linear-gradient(135deg,#3a7bd5,#245ca6);
+    box-shadow:0 10px 24px rgba(58,123,213,.22);
+  }
+  .r85-hide-old-risk { display:none !important; visibility:hidden !important; pointer-events:none !important; }
+  .r85-manager-risk-photo { width:100%; max-height:230px; object-fit:cover; border-radius:1rem; border:1px solid rgba(148,163,184,.35); }
 </style>
 
 <script>
 (function(){
-  const PATCH_VERSION = 'RESTEV85_SIMPLE_REPORT_GOOGLE_PHOTO_2026_07_06';
-  let r85RiskGps = null;
-  let r85GeoWatch = null;
-  let r85RiskPhotoData = null;
+  const PATCH_VERSION='RESTEV85_FINAL_EMPLOYEE_ONLY_SEND_GPS_PHOTO_2026_07_06';
+  const EMPLOYEE_SCREENS=['scr-employee','scr-report','scr-qcm','scr-qcm-success','scr-resources','scr-training','scr-employee-messages'];
+  const BLOCKED_SCREENS=['scr-home','scr-auth','scr-manager','scr-direction','scr-studio'];
+  let r85RiskGps=null;
+  let r85RiskPhoto=null;
+  let r85GpsWatch=null;
 
-  function toast(msg){ if(typeof showToast === 'function') showToast(msg); else alert(msg); }
-  function esc(v){ if(typeof escapeHtml === 'function') return escapeHtml(v || ''); return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-  function session(){ try { return currentEmployeeSession || window.currentEmployeeSession || null; } catch(e){ return window.currentEmployeeSession || null; } }
-  function currentCompany(){ return (session()?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim(); }
+  function client(){ return window.supabaseClient || (typeof supabaseClient !== 'undefined' ? supabaseClient : null); }
+  function toast(m){ if(typeof showToast==='function') showToast(m); else alert(m); }
+  function esc(v){ if(typeof escapeHtml==='function') return escapeHtml(v || ''); return String(v ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function params(){ return new URLSearchParams(location.search); }
+  function isEmployeeUrl(){ const p=params(); return !!(p.get('emp') && p.get('comp')); }
+  function getSession(){ try{return currentEmployeeSession || window.currentEmployeeSession || null;}catch(e){return window.currentEmployeeSession || null;} }
+  function hasEmployeeSession(){ const s=getSession(); return !!(s && s.name && s.company); }
+  function isEmployeeMode(){ return isEmployeeUrl() || hasEmployeeSession(); }
   function googleEmbed(lat,lng,z=21){ return `https://maps.google.com/maps?q=${encodeURIComponent(lat+','+lng)}&z=${z}&output=embed`; }
   function googleOpen(lat,lng){ return `https://www.google.com/maps?q=${encodeURIComponent(lat+','+lng)}`; }
 
-  async function fetchZones(){
-    if(!window.supabaseClient && typeof supabaseClient === 'undefined') return [];
-    const client = window.supabaseClient || supabaseClient;
-    const c = currentCompany();
-    if(!client || !c) return [];
-    try{
-      const {data,error} = await client.from('work_zones').select('id,name,description').eq('company_code', c).order('name',{ascending:true});
-      if(error) return [];
-      return data || [];
-    }catch(e){ return []; }
+  function hydrateEmployeeFromQr(){
+    if(!isEmployeeUrl()) return;
+    const p=params();
+    const emp=p.get('emp');
+    const comp=p.get('comp');
+    const sector=p.get('sector') || p.get('secteur') || 'Autre';
+    let epis=[];
+    try{ epis=JSON.parse(decodeURIComponent(p.get('epis') || '[]')); if(!Array.isArray(epis)) epis=[]; }catch(e){ epis=[]; }
+    try{ currentEmployeeSession={name:emp, company:comp, sector, epis}; }catch(e){ window.currentEmployeeSession={name:emp, company:comp, sector, epis}; }
+    const w=document.getElementById('lbl-emp-welcome');
+    const c=document.getElementById('lbl-emp-company');
+    if(w && emp) w.innerText='Bonjour, '+emp;
+    if(c && comp) c.innerText='Établissement : '+comp+(sector?' | Secteur : '+sector:'');
   }
 
-  async function loadReportZones(){
-    const sel = document.getElementById('r85-simple-work-zone');
-    if(!sel) return;
-    const old = sel.value;
-    const zones = await fetchZones();
-    sel.innerHTML = '<option value="">Lieu / zone non renseigné</option>' + zones.map(z => `<option value="${esc(z.name)}">${esc(z.name)}</option>`).join('');
-    if(old) sel.value = old;
+  function display(el,value){
+    if(!el) return;
+    el.style.setProperty('display',value,'important');
+    el.style.setProperty('visibility',value==='none'?'hidden':'visible','important');
+    el.style.setProperty('pointer-events',value==='none'?'none':'auto','important');
   }
 
-  function hideOldComplexFields(){
-    // Masque les champs qui faisaient réfléchir le salarié : gravité / fréquence / ancienne carte.
-    ['risk-level','risk-frequency','map','geo-status'].forEach(id => {
-      const el = document.getElementById(id);
-      if(el){
-        const wrap = el.closest('.grid') || el.closest('div') || el;
-        wrap.classList.add('r85-hidden-old-report');
-      }
+  function showScreen(id){
+    if(isEmployeeMode() && !EMPLOYEE_SCREENS.includes(id)) id='scr-employee';
+    document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active'); display(s,'none');});
+    const t=document.getElementById(id);
+    if(t){
+      t.classList.add('active'); display(t,'block');
+      if(id==='scr-report') setTimeout(()=>{ installFinalSimpleReport(); },220);
+      if(id==='scr-qcm-success') setTimeout(()=>{ try{ if(typeof initSignaturePads==='function') initSignaturePads(); }catch(e){} },250);
+      if(id==='scr-training') setTimeout(()=>{ try{ if(typeof adjustTutoViewer==='function') adjustTutoViewer(); }catch(e){} },250);
+      scrollTo({top:0,behavior:'smooth'});
+    }
+    if(isEmployeeMode()) setTimeout(lockEmployeeOnly,20);
+  }
+
+  function lockEmployeeOnly(){
+    if(!isEmployeeMode()) return;
+    document.body.classList.add('r85-employee-only');
+    hydrateEmployeeFromQr();
+    BLOCKED_SCREENS.forEach(id=>{const el=document.getElementById(id); if(el){el.classList.remove('active'); display(el,'none');}});
+    document.querySelectorAll("button[onclick*='scr-home'],button[onclick*='scr-auth'],button[onclick*='scr-manager'],button[onclick*='scr-direction'],button[onclick*='createNewCompany']").forEach(b=>display(b,'none'));
+    const active=document.querySelector('.screen.active');
+    if(!active || !EMPLOYEE_SCREENS.includes(active.id)) showScreen('scr-employee');
+  }
+
+  window.switchScreen=function(id){ showScreen(id); };
+
+  // Rebranche les boutons salarié au cas où un ancien verrouillage gêne l'onclick.
+  document.addEventListener('click',function(e){
+    if(!isEmployeeMode()) return;
+    const btn=e.target.closest('button');
+    if(!btn) return;
+    const area=btn.closest('#scr-employee,#scr-report,#scr-qcm,#scr-qcm-success,#scr-resources,#scr-training,#scr-employee-messages');
+    if(!area) return;
+    const on=btn.getAttribute('onclick')||'';
+    if(on.includes("switchScreen('scr-report')") || on.includes('switchScreen("scr-report")')){e.preventDefault();e.stopImmediatePropagation();showScreen('scr-report');return;}
+    if(on.includes("switchScreen('scr-training')") || on.includes('switchScreen("scr-training")')){e.preventDefault();e.stopImmediatePropagation();showScreen('scr-training');return;}
+    if(on.includes("switchScreen('scr-employee')") || on.includes('switchScreen("scr-employee")')){e.preventDefault();e.stopImmediatePropagation();showScreen('scr-employee');return;}
+    if(on.includes('startEmployeeQCM')){e.preventDefault();e.stopImmediatePropagation();try{startEmployeeQCM();}catch(err){console.warn(err);showScreen('scr-qcm');}return;}
+    if(on.includes('openEmployeeResources')){e.preventDefault();e.stopImmediatePropagation();try{openEmployeeResources();}catch(err){console.warn(err);showScreen('scr-resources');}return;}
+    if(on.includes('openEmployeeMessages')){e.preventDefault();e.stopImmediatePropagation();try{openEmployeeMessages();}catch(err){console.warn(err);showScreen('scr-employee-messages');}return;}
+  },true);
+
+  function hideOldRiskFields(){
+    ['risk-level','risk-frequency','map','geo-status'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){ const wrap=el.closest('.grid') || el.closest('div') || el; wrap.classList.add('r85-hide-old-risk'); }
     });
+    document.querySelectorAll('#scr-report button[onclick="submitRiskReport()"],#scr-report button[onclick="submitRiskReport(); return false;"]').forEach(b=>b.classList.add('r85-hide-old-risk'));
   }
 
-  window.installR85SimpleRiskReport = function(){
-    const screen = document.getElementById('scr-report');
+  async function loadZones(){
+    const sel=document.getElementById('r85-final-zone');
+    const c=client();
+    const s=getSession();
+    const company=s?.company || document.getElementById('lbl-manager-comp-name')?.innerText?.trim() || '';
+    if(!sel || !c || !company) return;
+    try{
+      const {data,error}=await c.from('work_zones').select('name').eq('company_code',company).order('name',{ascending:true});
+      if(error) return;
+      const old=sel.value;
+      sel.innerHTML='<option value="">Zone / lieu non renseigné</option>'+(data||[]).map(z=>`<option value="${esc(z.name)}">${esc(z.name)}</option>`).join('');
+      if(old) sel.value=old;
+    }catch(e){}
+  }
+
+  window.installFinalSimpleReport=function(){
+    const screen=document.getElementById('scr-report');
     if(!screen) return;
-    hideOldComplexFields();
-
-    // Cache l'ancien bouton d'envoi pour éviter doublon.
-    document.querySelectorAll('#scr-report button[onclick="submitRiskReport()"], #scr-report button[onclick="submitRiskReport(); return false;"]').forEach(b => b.classList.add('r85-hidden-old-report'));
-
-    if(document.getElementById('r85-simple-report-block')) return;
-
-    const block = document.createElement('div');
-    block.id = 'r85-simple-report-block';
-    block.className = 'space-y-4';
-    block.innerHTML = `
+    hideOldRiskFields();
+    if(document.getElementById('r85-final-simple-report')) return;
+    const block=document.createElement('div');
+    block.id='r85-final-simple-report';
+    block.className='space-y-4';
+    block.innerHTML=`
       <div class="space-y-1">
-        <p class="text-xs font-black dark:text-white flex items-center gap-2"><i class="fa-solid fa-location-dot text-restev-blue"></i> Où se situe le risque ?</p>
-        <p class="text-[11px] text-slate-500 dark:text-slate-300 leading-relaxed">Autorisez la position pour afficher le lieu sur Google Maps. Le manager pourra ouvrir la carte.</p>
+        <p class="text-xs font-black dark:text-white"><i class="fa-solid fa-map-location-dot text-restev-blue mr-1"></i> Localisation du risque</p>
+        <p class="text-[11px] text-slate-500 dark:text-slate-300 leading-relaxed">Le salarié localise le risque. Le responsable reçoit le lien Google Maps.</p>
       </div>
-      <select id="r85-simple-work-zone" class="r85-clean-field"><option value="">Lieu / zone non renseigné</option></select>
-      <button type="button" onclick="requestR85RiskGeolocation()" class="w-full bg-restev-blue text-white py-3 rounded-xl text-xs font-black">
-        <i class="fa-solid fa-location-crosshairs mr-1"></i> Localiser le risque sur Google Maps
-      </button>
-      <iframe id="r85-simple-google-map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=46.670,-1.426&z=13&output=embed"></iframe>
-      <a id="r85-simple-google-open" href="https://www.google.com/maps?q=46.670,-1.426" target="_blank" class="block text-center bg-white dark:bg-slate-900 border text-restev-blue dark:text-blue-300 py-2 rounded-xl text-[10px] font-black">Ouvrir dans Google Maps</a>
-      <div id="r85-simple-gps-status" class="text-[11px] font-bold text-slate-500 dark:text-slate-300 bg-white dark:bg-slate-900 border rounded-xl p-3">Position non transmise pour le moment.</div>
+      <select id="r85-final-zone" class="r85-field-clean"><option value="">Zone / lieu non renseigné</option></select>
+      <button type="button" onclick="r85LocateRisk()" class="w-full bg-restev-blue text-white py-3 rounded-xl text-xs font-black"><i class="fa-solid fa-location-crosshairs mr-1"></i> Localiser avec Google Maps</button>
+      <iframe id="r85-final-google-map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=46.670,-1.426&z=13&output=embed"></iframe>
+      <a id="r85-final-google-link" href="https://www.google.com/maps?q=46.670,-1.426" target="_blank" class="block text-center bg-white dark:bg-slate-900 border text-restev-blue dark:text-blue-300 py-2 rounded-xl text-[10px] font-black">Ouvrir dans Google Maps</a>
+      <div id="r85-final-gps-status" class="text-[11px] font-bold text-slate-500 dark:text-slate-300 bg-white dark:bg-slate-900 border rounded-xl p-3">GPS non transmis pour le moment.</div>
 
       <div class="space-y-2 pt-2">
-        <p class="text-xs font-black dark:text-white flex items-center gap-2"><i class="fa-solid fa-camera text-restev-magenta"></i> Photo du risque identifié</p>
-        <input id="r85-risk-photo-input" type="file" accept="image/*" capture="environment" class="hidden" onchange="handleR85RiskPhoto(event)">
-        <label for="r85-risk-photo-input" class="r85-photo-btn"><i class="fa-solid fa-camera mr-1"></i> Prendre une photo / Ajouter une image</label>
-        <img id="r85-photo-preview" alt="Aperçu du risque identifié">
-        <button type="button" onclick="clearR85RiskPhoto()" id="r85-photo-clear" class="hidden w-full bg-slate-100 dark:bg-slate-700 dark:text-white py-2 rounded-xl text-[10px] font-black">Retirer la photo</button>
+        <p class="text-xs font-black dark:text-white"><i class="fa-solid fa-camera text-restev-magenta mr-1"></i> Photo du risque identifié</p>
+        <input id="r85-final-photo-input" type="file" accept="image/*" capture="environment" class="hidden" onchange="r85HandlePhoto(event)">
+        <label for="r85-final-photo-input" class="r85-camera-label"><i class="fa-solid fa-camera mr-1"></i> Prendre une photo / ajouter une image</label>
+        <img id="r85-final-photo-preview" alt="Photo du risque">
+        <button id="r85-final-photo-clear" type="button" onclick="r85ClearPhoto()" class="hidden w-full bg-slate-100 dark:bg-slate-700 dark:text-white py-2 rounded-xl text-[10px] font-black">Retirer la photo</button>
       </div>
-
-      <button type="button" onclick="submitRiskReport()" class="w-full bg-gradient-to-r from-red-600 to-pink-600 text-white py-3.5 rounded-xl text-sm font-extrabold shadow-lg">
-        <i class="fa-solid fa-paper-plane mr-1"></i> Envoyer le signalement au responsable
-      </button>
+      <button type="button" onclick="submitRiskReport()" class="w-full bg-gradient-to-r from-red-600 to-pink-600 text-white py-3.5 rounded-xl text-sm font-extrabold shadow-lg"><i class="fa-solid fa-paper-plane mr-1"></i> Envoyer le signalement</button>
     `;
-
-    const categoryBlock = document.getElementById('risk-category-select')?.closest('div');
-    if(categoryBlock) screen.insertBefore(block, categoryBlock);
-    else screen.prepend(block);
-    loadReportZones();
+    const categoryBlock=document.getElementById('risk-category-select')?.closest('div');
+    if(categoryBlock) screen.insertBefore(block,categoryBlock); else screen.prepend(block);
+    loadZones();
   };
 
-  window.requestR85RiskGeolocation = function(){
-    installR85SimpleRiskReport();
-    const status = document.getElementById('r85-simple-gps-status');
-    if(!navigator.geolocation){ if(status) status.innerHTML = 'Géolocalisation non compatible avec ce navigateur.'; return; }
-    if(status) status.innerHTML = 'Demande GPS en cours…';
-
-    if(r85GeoWatch !== null){ try{ navigator.geolocation.clearWatch(r85GeoWatch); }catch(e){} r85GeoWatch = null; }
-
-    let best = null;
-    const ok = pos => {
-      const p = {lat:pos.coords.latitude, lng:pos.coords.longitude, accuracy:pos.coords.accuracy, captured_at:new Date().toISOString()};
-      if(!best || p.accuracy < best.accuracy){ best = p; r85RiskGps = p; }
-      const frame = document.getElementById('r85-simple-google-map');
-      const link = document.getElementById('r85-simple-google-open');
-      if(frame) frame.src = googleEmbed(r85RiskGps.lat, r85RiskGps.lng, 21);
-      if(link) link.href = googleOpen(r85RiskGps.lat, r85RiskGps.lng);
-      if(status) status.innerHTML = `📍 Risque localisé sur Google Maps — précision environ <b>${Math.round(r85RiskGps.accuracy || 0)} m</b>`;
+  window.r85LocateRisk=function(){
+    installFinalSimpleReport();
+    const st=document.getElementById('r85-final-gps-status');
+    if(!navigator.geolocation){ if(st) st.innerHTML='GPS non compatible avec ce navigateur.'; return; }
+    if(st) st.innerHTML='Recherche GPS en cours…';
+    if(r85GpsWatch!==null){try{navigator.geolocation.clearWatch(r85GpsWatch);}catch(e){} r85GpsWatch=null;}
+    let best=null;
+    const ok=pos=>{
+      const p={lat:pos.coords.latitude,lng:pos.coords.longitude,accuracy:pos.coords.accuracy,captured_at:new Date().toISOString()};
+      if(!best || p.accuracy<best.accuracy){best=p;r85RiskGps=p;}
+      const frame=document.getElementById('r85-final-google-map');
+      const link=document.getElementById('r85-final-google-link');
+      if(frame) frame.src=googleEmbed(r85RiskGps.lat,r85RiskGps.lng,21);
+      if(link) link.href=googleOpen(r85RiskGps.lat,r85RiskGps.lng);
+      if(st) st.innerHTML=`📍 Position transmise — précision environ <b>${Math.round(r85RiskGps.accuracy||0)} m</b>`;
     };
-    const ko = err => { if(status) status.innerHTML = `<b>GPS refusé ou indisponible.</b><br>${esc(err.message || '')}<br>Le signalement peut quand même être envoyé avec une photo et une description.`; };
-    r85GeoWatch = navigator.geolocation.watchPosition(ok, ko, {enableHighAccuracy:true, timeout:25000, maximumAge:0});
-    setTimeout(()=>{ if(r85GeoWatch !== null){ try{navigator.geolocation.clearWatch(r85GeoWatch);}catch(e){} r85GeoWatch=null; } },12000);
+    const ko=err=>{ if(st) st.innerHTML=`GPS refusé ou indisponible. Le signalement peut être envoyé avec photo et description.<br>${esc(err.message||'')}`; };
+    r85GpsWatch=navigator.geolocation.watchPosition(ok,ko,{enableHighAccuracy:true,timeout:25000,maximumAge:0});
+    setTimeout(()=>{if(r85GpsWatch!==null){try{navigator.geolocation.clearWatch(r85GpsWatch);}catch(e){} r85GpsWatch=null;}},12000);
   };
 
-  function resizeImageToDataUrl(file, cb){
-    const reader = new FileReader();
-    reader.onload = e => {
-      const img = new Image();
-      img.onload = () => {
-        const max = 1100;
-        let w = img.width, h = img.height;
-        if(w > h && w > max){ h = Math.round(h * max / w); w = max; }
-        else if(h >= w && h > max){ w = Math.round(w * max / h); h = max; }
-        const canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img,0,0,w,h);
-        cb(canvas.toDataURL('image/jpeg', .72));
+  function imageToDataUrl(file,cb){
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const max=1100;let w=img.width,h=img.height;
+        if(w>h && w>max){h=Math.round(h*max/w);w=max;} else if(h>=w && h>max){w=Math.round(w*max/h);h=max;}
+        const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        cb(canvas.toDataURL('image/jpeg',0.72));
       };
-      img.src = e.target.result;
+      img.src=e.target.result;
     };
     reader.readAsDataURL(file);
   }
 
-  window.handleR85RiskPhoto = function(event){
-    const file = event.target.files && event.target.files[0];
+  window.r85HandlePhoto=function(event){
+    const file=event.target.files&&event.target.files[0];
     if(!file) return;
-    if(!file.type.startsWith('image/')) return toast('Le fichier sélectionné n’est pas une image.');
-    resizeImageToDataUrl(file, dataUrl => {
-      r85RiskPhotoData = dataUrl;
-      const preview = document.getElementById('r85-photo-preview');
-      const clear = document.getElementById('r85-photo-clear');
-      if(preview){ preview.src = dataUrl; preview.style.display = 'block'; }
+    if(!file.type.startsWith('image/')) return toast('Veuillez sélectionner une image.');
+    imageToDataUrl(file,data=>{
+      r85RiskPhoto=data;
+      const img=document.getElementById('r85-final-photo-preview');
+      const clear=document.getElementById('r85-final-photo-clear');
+      if(img){img.src=data;img.style.display='block';}
       if(clear) clear.classList.remove('hidden');
-      toast('Photo ajoutée au signalement.');
+      toast('Photo ajoutée.');
     });
   };
 
-  window.clearR85RiskPhoto = function(){
-    r85RiskPhotoData = null;
-    const input = document.getElementById('r85-risk-photo-input');
-    const preview = document.getElementById('r85-photo-preview');
-    const clear = document.getElementById('r85-photo-clear');
-    if(input) input.value = '';
-    if(preview){ preview.src = ''; preview.style.display = 'none'; }
+  window.r85ClearPhoto=function(){
+    r85RiskPhoto=null;
+    const input=document.getElementById('r85-final-photo-input');
+    const img=document.getElementById('r85-final-photo-preview');
+    const clear=document.getElementById('r85-final-photo-clear');
+    if(input) input.value='';
+    if(img){img.removeAttribute('src');img.style.display='none';}
     if(clear) clear.classList.add('hidden');
-    toast('Photo retirée.');
   };
 
-  // Signalement ultra simple : plus de choix de gravité/fréquence par le salarié.
-  window.submitRiskReport = async function(){
-    installR85SimpleRiskReport();
-    const client = window.supabaseClient || (typeof supabaseClient !== 'undefined' ? supabaseClient : null);
-    if(!client) return toast('Supabase non chargé. Vérifiez internet.');
+  window.submitRiskReport=async function(){
+    installFinalSimpleReport();
+    const c=client();
+    if(!c) return toast('Supabase non chargé.');
+    const s=getSession();
+    const company=s?.company || document.getElementById('lbl-manager-comp-name')?.innerText?.trim() || '';
+    const employee=s?.name || 'Salarié terrain';
+    if(!company) return toast('Établissement non reconnu. Ouvrez le lien QR salarié.');
+    const category=document.getElementById('risk-category-select')?.value || 'Risque terrain signalé';
+    const desc=document.getElementById('risk-description')?.value.trim() || '';
+    const zone=document.getElementById('r85-final-zone')?.value || '';
+    if(!desc && !r85RiskPhoto) return toast('Ajoutez une courte description ou une photo du risque.');
 
-    const category = document.getElementById('risk-category-select')?.value || 'Risque terrain signalé';
-    const desc = document.getElementById('risk-description')?.value.trim();
-    const zone = document.getElementById('r85-simple-work-zone')?.value || '';
-    if(!desc && !r85RiskPhotoData) return toast('Ajoutez une courte description ou une photo du risque.');
-
-    const s = session();
-    const employeeName = s ? s.name : 'Salarié terrain';
-    const companyCode = s ? s.company : (currentCompany() || 'Établissement non renseigné');
-
-    const payload = {
-      company_code: companyCode,
-      employee_name: employeeName,
+    const payload={
+      company_code:company,
+      employee_name:employee,
       category,
-      level: 'À traiter',
-      frequency: 'Non demandé au salarié',
-      description: desc || 'Photo transmise sans commentaire.',
-      status: 'Nouveau',
-      work_zone: zone || null,
-      gps_lat: r85RiskGps ? r85RiskGps.lat : null,
-      gps_lng: r85RiskGps ? r85RiskGps.lng : null,
-      gps_accuracy: r85RiskGps ? r85RiskGps.accuracy : null,
-      gps_captured_at: r85RiskGps ? r85RiskGps.captured_at : null,
-      photo_data: r85RiskPhotoData || null
+      level:'À traiter',
+      frequency:'Non demandé au salarié',
+      description:desc || 'Photo transmise sans commentaire.',
+      status:'Nouveau',
+      work_zone:zone || null,
+      gps_lat:r85RiskGps ? r85RiskGps.lat : null,
+      gps_lng:r85RiskGps ? r85RiskGps.lng : null,
+      gps_accuracy:r85RiskGps ? r85RiskGps.accuracy : null,
+      gps_captured_at:r85RiskGps ? r85RiskGps.captured_at : null,
+      photo_data:r85RiskPhoto || null
     };
 
-    let {error} = await client.from('prevention_reports').insert([payload]);
-    if(error && /(photo_data|work_zone|gps_)/i.test(error.message || '')){
-      const fallback = {...payload};
-      delete fallback.photo_data; delete fallback.work_zone; delete fallback.gps_lat; delete fallback.gps_lng; delete fallback.gps_accuracy; delete fallback.gps_captured_at;
-      const res = await client.from('prevention_reports').insert([fallback]);
-      error = res.error;
+    const {error}=await c.from('prevention_reports').insert([payload]);
+    if(error){
+      if(/photo_data|work_zone|gps_/i.test(error.message||'')) return toast('Colonnes GPS/photo absentes : lancez le SQL fourni puis réessayez.');
+      return toast('Erreur Supabase : '+error.message);
     }
-    if(error) return toast('Erreur Supabase : ' + error.message);
-
-    try{ if(typeof submitAnonymizedPreventionStat === 'function') await submitAnonymizedPreventionStat({category, level:'À traiter', frequency:'Non demandé au salarié', event_type:'Signalement prévention'}); }catch(e){}
-    const descEl = document.getElementById('risk-description');
-    if(descEl) descEl.value = '';
-    clearR85RiskPhoto();
-    r85RiskGps = null;
-    toast('Signalement envoyé au responsable.');
-    if(typeof switchScreen === 'function') switchScreen('scr-employee');
+    try{ if(typeof submitAnonymizedPreventionStat==='function') await submitAnonymizedPreventionStat({category,level:'À traiter',frequency:'Non demandé au salarié',event_type:'Signalement prévention'}); }catch(e){}
+    const descEl=document.getElementById('risk-description'); if(descEl) descEl.value='';
+    r85ClearPhoto(); r85RiskGps=null;
+    toast('Signalement envoyé avec les éléments disponibles.');
+    showScreen('scr-employee');
   };
 
-  // Vue manager enrichie : photo + bouton Google Maps si disponibles.
-  window.loadManagerReports = async function(){
-    const client = window.supabaseClient || (typeof supabaseClient !== 'undefined' ? supabaseClient : null);
-    if(!client) return toast('Supabase non chargé.');
-    const companyCode = document.getElementById('lbl-manager-comp-name')?.innerText?.trim();
-    if(!companyCode) return;
-    let {data,error} = await client
-      .from('prevention_reports')
+  window.loadManagerReports=async function(){
+    const c=client(); if(!c) return toast('Supabase non chargé.');
+    const company=document.getElementById('lbl-manager-comp-name')?.innerText?.trim(); if(!company) return;
+    const {data,error}=await c.from('prevention_reports')
       .select('id,company_code,employee_name,category,level,frequency,description,status,manager_response,corrective_action,work_zone,gps_lat,gps_lng,gps_accuracy,photo_data,created_at')
-      .eq('company_code', companyCode)
-      .order('created_at',{ascending:false})
-      .limit(30);
-    if(error && /photo_data|work_zone|gps_/i.test(error.message || '')){
-      const res = await client
-        .from('prevention_reports')
-        .select('id,company_code,employee_name,category,level,frequency,description,status,manager_response,corrective_action,created_at')
-        .eq('company_code', companyCode)
-        .order('created_at',{ascending:false})
-        .limit(30);
-      data = res.data; error = res.error;
-    }
-    if(error) return toast('Erreur Supabase : ' + error.message);
-    renderManagerReports(data || []);
+      .eq('company_code',company).order('created_at',{ascending:false}).limit(30);
+    if(error) return toast('Erreur Supabase : '+error.message);
+    renderManagerReports(data||[]);
   };
 
-  window.renderManagerReports = function(reports){
-    const c = document.getElementById('manager-risk-box');
-    if(!c) return;
-    c.innerHTML = '';
-    if(!reports.length){ c.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-8">Aucun danger signalé pour le moment.</p>'; return; }
-    reports.forEach(r => {
-      const hasGps = r.gps_lat && r.gps_lng;
-      const hasPhoto = !!r.photo_data;
-      const zone = r.work_zone || 'Zone non renseignée';
-      const mapLink = hasGps ? googleOpen(r.gps_lat, r.gps_lng) : '';
-      const card = document.createElement('div');
-      card.className = 'p-3 bg-red-50 dark:bg-slate-900 border border-red-200 dark:border-red-800 rounded-xl space-y-3 text-xs';
-      card.innerHTML = `
-        <div class="flex justify-between items-start gap-2">
-          <div>
-            <p class="font-black text-slate-900 dark:text-white">${esc(r.category || 'Signalement terrain')}</p>
-            <p class="text-[10px] text-slate-400">Par ${esc(r.employee_name || '')} - ${new Date(r.created_at).toLocaleString('fr-FR')}</p>
-          </div>
-          <span class="text-[10px] font-black px-2 py-1 rounded bg-white dark:bg-slate-800 text-red-600">À traiter</span>
-        </div>
-        <div class="bg-white dark:bg-slate-800 border rounded-lg p-2 flex flex-col gap-2">
-          <p class="text-[11px] font-black text-slate-600 dark:text-slate-300"><i class="fa-solid fa-location-dot text-restev-blue mr-1"></i>${esc(zone)}</p>
-          ${hasGps ? `<a href="${mapLink}" target="_blank" class="bg-restev-blue text-white text-[10px] font-black px-3 py-2 rounded-lg text-center"><i class="fa-solid fa-map-location-dot mr-1"></i>Ouvrir Google Maps</a>` : `<span class="text-[10px] text-slate-400 italic">GPS non transmis</span>`}
-        </div>
-        ${hasPhoto ? `<img src="${r.photo_data}" class="r85-manager-photo-thumb" alt="Photo du risque signalé">` : ''}
-        <p class="text-slate-600 dark:text-slate-300 font-medium">${esc(r.description || '')}</p>
-        <select onchange="updateReportStatus('${r.id}', this.value)" class="w-full p-2 rounded-lg border text-xs font-bold dark:bg-slate-900 dark:text-white">
-          <option value="Nouveau" ${r.status==='Nouveau'?'selected':''}>Nouveau</option>
-          <option value="Vu par le responsable" ${r.status==='Vu par le responsable'?'selected':''}>Vu par le responsable</option>
-          <option value="En cours de traitement" ${r.status==='En cours de traitement'?'selected':''}>En cours de traitement</option>
-          <option value="Traité" ${r.status==='Traité'?'selected':''}>Traité</option>
-        </select>
-        <textarea id="response-${r.id}" rows="2" placeholder="Réponse au salarié..." class="w-full p-2 rounded-lg border text-xs dark:bg-slate-900 dark:text-white">${esc(r.manager_response || '')}</textarea>
-        <textarea id="action-${r.id}" rows="2" placeholder="Action corrective..." class="w-full p-2 rounded-lg border text-xs dark:bg-slate-900 dark:text-white">${esc(r.corrective_action || '')}</textarea>
-        <button onclick="sendManagerResponse('${r.id}')" class="w-full bg-restev-blue text-white py-2 rounded-lg text-[10px] font-black uppercase">Répondre / enregistrer</button>
-      `;
-      c.appendChild(card);
+  window.renderManagerReports=function(reports){
+    const box=document.getElementById('manager-risk-box'); if(!box) return;
+    box.innerHTML='';
+    if(!reports.length){box.innerHTML='<p class="text-xs text-slate-400 italic text-center py-8">Aucun danger signalé pour le moment.</p>';return;}
+    reports.forEach(r=>{
+      const hasGps=r.gps_lat&&r.gps_lng;
+      const map=hasGps?googleOpen(r.gps_lat,r.gps_lng):'';
+      const card=document.createElement('div');
+      card.className='p-3 bg-red-50 dark:bg-slate-900 border border-red-200 dark:border-red-800 rounded-xl space-y-3 text-xs';
+      card.innerHTML=`
+        <div class="flex justify-between items-start gap-2"><div><p class="font-black text-slate-900 dark:text-white">${esc(r.category||'Signalement terrain')}</p><p class="text-[10px] text-slate-400">Par ${esc(r.employee_name||'')} - ${new Date(r.created_at).toLocaleString('fr-FR')}</p></div><span class="text-[10px] font-black px-2 py-1 rounded bg-white dark:bg-slate-800 text-red-600">À traiter</span></div>
+        <div class="bg-white dark:bg-slate-800 border rounded-lg p-2 flex flex-col gap-2"><p class="text-[11px] font-black text-slate-600 dark:text-slate-300"><i class="fa-solid fa-location-dot text-restev-blue mr-1"></i>${esc(r.work_zone||'Zone non renseignée')}</p>${hasGps?`<a href="${map}" target="_blank" class="bg-restev-blue text-white text-[10px] font-black px-3 py-2 rounded-lg text-center"><i class="fa-solid fa-map-location-dot mr-1"></i>Ouvrir Google Maps</a>`:'<span class="text-[10px] text-slate-400 italic">GPS non transmis</span>'}</div>
+        ${r.photo_data?`<img src="${r.photo_data}" class="r85-manager-risk-photo" alt="Photo du risque">`:''}
+        <p class="text-slate-600 dark:text-slate-300 font-medium">${esc(r.description||'')}</p>
+        <select onchange="updateReportStatus('${r.id}', this.value)" class="w-full p-2 rounded-lg border text-xs font-bold dark:bg-slate-900 dark:text-white"><option value="Nouveau" ${r.status==='Nouveau'?'selected':''}>Nouveau</option><option value="Vu par le responsable" ${r.status==='Vu par le responsable'?'selected':''}>Vu par le responsable</option><option value="En cours de traitement" ${r.status==='En cours de traitement'?'selected':''}>En cours de traitement</option><option value="Traité" ${r.status==='Traité'?'selected':''}>Traité</option></select>
+        <textarea id="response-${r.id}" rows="2" placeholder="Réponse au salarié..." class="w-full p-2 rounded-lg border text-xs dark:bg-slate-900 dark:text-white">${esc(r.manager_response||'')}</textarea>
+        <textarea id="action-${r.id}" rows="2" placeholder="Action corrective..." class="w-full p-2 rounded-lg border text-xs dark:bg-slate-900 dark:text-white">${esc(r.corrective_action||'')}</textarea>
+        <button onclick="sendManagerResponse('${r.id}')" class="w-full bg-restev-blue text-white py-2 rounded-lg text-[10px] font-black uppercase">Répondre / enregistrer</button>`;
+      box.appendChild(card);
     });
   };
 
-  const oldSwitchScreen = window.switchScreen;
-  window.switchScreen = function(screenId){
-    if(typeof oldSwitchScreen === 'function') oldSwitchScreen(screenId);
-    if(screenId === 'scr-report') setTimeout(() => { installR85SimpleRiskReport(); loadReportZones(); }, 250);
+  const previousHandleManagerLogin=window.handleManagerLogin;
+  window.handleManagerLogin=function(){
+    if(isEmployeeMode()){lockEmployeeOnly();toast('Accès manager bloqué depuis le QR salarié.');return;}
+    if(typeof previousHandleManagerLogin==='function') return previousHandleManagerLogin();
   };
 
-  document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => { installR85SimpleRiskReport(); }, 800);
-    console.log(PATCH_VERSION + ' installé');
+  window.backFromTraining=function(){ if(isEmployeeMode()) return showScreen('scr-employee'); showScreen('scr-home'); };
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    hydrateEmployeeFromQr();
+    if(isEmployeeMode()){setTimeout(()=>showScreen('scr-employee'),30);setTimeout(lockEmployeeOnly,150);setTimeout(lockEmployeeOnly,900);} 
+    setTimeout(()=>installFinalSimpleReport(),800);
+    console.log(PATCH_VERSION+' installé');
   });
 })();
 </script>
