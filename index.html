@@ -636,6 +636,20 @@ async function loadRestevStats(){
               <span class="text-[10px] font-extrabold text-restev-magenta uppercase tracking-wider">Scanner pour démarrer sur mobile</span> 
             </div> 
           </div> 
+
+          <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-premium border-t-4 border-t-cyan-500 space-y-3"> 
+            <h3 class="font-black dark:text-white text-xs uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-bullhorn text-cyan-500"></i> 4. Information descendante</h3> 
+            <p class="text-[10px] text-slate-500 dark:text-slate-400">Envoyez une information au salarié avec une alerte adaptée à l’importance.</p> 
+            <input type="text" id="manager-message-employee" placeholder="Nom salarié exact ou Tous" value="Tous" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white" /> 
+            <select id="manager-message-priority" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white"> 
+              <option value="Information">Information — alerte douce bleue</option> 
+              <option value="Important">Important — alerte orange</option> 
+              <option value="Urgent">Urgent — alerte rouge plein écran</option> 
+            </select> 
+            <input type="text" id="manager-message-title" placeholder="Titre de l'information" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white" /> 
+            <textarea id="manager-message-content" rows="3" placeholder="Message à transmettre..." class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white"></textarea> 
+            <button onclick="sendManagerInfoToEmployee()" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white py-3 rounded-xl text-xs font-extrabold shadow-md"><i class="fa-solid fa-paper-plane mr-1"></i> Envoyer l'information</button> 
+          </div> 
  
           </div> 
  
@@ -689,7 +703,7 @@ async function loadRestevStats(){
         <button onclick="switchScreen('scr-report')" class="w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-restev-magenta p-4 rounded-xl text-left flex items-center justify-between group shadow-sm"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-restev-magenta/10 text-restev-magenta rounded-xl flex items-center justify-center"><i class="fa-solid fa-triangle-exclamation"></i></div><div><p class="text-xs font-black dark:text-white">2. Signaler une Situation</p><p class="text-[10px] text-slate-400 mt-0.5">Remonter immédiatement un risque terrain.</p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i></button> 
         <button onclick="openEmployeeResources()" class="w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-emerald-500 p-4 rounded-xl text-left flex items-center justify-between group shadow-sm"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-emerald-500/10 text-emerald-500 rounded-xl flex items-center justify-center"><i class="fa-solid fa-book-medical"></i></div><div><p class="text-xs font-black dark:text-white">3. Fiches Conseils Sécurité</p><p class="text-[10px] text-slate-400 mt-0.5">Ressources INRS, CARSAT & OPPBTP.</p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i></button> 
         <button onclick="switchScreen('scr-training')" class="w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-restev-gold p-4 rounded-xl text-left flex items-center justify-between group shadow-sm"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-restev-gold/10 text-restev-gold rounded-xl flex items-center justify-center"><i class="fa-solid fa-graduation-cap"></i></div><div><p class="text-xs font-black dark:text-white">4. Modules INRS</p><p class="text-[10px] text-slate-400 mt-0.5">Tutoriels prévention adaptés aux métiers.</p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i></button> 
-        <button onclick="openEmployeeMessages()" class="w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-cyan-500 p-4 rounded-xl text-left flex items-center justify-between group shadow-sm"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-cyan-500/10 text-cyan-500 rounded-xl flex items-center justify-center"><i class="fa-solid fa-comments"></i></div><div><p class="text-xs font-black dark:text-white">5. Messages du responsable</p><p class="text-[10px] text-slate-400 mt-0.5">Suivre les réponses à vos signalements.</p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i></button> 
+        <button id="btn-employee-messages" onclick="openEmployeeMessages()" class="w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-cyan-500 p-4 rounded-xl text-left flex items-center justify-between group shadow-sm"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-cyan-500/10 text-cyan-500 rounded-xl flex items-center justify-center"><i class="fa-solid fa-comments"></i></div><div><p class="text-xs font-black dark:text-white">5. Messages du responsable</p><p class="text-[10px] text-slate-400 mt-0.5">Suivre les réponses à vos signalements.</p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i></button> 
       </div> 
     </section> 
  
@@ -1481,9 +1495,251 @@ function triggerNewReportAlert(report) {
     async function sendManagerResponse(id){ const response=document.getElementById(`response-${id}`).value.trim(); const action=document.getElementById(`action-${id}`).value.trim(); const {error}=await supabaseClient.from('prevention_reports').update({manager_response:response, corrective_action:action, status:'En cours de traitement'}).eq('id',id); if(error){ console.error(error); return showToast('Erreur Supabase : '+error.message); } showToast('Réponse enregistrée.'); loadManagerReports(); } 
     async function updateReportStatus(id,status){ const {error}=await supabaseClient.from('prevention_reports').update({status}).eq('id',id); if(error){ console.error(error); return showToast('Erreur Supabase : '+error.message); } showToast('Statut mis à jour.'); } 
  
-    async function openEmployeeMessages(){ if(!currentEmployeeSession) return showToast('Session salarié non reconnue.'); if(!supabaseClient) return showToast('Supabase non chargé. Vérifiez internet.'); const {data,error}=await supabaseClient.from('prevention_reports').select('*').eq('company_code',currentEmployeeSession.company).eq('employee_name',currentEmployeeSession.name).order('created_at',{ascending:false}).limit(20); if(error){ console.error(error); return showToast('Erreur Supabase : '+error.message); } renderEmployeeMessages(data||[]); switchScreen('scr-employee-messages'); } 
-    function renderEmployeeMessages(msgs){ const c=document.getElementById('employee-messages-list'); c.innerHTML=''; if(!msgs.length){ c.innerHTML='<p class="text-xs text-slate-400 italic text-center py-6">Aucun message pour le moment.</p>'; return; } msgs.forEach(m=>{ const card=document.createElement('div'); card.className='bg-white dark:bg-slate-800 p-4 rounded-2xl border shadow-sm space-y-2'; card.innerHTML=`<div class="flex justify-between items-start gap-2"><div><p class="text-xs font-black dark:text-white">${escapeHtml(m.category||'Signalement')}</p><p class="text-[10px] text-slate-400">${new Date(m.created_at).toLocaleString('fr-FR')}</p></div><span class="text-[10px] font-black px-2 py-1 rounded bg-blue-50 text-blue-600">${escapeHtml(m.status||'Nouveau')}</span></div><div class="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl"><p class="text-[10px] font-black uppercase text-slate-400 mb-1">Votre signalement</p><p class="text-xs text-slate-700 dark:text-slate-300">${escapeHtml(m.description||'')}</p></div><div class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-xl border"><p class="text-[10px] font-black uppercase text-emerald-600 mb-1">Réponse du responsable</p><p class="text-xs text-slate-700 dark:text-slate-300">${escapeHtml(m.manager_response || 'Aucune réponse pour le moment.')}</p></div><div class="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-xl border"><p class="text-[10px] font-black uppercase text-amber-600 mb-1">Action corrective</p><p class="text-xs text-slate-700 dark:text-slate-300">${escapeHtml(m.corrective_action || 'Aucune action corrective renseignée.')}</p></div>`; c.appendChild(card); }); } 
- 
+    async function openEmployeeMessages(){
+      if(!currentEmployeeSession) return showToast('Session salarié non reconnue.');
+      if(!supabaseClient) return showToast('Supabase non chargé. Vérifiez internet.');
+      resetEmployeeMessageBadge();
+      try{
+        const reportsRes=await supabaseClient
+          .from('prevention_reports')
+          .select('*')
+          .eq('company_code', currentEmployeeSession.company)
+          .eq('employee_name', currentEmployeeSession.name)
+          .order('created_at',{ascending:false})
+          .limit(20);
+
+        const infoRes=await supabaseClient
+          .from('manager_messages')
+          .select('*')
+          .eq('company_code', currentEmployeeSession.company)
+          .order('created_at',{ascending:false})
+          .limit(100);
+
+        if(reportsRes.error){ console.error(reportsRes.error); return showToast('Erreur Supabase : '+reportsRes.error.message); }
+        if(infoRes.error){ console.warn('Messages manager indisponibles :', infoRes.error.message); }
+
+        const reportMessages=(reportsRes.data||[]).map(r=>({
+          source:'report',
+          created_at:r.created_at,
+          title:r.category || 'Signalement',
+          priority:r.level || 'Suivi',
+          description:r.description || '',
+          status:r.status || 'Nouveau',
+          manager_response:r.manager_response || '',
+          corrective_action:r.corrective_action || ''
+        }));
+        const managerInfos=(infoRes.data||[]).filter(m=>{
+          const target=String(m.employee_name||'Tous').trim();
+          return target===currentEmployeeSession.name || target==='Tous' || target==='Tous les salariés' || target==='';
+        }).map(m=>({
+          source:'manager_info',
+          id:m.id,
+          created_at:m.created_at,
+          title:m.title || 'Information du responsable',
+          priority:m.priority || 'Information',
+          description:m.content || m.message || '',
+          status:m.status || 'Non lu',
+          manager_response:m.content || m.message || '',
+          corrective_action:''
+        }));
+        renderEmployeeMessages([...managerInfos, ...reportMessages].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)));
+
+        const unreadIds=(infoRes.data||[]).filter(m=>{
+          const target=String(m.employee_name||'Tous').trim();
+          return (m.status||'Non lu')!=='Lu' && target===currentEmployeeSession.name;
+        }).map(m=>m.id);
+        if(unreadIds.length){
+          await supabaseClient.from('manager_messages').update({status:'Lu', read_at:new Date().toISOString()}).in('id', unreadIds);
+        }
+        switchScreen('scr-employee-messages');
+      }catch(e){
+        console.error(e);
+        showToast('Erreur chargement messages.');
+      }
+    }
+    function renderEmployeeMessages(msgs){
+      const c=document.getElementById('employee-messages-list');
+      if(!c) return;
+      c.innerHTML='';
+      if(!msgs.length){ c.innerHTML='<p class="text-xs text-slate-400 italic text-center py-6">Aucun message pour le moment.</p>'; return; }
+      msgs.forEach(m=>{
+        const sev=getEmployeeAlertSeverity(m.priority);
+        const card=document.createElement('div');
+        card.className=`bg-white dark:bg-slate-800 p-4 rounded-2xl border shadow-sm space-y-2 border-l-4 ${sev.border}`;
+        if(m.source==='manager_info'){
+          card.innerHTML=`<div class="flex justify-between items-start gap-2"><div><p class="text-xs font-black dark:text-white flex items-center gap-2"><i class="fa-solid fa-bullhorn ${sev.text}"></i>${escapeHtml(m.title)}</p><p class="text-[10px] text-slate-400">${new Date(m.created_at).toLocaleString('fr-FR')}</p></div><span class="text-[10px] font-black px-2 py-1 rounded ${sev.badge}">${escapeHtml(m.priority)}</span></div><div class="${sev.soft} p-3 rounded-xl border"><p class="text-[10px] font-black uppercase ${sev.text} mb-1">Information du responsable</p><p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">${escapeHtml(m.description||'')}</p></div>`;
+        }else{
+          card.innerHTML=`<div class="flex justify-between items-start gap-2"><div><p class="text-xs font-black dark:text-white">${escapeHtml(m.title||'Signalement')}</p><p class="text-[10px] text-slate-400">${new Date(m.created_at).toLocaleString('fr-FR')}</p></div><span class="text-[10px] font-black px-2 py-1 rounded bg-blue-50 text-blue-600">${escapeHtml(m.status||'Nouveau')}</span></div><div class="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl"><p class="text-[10px] font-black uppercase text-slate-400 mb-1">Votre signalement</p><p class="text-xs text-slate-700 dark:text-slate-300">${escapeHtml(m.description||'')}</p></div><div class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-xl border"><p class="text-[10px] font-black uppercase text-emerald-600 mb-1">Réponse du responsable</p><p class="text-xs text-slate-700 dark:text-slate-300">${escapeHtml(m.manager_response || 'Aucune réponse pour le moment.')}</p></div><div class="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-xl border"><p class="text-[10px] font-black uppercase text-amber-600 mb-1">Action corrective</p><p class="text-xs text-slate-700 dark:text-slate-300">${escapeHtml(m.corrective_action || 'Aucune action corrective renseignée.')}</p></div>`;
+        }
+        c.appendChild(card);
+      });
+    }
+
+    function getEmployeeAlertSeverity(priority){
+      const p=String(priority||'Information').toLowerCase();
+      if(p.includes('urgent')) return {
+        key:'urgent', label:'URGENT', icon:'fa-triangle-exclamation',
+        gradient:'from-red-600 via-rose-600 to-restev-magenta', border:'border-l-red-600',
+        text:'text-red-600', badge:'bg-red-100 text-red-700', soft:'bg-red-50 dark:bg-red-950/20',
+        ring:'ring-red-500/40', sound:[880,1040,880], vibration:[300,120,300,120,500]
+      };
+      if(p.includes('important')) return {
+        key:'important', label:'IMPORTANT', icon:'fa-circle-exclamation',
+        gradient:'from-amber-500 via-orange-500 to-restev-gold', border:'border-l-amber-500',
+        text:'text-amber-600', badge:'bg-amber-100 text-amber-700', soft:'bg-amber-50 dark:bg-amber-950/20',
+        ring:'ring-amber-500/40', sound:[660,880], vibration:[220,100,220]
+      };
+      return {
+        key:'information', label:'INFORMATION', icon:'fa-bullhorn',
+        gradient:'from-cyan-500 via-restev-blue to-restev-blue-dark', border:'border-l-cyan-500',
+        text:'text-cyan-600', badge:'bg-cyan-100 text-cyan-700', soft:'bg-cyan-50 dark:bg-cyan-950/20',
+        ring:'ring-cyan-500/40', sound:[520], vibration:[140]
+      };
+    }
+    function startEmployeeMessageRealtime(){
+      if(!supabaseClient || !currentEmployeeSession) return;
+      const companyCode=currentEmployeeSession.company;
+      const employeeName=currentEmployeeSession.name;
+      if(!companyCode || !employeeName) return;
+      if(employeeRealtimeChannel){ supabaseClient.removeChannel(employeeRealtimeChannel); employeeRealtimeChannel=null; }
+      employeeRealtimeChannel=supabaseClient
+        .channel(`manager_messages_employee_${companyCode}_${employeeName}`)
+        .on('postgres_changes', {event:'INSERT', schema:'public', table:'manager_messages', filter:`company_code=eq.${companyCode}`}, payload=>{
+          const msg=payload.new||{};
+          const target=String(msg.employee_name||'Tous').trim();
+          const isForMe = target===employeeName || target==='Tous' || target==='Tous les salariés' || target==='';
+          if(!isForMe) return;
+          triggerEmployeeManagerInfoAlert(msg);
+        })
+        .subscribe(status=>console.log('Realtime salarié messages :', status));
+    }
+    async function loadEmployeeUnreadMessageCount(){
+      if(!supabaseClient || !currentEmployeeSession) return;
+      try{
+        const {data,error}=await supabaseClient
+          .from('manager_messages')
+          .select('id,status,employee_name')
+          .eq('company_code', currentEmployeeSession.company)
+          .order('created_at',{ascending:false})
+          .limit(100);
+        if(error) return console.warn('Compteur messages indisponible :', error.message);
+        employeeUnreadMessages=(data||[]).filter(m=>{
+          const target=String(m.employee_name||'Tous').trim();
+          return (m.status||'Non lu')!=='Lu' && (target===currentEmployeeSession.name || target==='Tous' || target==='Tous les salariés' || target==='');
+        }).length;
+        updateEmployeeMessageBadge();
+      }catch(e){ console.warn('Compteur messages ignoré :', e); }
+    }
+    function triggerEmployeeManagerInfoAlert(msg){
+      const now=Date.now();
+      if(now-lastEmployeeInfoAlertAt<800) return;
+      lastEmployeeInfoAlertAt=now;
+      employeeUnreadMessages++;
+      updateEmployeeMessageBadge();
+      const sev=getEmployeeAlertSeverity(msg.priority);
+      playEmployeePrioritySound(sev);
+      vibrateEmployeePriority(sev);
+      showToast(`${sev.label} : ${msg.title || 'Nouvelle information du responsable'}`);
+      showEmployeePriorityOverlay(msg, sev);
+      showEmployeeInfoBrowserNotification(msg, sev);
+    }
+    function updateEmployeeMessageBadge(){
+      const btn=document.getElementById('btn-employee-messages');
+      if(!btn) return;
+      let badge=document.getElementById('employee-message-badge');
+      if(!badge){
+        badge=document.createElement('span');
+        badge.id='employee-message-badge';
+        badge.className='ml-2 inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-red-600 text-white text-[10px] font-black animate-pulse';
+        const title=btn.querySelector('p.text-xs') || btn;
+        title.appendChild(badge);
+      }
+      badge.innerText=String(employeeUnreadMessages);
+      badge.style.display=employeeUnreadMessages>0?'inline-flex':'none';
+    }
+    function resetEmployeeMessageBadge(){ employeeUnreadMessages=0; updateEmployeeMessageBadge(); }
+    function unlockEmployeeAlertSound(){
+      try{
+        const AudioContext=window.AudioContext||window.webkitAudioContext;
+        if(!AudioContext) return;
+        if(!employeeAlertAudioCtx) employeeAlertAudioCtx=new AudioContext();
+        if(employeeAlertAudioCtx.state==='suspended') employeeAlertAudioCtx.resume();
+      }catch(e){ console.warn('Audio salarié indisponible :', e); }
+    }
+    function playEmployeePrioritySound(sev){
+      try{
+        const AudioContext=window.AudioContext||window.webkitAudioContext;
+        if(!AudioContext) return;
+        if(!employeeAlertAudioCtx) employeeAlertAudioCtx=new AudioContext();
+        if(employeeAlertAudioCtx.state==='suspended') employeeAlertAudioCtx.resume();
+        const start=employeeAlertAudioCtx.currentTime;
+        (sev.sound||[520]).forEach((freq,i)=>{
+          const osc=employeeAlertAudioCtx.createOscillator();
+          const gain=employeeAlertAudioCtx.createGain();
+          const t=start+(i*0.18);
+          osc.type=sev.key==='urgent'?'square':'sine';
+          osc.frequency.setValueAtTime(freq,t);
+          gain.gain.setValueAtTime(0.0001,t);
+          gain.gain.exponentialRampToValueAtTime(sev.key==='urgent'?0.30:0.18,t+0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001,t+0.14);
+          osc.connect(gain); gain.connect(employeeAlertAudioCtx.destination); osc.start(t); osc.stop(t+0.16);
+        });
+      }catch(e){ console.warn('Son alerte salarié impossible :', e); }
+    }
+    function vibrateEmployeePriority(sev){
+      try{ if('vibrate' in navigator) navigator.vibrate(sev.vibration||[140]); }catch(e){ console.warn('Vibration salarié impossible :', e); }
+    }
+    function showEmployeePriorityOverlay(msg, sev){
+      let overlay=document.getElementById('employee-priority-overlay');
+      if(!overlay){
+        overlay=document.createElement('div');
+        overlay.id='employee-priority-overlay';
+        overlay.className='fixed inset-0 z-[90] bg-slate-950/75 backdrop-blur-sm hidden items-center justify-center p-5 no-print';
+        overlay.innerHTML=`<div id="employee-priority-card" class="bg-white dark:bg-slate-900 rounded-[2rem] p-6 max-w-md w-full shadow-2xl border space-y-4"><div id="employee-priority-head" class="rounded-3xl p-5 text-white bg-gradient-to-r"><div class="flex items-center gap-3"><div class="w-14 h-14 rounded-2xl bg-white/20 border border-white/20 flex items-center justify-center text-2xl"><i id="employee-priority-icon" class="fa-solid"></i></div><div><p id="employee-priority-label" class="text-[10px] font-black uppercase tracking-widest opacity-90"></p><h3 id="employee-priority-title" class="text-xl font-black leading-tight"></h3></div></div></div><p id="employee-priority-content" class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed"></p><div class="grid grid-cols-2 gap-3"><button onclick="hideEmployeePriorityOverlay()" class="bg-slate-100 dark:bg-slate-800 dark:text-white py-3 rounded-xl text-xs font-black">Fermer</button><button onclick="hideEmployeePriorityOverlay(); openEmployeeMessages();" class="bg-restev-blue text-white py-3 rounded-xl text-xs font-black">Voir messages</button></div></div>`;
+        document.body.appendChild(overlay);
+      }
+      const head=document.getElementById('employee-priority-head');
+      const card=document.getElementById('employee-priority-card');
+      const icon=document.getElementById('employee-priority-icon');
+      head.className=`rounded-3xl p-5 text-white bg-gradient-to-r ${sev.gradient}`;
+      card.className=`bg-white dark:bg-slate-900 rounded-[2rem] p-6 max-w-md w-full shadow-2xl border space-y-4 ring-4 ${sev.ring} ${sev.key==='urgent'?'animate-pulse':''}`;
+      icon.className=`fa-solid ${sev.icon}`;
+      document.getElementById('employee-priority-label').innerText=sev.label;
+      document.getElementById('employee-priority-title').innerText=msg.title || 'Nouvelle information du responsable';
+      document.getElementById('employee-priority-content').innerText=msg.content || msg.message || 'Un nouveau message est disponible.';
+      overlay.classList.remove('hidden'); overlay.classList.add('flex');
+    }
+    function hideEmployeePriorityOverlay(){
+      const overlay=document.getElementById('employee-priority-overlay');
+      if(!overlay) return;
+      overlay.classList.add('hidden'); overlay.classList.remove('flex');
+    }
+    function enableEmployeeNotifications(){
+      unlockEmployeeAlertSound();
+      if(!('Notification' in window)) return showToast('Notifications navigateur non compatibles.');
+      Notification.requestPermission().then(permission=>showToast(permission==='granted'?'Notifications salarié activées.':'Notifications refusées.'));
+    }
+    function showEmployeeInfoBrowserNotification(msg, sev){
+      if(!('Notification' in window) || Notification.permission!=='granted') return;
+      try{
+        new Notification(`${sev.label} - ${msg.title || 'Information du responsable'}`, {body: msg.content || msg.message || 'Un nouveau message est disponible.', icon:'logo.png', badge:'logo.png'});
+      }catch(e){ console.warn('Notification salarié impossible :', e); }
+    }
+    async function sendManagerInfoToEmployee(){
+      if(!supabaseClient) return showToast('Supabase non chargé.');
+      const companyCode=document.getElementById('lbl-manager-comp-name')?.innerText?.trim();
+      const employeeName=(document.getElementById('manager-message-employee')?.value || 'Tous').trim() || 'Tous';
+      const priority=document.getElementById('manager-message-priority')?.value || 'Information';
+      const title=document.getElementById('manager-message-title')?.value?.trim();
+      const content=document.getElementById('manager-message-content')?.value?.trim();
+      if(!companyCode) return showToast('Code établissement manquant.');
+      if(!title || !content) return showToast('Titre et message obligatoires.');
+      const {error}=await supabaseClient.from('manager_messages').insert([{company_code:companyCode, employee_name:employeeName, title, content, priority, status:'Non lu'}]);
+      if(error){ console.error(error); return showToast('Erreur envoi info : '+error.message); }
+      document.getElementById('manager-message-title').value='';
+      document.getElementById('manager-message-content').value='';
+      showToast(`Information ${priority.toLowerCase()} envoyée au salarié.`);
+    }
     function getSectorKey(label){
       const s=String(label || '').toLowerCase();
       if(s.includes('btp') || s.includes('bâtiment') || s.includes('batiment')) return 'btp';
