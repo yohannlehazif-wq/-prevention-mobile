@@ -2706,259 +2706,207 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 <!-- =========================================================
-     PATCH RESTEV 85 — CENTRE RESTEV ANONYMISATION RENFORCÉE
-     Objectifs :
-     - Ne pas afficher de nom salarié, nom/code entreprise, commentaire ou donnée individuelle
-     - Séparer Alertes terrain / Passeports prévention
-     - Utiliser uniquement des agrégats statistiques
-     - Masquer les petits effectifs par principe de k-anonymat visuel
-     - Aligner les KPI passeports
+     PATCH RESTEV 85 — ALERTES TRAITÉES + SIGNALEMENT SALARIÉ SIMPLIFIÉ
+     À coller juste avant </body>
+
+     1) Retire le badge/alerte suspendue quand les signalements sont traités.
+     2) Simplifie le choix salarié : il ne choisit plus gravité + fréquence,
+        il choisit une phrase simple. L'application traduit en niveau technique.
      ========================================================= -->
 <script>
 (function(){
-  const PATCH_VERSION = 'RESTEV85_CENTER_STRONG_ANONYMIZATION_2026_07_03';
-  const RESTEV_MIN_GROUP_SIZE = 3; // seuil visuel : sous 3 occurrences, regroupement "Autres / données groupées"
+  const PATCH_VERSION = 'RESTEV85_TREATED_ALERTS_AND_SIMPLE_REPORT_2026_07_03';
+
+  function r85Toast(msg){
+    if(typeof showToast === 'function') showToast(msg);
+    else alert(msg);
+  }
+
+  function r85Company(){
+    return (document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
+  }
 
   function r85Esc(v){
     if(typeof escapeHtml === 'function') return escapeHtml(v || '');
     return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
-  function r85MonthLabel(value){
-    const v = String(value || '').slice(0,7);
-    return /^\d{4}-\d{2}$/.test(v) ? v : new Date().toISOString().slice(0,7);
+  function hideSuspendedAlertUI(){
+    const overlay = document.getElementById('restev-ultra-alert-overlay');
+    if(overlay){
+      overlay.classList.remove('r85-show');
+      overlay.classList.add('hidden');
+    }
+    const banner = document.getElementById('restev-live-alert-banner') || document.getElementById('bigAlertBanner');
+    if(banner) banner.classList.add('hidden');
+    const badge = document.getElementById('restev-alert-floating-badge');
+    if(badge) badge.classList.add('hidden');
+    const count = document.getElementById('restev-alert-badge-count');
+    if(count) count.innerText = '0';
+    try { window.restevAlertCounter = 0; } catch(e) {}
   }
 
-  function r85NormalizeGroupLabel(label){
-    const v = String(label || '').trim();
-    if(!v || v === 'undefined' || v === 'null') return 'Non renseigné';
-    return v;
-  }
+  window.updateRestevActiveAlertBadge = async function(){
+    if(!supabaseClient) return;
+    const company = r85Company();
+    if(!company) return;
 
-  function r85GroupCount(rows, key){
-    const map = {};
-    (rows || []).forEach(row => {
-      const label = r85NormalizeGroupLabel(row[key]);
-      map[label] = (map[label] || 0) + 1;
-    });
-    return map;
-  }
+    const { data, error } = await supabaseClient
+      .from('prevention_reports')
+      .select('id,status')
+      .eq('company_code', company)
+      .neq('status', 'Traité')
+      .limit(200);
 
-  function r85TopGrouped(counts, limit=6){
-    const safeRows = [];
-    let smallTotal = 0;
-    Object.entries(counts || {}).forEach(([label, count]) => {
-      if(count < RESTEV_MIN_GROUP_SIZE){
-        smallTotal += count;
-      } else {
-        safeRows.push([label, count]);
-      }
-    });
-    if(smallTotal > 0) safeRows.push(['Autres / données groupées', smallTotal]);
-    return safeRows.sort((a,b) => b[1] - a[1]).slice(0, limit);
-  }
+    if(error){
+      console.warn('Comptage alertes actives impossible:', error.message);
+      return;
+    }
 
-  function r85SetText(id, value){
-    const el = document.getElementById(id);
-    if(el) el.innerText = String(value);
-  }
+    const activeCount = (data || []).length;
+    const badge = document.getElementById('restev-alert-floating-badge');
+    const count = document.getElementById('restev-alert-badge-count');
 
-  window.alignPassportKpiCards = function(){
-    const ids = ['restev-passport-total','restev-passport-complete','restev-passport-improve'];
-    ids.forEach(id => {
-      const number = document.getElementById(id);
-      if(!number) return;
-      const card = number.parentElement;
-      if(!card) return;
-      card.style.minHeight = '118px';
-      card.style.display = 'flex';
-      card.style.flexDirection = 'column';
-      card.style.alignItems = 'center';
-      card.style.justifyContent = 'center';
-      card.style.textAlign = 'center';
-      const label = card.querySelector('p:first-child');
-      if(label){
-        label.style.minHeight = '26px';
-        label.style.display = 'flex';
-        label.style.alignItems = 'center';
-        label.style.justifyContent = 'center';
-        label.style.margin = '0 0 10px 0';
-        label.style.lineHeight = '1.05';
-      }
-      number.style.lineHeight = '1';
-      number.style.marginTop = '0';
-      number.style.textAlign = 'center';
-      number.style.width = '100%';
-    });
+    if(count) count.innerText = String(activeCount);
+
+    if(activeCount <= 0){
+      hideSuspendedAlertUI();
+    } else if(badge){
+      badge.classList.remove('hidden');
+    }
   };
 
-  function installAnonymousCenterLayout(){
-    const screen = document.getElementById('scr-direction');
-    if(!screen) return;
+  // Override statut : quand une alerte passe en Traité, on recalcule immédiatement le badge.
+  const oldUpdateReportStatus = window.updateReportStatus;
+  window.updateReportStatus = async function(id, status){
+    if(!supabaseClient){
+      if(typeof oldUpdateReportStatus === 'function') return oldUpdateReportStatus(id,status);
+      return r85Toast('Supabase non chargé.');
+    }
 
-    const oldCards = document.getElementById('stats-total')?.closest('.grid');
-    if(oldCards) oldCards.style.display = 'none';
+    const { error } = await supabaseClient
+      .from('prevention_reports')
+      .update({ status })
+      .eq('id', id);
 
-    const oldChart = document.getElementById('chart-restev-risks')?.closest('.grid');
-    if(oldChart) oldChart.style.display = 'none';
+    if(error){
+      console.error('Erreur update statut:', error);
+      return r85Toast('Erreur Supabase : ' + error.message);
+    }
 
-    if(document.getElementById('restev-anonymous-center-dashboard')) return;
+    r85Toast(status === 'Traité' ? 'Alerte traitée : rappel visuel retiré si plus aucune alerte active.' : 'Statut mis à jour.');
+
+    if(typeof loadManagerReports === 'function') await loadManagerReports();
+    setTimeout(window.updateRestevActiveAlertBadge, 250);
+  };
+
+  // Si le manager enregistre une réponse + action et met à jour la liste, on recalcule aussi.
+  const oldLoadManagerReports = window.loadManagerReports;
+  window.loadManagerReports = async function(){
+    if(typeof oldLoadManagerReports === 'function') await oldLoadManagerReports();
+    setTimeout(window.updateRestevActiveAlertBadge, 250);
+  };
+
+  // Si l'ancien bouton "J'ai vu" ferme l'overlay, on garde le badge tant que l'alerte n'est pas traitée.
+  const oldAcknowledge = window.acknowledgeRestevAlert;
+  window.acknowledgeRestevAlert = function(){
+    if(typeof oldAcknowledge === 'function') oldAcknowledge();
+    setTimeout(window.updateRestevActiveAlertBadge, 250);
+  };
+
+  // Injection d'un choix salarié simple, sans notion technique gravité/fréquence.
+  function installSimpleEmployeeReportUI(){
+    const screen = document.getElementById('scr-report');
+    const levelSelect = document.getElementById('risk-level');
+    const freqSelect = document.getElementById('risk-frequency');
+    const categorySelect = document.getElementById('risk-category-select');
+    if(!screen || !levelSelect || !freqSelect || !categorySelect) return;
+    if(document.getElementById('restev-simple-report-choice')) return;
+
+    // On garde les selects dans le DOM pour compatibilité, mais on les masque.
+    const levelContainer = levelSelect.closest('div');
+    const freqContainer = freqSelect.closest('div');
+    if(levelContainer) levelContainer.style.display = 'none';
+    if(freqContainer) freqContainer.style.display = 'none';
+
+    // Valeur par défaut : le salarié ne tranche pas, le manager qualifiera.
+    levelSelect.value = 'À vérifier par le manager 🟠';
+    freqSelect.value = 'Non renseignée';
 
     const block = document.createElement('div');
-    block.id = 'restev-anonymous-center-dashboard';
-    block.className = 'space-y-6';
+    block.id = 'restev-simple-report-choice';
+    block.className = 'space-y-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl';
     block.innerHTML = `
-      <div class="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900 p-4 rounded-2xl">
-        <p class="text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed">
-          <b><i class="fa-solid fa-user-shield text-emerald-600 mr-1"></i> Centre RESTEV anonymisé :</b>
-          cette vue ne présente que des indicateurs agrégés. Aucun nom de salarié, code entreprise, commentaire terrain, géolocalisation ou historique individuel n’est affiché.
-          Les petits effectifs sont regroupés afin de limiter le risque d’identification indirecte.
+      <div>
+        <p class="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center gap-2">
+          <i class="fa-solid fa-hand-pointer text-restev-blue"></i> Ce que je vois ressemble plutôt à :
         </p>
+        <p class="text-[10px] text-slate-500 mt-1 leading-relaxed">Pas besoin d'évaluer précisément la gravité : choisissez la phrase la plus proche, le responsable qualifiera ensuite.</p>
       </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-premium border-t-4 border-t-red-500 space-y-4">
-          <div class="flex items-center justify-between gap-3">
-            <div>
-              <p class="text-[10px] font-black uppercase tracking-widest text-red-500">Flux anonymisé 1</p>
-              <h3 class="text-lg font-black dark:text-white flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation text-red-500"></i> Alertes terrain</h3>
-            </div>
-            <button onclick="loadRestevStats()" class="text-[10px] bg-red-50 text-red-600 dark:bg-slate-700 dark:text-red-300 px-3 py-2 rounded-xl font-black">Actualiser</button>
-          </div>
-          <div class="grid grid-cols-3 gap-3">
-            <div class="bg-red-50 dark:bg-slate-900 p-4 rounded-2xl border border-red-100 dark:border-red-900 text-center min-h-[118px] flex flex-col items-center justify-center"><p class="text-[9px] font-black uppercase text-slate-400 min-h-[26px] flex items-center">Total alertes</p><p id="restev-alert-total" class="text-3xl font-black text-red-600 leading-none">0</p></div>
-            <div class="bg-orange-50 dark:bg-slate-900 p-4 rounded-2xl border border-orange-100 dark:border-orange-900 text-center min-h-[118px] flex flex-col items-center justify-center"><p class="text-[9px] font-black uppercase text-slate-400 min-h-[26px] flex items-center">Critiques</p><p id="restev-alert-critical" class="text-3xl font-black text-orange-600 leading-none">0</p></div>
-            <div class="bg-blue-50 dark:bg-slate-900 p-4 rounded-2xl border border-blue-100 dark:border-blue-900 text-center min-h-[118px] flex flex-col items-center justify-center"><p class="text-[9px] font-black uppercase text-slate-400 min-h-[26px] flex items-center">Risque dominant</p><p id="restev-alert-top" class="text-xs font-black text-blue-700 leading-tight">—</p></div>
-          </div>
-          <div>
-            <h4 class="text-xs font-black uppercase text-slate-500 mb-2">Top risques signalés anonymisés</h4>
-            <div id="restev-alert-list" class="space-y-2"><p class="text-xs text-slate-400 italic">Aucune alerte terrain.</p></div>
-          </div>
-        </div>
-
-        <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-premium border-t-4 border-t-emerald-500 space-y-4">
-          <div class="flex items-center justify-between gap-3">
-            <div>
-              <p class="text-[10px] font-black uppercase tracking-widest text-emerald-500">Flux anonymisé 2</p>
-              <h3 class="text-lg font-black dark:text-white flex items-center gap-2"><i class="fa-solid fa-id-card text-emerald-500"></i> Passeports prévention</h3>
-            </div>
-            <span class="text-[10px] bg-emerald-50 text-emerald-600 dark:bg-slate-700 dark:text-emerald-300 px-3 py-2 rounded-xl font-black">Agrégé uniquement</span>
-          </div>
-          <div class="grid grid-cols-3 gap-3">
-            <div class="bg-emerald-50 dark:bg-slate-900 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900 text-center min-h-[118px] flex flex-col items-center justify-center"><p class="text-[9px] font-black uppercase text-slate-400 min-h-[26px] flex items-center justify-center">Total passeports</p><p id="restev-passport-total" class="text-3xl font-black text-emerald-600 leading-none">0</p></div>
-            <div class="bg-teal-50 dark:bg-slate-900 p-4 rounded-2xl border border-teal-100 dark:border-teal-900 text-center min-h-[118px] flex flex-col items-center justify-center"><p class="text-[9px] font-black uppercase text-slate-400 min-h-[26px] flex items-center justify-center">Acquis complets</p><p id="restev-passport-complete" class="text-3xl font-black text-teal-600 leading-none">0</p></div>
-            <div class="bg-amber-50 dark:bg-slate-900 p-4 rounded-2xl border border-amber-100 dark:border-amber-900 text-center min-h-[118px] flex flex-col items-center justify-center"><p class="text-[9px] font-black uppercase text-slate-400 min-h-[26px] flex items-center justify-center">À renforcer</p><p id="restev-passport-improve" class="text-3xl font-black text-amber-600 leading-none">0</p></div>
-          </div>
-          <div>
-            <h4 class="text-xs font-black uppercase text-slate-500 mb-2">Répartition mensuelle anonymisée</h4>
-            <div id="restev-passport-list" class="space-y-2"><p class="text-xs text-slate-400 italic">Aucune donnée passeport.</p></div>
-          </div>
-        </div>
+      <div class="grid grid-cols-1 gap-2">
+        <button type="button" data-level="Danger immédiat 🔴" data-frequency="Maintenant" class="r85-simple-risk-btn text-left p-3 rounded-xl border-2 border-red-200 bg-red-50 text-red-700 font-black text-xs flex items-start gap-3">
+          <span class="text-lg">🚨</span><span><b>Quelqu'un peut se blesser maintenant</b><br><small class="font-bold text-red-500">Ex : chute possible, machine dangereuse, circulation engin...</small></span>
+        </button>
+        <button type="button" data-level="À vérifier par le manager 🟠" data-frequency="Régulière" class="r85-simple-risk-btn text-left p-3 rounded-xl border-2 border-orange-200 bg-orange-50 text-orange-700 font-black text-xs flex items-start gap-3">
+          <span class="text-lg">⚠️</span><span><b>C'est dangereux ou gênant, mais pas immédiat</b><br><small class="font-bold text-orange-500">Ex : situation qui revient, organisation à revoir...</small></span>
+        </button>
+        <button type="button" data-level="Amélioration prévention 🟢" data-frequency="Ponctuelle" class="r85-simple-risk-btn text-left p-3 rounded-xl border-2 border-emerald-200 bg-emerald-50 text-emerald-700 font-black text-xs flex items-start gap-3">
+          <span class="text-lg">💡</span><span><b>J'ai une idée d'amélioration / presque accident</b><br><small class="font-bold text-emerald-500">Ex : meilleure signalisation, rangement, matériel...</small></span>
+        </button>
       </div>
-
-      <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl">
-        <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
-          <b>Règle appliquée :</b> la vue Centre RESTEV ne doit pas permettre de remonter à une entreprise ou une personne. Pour le pilotage d’une entreprise, il faut utiliser l’espace manager de son propre établissement, pas cette vue collective.
-        </p>
-      </div>
+      <input type="hidden" id="restev-simple-choice-label" value="À vérifier par le manager">
     `;
 
-    const hero = screen.querySelector('.bg-gradient-to-br');
-    if(hero && hero.nextSibling) screen.insertBefore(block, hero.nextSibling);
+    const commentBlock = document.getElementById('risk-description')?.closest('div');
+    if(commentBlock) screen.insertBefore(block, commentBlock);
     else screen.appendChild(block);
-    setTimeout(window.alignPassportKpiCards, 150);
-  }
 
-  async function fetchStatsSafely(){
-    // Priorité : prevention_stats, car elle est déjà pensée anonymisée.
-    const { data, error } = await supabaseClient
-      .from('prevention_stats')
-      .select('period_month,sector,company_size_range,risk_category,risk_level,frequency,event_type,created_at')
-      .order('created_at',{ascending:false})
-      .limit(1500);
-    if(error) throw error;
-    return data || [];
-  }
-
-  window.loadRestevStats = async function(){
-    installAnonymousCenterLayout();
-    if(!supabaseClient){ showToast('Supabase non chargé : statistiques indisponibles.'); return; }
-
-    try{
-      const rows = await fetchStatsSafely();
-      const alertRows = rows.filter(r => String(r.event_type || '').toLowerCase().includes('signalement'));
-      const passportRows = rows.filter(r => String(r.event_type || '').toLowerCase().includes('passeport'));
-      renderAnonymousRestevCenter(alertRows, passportRows);
-    }catch(e){
-      console.error('Centre RESTEV anonymisé indisponible:', e);
-      showToast('Erreur Centre RESTEV anonymisé : ' + (e.message || e));
+    const buttons = Array.from(block.querySelectorAll('.r85-simple-risk-btn'));
+    function selectButton(btn){
+      buttons.forEach(b => {
+        b.classList.remove('ring-4','ring-offset-2','ring-restev-blue','scale-[1.01]');
+        b.style.transform = 'scale(1)';
+      });
+      btn.classList.add('ring-4','ring-offset-2','ring-restev-blue','scale-[1.01]');
+      btn.style.transform = 'scale(1.01)';
+      levelSelect.value = btn.dataset.level || 'À vérifier par le manager 🟠';
+      freqSelect.value = btn.dataset.frequency || 'Non renseignée';
+      const hidden = document.getElementById('restev-simple-choice-label');
+      if(hidden) hidden.value = btn.innerText.replace(/\s+/g,' ').trim();
     }
+    buttons.forEach(btn => btn.addEventListener('click', () => selectButton(btn)));
+    selectButton(buttons[1]);
+  }
+
+  // Submit simplifié : ajoute la phrase choisie dans la description pour aider le manager.
+  const oldSubmitRiskReport = window.submitRiskReport;
+  window.submitRiskReport = async function(){
+    installSimpleEmployeeReportUI();
+    const desc = document.getElementById('risk-description');
+    const choice = document.getElementById('restev-simple-choice-label')?.value || '';
+    if(desc && choice && !desc.value.includes('[Ressenti salarié]')){
+      desc.value = `[Ressenti salarié] ${choice}\n\n${desc.value}`.trim();
+    }
+    if(typeof oldSubmitRiskReport === 'function') return oldSubmitRiskReport();
   };
 
-  window.renderAnonymousRestevCenter = function(alertRows, passportRows){
-    alertRows = alertRows || [];
-    passportRows = passportRows || [];
+  // Quand l'alerte arrive, le badge est recalculé depuis Supabase pour éviter les alertes fantômes.
+  const oldTriggerUltra = window.triggerRestevUltraManagerAlert;
+  window.triggerRestevUltraManagerAlert = function(report){
+    if(typeof oldTriggerUltra === 'function') oldTriggerUltra(report);
+    setTimeout(window.updateRestevActiveAlertBadge, 500);
+  };
 
-    // Alertes : uniquement agrégats.
-    const riskCounts = r85GroupCount(alertRows, 'risk_category');
-    const topRisks = r85TopGrouped(riskCounts, 6);
-    const critical = alertRows.filter(r => String(r.risk_level || '').toLowerCase().includes('critique')).length;
-
-    r85SetText('restev-alert-total', alertRows.length);
-    r85SetText('restev-alert-critical', critical);
-    r85SetText('restev-alert-top', topRisks[0] ? topRisks[0][0] : '—');
-
-    const alertList = document.getElementById('restev-alert-list');
-    if(alertList){
-      alertList.innerHTML = topRisks.length ? topRisks.map(([risk, count], idx) => `
-        <div class="p-3 rounded-2xl border bg-red-50/70 dark:bg-slate-900 border-red-100 dark:border-red-900">
-          <div class="flex justify-between gap-2">
-            <p class="text-xs font-black dark:text-white">${idx+1}. ${r85Esc(risk)}</p>
-            <span class="text-[10px] font-black text-red-600 bg-white dark:bg-slate-800 px-2 py-1 rounded-lg">${count}</span>
-          </div>
-        </div>
-      `).join('') : '<p class="text-xs text-slate-400 italic">Aucune alerte terrain.</p>';
-    }
-
-    // Passeports : uniquement depuis prevention_stats event_type Passeport, donc pas de code entreprise affiché.
-    const totalPassports = passportRows.length;
-    const complete = passportRows.filter(r => String(r.risk_level || '').toLowerCase().includes('complet')).length;
-    const improve = Math.max(totalPassports - complete, 0);
-
-    r85SetText('restev-passport-total', totalPassports);
-    r85SetText('restev-passport-complete', complete);
-    r85SetText('restev-passport-improve', improve);
-
-    const monthCounts = {};
-    passportRows.forEach(r => {
-      const m = r85MonthLabel(r.period_month || r.created_at);
-      monthCounts[m] = (monthCounts[m] || 0) + 1;
-    });
-    const monthTop = Object.entries(monthCounts).sort((a,b) => b[0].localeCompare(a[0])).slice(0,6);
-
-    const passList = document.getElementById('restev-passport-list');
-    if(passList){
-      passList.innerHTML = monthTop.length ? monthTop.map(([month,count]) => `
-        <div class="p-3 rounded-2xl border bg-emerald-50/70 dark:bg-slate-900 border-emerald-100 dark:border-emerald-900">
-          <div class="flex justify-between gap-2">
-            <p class="text-xs font-black dark:text-white">Mois ${r85Esc(month)}</p>
-            <span class="text-[10px] font-black text-emerald-600 bg-white dark:bg-slate-800 px-2 py-1 rounded-lg">${count} passeport(s)</span>
-          </div>
-        </div>
-      `).join('') : '<p class="text-xs text-slate-400 italic">Aucune donnée passeport.</p>';
-    }
-
-    // Compatibilité ancienne zone : uniquement alertes, jamais passeports ni données nominatives.
-    r85SetText('stats-total', alertRows.length);
-    r85SetText('stats-top-risk', topRisks[0] ? topRisks[0][0] : '—');
-    r85SetText('stats-sector-count', Object.keys(r85GroupCount(alertRows, 'sector')).length);
-
-    setTimeout(window.alignPassportKpiCards, 100);
+  const oldSwitchScreen = window.switchScreen;
+  window.switchScreen = function(screenId){
+    if(typeof oldSwitchScreen === 'function') oldSwitchScreen(screenId);
+    if(screenId === 'scr-report') setTimeout(installSimpleEmployeeReportUI, 150);
+    if(screenId === 'scr-manager') setTimeout(window.updateRestevActiveAlertBadge, 400);
   };
 
   document.addEventListener('DOMContentLoaded', () => {
-    installAnonymousCenterLayout();
-    setTimeout(window.alignPassportKpiCards, 300);
+    installSimpleEmployeeReportUI();
+    setTimeout(window.updateRestevActiveAlertBadge, 1000);
     console.log(PATCH_VERSION + ' installé');
   });
 })();
