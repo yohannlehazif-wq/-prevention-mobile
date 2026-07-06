@@ -14,16 +14,11 @@
  
  
   <script>
-// PATCH RESTEV 85 — correction globale escapeHtml disponible dès le démarrage.
+
+// PATCH RESTEV 85 — escapeHtml global disponible dès le démarrage
 function escapeHtml(value){
   return String(value ?? '').replace(/[&<>'"]/g, function(c){
-    return {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      "'": '&#39;',
-      '"': '&quot;'
-    }[c];
+    return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];
   });
 }
 window.escapeHtml = escapeHtml;
@@ -654,7 +649,16 @@ async function loadRestevStats(){
  
           </div> 
  
-        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border-t-4 border-t-red-500 shadow-premium flex flex-col"> 
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-premium border-t-4 border-t-cyan-500 space-y-3">
+            <h3 class="font-black dark:text-white text-xs uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-bullhorn text-cyan-500"></i> 4. Information descendante</h3>
+            <p class="text-[10px] text-slate-500 dark:text-slate-400">Envoyez une information au salarié avec une alerte adaptée à l’importance.</p>
+            <input type="text" id="manager-message-employee" placeholder="Nom salarié exact ou Tous" value="Tous" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white" />
+            <select id="manager-message-priority" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white"><option value="Information">Information — alerte douce bleue</option><option value="Important">Important — alerte orange</option><option value="Urgent">Urgent — alerte rouge plein écran</option></select>
+            <input type="text" id="manager-message-title" placeholder="Titre de l'information" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white" />
+            <textarea id="manager-message-content" rows="3" placeholder="Message à transmettre..." class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white"></textarea>
+            <button onclick="sendManagerInfoToEmployee()" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white py-3 rounded-xl text-xs font-extrabold shadow-md"><i class="fa-solid fa-paper-plane mr-1"></i> Envoyer l'information</button>
+          </div>
+          <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border-t-4 border-t-red-500 shadow-premium flex flex-col"> 
           <div class="flex items-center justify-between gap-2"> 
             <h3 class="font-black dark:text-white text-xs uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-bell text-red-500 animate-bounce"></i> Signalements Dangers</h3> 
             <button onclick="loadManagerReports()" class="text-[10px] bg-slate-100 dark:bg-slate-700 dark:text-white px-2 py-1 rounded-lg font-black">Actualiser</button> 
@@ -704,7 +708,7 @@ async function loadRestevStats(){
         <button onclick="switchScreen('scr-report')" class="w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-restev-magenta p-4 rounded-xl text-left flex items-center justify-between group shadow-sm"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-restev-magenta/10 text-restev-magenta rounded-xl flex items-center justify-center"><i class="fa-solid fa-triangle-exclamation"></i></div><div><p class="text-xs font-black dark:text-white">2. Signaler une Situation</p><p class="text-[10px] text-slate-400 mt-0.5">Remonter immédiatement un risque terrain.</p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i></button> 
         <button onclick="openEmployeeResources()" class="w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-emerald-500 p-4 rounded-xl text-left flex items-center justify-between group shadow-sm"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-emerald-500/10 text-emerald-500 rounded-xl flex items-center justify-center"><i class="fa-solid fa-book-medical"></i></div><div><p class="text-xs font-black dark:text-white">3. Fiches Conseils Sécurité</p><p class="text-[10px] text-slate-400 mt-0.5">Ressources INRS, CARSAT & OPPBTP.</p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i></button> 
         <button onclick="switchScreen('scr-training')" class="w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-restev-gold p-4 rounded-xl text-left flex items-center justify-between group shadow-sm"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-restev-gold/10 text-restev-gold rounded-xl flex items-center justify-center"><i class="fa-solid fa-graduation-cap"></i></div><div><p class="text-xs font-black dark:text-white">4. Modules INRS</p><p class="text-[10px] text-slate-400 mt-0.5">Tutoriels prévention adaptés aux métiers.</p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i></button> 
-        <button onclick="openEmployeeMessages()" class="w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-cyan-500 p-4 rounded-xl text-left flex items-center justify-between group shadow-sm"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-cyan-500/10 text-cyan-500 rounded-xl flex items-center justify-center"><i class="fa-solid fa-comments"></i></div><div><p class="text-xs font-black dark:text-white">5. Messages du responsable</p><p class="text-[10px] text-slate-400 mt-0.5">Suivre les réponses à vos signalements.</p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i></button> 
+        <button id="btn-employee-messages" onclick="openEmployeeMessages()" class="w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-cyan-500 p-4 rounded-xl text-left flex items-center justify-between group shadow-sm"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-cyan-500/10 text-cyan-500 rounded-xl flex items-center justify-center"><i class="fa-solid fa-comments"></i></div><div><p class="text-xs font-black dark:text-white">5. Messages du responsable</p><p class="text-[10px] text-slate-400 mt-0.5">Suivre les réponses à vos signalements.</p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i></button> 
       </div> 
     </section> 
  
@@ -755,7 +759,10 @@ async function loadRestevStats(){
     <section id="scr-report" class="screen max-w-md mx-auto w-full bg-white dark:bg-slate-800 p-5 rounded-3xl border shadow-premium space-y-4"> 
       <h3 class="text-base font-black dark:text-white flex items-center space-x-2"><i class="fa-solid fa-triangle-exclamation text-restev-magenta animate-pulse"></i><span>Signalement Incident</span></h3> 
       <div class="p-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border text-center"><p id="geo-status" class="text-[11px] font-bold text-slate-500">Recherche GPS...</p></div> 
-      <div id="map" class="h-44 w-full rounded-2xl border shadow-inner bg-slate-100 z-0"></div> 
+      <div id="map" class="h-44 w-full rounded-2xl border shadow-inner bg-slate-100 z-0"></div>
+      <input type="hidden" id="risk-latitude" />
+      <input type="hidden" id="risk-longitude" />
+      <input type="hidden" id="risk-map-url" /> 
       <div class="space-y-2"><label class="block text-xs font-black text-slate-700 dark:text-slate-300">Type de Risque :</label><select id="risk-category-select" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white"></select></div> 
       <div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-black text-slate-700 dark:text-slate-300">Gravité :</label><select id="risk-level" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold text-red-600"><option value="Critique 🔴">Danger Grave</option><option value="Modéré 🟠">Anomalie Simple</option></select></div><div><label class="block text-xs font-black text-slate-700 dark:text-slate-300">Fréquence :</label><select id="risk-frequency" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white"><option value="Ponctuelle">Ponctuelle</option><option value="Régulière">Régulière</option><option value="Permanente">Permanente</option></select></div></div> 
       <div><label class="block text-xs font-black text-slate-700 dark:text-slate-300">Commentaires :</label><textarea id="risk-description" rows="3" placeholder="Décrivez la situation..." class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white"></textarea></div> 
@@ -1188,7 +1195,12 @@ const supabaseClient = window.supabase
     }; 
  
     let currentEmployeeSession = null; 
-    let mapInstance = null; 
+    let mapInstance = null;
+    let googleMapInstance = null;
+    let googleRiskMarker = null;
+    let googleRiskAccuracyCircle = null;
+    let currentRiskLocation = null;
+    let googleMapsReady = false; 
     let soundMuted = false; 
     let qcmActiveQuestions = []; 
     let qcmCurrentIndex = 0; 
@@ -1204,6 +1216,11 @@ let managerNotificationsEnabled = false;
 let restevStatsChart = null;
 let managerSector = 'Non renseigné';
 let managerCompanySize = 'Non renseigné';
+let employeeRealtimeChannel = null;
+let employeeAlertAudioCtx = null;
+let employeeUnreadMessages = 0;
+let lastEmployeeInfoAlertAt = 0;
+let employeeLiveMessagesCache = [];
  
     document.addEventListener('DOMContentLoaded', () => { 
       populateSectorDropdown(); 
@@ -1211,10 +1228,11 @@ let managerCompanySize = 'Non renseigné';
       populateRiskSelectors(); 
       renderEPIGrid(); 
       generateTrainingMenu(); 
-      initLeafletMap(); 
+      initGoogleMap(); 
       initChart(); 
       checkUrlParameters();
-      initSignaturePads(); 
+      initSignaturePads();
+      document.addEventListener('click', unlockEmployeeAlertSound, {once:true}); 
     }); 
  
     window.addEventListener('resize', adjustTutoViewer); 
@@ -1496,9 +1514,38 @@ function triggerNewReportAlert(report) {
     async function sendManagerResponse(id){ const response=document.getElementById(`response-${id}`).value.trim(); const action=document.getElementById(`action-${id}`).value.trim(); const {error}=await supabaseClient.from('prevention_reports').update({manager_response:response, corrective_action:action, status:'En cours de traitement'}).eq('id',id); if(error){ console.error(error); return showToast('Erreur Supabase : '+error.message); } showToast('Réponse enregistrée.'); loadManagerReports(); } 
     async function updateReportStatus(id,status){ const {error}=await supabaseClient.from('prevention_reports').update({status}).eq('id',id); if(error){ console.error(error); return showToast('Erreur Supabase : '+error.message); } showToast('Statut mis à jour.'); } 
  
-    async function openEmployeeMessages(){ if(!currentEmployeeSession) return showToast('Session salarié non reconnue.'); if(!supabaseClient) return showToast('Supabase non chargé. Vérifiez internet.'); const {data,error}=await supabaseClient.from('prevention_reports').select('*').eq('company_code',currentEmployeeSession.company).eq('employee_name',currentEmployeeSession.name).order('created_at',{ascending:false}).limit(20); if(error){ console.error(error); return showToast('Erreur Supabase : '+error.message); } renderEmployeeMessages(data||[]); switchScreen('scr-employee-messages'); } 
-    function renderEmployeeMessages(msgs){ const c=document.getElementById('employee-messages-list'); c.innerHTML=''; if(!msgs.length){ c.innerHTML='<p class="text-xs text-slate-400 italic text-center py-6">Aucun message pour le moment.</p>'; return; } msgs.forEach(m=>{ const card=document.createElement('div'); card.className='bg-white dark:bg-slate-800 p-4 rounded-2xl border shadow-sm space-y-2'; card.innerHTML=`<div class="flex justify-between items-start gap-2"><div><p class="text-xs font-black dark:text-white">${escapeHtml(m.category||'Signalement')}</p><p class="text-[10px] text-slate-400">${new Date(m.created_at).toLocaleString('fr-FR')}</p></div><span class="text-[10px] font-black px-2 py-1 rounded bg-blue-50 text-blue-600">${escapeHtml(m.status||'Nouveau')}</span></div><div class="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl"><p class="text-[10px] font-black uppercase text-slate-400 mb-1">Votre signalement</p><p class="text-xs text-slate-700 dark:text-slate-300">${escapeHtml(m.description||'')}</p></div><div class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-xl border"><p class="text-[10px] font-black uppercase text-emerald-600 mb-1">Réponse du responsable</p><p class="text-xs text-slate-700 dark:text-slate-300">${escapeHtml(m.manager_response || 'Aucune réponse pour le moment.')}</p></div><div class="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-xl border"><p class="text-[10px] font-black uppercase text-amber-600 mb-1">Action corrective</p><p class="text-xs text-slate-700 dark:text-slate-300">${escapeHtml(m.corrective_action || 'Aucune action corrective renseignée.')}</p></div>`; c.appendChild(card); }); } 
- 
+    async function openEmployeeMessages(){
+      if(!currentEmployeeSession) return showToast('Session salarié non reconnue.');
+      resetEmployeeMessageBadge();
+      switchScreen('scr-employee-messages');
+      if(employeeLiveMessagesCache.length) renderEmployeeMessages(employeeLiveMessagesCache);
+      if(!supabaseClient) return showToast('Supabase non chargé. Vérifiez internet.');
+      try{
+        const reportsRes=await supabaseClient.from('prevention_reports').select('*').eq('company_code', currentEmployeeSession.company).eq('employee_name', currentEmployeeSession.name).order('created_at',{ascending:false}).limit(20);
+        const infoRes=await supabaseClient.from('manager_messages').select('*').eq('company_code', currentEmployeeSession.company).order('created_at',{ascending:false}).limit(100);
+        const reportMessages=(reportsRes.data||[]).map(r=>({source:'report', id:r.id, created_at:r.created_at, title:r.category||'Signalement', priority:r.level||'Suivi', description:r.description||'', status:r.status||'Nouveau', manager_response:r.manager_response||'', corrective_action:r.corrective_action||''}));
+        const managerInfos=(infoRes.data||[]).filter(m=>{const t=String(m.employee_name||'Tous').trim(); return t===currentEmployeeSession.name||t==='Tous'||t==='Tous les salariés'||t==='';}).map(m=>normalizeEmployeeManagerInfo(m));
+        renderEmployeeMessages([...employeeLiveMessagesCache,...managerInfos,...reportMessages].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)));
+      }catch(e){ console.error(e); showToast('Erreur chargement messages.'); }
+    }
+    function alertSeverity(priority){const p=String(priority||'Information').toLowerCase(); if(p.includes('urgent')) return {label:'URGENT',text:'text-red-600',border:'border-l-red-600',badge:'bg-red-100 text-red-700',soft:'bg-red-50',gradient:'from-red-600 to-restev-magenta',sound:[880,1040,880],vibration:[300,120,300,120,500]}; if(p.includes('important')) return {label:'IMPORTANT',text:'text-amber-600',border:'border-l-amber-500',badge:'bg-amber-100 text-amber-700',soft:'bg-amber-50',gradient:'from-amber-500 to-restev-gold',sound:[660,880],vibration:[220,100,220]}; return {label:'INFORMATION',text:'text-cyan-600',border:'border-l-cyan-500',badge:'bg-cyan-100 text-cyan-700',soft:'bg-cyan-50',gradient:'from-cyan-500 to-restev-blue',sound:[520],vibration:[140]};}
+    function getEmployeeAlertSeverity(priority){return alertSeverity(priority);}
+    function normalizeEmployeeManagerInfo(msg){return {source:'manager_info',id:msg.id||('live-'+Date.now()),created_at:msg.created_at||new Date().toISOString(),title:msg.title||'Information du responsable',priority:msg.priority||'Information',description:msg.content||msg.message||'',status:msg.status||'Non lu',manager_response:msg.content||msg.message||'',corrective_action:''};}
+    function buildEmployeeMessageCard(m){const sev=alertSeverity(m.priority); const card=document.createElement('div'); card.setAttribute('data-message-id',String(m.id||m.created_at||Math.random())); card.className=`bg-white dark:bg-slate-800 p-4 rounded-2xl border shadow-sm space-y-2 border-l-4 ${sev.border}`; if(m.source==='manager_info'){card.innerHTML=`<div class="flex justify-between items-start gap-2"><div><p class="text-xs font-black dark:text-white flex items-center gap-2"><i class="fa-solid fa-bullhorn ${sev.text}"></i>${escapeHtml(m.title)}</p><p class="text-[10px] text-slate-400">${new Date(m.created_at).toLocaleString('fr-FR')}</p></div><span class="text-[10px] font-black px-2 py-1 rounded ${sev.badge}">${escapeHtml(m.priority)}</span></div><div class="${sev.soft} p-3 rounded-xl border"><p class="text-[10px] font-black uppercase ${sev.text} mb-1">Information du responsable</p><p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">${escapeHtml(m.description||'')}</p></div>`;} else {card.innerHTML=`<div class="flex justify-between items-start gap-2"><div><p class="text-xs font-black dark:text-white">${escapeHtml(m.title||'Signalement')}</p><p class="text-[10px] text-slate-400">${new Date(m.created_at).toLocaleString('fr-FR')}</p></div><span class="text-[10px] font-black px-2 py-1 rounded bg-blue-50 text-blue-600">${escapeHtml(m.status||'Nouveau')}</span></div><div class="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl"><p class="text-[10px] font-black uppercase text-slate-400 mb-1">Votre signalement</p><p class="text-xs text-slate-700 dark:text-slate-300">${escapeHtml(m.description||'')}</p></div><div class="bg-emerald-50 p-3 rounded-xl border"><p class="text-[10px] font-black uppercase text-emerald-600 mb-1">Réponse du responsable</p><p class="text-xs text-slate-700 dark:text-slate-300">${escapeHtml(m.manager_response||'Aucune réponse pour le moment.')}</p></div>`;} return card;}
+    function renderEmployeeMessages(msgs){const c=document.getElementById('employee-messages-list'); if(!c) return; c.innerHTML=''; const seen=new Set(); const unique=[]; (msgs||[]).forEach(m=>{const k=String(m.id||m.created_at||JSON.stringify(m)); if(!seen.has(k)){seen.add(k); unique.push(m);}}); if(!unique.length){c.innerHTML='<p class="text-xs text-slate-400 italic text-center py-6">Aucun message pour le moment.</p>';return;} unique.forEach(m=>c.appendChild(buildEmployeeMessageCard(m)));}
+    function rememberEmployeeLiveMessage(msg){const n=normalizeEmployeeManagerInfo(msg); if(!employeeLiveMessagesCache.some(m=>String(m.id)===String(n.id))){employeeLiveMessagesCache.unshift(n); employeeLiveMessagesCache=employeeLiveMessagesCache.slice(0,30);} return n;}
+    function startEmployeeMessageRealtime(){if(!supabaseClient||!currentEmployeeSession)return; const companyCode=currentEmployeeSession.company, employeeName=currentEmployeeSession.name; if(employeeRealtimeChannel){supabaseClient.removeChannel(employeeRealtimeChannel); employeeRealtimeChannel=null;} employeeRealtimeChannel=supabaseClient.channel(`manager_messages_employee_${companyCode}_${employeeName}`).on('postgres_changes',{event:'INSERT',schema:'public',table:'manager_messages',filter:`company_code=eq.${companyCode}`},payload=>{const msg=payload.new||{}; const t=String(msg.employee_name||'Tous').trim(); if(t===employeeName||t==='Tous'||t==='Tous les salariés'||t==='') triggerEmployeeManagerInfoAlert(msg);}).subscribe(status=>{console.log('Realtime salarié messages :',status); if(status==='SUBSCRIBED') showToast('Alertes salarié temps réel activées.');});}
+    async function loadEmployeeUnreadMessageCount(){return;}
+    function triggerEmployeeManagerInfoAlert(msg){const now=Date.now(); if(now-lastEmployeeInfoAlertAt<800)return; lastEmployeeInfoAlertAt=now; const live=rememberEmployeeLiveMessage(msg); employeeUnreadMessages++; updateEmployeeMessageBadge(); const list=document.getElementById('employee-messages-list'), screen=document.getElementById('scr-employee-messages'); if(list&&screen&&screen.classList.contains('active')){if(list.innerText.includes('Aucun message')) list.innerHTML=''; list.prepend(buildEmployeeMessageCard(live));} const sev=alertSeverity(live.priority); playEmployeePrioritySound(sev); vibrateEmployeePriority(sev); showToast(`${sev.label} : ${live.title}`); showEmployeePriorityOverlay(live,sev);}
+    function updateEmployeeMessageBadge(){const btn=document.getElementById('btn-employee-messages'); if(!btn)return; let badge=document.getElementById('employee-message-badge'); if(!badge){badge=document.createElement('span'); badge.id='employee-message-badge'; badge.className='ml-2 inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-red-600 text-white text-[10px] font-black animate-pulse'; (btn.querySelector('p.text-xs')||btn).appendChild(badge);} badge.innerText=String(employeeUnreadMessages); badge.style.display=employeeUnreadMessages>0?'inline-flex':'none';}
+    function resetEmployeeMessageBadge(){employeeUnreadMessages=0; updateEmployeeMessageBadge();}
+    function unlockEmployeeAlertSound(){try{const A=window.AudioContext||window.webkitAudioContext; if(!A)return; if(!employeeAlertAudioCtx) employeeAlertAudioCtx=new A(); if(employeeAlertAudioCtx.state==='suspended') employeeAlertAudioCtx.resume();}catch(e){}}
+    function playEmployeePrioritySound(sev){try{unlockEmployeeAlertSound(); if(!employeeAlertAudioCtx)return; const start=employeeAlertAudioCtx.currentTime; (sev.sound||[520]).forEach((freq,i)=>{const osc=employeeAlertAudioCtx.createOscillator(),gain=employeeAlertAudioCtx.createGain(),t=start+i*.18; osc.frequency.setValueAtTime(freq,t); gain.gain.setValueAtTime(.0001,t); gain.gain.exponentialRampToValueAtTime(.20,t+.02); gain.gain.exponentialRampToValueAtTime(.0001,t+.14); osc.connect(gain); gain.connect(employeeAlertAudioCtx.destination); osc.start(t); osc.stop(t+.16);});}catch(e){}}
+    function vibrateEmployeePriority(sev){try{if('vibrate' in navigator) navigator.vibrate(sev.vibration||[140]);}catch(e){}}
+    function showEmployeePriorityOverlay(msg,sev){let overlay=document.getElementById('employee-priority-overlay'); if(!overlay){overlay=document.createElement('div'); overlay.id='employee-priority-overlay'; overlay.className='fixed inset-0 z-[90] bg-slate-950/75 backdrop-blur-sm hidden items-center justify-center p-5 no-print'; overlay.innerHTML=`<div class="bg-white dark:bg-slate-900 rounded-[2rem] p-6 max-w-md w-full shadow-2xl border space-y-4"><div id="employee-priority-head" class="rounded-3xl p-5 text-white bg-gradient-to-r"><p id="employee-priority-label" class="text-[10px] font-black uppercase tracking-widest"></p><h3 id="employee-priority-title" class="text-xl font-black"></h3></div><p id="employee-priority-content" class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed"></p><div class="grid grid-cols-2 gap-3"><button onclick="hideEmployeePriorityOverlay()" class="bg-slate-100 dark:bg-slate-800 dark:text-white py-3 rounded-xl text-xs font-black">Fermer</button><button onclick="hideEmployeePriorityOverlay(); openEmployeeMessages();" class="bg-restev-blue text-white py-3 rounded-xl text-xs font-black">Voir messages</button></div></div>`; document.body.appendChild(overlay);} document.getElementById('employee-priority-head').className=`rounded-3xl p-5 text-white bg-gradient-to-r ${sev.gradient}`; document.getElementById('employee-priority-label').innerText=sev.label; document.getElementById('employee-priority-title').innerText=msg.title; document.getElementById('employee-priority-content').innerText=msg.description||'Un nouveau message est disponible.'; overlay.classList.remove('hidden'); overlay.classList.add('flex');}
+    function hideEmployeePriorityOverlay(){const o=document.getElementById('employee-priority-overlay'); if(o){o.classList.add('hidden'); o.classList.remove('flex');}}
+    function enableEmployeeNotifications(){unlockEmployeeAlertSound(); if('Notification' in window) Notification.requestPermission();}
+    async function sendManagerInfoToEmployee(){if(!supabaseClient)return showToast('Supabase non chargé.'); const companyCode=document.getElementById('lbl-manager-comp-name')?.innerText?.trim(); const employeeName=(document.getElementById('manager-message-employee')?.value||'Tous').trim()||'Tous'; const priority=document.getElementById('manager-message-priority')?.value||'Information'; const title=document.getElementById('manager-message-title')?.value?.trim(); const content=document.getElementById('manager-message-content')?.value?.trim(); if(!companyCode||!title||!content)return showToast('Code, titre et message obligatoires.'); const {error}=await supabaseClient.from('manager_messages').insert([{company_code:companyCode,employee_name:employeeName,title,content,priority,status:'Non lu'}]); if(error){console.error(error); return showToast('Erreur envoi info : '+error.message);} document.getElementById('manager-message-title').value=''; document.getElementById('manager-message-content').value=''; showToast('Information envoyée.');}
     function getSectorKey(label){
       const s=String(label || '').toLowerCase();
       if(s.includes('btp') || s.includes('bâtiment') || s.includes('batiment')) return 'btp';
@@ -1716,78 +1763,63 @@ function triggerNewReportAlert(report) {
       initGoogleMap();
     };
 
-    function initGoogleMap(){
-      const mapEl = document.getElementById('map');
-      if(!mapEl) return;
-      if(!window.google || !google.maps){
-        const status=document.getElementById('geo-status');
-        if(status) status.innerText='Chargement de Google Maps...';
-        return;
-      }
-      if(googleMapInstance) return requestRiskPosition();
-      const defaultPos = { lat: 46.670, lng: -1.426 }; // Vendée par défaut
-      googleMapInstance = new google.maps.Map(mapEl, {
-        center: defaultPos,
-        zoom: 13,
-        mapTypeControl: false,
-        streetViewControl: false,
-        fullscreenControl: false
-      });
-      googleRiskMarker = new google.maps.Marker({
-        position: defaultPos,
-        map: googleMapInstance,
-        title: 'Localisation du risque'
-      });
-      requestRiskPosition();
+    function initLeafletMap(){
+      initGoogleMap();
     }
 
-    function requestRiskPosition(){
+    function initGoogleMap(){
+      const mapEl=document.getElementById('map');
+      if(!mapEl) return;
       const status=document.getElementById('geo-status');
-      if(!navigator.geolocation){
-        if(status) status.innerText='GPS non disponible sur cet appareil.';
+      if(!window.google || !google.maps){
+        if(status) status.innerText='Google Maps est en chargement ou la clé API est absente.';
+        mapEl.innerHTML='<div class="p-4 text-xs font-bold text-slate-500">Google Maps non chargé : remplacez VOTRE_CLE_API_GOOGLE_MAPS par une clé valide.</div>';
         return;
       }
-      if(status) status.innerText='Autorisez la géolocalisation pour localiser le risque...';
+      const defaultPos={lat:46.670,lng:-1.426};
+      if(!googleMapInstance){
+        mapEl.innerHTML='';
+        googleMapInstance=new google.maps.Map(mapEl,{center:defaultPos,zoom:14,mapTypeControl:false,streetViewControl:false,fullscreenControl:true,clickableIcons:false,gestureHandling:'greedy'});
+        googleRiskMarker=new google.maps.Marker({position:defaultPos,map:googleMapInstance,title:'Localisation du risque',draggable:true});
+        googleRiskMarker.addListener('dragend',()=>{const p=googleRiskMarker.getPosition(); if(p) setRiskMapPosition(p.lat(),p.lng(),null,'📍 Position ajustée manuellement sur Google Maps');});
+        const locateBtn=document.createElement('button');
+        locateBtn.type='button'; locateBtn.textContent='📍 Me localiser précisément';
+        locateBtn.className='bg-white text-restev-blue font-black text-[11px] px-3 py-2 rounded-xl shadow border m-2';
+        locateBtn.onclick=()=>requestRiskPosition(true);
+        googleMapInstance.controls[google.maps.ControlPosition.TOP_CENTER].push(locateBtn);
+      }
+      setTimeout(()=>google.maps.event.trigger(googleMapInstance,'resize'),250);
+      requestRiskPosition(false);
+    }
+
+    function requestRiskPosition(force){
+      const status=document.getElementById('geo-status');
+      if(!navigator.geolocation){ if(status) status.innerText='GPS non disponible sur cet appareil.'; return; }
+      if(!window.isSecureContext && location.hostname !== 'localhost'){ if(status) status.innerText='GPS bloqué : ouvrez l’application en HTTPS pour une position précise.'; return; }
+      if(status) status.innerText='Recherche Google Maps GPS haute précision...';
       navigator.geolocation.getCurrentPosition(
-        pos=>{
-          const lat=pos.coords.latitude;
-          const lng=pos.coords.longitude;
-          setRiskMapPosition(lat,lng,'📍 Position GPS du risque verrouillée');
-        },
-        err=>{
-          console.warn('Géolocalisation refusée/indisponible :', err);
-          if(status) status.innerText='GPS refusé ou indisponible : signalement possible sans position.';
-        },
-        { enableHighAccuracy:true, timeout:10000, maximumAge:60000 }
+        pos=>{ const lat=pos.coords.latitude; const lng=pos.coords.longitude; const accuracy=pos.coords.accuracy || null; setRiskMapPosition(lat,lng,accuracy, accuracy ? `📍 Position Google Maps enregistrée — précision ± ${Math.round(accuracy)} m` : '📍 Position Google Maps enregistrée'); },
+        err=>{ console.warn('Géolocalisation refusée/indisponible :', err); if(status) status.innerText='GPS refusé ou indisponible : signalement possible sans position.'; },
+        {enableHighAccuracy:true, timeout:15000, maximumAge: force ? 0 : 30000}
       );
     }
 
-    function setRiskMapPosition(lat,lng,message){
-      currentRiskLocation = { lat:Number(lat), lng:Number(lng) };
-      const mapUrl = `https://www.google.com/maps?q=${lat},${lng}`;
-      const latEl=document.getElementById('risk-latitude');
-      const lngEl=document.getElementById('risk-longitude');
-      const urlEl=document.getElementById('risk-map-url');
-      if(latEl) latEl.value=String(lat);
-      if(lngEl) lngEl.value=String(lng);
-      if(urlEl) urlEl.value=mapUrl;
+    function setRiskMapPosition(lat,lng,accuracy,message){
+      currentRiskLocation={lat:Number(lat),lng:Number(lng),accuracy:accuracy?Number(accuracy):null};
+      const mapUrl=`https://www.google.com/maps?q=${lat},${lng}`;
+      const latEl=document.getElementById('risk-latitude'); const lngEl=document.getElementById('risk-longitude'); const urlEl=document.getElementById('risk-map-url');
+      if(latEl) latEl.value=String(lat); if(lngEl) lngEl.value=String(lng); if(urlEl) urlEl.value=mapUrl;
       if(googleMapInstance){
-        const p={lat:Number(lat), lng:Number(lng)};
-        googleMapInstance.setCenter(p);
-        googleMapInstance.setZoom(17);
-        if(googleRiskMarker) googleRiskMarker.setPosition(p);
+        const p={lat:Number(lat),lng:Number(lng)}; googleMapInstance.setCenter(p); googleMapInstance.setZoom(18); if(googleRiskMarker) googleRiskMarker.setPosition(p);
+        if(googleRiskAccuracyCircle) googleRiskAccuracyCircle.setMap(null);
+        if(accuracy){ googleRiskAccuracyCircle=new google.maps.Circle({map:googleMapInstance,center:p,radius:Number(accuracy),fillColor:'#3a7bd5',fillOpacity:0.13,strokeColor:'#245ca6',strokeOpacity:0.45,strokeWeight:1}); }
       }
-      const status=document.getElementById('geo-status');
-      if(status) status.innerText=message || '📍 Coordonnées GPS enregistrées';
+      const status=document.getElementById('geo-status'); if(status) status.innerText=message || '📍 Coordonnées Google Maps enregistrées';
     }
 
     function fixMapSize(){
-      if(googleMapInstance){
-        google.maps.event.trigger(googleMapInstance, 'resize');
-        if(currentRiskLocation) googleMapInstance.setCenter(currentRiskLocation);
-      }else{
-        initGoogleMap();
-      }
+      if(googleMapInstance){ google.maps.event.trigger(googleMapInstance,'resize'); if(currentRiskLocation) googleMapInstance.setCenter({lat:currentRiskLocation.lat,lng:currentRiskLocation.lng}); }
+      else initGoogleMap();
     } 
     function getCurrentSectorLabel(){
       const companyCode = (currentEmployeeSession?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
@@ -2811,528 +2843,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 })();
 </script>
+<!-- Google Maps RESTEV : remplacez VOTRE_CLE_API_GOOGLE_MAPS par une clé API Google Maps JavaScript valide -->
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=VOTRE_CLE_API_GOOGLE_MAPS&callback=initGoogleMapsLoader"></script>
 
-
-<!-- =========================================================
-     PATCH RESTEV 85 — ZONES SANS GPS + PHOTO + ALERTE MANAGER FORTE
-     À coller juste avant 
-  <!-- Google Maps : remplacez VOTRE_CLE_API_GOOGLE_MAPS par votre clé API Google Maps JavaScript -->
-  <script async defer src="https://maps.googleapis.com/maps/api/js?key=VOTRE_CLE_API_GOOGLE_MAPS&callback=initGoogleMapsLoader"></script>
 </body>
-
-   
-<script>
-(function(){
-  const PATCH_VERSION = 'RESTEV85_ZONES_SANS_GPS_PHOTO_ALERTE_2026_07_03';
-  let r85PhotoData = null;
-  let r85PhotoName = null;
-  let r85ManagerAlertChannel = null;
-  let r85AudioCtx = null;
-
-  function r85Toast(msg){
-    if(typeof showToast === 'function') showToast(msg);
-    else alert(msg);
-  }
-
-  function r85Esc(v){
-    if(typeof escapeHtml === 'function') return escapeHtml(v || '');
-    return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
-
-  function r85ManagerCompany(){
-    return (document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
-  }
-
-  function r85EmployeeSession(){
-    try { return currentEmployeeSession || window.currentEmployeeSession || null; }
-    catch(e){ return window.currentEmployeeSession || null; }
-  }
-
-  // =========================================================
-  // ALERTE MANAGER FORTE — RESTAURÉE
-  // =========================================================
-  function r85UnlockAudio(){
-    try{
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if(!AC) return;
-      if(!r85AudioCtx) r85AudioCtx = new AC();
-      if(r85AudioCtx.state === 'suspended') r85AudioCtx.resume();
-    }catch(e){}
-  }
-
-  function r85PlayStrongSound(){
-    try{
-      if(typeof soundMuted !== 'undefined' && soundMuted) return;
-      r85UnlockAudio();
-      if(!r85AudioCtx) return;
-      [0,.18,.36,.72,.90,1.08].forEach((delay, idx) => {
-        const now = r85AudioCtx.currentTime + delay;
-        const osc = r85AudioCtx.createOscillator();
-        const gain = r85AudioCtx.createGain();
-        osc.type = idx % 2 ? 'sawtooth' : 'square';
-        osc.frequency.setValueAtTime(idx % 2 ? 650 : 980, now);
-        gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.exponentialRampToValueAtTime(0.25, now + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
-        osc.connect(gain);
-        gain.connect(r85AudioCtx.destination);
-        osc.start(now);
-        osc.stop(now + 0.17);
-      });
-    }catch(e){ console.warn('Alerte sonore impossible:', e); }
-  }
-
-  function installStrongAlertUI(){
-    if(!document.getElementById('r85-strong-alert-style')){
-      const style = document.createElement('style');
-      style.id = 'r85-strong-alert-style';
-      style.innerHTML = `
-        @keyframes r85FlashRed {0%{background:#7f1d1d;transform:scale(1)}50%{background:#dc2626;transform:scale(1.018)}100%{background:#991b1b;transform:scale(1)}}
-        @keyframes r85BeaconPulse {0%{box-shadow:0 0 0 0 rgba(255,255,255,.9)}70%{box-shadow:0 0 0 28px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
-        @keyframes r85BadgePulse {0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
-        #r85-manager-alert-overlay.r85-show { display:flex !important; }
-        .r85-flash-red { animation:r85FlashRed .65s infinite; }
-        .r85-beacon-pulse { animation:r85BeaconPulse 1s infinite; }
-        #r85-manager-alert-badge { animation:r85BadgePulse 1s infinite; }
-      `;
-      document.head.appendChild(style);
-    }
-
-    if(!document.getElementById('r85-manager-alert-overlay')){
-      const overlay = document.createElement('div');
-      overlay.id = 'r85-manager-alert-overlay';
-      overlay.className = 'hidden fixed inset-0 z-[9999] items-center justify-center p-4 bg-black/75 backdrop-blur-sm no-print';
-      overlay.innerHTML = `
-        <div class="r85-flash-red max-w-2xl w-full text-white rounded-[2rem] shadow-2xl border-4 border-white p-6 md:p-8 text-center space-y-5">
-          <div class="mx-auto w-24 h-24 rounded-full bg-white/20 border-4 border-white flex items-center justify-center r85-beacon-pulse">
-            <i class="fa-solid fa-triangle-exclamation text-5xl"></i>
-          </div>
-          <div>
-            <p class="text-[11px] font-black uppercase tracking-[.35em] text-red-100">Alerte terrain</p>
-            <h2 class="text-3xl md:text-5xl font-black mt-2">🚨 NOUVEAU SIGNALEMENT 🚨</h2>
-          </div>
-          <div class="bg-white/15 border border-white/30 rounded-2xl p-4 text-left space-y-3">
-            <div>
-              <p class="text-[10px] font-black uppercase text-red-100">Risque</p>
-              <p id="r85-alert-risk" class="text-xl font-black">—</p>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div><p class="text-[10px] font-black uppercase text-red-100">Salarié</p><p id="r85-alert-employee" class="font-bold">—</p></div>
-              <div><p class="text-[10px] font-black uppercase text-red-100">Zone / lieu</p><p id="r85-alert-zone" class="font-bold">—</p></div>
-            </div>
-            <p id="r85-alert-desc" class="text-sm leading-relaxed bg-black/20 rounded-xl p-3">—</p>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button onclick="acknowledgeR85ManagerAlert()" class="bg-white text-red-700 py-3 rounded-xl font-black shadow-lg"><i class="fa-solid fa-check mr-1"></i> J'ai vu</button>
-            <button onclick="openR85ManagerAlerts()" class="bg-slate-900 text-white py-3 rounded-xl font-black shadow-lg"><i class="fa-solid fa-list-check mr-1"></i> Ouvrir les signalements</button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(overlay);
-    }
-
-    if(!document.getElementById('r85-manager-alert-badge')){
-      const badge = document.createElement('button');
-      badge.id = 'r85-manager-alert-badge';
-      badge.className = 'hidden fixed bottom-5 left-5 z-[9998] bg-red-600 text-white rounded-2xl shadow-2xl border-4 border-white px-4 py-3 font-black no-print';
-      badge.onclick = () => openR85ManagerAlerts();
-      badge.innerHTML = `<i class="fa-solid fa-bell mr-2"></i><span id="r85-manager-alert-count">0</span> alerte(s)`;
-      document.body.appendChild(badge);
-    }
-  }
-
-  window.acknowledgeR85ManagerAlert = function(){
-    const overlay = document.getElementById('r85-manager-alert-overlay');
-    if(overlay){ overlay.classList.remove('r85-show'); overlay.classList.add('hidden'); }
-    updateR85ActiveAlertBadge();
-  };
-
-  window.openR85ManagerAlerts = function(){
-    acknowledgeR85ManagerAlert();
-    if(typeof switchScreen === 'function') switchScreen('scr-manager');
-    setTimeout(() => document.getElementById('manager-risk-box')?.scrollIntoView({behavior:'smooth', block:'start'}), 300);
-    if(typeof loadManagerReports === 'function') loadManagerReports();
-  };
-
-  function triggerR85ManagerAlert(report){
-    installStrongAlertUI();
-    const overlay = document.getElementById('r85-manager-alert-overlay');
-    const set = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val || '—'; };
-    set('r85-alert-risk', report?.category);
-    set('r85-alert-employee', report?.employee_name);
-    set('r85-alert-zone', report?.work_zone || 'Zone non précisée');
-    set('r85-alert-desc', report?.description);
-
-    overlay?.classList.remove('hidden');
-    overlay?.classList.add('r85-show');
-    r85PlayStrongSound();
-    try{ if(navigator.vibrate) navigator.vibrate([350,120,350,120,650]); }catch(e){}
-    r85Toast('🚨 Nouveau signalement terrain reçu !');
-    updateR85ActiveAlertBadge();
-  }
-
-  window.updateR85ActiveAlertBadge = async function(){
-    if(!supabaseClient) return;
-    const company = r85ManagerCompany();
-    if(!company) return;
-
-    const { data, error } = await supabaseClient
-      .from('prevention_reports')
-      .select('id,status')
-      .eq('company_code', company)
-      .neq('status', 'Traité')
-      .limit(200);
-
-    if(error) return console.warn('Comptage alertes actives impossible:', error.message);
-    const active = (data || []).length;
-    const badge = document.getElementById('r85-manager-alert-badge');
-    const count = document.getElementById('r85-manager-alert-count');
-    if(count) count.innerText = String(active);
-    if(active <= 0){
-      const overlay = document.getElementById('r85-manager-alert-overlay');
-      if(overlay){ overlay.classList.remove('r85-show'); overlay.classList.add('hidden'); }
-      if(badge) badge.classList.add('hidden');
-    } else if(badge){
-      badge.classList.remove('hidden');
-    }
-  };
-
-  // Realtime manager restauré.
-  window.startManagerRealtime = function(){
-    if(!supabaseClient) return r85Toast('Supabase non chargé.');
-    const company = r85ManagerCompany();
-    if(!company) return;
-    installStrongAlertUI();
-    r85UnlockAudio();
-
-    if(r85ManagerAlertChannel){
-      try{ supabaseClient.removeChannel(r85ManagerAlertChannel); }catch(e){}
-      r85ManagerAlertChannel = null;
-    }
-
-    r85ManagerAlertChannel = supabaseClient
-      .channel('r85_manager_alerts_' + company)
-      .on('postgres_changes', {event:'INSERT', schema:'public', table:'prevention_reports', filter:'company_code=eq.' + company}, payload => {
-        triggerR85ManagerAlert(payload.new);
-        if(typeof loadManagerReports === 'function') loadManagerReports();
-      })
-      .subscribe(status => {
-        console.log('Realtime alertes manager:', status);
-        if(status === 'SUBSCRIBED') r85Toast('Alertes visuelles manager activées.');
-      });
-  };
-
-  // =========================================================
-  // ZONES MANAGER SANS GPS
-  // =========================================================
-  function installManagerZonesPanel(){
-    const screen = document.getElementById('scr-manager');
-    if(!screen || document.getElementById('r85-manager-zones-panel')) return;
-
-    const panel = document.createElement('div');
-    panel.id = 'r85-manager-zones-panel';
-    panel.className = 'bg-white dark:bg-slate-800 p-5 rounded-2xl border-t-4 border-t-violet-500 shadow-premium space-y-4';
-    panel.innerHTML = `
-      <div class="flex items-center justify-between gap-2">
-        <h3 class="font-black dark:text-white text-xs uppercase tracking-wider flex items-center gap-2">
-          <i class="fa-solid fa-map-location-dot text-violet-500"></i> Zones / lieux de travail
-        </h3>
-        <button onclick="loadWorkZones()" class="text-[10px] bg-violet-50 text-violet-700 dark:bg-slate-700 dark:text-violet-300 px-3 py-2 rounded-xl font-black">Actualiser</button>
-      </div>
-      <p class="text-[10px] text-slate-500 leading-relaxed">Exemples : Ligne 1, Atelier, Réserve, Chantier XXX, Parking, Quai, Véhicule tournée...</p>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <input id="r85-zone-name" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white" placeholder="Nom zone : Ligne 1">
-        <input id="r85-zone-activity" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white" placeholder="Activité : production, stockage...">
-        <button onclick="saveWorkZone()" class="bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white py-3 rounded-xl text-xs font-black"><i class="fa-solid fa-plus mr-1"></i> Ajouter</button>
-      </div>
-      <textarea id="r85-zone-description" rows="2" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white" placeholder="Description courte facultative"></textarea>
-      <div id="r85-zones-list" class="space-y-2"><p class="text-xs text-slate-400 italic">Aucune zone créée.</p></div>
-    `;
-
-    const firstGrid = screen.querySelector('.grid.grid-cols-1.md\\:grid-cols-2') || screen.querySelector('.grid');
-    if(firstGrid && firstGrid.nextSibling) screen.insertBefore(panel, firstGrid.nextSibling);
-    else screen.appendChild(panel);
-  }
-
-  window.saveWorkZone = async function(){
-    if(!supabaseClient) return r85Toast('Supabase non chargé.');
-    const company = r85ManagerCompany();
-    if(!company) return r85Toast('Code établissement manager manquant.');
-    const zone_name = document.getElementById('r85-zone-name')?.value.trim();
-    const activity_type = document.getElementById('r85-zone-activity')?.value.trim();
-    const description = document.getElementById('r85-zone-description')?.value.trim();
-    if(!zone_name) return r85Toast('Nom de zone obligatoire.');
-
-    const { error } = await supabaseClient.from('company_work_zones').insert([{ company_code: company, zone_name, activity_type, description }]);
-    if(error) return r85Toast('Erreur création zone : ' + error.message);
-
-    ['r85-zone-name','r85-zone-activity','r85-zone-description'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
-    r85Toast('Zone / lieu ajouté.');
-    loadWorkZones();
-  };
-
-  window.deleteWorkZone = async function(id){
-    if(!supabaseClient) return;
-    if(!confirm('Supprimer cette zone ?')) return;
-    const { error } = await supabaseClient.from('company_work_zones').delete().eq('id', id);
-    if(error) return r85Toast('Erreur suppression : ' + error.message);
-    r85Toast('Zone supprimée.');
-    loadWorkZones();
-  };
-
-  window.loadWorkZones = async function(){
-    const company = r85ManagerCompany() || r85EmployeeSession()?.company;
-    if(!company || !supabaseClient) return;
-    const list = document.getElementById('r85-zones-list');
-    const select = document.getElementById('r85-report-zone');
-
-    const { data, error } = await supabaseClient
-      .from('company_work_zones')
-      .select('id,zone_name,activity_type,description,created_at')
-      .eq('company_code', company)
-      .order('zone_name',{ascending:true});
-
-    if(error){
-      if(list) list.innerHTML = `<p class="text-xs text-red-500 font-bold">Erreur zones : ${r85Esc(error.message)}</p>`;
-      if(select) select.innerHTML = '<option value="">Aucune zone disponible</option>';
-      return;
-    }
-
-    const rows = data || [];
-    if(list){
-      list.innerHTML = rows.length ? rows.map(z => `
-        <div class="p-3 rounded-xl border bg-violet-50/70 dark:bg-slate-900 border-violet-100 dark:border-slate-700 text-xs">
-          <div class="flex justify-between gap-2">
-            <div>
-              <p class="font-black dark:text-white">${r85Esc(z.zone_name)}</p>
-              <p class="text-[10px] text-slate-500">${r85Esc(z.activity_type || 'Activité non renseignée')}</p>
-              <p class="text-[10px] text-slate-400 mt-1">${r85Esc(z.description || '')}</p>
-            </div>
-            <button onclick="deleteWorkZone('${z.id}')" class="text-red-500 font-black text-[10px]">Supprimer</button>
-          </div>
-        </div>`).join('') : '<p class="text-xs text-slate-400 italic">Aucune zone créée.</p>';
-    }
-
-    if(select){
-      select.innerHTML = '<option value="Autre / non précisée">Je ne sais pas / Autre zone</option>' + rows.map(z =>
-        `<option value="${r85Esc(z.zone_name)}">${r85Esc(z.zone_name)}${z.activity_type ? ' — '+r85Esc(z.activity_type) : ''}</option>`
-      ).join('');
-    }
-  };
-
-  // =========================================================
-  // SIGNALEMENT SALARIÉ : ZONE + PHOTO, SANS GPS
-  // =========================================================
-  function compressImageFile(file, maxWidth=900, quality=0.72){
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = e => {
-        const img = new Image();
-        img.onload = () => {
-          const scale = Math.min(1, maxWidth / img.width);
-          const canvas = document.createElement('canvas');
-          canvas.width = Math.round(img.width * scale);
-          canvas.height = Math.round(img.height * scale);
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL('image/jpeg', quality));
-        };
-        img.onerror = reject;
-        img.src = e.target.result;
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-  async function handlePhoto(event){
-    const file = event.target.files && event.target.files[0];
-    if(!file) return;
-    try{
-      r85PhotoName = file.name || ('photo-signalement-' + Date.now() + '.jpg');
-      r85PhotoData = await compressImageFile(file);
-      const preview = document.getElementById('r85-photo-preview');
-      if(preview){
-        preview.classList.remove('hidden');
-        preview.innerHTML = `<p class="text-[10px] font-black text-slate-500 mb-2">Photo ajoutée</p><img src="${r85PhotoData}" class="w-full max-h-56 object-cover rounded-xl border"><button type="button" onclick="clearReportPhoto()" class="mt-2 text-[10px] font-black text-red-600">Retirer la photo</button>`;
-      }
-      r85Toast('Photo ajoutée.');
-    }catch(e){ r85Toast('Impossible de lire la photo.'); }
-  }
-
-  window.clearReportPhoto = function(){
-    r85PhotoData = null; r85PhotoName = null;
-    const input = document.getElementById('r85-report-photo'); if(input) input.value = '';
-    const preview = document.getElementById('r85-photo-preview'); if(preview){ preview.classList.add('hidden'); preview.innerHTML=''; }
-  };
-
-  function installReportZonePhotoUI(){
-    const screen = document.getElementById('scr-report');
-    const riskSelect = document.getElementById('risk-category-select');
-    const desc = document.getElementById('risk-description');
-    if(!screen || !riskSelect || !desc) return;
-
-    // Supprime l'ancien bloc GPS/photo si présent.
-    const oldGps = document.getElementById('r85-zone-gps-photo-block');
-    if(oldGps) oldGps.remove();
-
-    if(document.getElementById('r85-zone-photo-block')) return;
-
-    const block = document.createElement('div');
-    block.id = 'r85-zone-photo-block';
-    block.className = 'space-y-3 bg-blue-50/70 dark:bg-slate-900 border border-blue-100 dark:border-slate-700 p-4 rounded-2xl';
-    block.innerHTML = `
-      <div class="space-y-2">
-        <label class="block text-xs font-black text-slate-700 dark:text-slate-300"><i class="fa-solid fa-location-dot text-restev-blue mr-1"></i> Zone / lieu concerné</label>
-        <select id="r85-report-zone" class="w-full p-3 bg-white dark:bg-slate-800 border rounded-xl text-xs font-bold dark:text-white"><option value="Autre / non précisée">Chargement des zones...</option></select>
-      </div>
-      <label class="block bg-slate-900 dark:bg-slate-700 text-white py-3 rounded-xl text-xs font-black text-center cursor-pointer">
-        <i class="fa-solid fa-camera mr-1"></i> Ajouter une photo pour aider le manager
-        <input id="r85-report-photo" type="file" accept="image/*" capture="environment" class="hidden">
-      </label>
-      <div id="r85-photo-preview" class="hidden bg-white dark:bg-slate-800 border rounded-xl p-2"></div>
-    `;
-
-    const riskBlock = riskSelect.closest('div');
-    if(riskBlock && riskBlock.nextSibling) screen.insertBefore(block, riskBlock.nextSibling);
-    else screen.appendChild(block);
-    document.getElementById('r85-report-photo')?.addEventListener('change', handlePhoto);
-    loadWorkZones();
-  }
-
-  // Envoi signalement : zone + photo, sans GPS.
-  window.submitRiskReport = async function(){
-    installReportZonePhotoUI();
-    if(!supabaseClient) return r85Toast('Supabase non chargé.');
-    const category = document.getElementById('risk-category-select')?.value || 'Non renseigné';
-    const desc = document.getElementById('risk-description')?.value.trim();
-    const lvl = document.getElementById('risk-level')?.value || 'À vérifier par le manager 🟠';
-    const freq = document.getElementById('risk-frequency')?.value || 'Non renseignée';
-    const work_zone = document.getElementById('r85-report-zone')?.value || 'Autre / non précisée';
-    if(!desc) return r85Toast('Veuillez décrire simplement la situation.');
-
-    const session = r85EmployeeSession();
-    const employeeName = session ? session.name : 'Salarié terrain';
-    const companyCode = session ? session.company : (r85ManagerCompany() || 'Établissement non renseigné');
-    const fullDescription = `[Zone / lieu] ${work_zone}\n\n${desc}`;
-
-    const { error } = await supabaseClient.from('prevention_reports').insert([{
-      company_code: companyCode,
-      employee_name: employeeName,
-      category,
-      level: lvl,
-      frequency: freq,
-      description: fullDescription,
-      status: 'Nouveau',
-      work_zone,
-      photo_data: r85PhotoData,
-      photo_name: r85PhotoName
-    }]);
-
-    if(error) return r85Toast('Erreur signalement : ' + error.message);
-
-    try{
-      if(typeof submitAnonymizedPreventionStat === 'function') await submitAnonymizedPreventionStat({category, level:lvl, frequency:freq, event_type:'Signalement prévention'});
-    }catch(e){}
-
-    document.getElementById('risk-description').value = '';
-    clearReportPhoto();
-    r85Toast('Signalement envoyé au manager.');
-    if(typeof switchScreen === 'function') switchScreen('scr-employee');
-  };
-
-  // Manager : cartes signalement enrichies zone + photo.
-  window.loadManagerReports = async function(){
-    if(!supabaseClient) return r85Toast('Supabase non chargé.');
-    const company = r85ManagerCompany();
-    if(!company) return;
-
-    const { data, error } = await supabaseClient
-      .from('prevention_reports')
-      .select('id,company_code,employee_name,category,level,frequency,description,latitude,longitude,map_url,status,manager_response,corrective_action,created_at,work_zone,photo_data,photo_name')
-      .eq('company_code', company)
-      .order('created_at', {ascending:false})
-      .limit(40);
-
-    if(error) return r85Toast('Erreur chargement signalements : ' + error.message);
-    renderManagerReports(data || []);
-    updateR85ActiveAlertBadge();
-  };
-
-  window.renderManagerReports = function(reports){
-    const c = document.getElementById('manager-risk-box');
-    if(!c) return;
-    c.innerHTML = '';
-    if(!reports || !reports.length){
-      c.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-8">Aucun danger signalé pour le moment.</p>';
-      return;
-    }
-
-    reports.forEach(r => {
-      const card = document.createElement('div');
-      const critical = String(r.level || '').includes('🔴') || String(r.level || '').toLowerCase().includes('danger') || String(r.level || '').toLowerCase().includes('critique');
-      card.className = `p-3 ${critical ? 'bg-red-50 border-red-300' : 'bg-orange-50 border-orange-200'} dark:bg-slate-900 border dark:border-slate-700 rounded-xl space-y-3 text-xs`;
-      card.innerHTML = `
-        <div class="flex justify-between items-start gap-2">
-          <div>
-            <p class="font-black text-slate-900 dark:text-white">${r85Esc(r.category || 'Signalement')}</p>
-            <p class="text-[10px] text-slate-400">Par ${r85Esc(r.employee_name || '')} — ${new Date(r.created_at).toLocaleString('fr-FR')}</p>
-          </div>
-          <span class="text-[10px] font-black px-2 py-1 rounded bg-white dark:bg-slate-800 text-red-600">${r85Esc(r.level || 'À qualifier')}</span>
-        </div>
-        <div class="bg-white/80 dark:bg-slate-800 border rounded-xl p-3">
-          <p class="text-[10px] font-black uppercase text-slate-400">Zone / lieu</p>
-          <p class="font-black dark:text-white">${r85Esc(r.work_zone || 'Zone non précisée')}</p>
-        </div>
-        ${r.photo_data ? `<img src="${r.photo_data}" class="w-full max-h-64 object-cover rounded-xl border shadow-sm" alt="Photo signalement terrain">` : ''}
-        <p class="text-slate-600 dark:text-slate-300 font-medium whitespace-pre-line">${r85Esc(r.description || '')}</p>
-        <select onchange="updateReportStatus('${r.id}', this.value)" class="w-full p-2 rounded-lg border text-xs font-bold dark:bg-slate-900 dark:text-white">
-          <option value="Nouveau" ${r.status==='Nouveau'?'selected':''}>Nouveau</option>
-          <option value="Vu par le responsable" ${r.status==='Vu par le responsable'?'selected':''}>Vu par le responsable</option>
-          <option value="En cours de traitement" ${r.status==='En cours de traitement'?'selected':''}>En cours de traitement</option>
-          <option value="Traité" ${r.status==='Traité'?'selected':''}>Traité</option>
-        </select>
-        <textarea id="response-${r.id}" rows="2" placeholder="Réponse au salarié..." class="w-full p-2 rounded-lg border text-xs dark:bg-slate-900 dark:text-white">${r85Esc(r.manager_response || '')}</textarea>
-        <textarea id="action-${r.id}" rows="2" placeholder="Action corrective..." class="w-full p-2 rounded-lg border text-xs dark:bg-slate-900 dark:text-white">${r85Esc(r.corrective_action || '')}</textarea>
-        <button onclick="sendManagerResponse('${r.id}')" class="w-full bg-restev-blue text-white py-2 rounded-lg text-[10px] font-black uppercase">Répondre / enregistrer</button>
-      `;
-      c.appendChild(card);
-    });
-  };
-
-  // Statut traité : retire badge/overlay si plus aucune alerte active.
-  window.updateReportStatus = async function(id, status){
-    if(!supabaseClient) return;
-    const { error } = await supabaseClient.from('prevention_reports').update({status}).eq('id', id);
-    if(error) return r85Toast('Erreur statut : ' + error.message);
-    r85Toast(status === 'Traité' ? 'Alerte traitée.' : 'Statut mis à jour.');
-    await loadManagerReports();
-    updateR85ActiveAlertBadge();
-  };
-
-  const oldHandleManagerLogin = window.handleManagerLogin;
-  window.handleManagerLogin = function(){
-    r85UnlockAudio();
-    if(typeof oldHandleManagerLogin === 'function') oldHandleManagerLogin();
-    setTimeout(() => { installStrongAlertUI(); installManagerZonesPanel(); loadWorkZones(); startManagerRealtime(); updateR85ActiveAlertBadge(); }, 400);
-  };
-
-  const oldSwitchScreen = window.switchScreen;
-  window.switchScreen = function(screenId){
-    if(typeof oldSwitchScreen === 'function') oldSwitchScreen(screenId);
-    if(screenId === 'scr-manager') setTimeout(() => { installStrongAlertUI(); installManagerZonesPanel(); loadWorkZones(); updateR85ActiveAlertBadge(); }, 250);
-    if(screenId === 'scr-report') setTimeout(installReportZonePhotoUI, 250);
-  };
-
-  document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => { installStrongAlertUI(); installManagerZonesPanel(); installReportZonePhotoUI(); }, 600);
-    console.log(PATCH_VERSION + ' installé');
-  });
-})();
-</script>
-
-
-  <!-- Google Maps : remplacez VOTRE_CLE_API_GOOGLE_MAPS par votre clé API Google Maps JavaScript -->
-  <script async defer src="https://maps.googleapis.com/maps/api/js?key=VOTRE_CLE_API_GOOGLE_MAPS&callback=initGoogleMapsLoader"></script>
-</body> 
 </html>
