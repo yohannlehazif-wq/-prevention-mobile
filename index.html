@@ -2851,11 +2851,199 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 })();
 </script>
-
-
 <!-- =========================================================
 PATCH RESTEV 85 — CORRECTION NAVIGATION SALARIÉ APRÈS VERROUILLAGE QR
-À coller tout à la fin, juste avant </body>, après les autres patchs.
+À coller tout à la fin, juste avant 
+
+<!-- =========================================================
+PATCH RESTEV 85 — NAVIGATION SALARIÉ RÉPARÉE DÉFINITIVEMENT
+À coller EN DERNIER juste avant </body>.
+But : le QR ouvre uniquement l'espace salarié, mais les boutons salarié restent cliquables.
+========================================================= -->
+<style id="r85-employee-nav-final-fix-style">
+  /* Autorise explicitement l'interaction dans tout le parcours salarié */
+  body.r85-employee-only #scr-employee,
+  body.r85-employee-only #scr-report,
+  body.r85-employee-only #scr-qcm,
+  body.r85-employee-only #scr-qcm-success,
+  body.r85-employee-only #scr-resources,
+  body.r85-employee-only #scr-training,
+  body.r85-employee-only #scr-employee-messages {
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  body.r85-employee-only #scr-employee *,
+  body.r85-employee-only #scr-report *,
+  body.r85-employee-only #scr-qcm *,
+  body.r85-employee-only #scr-qcm-success *,
+  body.r85-employee-only #scr-resources *,
+  body.r85-employee-only #scr-training *,
+  body.r85-employee-only #scr-employee-messages * {
+    pointer-events: auto !important;
+  }
+
+  body.r85-employee-only #scr-employee.active,
+  body.r85-employee-only #scr-report.active,
+  body.r85-employee-only #scr-qcm.active,
+  body.r85-employee-only #scr-qcm-success.active,
+  body.r85-employee-only #scr-resources.active,
+  body.r85-employee-only #scr-training.active,
+  body.r85-employee-only #scr-employee-messages.active {
+    display: block !important;
+  }
+
+  /* Interdiction stricte uniquement sur les espaces manager/centre */
+  body.r85-employee-only #scr-home,
+  body.r85-employee-only #scr-auth,
+  body.r85-employee-only #scr-manager,
+  body.r85-employee-only #scr-direction,
+  body.r85-employee-only #scr-studio,
+  body.r85-employee-only #r85-maintenance-panel,
+  body.r85-employee-only #r85-manager-zones-panel,
+  body.r85-employee-only #generated-code-box,
+  body.r85-employee-only button[onclick*="scr-auth"],
+  body.r85-employee-only button[onclick*="scr-manager"],
+  body.r85-employee-only button[onclick*="scr-direction"],
+  body.r85-employee-only button[onclick*="createNewCompany"] {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+</style>
+
+<script>
+(function(){
+  const PATCH_VERSION = 'RESTEV85_EMPLOYEE_NAV_FINAL_FIX_2026_07_06';
+  const EMPLOYEE_SCREENS = ['scr-employee','scr-report','scr-qcm','scr-qcm-success','scr-resources','scr-training','scr-employee-messages'];
+  const BLOCKED_SCREENS = ['scr-home','scr-auth','scr-manager','scr-direction','scr-studio'];
+
+  function getParams(){ return new URLSearchParams(window.location.search); }
+  function isEmployeeUrl(){ const p=getParams(); return !!(p.get('emp') && p.get('comp')); }
+  function hasEmployeeSession(){
+    try { return !!(currentEmployeeSession && currentEmployeeSession.name && currentEmployeeSession.company); }
+    catch(e){ return !!(window.currentEmployeeSession && window.currentEmployeeSession.name && window.currentEmployeeSession.company); }
+  }
+  function isEmployeeMode(){ return isEmployeeUrl() || hasEmployeeSession(); }
+
+  function hydrateEmployee(){
+    if(!isEmployeeUrl()) return;
+    const p=getParams();
+    const emp=p.get('emp');
+    const comp=p.get('comp');
+    const sector=p.get('sector') || p.get('secteur') || 'Autre';
+    let epis=[];
+    try { epis=JSON.parse(decodeURIComponent(p.get('epis') || '[]')); if(!Array.isArray(epis)) epis=[]; } catch(e){ epis=[]; }
+    try { currentEmployeeSession={name:emp,company:comp,sector,epis}; } catch(e){ window.currentEmployeeSession={name:emp,company:comp,sector,epis}; }
+    const welcome=document.getElementById('lbl-emp-welcome');
+    const company=document.getElementById('lbl-emp-company');
+    if(welcome && emp) welcome.innerText='Bonjour, '+emp;
+    if(company && comp) company.innerText='Établissement : '+comp+(sector?' | Secteur : '+sector:'');
+  }
+
+  function setDisplayImportant(el, value){
+    if(!el) return;
+    el.style.setProperty('display', value, 'important');
+    el.style.setProperty('visibility', value === 'none' ? 'hidden' : 'visible', 'important');
+    el.style.setProperty('pointer-events', value === 'none' ? 'none' : 'auto', 'important');
+  }
+
+  function forceScreen(screenId){
+    if(isEmployeeMode() && !EMPLOYEE_SCREENS.includes(screenId)) screenId='scr-employee';
+    document.querySelectorAll('.screen').forEach(screen=>{
+      screen.classList.remove('active');
+      setDisplayImportant(screen, 'none');
+    });
+    const target=document.getElementById(screenId);
+    if(target){
+      target.classList.add('active');
+      setDisplayImportant(target, 'block');
+      if(screenId === 'scr-report') setTimeout(()=>{ try{ if(typeof installR85GoogleGpsBlock==='function') installR85GoogleGpsBlock(); }catch(e){} try{ if(typeof fixMapSize==='function') fixMapSize(); }catch(e){} },250);
+      if(screenId === 'scr-qcm-success') setTimeout(()=>{ try{ if(typeof initSignaturePads==='function') initSignaturePads(); }catch(e){} },250);
+      if(screenId === 'scr-training') setTimeout(()=>{ try{ if(typeof adjustTutoViewer==='function') adjustTutoViewer(); }catch(e){} },250);
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+    if(isEmployeeMode()) setTimeout(lockManagerOnly, 10);
+  }
+
+  function lockManagerOnly(){
+    if(!isEmployeeMode()) return;
+    document.body.classList.add('r85-employee-only');
+    hydrateEmployee();
+    BLOCKED_SCREENS.forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){ el.classList.remove('active'); setDisplayImportant(el,'none'); }
+    });
+    document.querySelectorAll("button[onclick*='scr-auth'],button[onclick*='scr-manager'],button[onclick*='scr-direction'],button[onclick*='createNewCompany']").forEach(btn=>setDisplayImportant(btn,'none'));
+    const active=document.querySelector('.screen.active');
+    if(!active || !EMPLOYEE_SCREENS.includes(active.id)) forceScreen('scr-employee');
+  }
+
+  // Remplace la navigation globale par une version compatible avec le verrouillage salarié.
+  window.switchScreen = function(screenId){ forceScreen(screenId); };
+
+  // Les boutons salariés sont reconnectés en capture : même si un ancien patch gêne l'onclick, le clic fonctionne.
+  document.addEventListener('click', function(e){
+    if(!isEmployeeMode()) return;
+    const btn=e.target.closest('button');
+    if(!btn) return;
+    const employeeArea=btn.closest('#scr-employee,#scr-report,#scr-qcm,#scr-qcm-success,#scr-resources,#scr-training,#scr-employee-messages');
+    if(!employeeArea) return;
+    const onclick=btn.getAttribute('onclick') || '';
+
+    if(onclick.includes("switchScreen('scr-report')") || onclick.includes('switchScreen("scr-report")')){
+      e.preventDefault(); e.stopImmediatePropagation(); forceScreen('scr-report'); return;
+    }
+    if(onclick.includes("switchScreen('scr-training')") || onclick.includes('switchScreen("scr-training")')){
+      e.preventDefault(); e.stopImmediatePropagation(); forceScreen('scr-training'); return;
+    }
+    if(onclick.includes("switchScreen('scr-employee')") || onclick.includes('switchScreen("scr-employee")')){
+      e.preventDefault(); e.stopImmediatePropagation(); forceScreen('scr-employee'); return;
+    }
+    if(onclick.includes('startEmployeeQCM')){
+      e.preventDefault(); e.stopImmediatePropagation();
+      try { if(typeof startEmployeeQCM==='function') startEmployeeQCM(); else forceScreen('scr-qcm'); } catch(err){ console.warn(err); forceScreen('scr-qcm'); }
+      return;
+    }
+    if(onclick.includes('openEmployeeResources')){
+      e.preventDefault(); e.stopImmediatePropagation();
+      try { if(typeof openEmployeeResources==='function') openEmployeeResources(); else forceScreen('scr-resources'); } catch(err){ console.warn(err); forceScreen('scr-resources'); }
+      return;
+    }
+    if(onclick.includes('openEmployeeMessages')){
+      e.preventDefault(); e.stopImmediatePropagation();
+      try { if(typeof openEmployeeMessages==='function') openEmployeeMessages(); else forceScreen('scr-employee-messages'); } catch(err){ console.warn(err); forceScreen('scr-employee-messages'); }
+      return;
+    }
+  }, true);
+
+  // Retour formation compatible salarié.
+  window.backFromTraining=function(){ if(isEmployeeMode()) return forceScreen('scr-employee'); forceScreen('scr-home'); };
+
+  // Bloque toute tentative de connexion manager depuis un QR salarié.
+  const previousHandleManagerLogin=window.handleManagerLogin;
+  window.handleManagerLogin=function(){
+    if(isEmployeeMode()){
+      lockManagerOnly();
+      if(typeof showToast==='function') showToast('Accès manager bloqué depuis le QR salarié.');
+      return;
+    }
+    if(typeof previousHandleManagerLogin==='function') return previousHandleManagerLogin();
+  };
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    hydrateEmployee();
+    if(isEmployeeMode()){
+      setTimeout(()=>forceScreen('scr-employee'), 30);
+      setTimeout(lockManagerOnly, 150);
+      setTimeout(lockManagerOnly, 800);
+    }
+    console.log(PATCH_VERSION+' installé');
+  });
+})();
+</script>
+
+</body>, après les autres patchs.
 Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans tout son espace.
 ========================================================= -->
 <style id="r85-employee-navigation-fix-style">
@@ -2871,7 +3059,6 @@ Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans t
     visibility:visible !important;
     pointer-events:auto !important;
   }
-
   body.r85-employee-only #scr-employee,
   body.r85-employee-only #scr-report,
   body.r85-employee-only #scr-qcm,
@@ -2881,7 +3068,6 @@ Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans t
   body.r85-employee-only #scr-employee-messages {
     pointer-events:auto !important;
   }
-
   body.r85-employee-only #scr-employee button,
   body.r85-employee-only #scr-report button,
   body.r85-employee-only #scr-qcm button,
@@ -2898,7 +3084,6 @@ Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans t
     visibility:visible !important;
     pointer-events:auto !important;
   }
-
   /* On bloque uniquement les espaces non salariés */
   body.r85-employee-only #scr-home,
   body.r85-employee-only #scr-auth,
@@ -2917,25 +3102,20 @@ Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans t
     pointer-events:none !important;
   }
 </style>
-
 <script>
 (function(){
   const PATCH_VERSION = 'RESTEV85_EMPLOYEE_NAVIGATION_FIX_2026_07_06';
   const ALLOWED_EMPLOYEE_SCREENS = ['scr-employee','scr-report','scr-qcm','scr-qcm-success','scr-resources','scr-training','scr-employee-messages'];
   const BLOCKED_EMPLOYEE_SCREENS = ['scr-home','scr-auth','scr-manager','scr-direction','scr-studio'];
-
   function isEmployeeUrl(){
     const p = new URLSearchParams(location.search);
     return !!(p.get('emp') && p.get('comp'));
   }
-
   function hasEmployeeSession(){
     try { return !!(currentEmployeeSession && currentEmployeeSession.name && currentEmployeeSession.company); }
     catch(e){ return !!(window.currentEmployeeSession && window.currentEmployeeSession.name && window.currentEmployeeSession.company); }
   }
-
   function isEmployeeMode(){ return isEmployeeUrl() || hasEmployeeSession(); }
-
   function hydrateEmployeeSessionFromUrl(){
     if(!isEmployeeUrl()) return;
     const p = new URLSearchParams(location.search);
@@ -2945,7 +3125,6 @@ Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans t
     let epis = [];
     try { epis = JSON.parse(decodeURIComponent(p.get('epis') || '[]')); if(!Array.isArray(epis)) epis = []; } catch(e){ epis = []; }
     try { currentEmployeeSession = {name: emp, company: comp, sector, epis}; } catch(e){ window.currentEmployeeSession = {name: emp, company: comp, sector, epis}; }
-
     const welcome = document.getElementById('lbl-emp-welcome');
     const company = document.getElementById('lbl-emp-company');
     const profile = document.getElementById('lbl-emp-profile');
@@ -2953,7 +3132,6 @@ Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans t
     if(company && comp) company.innerText = 'Établissement : ' + comp + (sector ? ' | Secteur : ' + sector : '');
     if(profile && p.get('profile')) profile.innerText = 'Profil : ' + p.get('profile');
   }
-
   function directSwitchScreen(screenId){
     document.querySelectorAll('.screen').forEach(s => {
       s.classList.remove('active');
@@ -2967,7 +3145,6 @@ Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans t
       target.style.pointerEvents = 'auto';
       window.scrollTo({top:0, behavior:'smooth'});
     }
-
     // Relance les fonctions utiles si elles existent, sans toucher au reste.
     if(screenId === 'scr-report'){
       setTimeout(() => {
@@ -2982,12 +3159,10 @@ Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans t
       setTimeout(() => { try { if(typeof adjustTutoViewer === 'function') adjustTutoViewer(); } catch(e){} }, 250);
     }
   }
-
   function lockOnlyManagerAccess(){
     if(!isEmployeeMode()) return;
     document.body.classList.add('r85-employee-only');
     hydrateEmployeeSessionFromUrl();
-
     BLOCKED_EMPLOYEE_SCREENS.forEach(id => {
       const el = document.getElementById(id);
       if(el){
@@ -2997,19 +3172,16 @@ Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans t
         el.style.pointerEvents = 'none';
       }
     });
-
     document.querySelectorAll("button[onclick*='scr-auth'],button[onclick*='scr-manager'],button[onclick*='scr-direction'],button[onclick*='createNewCompany']").forEach(b => {
       b.style.display = 'none';
       b.style.visibility = 'hidden';
       b.style.pointerEvents = 'none';
     });
-
     const active = document.querySelector('.screen.active');
     if(!active || !ALLOWED_EMPLOYEE_SCREENS.includes(active.id)){
       directSwitchScreen('scr-employee');
     }
   }
-
   // Nouvelle navigation : bloque manager/centre, mais laisse circuler dans les pages salarié.
   window.switchScreen = function(screenId){
     if(isEmployeeMode() && !ALLOWED_EMPLOYEE_SCREENS.includes(screenId)){
@@ -3018,13 +3190,11 @@ Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans t
     directSwitchScreen(screenId);
     if(isEmployeeMode()) setTimeout(lockOnlyManagerAccess, 20);
   };
-
   // Corrige le bouton retour formation en mode salarié.
   window.backFromTraining = function(){
     if(isEmployeeMode()) return window.switchScreen('scr-employee');
     return window.switchScreen('scr-home');
   };
-
   // En mode salarié, toute tentative d'accès manager est refusée immédiatement.
   const oldHandleManagerLogin = window.handleManagerLogin;
   window.handleManagerLogin = function(){
@@ -3035,7 +3205,6 @@ Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans t
     }
     if(typeof oldHandleManagerLogin === 'function') return oldHandleManagerLogin();
   };
-
   // Au chargement QR : ouverture directe espace salarié, puis navigation autorisée.
   document.addEventListener('DOMContentLoaded', () => {
     hydrateEmployeeSessionFromUrl();
@@ -3045,6 +3214,195 @@ Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans t
       setTimeout(lockOnlyManagerAccess, 500);
     }
     console.log(PATCH_VERSION + ' installé');
+  });
+})();
+</script>
+
+
+<!-- =========================================================
+PATCH RESTEV 85 — NAVIGATION SALARIÉ RÉPARÉE DÉFINITIVEMENT
+À coller EN DERNIER juste avant </body>.
+But : le QR ouvre uniquement l'espace salarié, mais les boutons salarié restent cliquables.
+========================================================= -->
+<style id="r85-employee-nav-final-fix-style">
+  /* Autorise explicitement l'interaction dans tout le parcours salarié */
+  body.r85-employee-only #scr-employee,
+  body.r85-employee-only #scr-report,
+  body.r85-employee-only #scr-qcm,
+  body.r85-employee-only #scr-qcm-success,
+  body.r85-employee-only #scr-resources,
+  body.r85-employee-only #scr-training,
+  body.r85-employee-only #scr-employee-messages {
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  body.r85-employee-only #scr-employee *,
+  body.r85-employee-only #scr-report *,
+  body.r85-employee-only #scr-qcm *,
+  body.r85-employee-only #scr-qcm-success *,
+  body.r85-employee-only #scr-resources *,
+  body.r85-employee-only #scr-training *,
+  body.r85-employee-only #scr-employee-messages * {
+    pointer-events: auto !important;
+  }
+
+  body.r85-employee-only #scr-employee.active,
+  body.r85-employee-only #scr-report.active,
+  body.r85-employee-only #scr-qcm.active,
+  body.r85-employee-only #scr-qcm-success.active,
+  body.r85-employee-only #scr-resources.active,
+  body.r85-employee-only #scr-training.active,
+  body.r85-employee-only #scr-employee-messages.active {
+    display: block !important;
+  }
+
+  /* Interdiction stricte uniquement sur les espaces manager/centre */
+  body.r85-employee-only #scr-home,
+  body.r85-employee-only #scr-auth,
+  body.r85-employee-only #scr-manager,
+  body.r85-employee-only #scr-direction,
+  body.r85-employee-only #scr-studio,
+  body.r85-employee-only #r85-maintenance-panel,
+  body.r85-employee-only #r85-manager-zones-panel,
+  body.r85-employee-only #generated-code-box,
+  body.r85-employee-only button[onclick*="scr-auth"],
+  body.r85-employee-only button[onclick*="scr-manager"],
+  body.r85-employee-only button[onclick*="scr-direction"],
+  body.r85-employee-only button[onclick*="createNewCompany"] {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+</style>
+
+<script>
+(function(){
+  const PATCH_VERSION = 'RESTEV85_EMPLOYEE_NAV_FINAL_FIX_2026_07_06';
+  const EMPLOYEE_SCREENS = ['scr-employee','scr-report','scr-qcm','scr-qcm-success','scr-resources','scr-training','scr-employee-messages'];
+  const BLOCKED_SCREENS = ['scr-home','scr-auth','scr-manager','scr-direction','scr-studio'];
+
+  function getParams(){ return new URLSearchParams(window.location.search); }
+  function isEmployeeUrl(){ const p=getParams(); return !!(p.get('emp') && p.get('comp')); }
+  function hasEmployeeSession(){
+    try { return !!(currentEmployeeSession && currentEmployeeSession.name && currentEmployeeSession.company); }
+    catch(e){ return !!(window.currentEmployeeSession && window.currentEmployeeSession.name && window.currentEmployeeSession.company); }
+  }
+  function isEmployeeMode(){ return isEmployeeUrl() || hasEmployeeSession(); }
+
+  function hydrateEmployee(){
+    if(!isEmployeeUrl()) return;
+    const p=getParams();
+    const emp=p.get('emp');
+    const comp=p.get('comp');
+    const sector=p.get('sector') || p.get('secteur') || 'Autre';
+    let epis=[];
+    try { epis=JSON.parse(decodeURIComponent(p.get('epis') || '[]')); if(!Array.isArray(epis)) epis=[]; } catch(e){ epis=[]; }
+    try { currentEmployeeSession={name:emp,company:comp,sector,epis}; } catch(e){ window.currentEmployeeSession={name:emp,company:comp,sector,epis}; }
+    const welcome=document.getElementById('lbl-emp-welcome');
+    const company=document.getElementById('lbl-emp-company');
+    if(welcome && emp) welcome.innerText='Bonjour, '+emp;
+    if(company && comp) company.innerText='Établissement : '+comp+(sector?' | Secteur : '+sector:'');
+  }
+
+  function setDisplayImportant(el, value){
+    if(!el) return;
+    el.style.setProperty('display', value, 'important');
+    el.style.setProperty('visibility', value === 'none' ? 'hidden' : 'visible', 'important');
+    el.style.setProperty('pointer-events', value === 'none' ? 'none' : 'auto', 'important');
+  }
+
+  function forceScreen(screenId){
+    if(isEmployeeMode() && !EMPLOYEE_SCREENS.includes(screenId)) screenId='scr-employee';
+    document.querySelectorAll('.screen').forEach(screen=>{
+      screen.classList.remove('active');
+      setDisplayImportant(screen, 'none');
+    });
+    const target=document.getElementById(screenId);
+    if(target){
+      target.classList.add('active');
+      setDisplayImportant(target, 'block');
+      if(screenId === 'scr-report') setTimeout(()=>{ try{ if(typeof installR85GoogleGpsBlock==='function') installR85GoogleGpsBlock(); }catch(e){} try{ if(typeof fixMapSize==='function') fixMapSize(); }catch(e){} },250);
+      if(screenId === 'scr-qcm-success') setTimeout(()=>{ try{ if(typeof initSignaturePads==='function') initSignaturePads(); }catch(e){} },250);
+      if(screenId === 'scr-training') setTimeout(()=>{ try{ if(typeof adjustTutoViewer==='function') adjustTutoViewer(); }catch(e){} },250);
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+    if(isEmployeeMode()) setTimeout(lockManagerOnly, 10);
+  }
+
+  function lockManagerOnly(){
+    if(!isEmployeeMode()) return;
+    document.body.classList.add('r85-employee-only');
+    hydrateEmployee();
+    BLOCKED_SCREENS.forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){ el.classList.remove('active'); setDisplayImportant(el,'none'); }
+    });
+    document.querySelectorAll("button[onclick*='scr-auth'],button[onclick*='scr-manager'],button[onclick*='scr-direction'],button[onclick*='createNewCompany']").forEach(btn=>setDisplayImportant(btn,'none'));
+    const active=document.querySelector('.screen.active');
+    if(!active || !EMPLOYEE_SCREENS.includes(active.id)) forceScreen('scr-employee');
+  }
+
+  // Remplace la navigation globale par une version compatible avec le verrouillage salarié.
+  window.switchScreen = function(screenId){ forceScreen(screenId); };
+
+  // Les boutons salariés sont reconnectés en capture : même si un ancien patch gêne l'onclick, le clic fonctionne.
+  document.addEventListener('click', function(e){
+    if(!isEmployeeMode()) return;
+    const btn=e.target.closest('button');
+    if(!btn) return;
+    const employeeArea=btn.closest('#scr-employee,#scr-report,#scr-qcm,#scr-qcm-success,#scr-resources,#scr-training,#scr-employee-messages');
+    if(!employeeArea) return;
+    const onclick=btn.getAttribute('onclick') || '';
+
+    if(onclick.includes("switchScreen('scr-report')") || onclick.includes('switchScreen("scr-report")')){
+      e.preventDefault(); e.stopImmediatePropagation(); forceScreen('scr-report'); return;
+    }
+    if(onclick.includes("switchScreen('scr-training')") || onclick.includes('switchScreen("scr-training")')){
+      e.preventDefault(); e.stopImmediatePropagation(); forceScreen('scr-training'); return;
+    }
+    if(onclick.includes("switchScreen('scr-employee')") || onclick.includes('switchScreen("scr-employee")')){
+      e.preventDefault(); e.stopImmediatePropagation(); forceScreen('scr-employee'); return;
+    }
+    if(onclick.includes('startEmployeeQCM')){
+      e.preventDefault(); e.stopImmediatePropagation();
+      try { if(typeof startEmployeeQCM==='function') startEmployeeQCM(); else forceScreen('scr-qcm'); } catch(err){ console.warn(err); forceScreen('scr-qcm'); }
+      return;
+    }
+    if(onclick.includes('openEmployeeResources')){
+      e.preventDefault(); e.stopImmediatePropagation();
+      try { if(typeof openEmployeeResources==='function') openEmployeeResources(); else forceScreen('scr-resources'); } catch(err){ console.warn(err); forceScreen('scr-resources'); }
+      return;
+    }
+    if(onclick.includes('openEmployeeMessages')){
+      e.preventDefault(); e.stopImmediatePropagation();
+      try { if(typeof openEmployeeMessages==='function') openEmployeeMessages(); else forceScreen('scr-employee-messages'); } catch(err){ console.warn(err); forceScreen('scr-employee-messages'); }
+      return;
+    }
+  }, true);
+
+  // Retour formation compatible salarié.
+  window.backFromTraining=function(){ if(isEmployeeMode()) return forceScreen('scr-employee'); forceScreen('scr-home'); };
+
+  // Bloque toute tentative de connexion manager depuis un QR salarié.
+  const previousHandleManagerLogin=window.handleManagerLogin;
+  window.handleManagerLogin=function(){
+    if(isEmployeeMode()){
+      lockManagerOnly();
+      if(typeof showToast==='function') showToast('Accès manager bloqué depuis le QR salarié.');
+      return;
+    }
+    if(typeof previousHandleManagerLogin==='function') return previousHandleManagerLogin();
+  };
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    hydrateEmployee();
+    if(isEmployeeMode()){
+      setTimeout(()=>forceScreen('scr-employee'), 30);
+      setTimeout(lockManagerOnly, 150);
+      setTimeout(lockManagerOnly, 800);
+    }
+    console.log(PATCH_VERSION+' installé');
   });
 })();
 </script>
@@ -3381,11 +3739,199 @@ Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans t
   });
 })();
 </script>
-
-
 <!-- =========================================================
 PATCH RESTEV 85 — CORRECTION NAVIGATION SALARIÉ APRÈS VERROUILLAGE QR
-À coller tout à la fin, juste avant </body>, après les autres patchs.
+À coller tout à la fin, juste avant 
+
+<!-- =========================================================
+PATCH RESTEV 85 — NAVIGATION SALARIÉ RÉPARÉE DÉFINITIVEMENT
+À coller EN DERNIER juste avant </body>.
+But : le QR ouvre uniquement l'espace salarié, mais les boutons salarié restent cliquables.
+========================================================= -->
+<style id="r85-employee-nav-final-fix-style">
+  /* Autorise explicitement l'interaction dans tout le parcours salarié */
+  body.r85-employee-only #scr-employee,
+  body.r85-employee-only #scr-report,
+  body.r85-employee-only #scr-qcm,
+  body.r85-employee-only #scr-qcm-success,
+  body.r85-employee-only #scr-resources,
+  body.r85-employee-only #scr-training,
+  body.r85-employee-only #scr-employee-messages {
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  body.r85-employee-only #scr-employee *,
+  body.r85-employee-only #scr-report *,
+  body.r85-employee-only #scr-qcm *,
+  body.r85-employee-only #scr-qcm-success *,
+  body.r85-employee-only #scr-resources *,
+  body.r85-employee-only #scr-training *,
+  body.r85-employee-only #scr-employee-messages * {
+    pointer-events: auto !important;
+  }
+
+  body.r85-employee-only #scr-employee.active,
+  body.r85-employee-only #scr-report.active,
+  body.r85-employee-only #scr-qcm.active,
+  body.r85-employee-only #scr-qcm-success.active,
+  body.r85-employee-only #scr-resources.active,
+  body.r85-employee-only #scr-training.active,
+  body.r85-employee-only #scr-employee-messages.active {
+    display: block !important;
+  }
+
+  /* Interdiction stricte uniquement sur les espaces manager/centre */
+  body.r85-employee-only #scr-home,
+  body.r85-employee-only #scr-auth,
+  body.r85-employee-only #scr-manager,
+  body.r85-employee-only #scr-direction,
+  body.r85-employee-only #scr-studio,
+  body.r85-employee-only #r85-maintenance-panel,
+  body.r85-employee-only #r85-manager-zones-panel,
+  body.r85-employee-only #generated-code-box,
+  body.r85-employee-only button[onclick*="scr-auth"],
+  body.r85-employee-only button[onclick*="scr-manager"],
+  body.r85-employee-only button[onclick*="scr-direction"],
+  body.r85-employee-only button[onclick*="createNewCompany"] {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+</style>
+
+<script>
+(function(){
+  const PATCH_VERSION = 'RESTEV85_EMPLOYEE_NAV_FINAL_FIX_2026_07_06';
+  const EMPLOYEE_SCREENS = ['scr-employee','scr-report','scr-qcm','scr-qcm-success','scr-resources','scr-training','scr-employee-messages'];
+  const BLOCKED_SCREENS = ['scr-home','scr-auth','scr-manager','scr-direction','scr-studio'];
+
+  function getParams(){ return new URLSearchParams(window.location.search); }
+  function isEmployeeUrl(){ const p=getParams(); return !!(p.get('emp') && p.get('comp')); }
+  function hasEmployeeSession(){
+    try { return !!(currentEmployeeSession && currentEmployeeSession.name && currentEmployeeSession.company); }
+    catch(e){ return !!(window.currentEmployeeSession && window.currentEmployeeSession.name && window.currentEmployeeSession.company); }
+  }
+  function isEmployeeMode(){ return isEmployeeUrl() || hasEmployeeSession(); }
+
+  function hydrateEmployee(){
+    if(!isEmployeeUrl()) return;
+    const p=getParams();
+    const emp=p.get('emp');
+    const comp=p.get('comp');
+    const sector=p.get('sector') || p.get('secteur') || 'Autre';
+    let epis=[];
+    try { epis=JSON.parse(decodeURIComponent(p.get('epis') || '[]')); if(!Array.isArray(epis)) epis=[]; } catch(e){ epis=[]; }
+    try { currentEmployeeSession={name:emp,company:comp,sector,epis}; } catch(e){ window.currentEmployeeSession={name:emp,company:comp,sector,epis}; }
+    const welcome=document.getElementById('lbl-emp-welcome');
+    const company=document.getElementById('lbl-emp-company');
+    if(welcome && emp) welcome.innerText='Bonjour, '+emp;
+    if(company && comp) company.innerText='Établissement : '+comp+(sector?' | Secteur : '+sector:'');
+  }
+
+  function setDisplayImportant(el, value){
+    if(!el) return;
+    el.style.setProperty('display', value, 'important');
+    el.style.setProperty('visibility', value === 'none' ? 'hidden' : 'visible', 'important');
+    el.style.setProperty('pointer-events', value === 'none' ? 'none' : 'auto', 'important');
+  }
+
+  function forceScreen(screenId){
+    if(isEmployeeMode() && !EMPLOYEE_SCREENS.includes(screenId)) screenId='scr-employee';
+    document.querySelectorAll('.screen').forEach(screen=>{
+      screen.classList.remove('active');
+      setDisplayImportant(screen, 'none');
+    });
+    const target=document.getElementById(screenId);
+    if(target){
+      target.classList.add('active');
+      setDisplayImportant(target, 'block');
+      if(screenId === 'scr-report') setTimeout(()=>{ try{ if(typeof installR85GoogleGpsBlock==='function') installR85GoogleGpsBlock(); }catch(e){} try{ if(typeof fixMapSize==='function') fixMapSize(); }catch(e){} },250);
+      if(screenId === 'scr-qcm-success') setTimeout(()=>{ try{ if(typeof initSignaturePads==='function') initSignaturePads(); }catch(e){} },250);
+      if(screenId === 'scr-training') setTimeout(()=>{ try{ if(typeof adjustTutoViewer==='function') adjustTutoViewer(); }catch(e){} },250);
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+    if(isEmployeeMode()) setTimeout(lockManagerOnly, 10);
+  }
+
+  function lockManagerOnly(){
+    if(!isEmployeeMode()) return;
+    document.body.classList.add('r85-employee-only');
+    hydrateEmployee();
+    BLOCKED_SCREENS.forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){ el.classList.remove('active'); setDisplayImportant(el,'none'); }
+    });
+    document.querySelectorAll("button[onclick*='scr-auth'],button[onclick*='scr-manager'],button[onclick*='scr-direction'],button[onclick*='createNewCompany']").forEach(btn=>setDisplayImportant(btn,'none'));
+    const active=document.querySelector('.screen.active');
+    if(!active || !EMPLOYEE_SCREENS.includes(active.id)) forceScreen('scr-employee');
+  }
+
+  // Remplace la navigation globale par une version compatible avec le verrouillage salarié.
+  window.switchScreen = function(screenId){ forceScreen(screenId); };
+
+  // Les boutons salariés sont reconnectés en capture : même si un ancien patch gêne l'onclick, le clic fonctionne.
+  document.addEventListener('click', function(e){
+    if(!isEmployeeMode()) return;
+    const btn=e.target.closest('button');
+    if(!btn) return;
+    const employeeArea=btn.closest('#scr-employee,#scr-report,#scr-qcm,#scr-qcm-success,#scr-resources,#scr-training,#scr-employee-messages');
+    if(!employeeArea) return;
+    const onclick=btn.getAttribute('onclick') || '';
+
+    if(onclick.includes("switchScreen('scr-report')") || onclick.includes('switchScreen("scr-report")')){
+      e.preventDefault(); e.stopImmediatePropagation(); forceScreen('scr-report'); return;
+    }
+    if(onclick.includes("switchScreen('scr-training')") || onclick.includes('switchScreen("scr-training")')){
+      e.preventDefault(); e.stopImmediatePropagation(); forceScreen('scr-training'); return;
+    }
+    if(onclick.includes("switchScreen('scr-employee')") || onclick.includes('switchScreen("scr-employee")')){
+      e.preventDefault(); e.stopImmediatePropagation(); forceScreen('scr-employee'); return;
+    }
+    if(onclick.includes('startEmployeeQCM')){
+      e.preventDefault(); e.stopImmediatePropagation();
+      try { if(typeof startEmployeeQCM==='function') startEmployeeQCM(); else forceScreen('scr-qcm'); } catch(err){ console.warn(err); forceScreen('scr-qcm'); }
+      return;
+    }
+    if(onclick.includes('openEmployeeResources')){
+      e.preventDefault(); e.stopImmediatePropagation();
+      try { if(typeof openEmployeeResources==='function') openEmployeeResources(); else forceScreen('scr-resources'); } catch(err){ console.warn(err); forceScreen('scr-resources'); }
+      return;
+    }
+    if(onclick.includes('openEmployeeMessages')){
+      e.preventDefault(); e.stopImmediatePropagation();
+      try { if(typeof openEmployeeMessages==='function') openEmployeeMessages(); else forceScreen('scr-employee-messages'); } catch(err){ console.warn(err); forceScreen('scr-employee-messages'); }
+      return;
+    }
+  }, true);
+
+  // Retour formation compatible salarié.
+  window.backFromTraining=function(){ if(isEmployeeMode()) return forceScreen('scr-employee'); forceScreen('scr-home'); };
+
+  // Bloque toute tentative de connexion manager depuis un QR salarié.
+  const previousHandleManagerLogin=window.handleManagerLogin;
+  window.handleManagerLogin=function(){
+    if(isEmployeeMode()){
+      lockManagerOnly();
+      if(typeof showToast==='function') showToast('Accès manager bloqué depuis le QR salarié.');
+      return;
+    }
+    if(typeof previousHandleManagerLogin==='function') return previousHandleManagerLogin();
+  };
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    hydrateEmployee();
+    if(isEmployeeMode()){
+      setTimeout(()=>forceScreen('scr-employee'), 30);
+      setTimeout(lockManagerOnly, 150);
+      setTimeout(lockManagerOnly, 800);
+    }
+    console.log(PATCH_VERSION+' installé');
+  });
+})();
+</script>
+
+</body>, après les autres patchs.
 Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans tout son espace.
 ========================================================= -->
 <style id="r85-employee-navigation-fix-style">
@@ -3401,7 +3947,6 @@ Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans t
     visibility:visible !important;
     pointer-events:auto !important;
   }
-
   body.r85-employee-only #scr-employee,
   body.r85-employee-only #scr-report,
   body.r85-employee-only #scr-qcm,
@@ -3411,7 +3956,6 @@ Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans t
   body.r85-employee-only #scr-employee-messages {
     pointer-events:auto !important;
   }
-
   body.r85-employee-only #scr-employee button,
   body.r85-employee-only #scr-report button,
   body.r85-employee-only #scr-qcm button,
@@ -3428,7 +3972,6 @@ Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans t
     visibility:visible !important;
     pointer-events:auto !important;
   }
-
   /* On bloque uniquement les espaces non salariés */
   body.r85-employee-only #scr-home,
   body.r85-employee-only #scr-auth,
@@ -3447,25 +3990,20 @@ Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans t
     pointer-events:none !important;
   }
 </style>
-
 <script>
 (function(){
   const PATCH_VERSION = 'RESTEV85_EMPLOYEE_NAVIGATION_FIX_2026_07_06';
   const ALLOWED_EMPLOYEE_SCREENS = ['scr-employee','scr-report','scr-qcm','scr-qcm-success','scr-resources','scr-training','scr-employee-messages'];
   const BLOCKED_EMPLOYEE_SCREENS = ['scr-home','scr-auth','scr-manager','scr-direction','scr-studio'];
-
   function isEmployeeUrl(){
     const p = new URLSearchParams(location.search);
     return !!(p.get('emp') && p.get('comp'));
   }
-
   function hasEmployeeSession(){
     try { return !!(currentEmployeeSession && currentEmployeeSession.name && currentEmployeeSession.company); }
     catch(e){ return !!(window.currentEmployeeSession && window.currentEmployeeSession.name && window.currentEmployeeSession.company); }
   }
-
   function isEmployeeMode(){ return isEmployeeUrl() || hasEmployeeSession(); }
-
   function hydrateEmployeeSessionFromUrl(){
     if(!isEmployeeUrl()) return;
     const p = new URLSearchParams(location.search);
@@ -3475,7 +4013,6 @@ Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans t
     let epis = [];
     try { epis = JSON.parse(decodeURIComponent(p.get('epis') || '[]')); if(!Array.isArray(epis)) epis = []; } catch(e){ epis = []; }
     try { currentEmployeeSession = {name: emp, company: comp, sector, epis}; } catch(e){ window.currentEmployeeSession = {name: emp, company: comp, sector, epis}; }
-
     const welcome = document.getElementById('lbl-emp-welcome');
     const company = document.getElementById('lbl-emp-company');
     const profile = document.getElementById('lbl-emp-profile');
@@ -3483,7 +4020,6 @@ Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans t
     if(company && comp) company.innerText = 'Établissement : ' + comp + (sector ? ' | Secteur : ' + sector : '');
     if(profile && p.get('profile')) profile.innerText = 'Profil : ' + p.get('profile');
   }
-
   function directSwitchScreen(screenId){
     document.querySelectorAll('.screen').forEach(s => {
       s.classList.remove('active');
@@ -3497,7 +4033,6 @@ Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans t
       target.style.pointerEvents = 'auto';
       window.scrollTo({top:0, behavior:'smooth'});
     }
-
     // Relance les fonctions utiles si elles existent, sans toucher au reste.
     if(screenId === 'scr-report'){
       setTimeout(() => {
@@ -3512,12 +4047,10 @@ Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans t
       setTimeout(() => { try { if(typeof adjustTutoViewer === 'function') adjustTutoViewer(); } catch(e){} }, 250);
     }
   }
-
   function lockOnlyManagerAccess(){
     if(!isEmployeeMode()) return;
     document.body.classList.add('r85-employee-only');
     hydrateEmployeeSessionFromUrl();
-
     BLOCKED_EMPLOYEE_SCREENS.forEach(id => {
       const el = document.getElementById(id);
       if(el){
@@ -3527,19 +4060,16 @@ Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans t
         el.style.pointerEvents = 'none';
       }
     });
-
     document.querySelectorAll("button[onclick*='scr-auth'],button[onclick*='scr-manager'],button[onclick*='scr-direction'],button[onclick*='createNewCompany']").forEach(b => {
       b.style.display = 'none';
       b.style.visibility = 'hidden';
       b.style.pointerEvents = 'none';
     });
-
     const active = document.querySelector('.screen.active');
     if(!active || !ALLOWED_EMPLOYEE_SCREENS.includes(active.id)){
       directSwitchScreen('scr-employee');
     }
   }
-
   // Nouvelle navigation : bloque manager/centre, mais laisse circuler dans les pages salarié.
   window.switchScreen = function(screenId){
     if(isEmployeeMode() && !ALLOWED_EMPLOYEE_SCREENS.includes(screenId)){
@@ -3548,13 +4078,11 @@ Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans t
     directSwitchScreen(screenId);
     if(isEmployeeMode()) setTimeout(lockOnlyManagerAccess, 20);
   };
-
   // Corrige le bouton retour formation en mode salarié.
   window.backFromTraining = function(){
     if(isEmployeeMode()) return window.switchScreen('scr-employee');
     return window.switchScreen('scr-home');
   };
-
   // En mode salarié, toute tentative d'accès manager est refusée immédiatement.
   const oldHandleManagerLogin = window.handleManagerLogin;
   window.handleManagerLogin = function(){
@@ -3565,7 +4093,6 @@ Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans t
     }
     if(typeof oldHandleManagerLogin === 'function') return oldHandleManagerLogin();
   };
-
   // Au chargement QR : ouverture directe espace salarié, puis navigation autorisée.
   document.addEventListener('DOMContentLoaded', () => {
     hydrateEmployeeSessionFromUrl();
@@ -3575,6 +4102,195 @@ Objectif : le salarié reste verrouillé hors manager, MAIS peut naviguer dans t
       setTimeout(lockOnlyManagerAccess, 500);
     }
     console.log(PATCH_VERSION + ' installé');
+  });
+})();
+</script>
+
+
+<!-- =========================================================
+PATCH RESTEV 85 — NAVIGATION SALARIÉ RÉPARÉE DÉFINITIVEMENT
+À coller EN DERNIER juste avant </body>.
+But : le QR ouvre uniquement l'espace salarié, mais les boutons salarié restent cliquables.
+========================================================= -->
+<style id="r85-employee-nav-final-fix-style">
+  /* Autorise explicitement l'interaction dans tout le parcours salarié */
+  body.r85-employee-only #scr-employee,
+  body.r85-employee-only #scr-report,
+  body.r85-employee-only #scr-qcm,
+  body.r85-employee-only #scr-qcm-success,
+  body.r85-employee-only #scr-resources,
+  body.r85-employee-only #scr-training,
+  body.r85-employee-only #scr-employee-messages {
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  body.r85-employee-only #scr-employee *,
+  body.r85-employee-only #scr-report *,
+  body.r85-employee-only #scr-qcm *,
+  body.r85-employee-only #scr-qcm-success *,
+  body.r85-employee-only #scr-resources *,
+  body.r85-employee-only #scr-training *,
+  body.r85-employee-only #scr-employee-messages * {
+    pointer-events: auto !important;
+  }
+
+  body.r85-employee-only #scr-employee.active,
+  body.r85-employee-only #scr-report.active,
+  body.r85-employee-only #scr-qcm.active,
+  body.r85-employee-only #scr-qcm-success.active,
+  body.r85-employee-only #scr-resources.active,
+  body.r85-employee-only #scr-training.active,
+  body.r85-employee-only #scr-employee-messages.active {
+    display: block !important;
+  }
+
+  /* Interdiction stricte uniquement sur les espaces manager/centre */
+  body.r85-employee-only #scr-home,
+  body.r85-employee-only #scr-auth,
+  body.r85-employee-only #scr-manager,
+  body.r85-employee-only #scr-direction,
+  body.r85-employee-only #scr-studio,
+  body.r85-employee-only #r85-maintenance-panel,
+  body.r85-employee-only #r85-manager-zones-panel,
+  body.r85-employee-only #generated-code-box,
+  body.r85-employee-only button[onclick*="scr-auth"],
+  body.r85-employee-only button[onclick*="scr-manager"],
+  body.r85-employee-only button[onclick*="scr-direction"],
+  body.r85-employee-only button[onclick*="createNewCompany"] {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+</style>
+
+<script>
+(function(){
+  const PATCH_VERSION = 'RESTEV85_EMPLOYEE_NAV_FINAL_FIX_2026_07_06';
+  const EMPLOYEE_SCREENS = ['scr-employee','scr-report','scr-qcm','scr-qcm-success','scr-resources','scr-training','scr-employee-messages'];
+  const BLOCKED_SCREENS = ['scr-home','scr-auth','scr-manager','scr-direction','scr-studio'];
+
+  function getParams(){ return new URLSearchParams(window.location.search); }
+  function isEmployeeUrl(){ const p=getParams(); return !!(p.get('emp') && p.get('comp')); }
+  function hasEmployeeSession(){
+    try { return !!(currentEmployeeSession && currentEmployeeSession.name && currentEmployeeSession.company); }
+    catch(e){ return !!(window.currentEmployeeSession && window.currentEmployeeSession.name && window.currentEmployeeSession.company); }
+  }
+  function isEmployeeMode(){ return isEmployeeUrl() || hasEmployeeSession(); }
+
+  function hydrateEmployee(){
+    if(!isEmployeeUrl()) return;
+    const p=getParams();
+    const emp=p.get('emp');
+    const comp=p.get('comp');
+    const sector=p.get('sector') || p.get('secteur') || 'Autre';
+    let epis=[];
+    try { epis=JSON.parse(decodeURIComponent(p.get('epis') || '[]')); if(!Array.isArray(epis)) epis=[]; } catch(e){ epis=[]; }
+    try { currentEmployeeSession={name:emp,company:comp,sector,epis}; } catch(e){ window.currentEmployeeSession={name:emp,company:comp,sector,epis}; }
+    const welcome=document.getElementById('lbl-emp-welcome');
+    const company=document.getElementById('lbl-emp-company');
+    if(welcome && emp) welcome.innerText='Bonjour, '+emp;
+    if(company && comp) company.innerText='Établissement : '+comp+(sector?' | Secteur : '+sector:'');
+  }
+
+  function setDisplayImportant(el, value){
+    if(!el) return;
+    el.style.setProperty('display', value, 'important');
+    el.style.setProperty('visibility', value === 'none' ? 'hidden' : 'visible', 'important');
+    el.style.setProperty('pointer-events', value === 'none' ? 'none' : 'auto', 'important');
+  }
+
+  function forceScreen(screenId){
+    if(isEmployeeMode() && !EMPLOYEE_SCREENS.includes(screenId)) screenId='scr-employee';
+    document.querySelectorAll('.screen').forEach(screen=>{
+      screen.classList.remove('active');
+      setDisplayImportant(screen, 'none');
+    });
+    const target=document.getElementById(screenId);
+    if(target){
+      target.classList.add('active');
+      setDisplayImportant(target, 'block');
+      if(screenId === 'scr-report') setTimeout(()=>{ try{ if(typeof installR85GoogleGpsBlock==='function') installR85GoogleGpsBlock(); }catch(e){} try{ if(typeof fixMapSize==='function') fixMapSize(); }catch(e){} },250);
+      if(screenId === 'scr-qcm-success') setTimeout(()=>{ try{ if(typeof initSignaturePads==='function') initSignaturePads(); }catch(e){} },250);
+      if(screenId === 'scr-training') setTimeout(()=>{ try{ if(typeof adjustTutoViewer==='function') adjustTutoViewer(); }catch(e){} },250);
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+    if(isEmployeeMode()) setTimeout(lockManagerOnly, 10);
+  }
+
+  function lockManagerOnly(){
+    if(!isEmployeeMode()) return;
+    document.body.classList.add('r85-employee-only');
+    hydrateEmployee();
+    BLOCKED_SCREENS.forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){ el.classList.remove('active'); setDisplayImportant(el,'none'); }
+    });
+    document.querySelectorAll("button[onclick*='scr-auth'],button[onclick*='scr-manager'],button[onclick*='scr-direction'],button[onclick*='createNewCompany']").forEach(btn=>setDisplayImportant(btn,'none'));
+    const active=document.querySelector('.screen.active');
+    if(!active || !EMPLOYEE_SCREENS.includes(active.id)) forceScreen('scr-employee');
+  }
+
+  // Remplace la navigation globale par une version compatible avec le verrouillage salarié.
+  window.switchScreen = function(screenId){ forceScreen(screenId); };
+
+  // Les boutons salariés sont reconnectés en capture : même si un ancien patch gêne l'onclick, le clic fonctionne.
+  document.addEventListener('click', function(e){
+    if(!isEmployeeMode()) return;
+    const btn=e.target.closest('button');
+    if(!btn) return;
+    const employeeArea=btn.closest('#scr-employee,#scr-report,#scr-qcm,#scr-qcm-success,#scr-resources,#scr-training,#scr-employee-messages');
+    if(!employeeArea) return;
+    const onclick=btn.getAttribute('onclick') || '';
+
+    if(onclick.includes("switchScreen('scr-report')") || onclick.includes('switchScreen("scr-report")')){
+      e.preventDefault(); e.stopImmediatePropagation(); forceScreen('scr-report'); return;
+    }
+    if(onclick.includes("switchScreen('scr-training')") || onclick.includes('switchScreen("scr-training")')){
+      e.preventDefault(); e.stopImmediatePropagation(); forceScreen('scr-training'); return;
+    }
+    if(onclick.includes("switchScreen('scr-employee')") || onclick.includes('switchScreen("scr-employee")')){
+      e.preventDefault(); e.stopImmediatePropagation(); forceScreen('scr-employee'); return;
+    }
+    if(onclick.includes('startEmployeeQCM')){
+      e.preventDefault(); e.stopImmediatePropagation();
+      try { if(typeof startEmployeeQCM==='function') startEmployeeQCM(); else forceScreen('scr-qcm'); } catch(err){ console.warn(err); forceScreen('scr-qcm'); }
+      return;
+    }
+    if(onclick.includes('openEmployeeResources')){
+      e.preventDefault(); e.stopImmediatePropagation();
+      try { if(typeof openEmployeeResources==='function') openEmployeeResources(); else forceScreen('scr-resources'); } catch(err){ console.warn(err); forceScreen('scr-resources'); }
+      return;
+    }
+    if(onclick.includes('openEmployeeMessages')){
+      e.preventDefault(); e.stopImmediatePropagation();
+      try { if(typeof openEmployeeMessages==='function') openEmployeeMessages(); else forceScreen('scr-employee-messages'); } catch(err){ console.warn(err); forceScreen('scr-employee-messages'); }
+      return;
+    }
+  }, true);
+
+  // Retour formation compatible salarié.
+  window.backFromTraining=function(){ if(isEmployeeMode()) return forceScreen('scr-employee'); forceScreen('scr-home'); };
+
+  // Bloque toute tentative de connexion manager depuis un QR salarié.
+  const previousHandleManagerLogin=window.handleManagerLogin;
+  window.handleManagerLogin=function(){
+    if(isEmployeeMode()){
+      lockManagerOnly();
+      if(typeof showToast==='function') showToast('Accès manager bloqué depuis le QR salarié.');
+      return;
+    }
+    if(typeof previousHandleManagerLogin==='function') return previousHandleManagerLogin();
+  };
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    hydrateEmployee();
+    if(isEmployeeMode()){
+      setTimeout(()=>forceScreen('scr-employee'), 30);
+      setTimeout(lockManagerOnly, 150);
+      setTimeout(lockManagerOnly, 800);
+    }
+    console.log(PATCH_VERSION+' installé');
   });
 })();
 </script>
