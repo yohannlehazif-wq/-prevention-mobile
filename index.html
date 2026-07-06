@@ -2706,28 +2706,61 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 <!-- =========================================================
-     PATCH RESTEV 85 — CENTRE RESTEV SÉPARÉ + ALIGNEMENT KPI
-     - Sépare distinctement Alertes terrain / Passeports prévention
-     - Aligne les chiffres : Total passeports / Acquis complets / À renforcer
-     À placer juste avant </body>
+     PATCH RESTEV 85 — CENTRE RESTEV ANONYMISATION RENFORCÉE
+     Objectifs :
+     - Ne pas afficher de nom salarié, nom/code entreprise, commentaire ou donnée individuelle
+     - Séparer Alertes terrain / Passeports prévention
+     - Utiliser uniquement des agrégats statistiques
+     - Masquer les petits effectifs par principe de k-anonymat visuel
+     - Aligner les KPI passeports
      ========================================================= -->
 <script>
 (function(){
-  const PATCH_VERSION = 'RESTEV85_CENTER_SPLIT_AND_ALIGN_2026_07_03';
+  const PATCH_VERSION = 'RESTEV85_CENTER_STRONG_ANONYMIZATION_2026_07_03';
+  const RESTEV_MIN_GROUP_SIZE = 3; // seuil visuel : sous 3 occurrences, regroupement "Autres / données groupées"
 
   function r85Esc(v){
     if(typeof escapeHtml === 'function') return escapeHtml(v || '');
     return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
-  function r85CountBy(rows, key){
-    return (rows || []).reduce((acc, row) => {
-      const value = row[key] || 'Non renseigné';
-      acc[value] = (acc[value] || 0) + 1;
-      return acc;
-    }, {});
+
+  function r85MonthLabel(value){
+    const v = String(value || '').slice(0,7);
+    return /^\d{4}-\d{2}$/.test(v) ? v : new Date().toISOString().slice(0,7);
   }
-  function r85Top(obj, limit=6){
-    return Object.entries(obj || {}).sort((a,b) => b[1] - a[1]).slice(0, limit);
+
+  function r85NormalizeGroupLabel(label){
+    const v = String(label || '').trim();
+    if(!v || v === 'undefined' || v === 'null') return 'Non renseigné';
+    return v;
+  }
+
+  function r85GroupCount(rows, key){
+    const map = {};
+    (rows || []).forEach(row => {
+      const label = r85NormalizeGroupLabel(row[key]);
+      map[label] = (map[label] || 0) + 1;
+    });
+    return map;
+  }
+
+  function r85TopGrouped(counts, limit=6){
+    const safeRows = [];
+    let smallTotal = 0;
+    Object.entries(counts || {}).forEach(([label, count]) => {
+      if(count < RESTEV_MIN_GROUP_SIZE){
+        smallTotal += count;
+      } else {
+        safeRows.push([label, count]);
+      }
+    });
+    if(smallTotal > 0) safeRows.push(['Autres / données groupées', smallTotal]);
+    return safeRows.sort((a,b) => b[1] - a[1]).slice(0, limit);
+  }
+
+  function r85SetText(id, value){
+    const el = document.getElementById(id);
+    if(el) el.innerText = String(value);
   }
 
   window.alignPassportKpiCards = function(){
@@ -2737,19 +2770,14 @@ document.addEventListener('DOMContentLoaded', () => {
       if(!number) return;
       const card = number.parentElement;
       if(!card) return;
-
-      // Même structure visuelle pour les 3 cartes KPI
-      card.classList.add('flex','flex-col','items-center','justify-center','text-center','min-h-[118px]');
       card.style.minHeight = '118px';
       card.style.display = 'flex';
       card.style.flexDirection = 'column';
       card.style.alignItems = 'center';
       card.style.justifyContent = 'center';
       card.style.textAlign = 'center';
-
       const label = card.querySelector('p:first-child');
       if(label){
-        label.classList.add('min-h-[26px]','flex','items-center','justify-center','text-center');
         label.style.minHeight = '26px';
         label.style.display = 'flex';
         label.style.alignItems = 'center';
@@ -2757,33 +2785,43 @@ document.addEventListener('DOMContentLoaded', () => {
         label.style.margin = '0 0 10px 0';
         label.style.lineHeight = '1.05';
       }
-
-      number.classList.add('leading-none','block','text-center');
       number.style.lineHeight = '1';
       number.style.marginTop = '0';
-      number.style.display = 'block';
-      number.style.width = '100%';
       number.style.textAlign = 'center';
+      number.style.width = '100%';
     });
   };
 
-  function installCenterSplitLayout(){
+  function installAnonymousCenterLayout(){
     const screen = document.getElementById('scr-direction');
-    if(!screen || document.getElementById('restev-center-split-dashboard')) return;
+    if(!screen) return;
 
     const oldCards = document.getElementById('stats-total')?.closest('.grid');
     if(oldCards) oldCards.style.display = 'none';
 
-    const split = document.createElement('div');
-    split.id = 'restev-center-split-dashboard';
-    split.className = 'space-y-6';
-    split.innerHTML = `
+    const oldChart = document.getElementById('chart-restev-risks')?.closest('.grid');
+    if(oldChart) oldChart.style.display = 'none';
+
+    if(document.getElementById('restev-anonymous-center-dashboard')) return;
+
+    const block = document.createElement('div');
+    block.id = 'restev-anonymous-center-dashboard';
+    block.className = 'space-y-6';
+    block.innerHTML = `
+      <div class="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900 p-4 rounded-2xl">
+        <p class="text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed">
+          <b><i class="fa-solid fa-user-shield text-emerald-600 mr-1"></i> Centre RESTEV anonymisé :</b>
+          cette vue ne présente que des indicateurs agrégés. Aucun nom de salarié, code entreprise, commentaire terrain, géolocalisation ou historique individuel n’est affiché.
+          Les petits effectifs sont regroupés afin de limiter le risque d’identification indirecte.
+        </p>
+      </div>
+
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-premium border-t-4 border-t-red-500 space-y-4">
           <div class="flex items-center justify-between gap-3">
             <div>
-              <p class="text-[10px] font-black uppercase tracking-widest text-red-500">Flux 1 — Alertes terrain</p>
-              <h3 class="text-lg font-black dark:text-white flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation text-red-500"></i> Signalements prévention</h3>
+              <p class="text-[10px] font-black uppercase tracking-widest text-red-500">Flux anonymisé 1</p>
+              <h3 class="text-lg font-black dark:text-white flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation text-red-500"></i> Alertes terrain</h3>
             </div>
             <button onclick="loadRestevStats()" class="text-[10px] bg-red-50 text-red-600 dark:bg-slate-700 dark:text-red-300 px-3 py-2 rounded-xl font-black">Actualiser</button>
           </div>
@@ -2793,7 +2831,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="bg-blue-50 dark:bg-slate-900 p-4 rounded-2xl border border-blue-100 dark:border-blue-900 text-center min-h-[118px] flex flex-col items-center justify-center"><p class="text-[9px] font-black uppercase text-slate-400 min-h-[26px] flex items-center">Risque dominant</p><p id="restev-alert-top" class="text-xs font-black text-blue-700 leading-tight">—</p></div>
           </div>
           <div>
-            <h4 class="text-xs font-black uppercase text-slate-500 mb-2">Top alertes par risque</h4>
+            <h4 class="text-xs font-black uppercase text-slate-500 mb-2">Top risques signalés anonymisés</h4>
             <div id="restev-alert-list" class="space-y-2"><p class="text-xs text-slate-400 italic">Aucune alerte terrain.</p></div>
           </div>
         </div>
@@ -2801,10 +2839,10 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-premium border-t-4 border-t-emerald-500 space-y-4">
           <div class="flex items-center justify-between gap-3">
             <div>
-              <p class="text-[10px] font-black uppercase tracking-widest text-emerald-500">Flux 2 — Passeports prévention</p>
-              <h3 class="text-lg font-black dark:text-white flex items-center gap-2"><i class="fa-solid fa-id-card text-emerald-500"></i> Passeports validés</h3>
+              <p class="text-[10px] font-black uppercase tracking-widest text-emerald-500">Flux anonymisé 2</p>
+              <h3 class="text-lg font-black dark:text-white flex items-center gap-2"><i class="fa-solid fa-id-card text-emerald-500"></i> Passeports prévention</h3>
             </div>
-            <span class="text-[10px] bg-emerald-50 text-emerald-600 dark:bg-slate-700 dark:text-emerald-300 px-3 py-2 rounded-xl font-black">Registre séparé</span>
+            <span class="text-[10px] bg-emerald-50 text-emerald-600 dark:bg-slate-700 dark:text-emerald-300 px-3 py-2 rounded-xl font-black">Agrégé uniquement</span>
           </div>
           <div class="grid grid-cols-3 gap-3">
             <div class="bg-emerald-50 dark:bg-slate-900 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900 text-center min-h-[118px] flex flex-col items-center justify-center"><p class="text-[9px] font-black uppercase text-slate-400 min-h-[26px] flex items-center justify-center">Total passeports</p><p id="restev-passport-total" class="text-3xl font-black text-emerald-600 leading-none">0</p></div>
@@ -2812,129 +2850,114 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="bg-amber-50 dark:bg-slate-900 p-4 rounded-2xl border border-amber-100 dark:border-amber-900 text-center min-h-[118px] flex flex-col items-center justify-center"><p class="text-[9px] font-black uppercase text-slate-400 min-h-[26px] flex items-center justify-center">À renforcer</p><p id="restev-passport-improve" class="text-3xl font-black text-amber-600 leading-none">0</p></div>
           </div>
           <div>
-            <h4 class="text-xs font-black uppercase text-slate-500 mb-2">Derniers passeports enregistrés</h4>
-            <div id="restev-passport-list" class="space-y-2"><p class="text-xs text-slate-400 italic">Aucun passeport validé.</p></div>
+            <h4 class="text-xs font-black uppercase text-slate-500 mb-2">Répartition mensuelle anonymisée</h4>
+            <div id="restev-passport-list" class="space-y-2"><p class="text-xs text-slate-400 italic">Aucune donnée passeport.</p></div>
           </div>
         </div>
+      </div>
+
+      <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl">
+        <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+          <b>Règle appliquée :</b> la vue Centre RESTEV ne doit pas permettre de remonter à une entreprise ou une personne. Pour le pilotage d’une entreprise, il faut utiliser l’espace manager de son propre établissement, pas cette vue collective.
+        </p>
       </div>
     `;
 
     const hero = screen.querySelector('.bg-gradient-to-br');
-    if(hero && hero.nextSibling) screen.insertBefore(split, hero.nextSibling);
-    else screen.appendChild(split);
+    if(hero && hero.nextSibling) screen.insertBefore(block, hero.nextSibling);
+    else screen.appendChild(block);
+    setTimeout(window.alignPassportKpiCards, 150);
+  }
 
-    setTimeout(window.alignPassportKpiCards, 100);
+  async function fetchStatsSafely(){
+    // Priorité : prevention_stats, car elle est déjà pensée anonymisée.
+    const { data, error } = await supabaseClient
+      .from('prevention_stats')
+      .select('period_month,sector,company_size_range,risk_category,risk_level,frequency,event_type,created_at')
+      .order('created_at',{ascending:false})
+      .limit(1500);
+    if(error) throw error;
+    return data || [];
   }
 
   window.loadRestevStats = async function(){
-    installCenterSplitLayout();
+    installAnonymousCenterLayout();
     if(!supabaseClient){ showToast('Supabase non chargé : statistiques indisponibles.'); return; }
 
     try{
-      const statRes = await supabaseClient
-        .from('prevention_stats')
-        .select('period_month,sector,company_size_range,risk_category,risk_level,frequency,event_type,created_at')
-        .order('created_at',{ascending:false})
-        .limit(1000);
-
-      if(statRes.error){
-        console.error(statRes.error);
-        showToast('Statistiques RESTEV indisponibles : ' + statRes.error.message);
-        return;
-      }
-
-      const allStats = statRes.data || [];
-      const alertRows = allStats.filter(r => String(r.event_type || '').toLowerCase().includes('signalement'));
-      const passportStatRows = allStats.filter(r => String(r.event_type || '').toLowerCase().includes('passeport'));
-
-      let passportRows = [];
-      const passRes = await supabaseClient
-        .from('passport_registry')
-        .select('company_code,employee_name,score,total,status,created_at')
-        .order('created_at',{ascending:false})
-        .limit(500);
-
-      if(!passRes.error && passRes.data) passportRows = passRes.data || [];
-      renderRestevSplitStats(alertRows, passportRows, passportStatRows);
-      setTimeout(window.alignPassportKpiCards, 100);
+      const rows = await fetchStatsSafely();
+      const alertRows = rows.filter(r => String(r.event_type || '').toLowerCase().includes('signalement'));
+      const passportRows = rows.filter(r => String(r.event_type || '').toLowerCase().includes('passeport'));
+      renderAnonymousRestevCenter(alertRows, passportRows);
     }catch(e){
-      console.error(e);
-      showToast('Erreur chargement Centre RESTEV.');
+      console.error('Centre RESTEV anonymisé indisponible:', e);
+      showToast('Erreur Centre RESTEV anonymisé : ' + (e.message || e));
     }
   };
 
-  window.renderRestevSplitStats = function(alertRows, passportRows, passportStatRows){
+  window.renderAnonymousRestevCenter = function(alertRows, passportRows){
     alertRows = alertRows || [];
     passportRows = passportRows || [];
-    passportStatRows = passportStatRows || [];
 
-    const riskCounts = r85CountBy(alertRows, 'risk_category');
-    const topAlerts = r85Top(riskCounts, 6);
+    // Alertes : uniquement agrégats.
+    const riskCounts = r85GroupCount(alertRows, 'risk_category');
+    const topRisks = r85TopGrouped(riskCounts, 6);
     const critical = alertRows.filter(r => String(r.risk_level || '').toLowerCase().includes('critique')).length;
 
-    const set = (id, value) => { const el = document.getElementById(id); if(el) el.innerText = String(value); };
-    set('restev-alert-total', alertRows.length);
-    set('restev-alert-critical', critical);
-    set('restev-alert-top', topAlerts[0] ? topAlerts[0][0] : '—');
+    r85SetText('restev-alert-total', alertRows.length);
+    r85SetText('restev-alert-critical', critical);
+    r85SetText('restev-alert-top', topRisks[0] ? topRisks[0][0] : '—');
 
     const alertList = document.getElementById('restev-alert-list');
     if(alertList){
-      alertList.innerHTML = topAlerts.length ? topAlerts.map(([risk,count],idx) => `
+      alertList.innerHTML = topRisks.length ? topRisks.map(([risk, count], idx) => `
         <div class="p-3 rounded-2xl border bg-red-50/70 dark:bg-slate-900 border-red-100 dark:border-red-900">
           <div class="flex justify-between gap-2">
             <p class="text-xs font-black dark:text-white">${idx+1}. ${r85Esc(risk)}</p>
             <span class="text-[10px] font-black text-red-600 bg-white dark:bg-slate-800 px-2 py-1 rounded-lg">${count}</span>
           </div>
-        </div>`).join('') : '<p class="text-xs text-slate-400 italic">Aucune alerte terrain.</p>';
+        </div>
+      `).join('') : '<p class="text-xs text-slate-400 italic">Aucune alerte terrain.</p>';
     }
 
-    let complete = 0, improve = 0;
-    passportRows.forEach(p => {
-      const s = Number(p.score || 0), t = Number(p.total || 0);
-      if(t > 0 && s === t) complete++; else improve++;
+    // Passeports : uniquement depuis prevention_stats event_type Passeport, donc pas de code entreprise affiché.
+    const totalPassports = passportRows.length;
+    const complete = passportRows.filter(r => String(r.risk_level || '').toLowerCase().includes('complet')).length;
+    const improve = Math.max(totalPassports - complete, 0);
+
+    r85SetText('restev-passport-total', totalPassports);
+    r85SetText('restev-passport-complete', complete);
+    r85SetText('restev-passport-improve', improve);
+
+    const monthCounts = {};
+    passportRows.forEach(r => {
+      const m = r85MonthLabel(r.period_month || r.created_at);
+      monthCounts[m] = (monthCounts[m] || 0) + 1;
     });
-    if(!passportRows.length && passportStatRows.length){
-      passportStatRows.forEach(p => String(p.risk_level || '').toLowerCase().includes('complet') ? complete++ : improve++);
-    }
-    const passportTotal = passportRows.length || passportStatRows.length;
-    set('restev-passport-total', passportTotal);
-    set('restev-passport-complete', complete);
-    set('restev-passport-improve', improve);
+    const monthTop = Object.entries(monthCounts).sort((a,b) => b[0].localeCompare(a[0])).slice(0,6);
 
-    const passportList = document.getElementById('restev-passport-list');
-    if(passportList){
-      if(passportRows.length){
-        passportList.innerHTML = passportRows.slice(0,8).map(p => `
-          <div class="p-3 rounded-2xl border bg-emerald-50/70 dark:bg-slate-900 border-emerald-100 dark:border-emerald-900">
-            <div class="flex justify-between gap-2">
-              <div>
-                <p class="text-xs font-black dark:text-white">${r85Esc(p.company_code || 'Établissement')}</p>
-                <p class="text-[10px] text-slate-500">${new Date(p.created_at).toLocaleString('fr-FR')} — Score : ${r85Esc(p.score)}/${r85Esc(p.total)}</p>
-              </div>
-              <span class="text-[10px] font-black text-emerald-600 bg-white dark:bg-slate-800 px-2 py-1 rounded-lg">${r85Esc(p.status || 'Validé')}</span>
-            </div>
-          </div>`).join('');
-      } else if(passportStatRows.length){
-        passportList.innerHTML = passportStatRows.slice(0,8).map(p => `
-          <div class="p-3 rounded-2xl border bg-emerald-50/70 dark:bg-slate-900 border-emerald-100 dark:border-emerald-900">
-            <p class="text-xs font-black dark:text-white">${r85Esc(p.risk_category || 'Validation passeport prévention')}</p>
-            <p class="text-[10px] text-slate-500">${new Date(p.created_at).toLocaleString('fr-FR')} — ${r85Esc(p.risk_level || '')}</p>
-          </div>`).join('');
-      } else {
-        passportList.innerHTML = '<p class="text-xs text-slate-400 italic">Aucun passeport validé.</p>';
-      }
+    const passList = document.getElementById('restev-passport-list');
+    if(passList){
+      passList.innerHTML = monthTop.length ? monthTop.map(([month,count]) => `
+        <div class="p-3 rounded-2xl border bg-emerald-50/70 dark:bg-slate-900 border-emerald-100 dark:border-emerald-900">
+          <div class="flex justify-between gap-2">
+            <p class="text-xs font-black dark:text-white">Mois ${r85Esc(month)}</p>
+            <span class="text-[10px] font-black text-emerald-600 bg-white dark:bg-slate-800 px-2 py-1 rounded-lg">${count} passeport(s)</span>
+          </div>
+        </div>
+      `).join('') : '<p class="text-xs text-slate-400 italic">Aucune donnée passeport.</p>';
     }
 
-    // Ancienne zone compatible, mais uniquement sur les alertes.
-    set('stats-total', alertRows.length);
-    set('stats-top-risk', topAlerts[0] ? topAlerts[0][0] : '—');
-    set('stats-sector-count', Object.keys(r85CountBy(alertRows, 'sector')).length);
+    // Compatibilité ancienne zone : uniquement alertes, jamais passeports ni données nominatives.
+    r85SetText('stats-total', alertRows.length);
+    r85SetText('stats-top-risk', topRisks[0] ? topRisks[0][0] : '—');
+    r85SetText('stats-sector-count', Object.keys(r85GroupCount(alertRows, 'sector')).length);
 
     setTimeout(window.alignPassportKpiCards, 100);
   };
 
   document.addEventListener('DOMContentLoaded', () => {
-    installCenterSplitLayout();
+    installAnonymousCenterLayout();
     setTimeout(window.alignPassportKpiCards, 300);
     console.log(PATCH_VERSION + ' installé');
   });
