@@ -2709,279 +2709,95 @@ document.addEventListener('DOMContentLoaded', () => {
      Fond lisible, glassmorphism, page d'accueil modernisée.
      À coller juste avant 
 
-<!-- =========================================================
-PATCH FINAL RESTEV 85 — APP DESIGN + DARK MODE TOTAL + QR SALARIÉ VERROUILLÉ + ALERTE VISUELLE RENFORCÉE
-À coller juste avant </body>. Ne modifie pas la logique métier existante.
-========================================================= -->
-<style id="r85-app-final-polish-style">
-  :root{
-    --r85-bg-a:#f8fbff;
-    --r85-bg-b:#eef7ff;
-    --r85-bg-c:#fff3fa;
-    --r85-card:rgba(255,255,255,.88);
-    --r85-card-strong:rgba(255,255,255,.96);
-    --r85-text:#0f172a;
-    --r85-muted:#64748b;
-    --r85-border:rgba(148,163,184,.26);
-    --r85-shadow:0 18px 45px rgba(15,23,42,.10);
-    --r85-shadow-strong:0 25px 70px rgba(15,23,42,.16);
-    --r85-blue:#3a7bd5;
-    --r85-blue-dark:#245ca6;
-    --r85-magenta:#e0248a;
-    --r85-teal:#4ec3b1;
-    --r85-gold:#ffb007;
-  }
-
-  html.dark{
-    --r85-bg-a:#020617;
-    --r85-bg-b:#0f172a;
-    --r85-bg-c:#111827;
-    --r85-card:rgba(15,23,42,.86);
-    --r85-card-strong:rgba(15,23,42,.96);
-    --r85-text:#f8fafc;
-    --r85-muted:#cbd5e1;
-    --r85-border:rgba(71,85,105,.82);
-    --r85-shadow:0 18px 45px rgba(0,0,0,.34);
-    --r85-shadow-strong:0 25px 75px rgba(0,0,0,.46);
-  }
-
-  body{
-    color:var(--r85-text)!important;
-    background:
-      radial-gradient(circle at 15% 12%, rgba(58,123,213,.20), transparent 32%),
-      radial-gradient(circle at 86% 18%, rgba(224,36,138,.16), transparent 30%),
-      radial-gradient(circle at 40% 90%, rgba(78,195,177,.13), transparent 34%),
-      linear-gradient(135deg,var(--r85-bg-a),var(--r85-bg-b) 48%,var(--r85-bg-c))!important;
-    min-height:100dvh;
-  }
-
-  html.dark body,
-  body.dark{
-    color:var(--r85-text)!important;
-    background:
-      radial-gradient(circle at 12% 10%, rgba(58,123,213,.22), transparent 32%),
-      radial-gradient(circle at 87% 17%, rgba(224,36,138,.18), transparent 30%),
-      radial-gradient(circle at 50% 95%, rgba(78,195,177,.10), transparent 34%),
-      linear-gradient(135deg,#020617,#0f172a 48%,#111827)!important;
-  }
-
-  header{
-    background:rgba(255,255,255,.72)!important;
-    border-color:var(--r85-border)!important;
-    backdrop-filter:blur(22px)!important;
-    box-shadow:0 8px 28px rgba(15,23,42,.06)!important;
-  }
-  html.dark header{background:rgba(15,23,42,.82)!important;box-shadow:0 8px 30px rgba(0,0,0,.28)!important;}
-
-  main{max-width:1120px!important;}
-
-  .screen{border-radius:30px;}
-  .screen.active{animation:r85AppIn .28s ease both!important;}
-  @keyframes r85AppIn{from{opacity:0;transform:translateY(8px) scale(.993)}to{opacity:1;transform:none}}
-
-  .bg-white,
-  .bg-slate-50,
-  .bg-blue-50,
-  .bg-emerald-50,
-  .bg-red-50,
-  .bg-amber-50,
-  .bg-pink-50,
-  .bg-cyan-50,
-  .bg-teal-50,
-  .bg-orange-50,
-  .dark\:bg-slate-800,
-  .dark\:bg-slate-900{
-    background:var(--r85-card)!important;
-    color:var(--r85-text)!important;
-    border-color:var(--r85-border)!important;
-    box-shadow:var(--r85-shadow)!important;
-    backdrop-filter:blur(20px)!important;
-  }
-
-  #scr-manager > .bg-white,
-  #scr-manager .rounded-2xl,
-  #scr-manager .rounded-3xl,
-  #scr-employee .rounded-2xl,
-  #scr-employee .rounded-3xl,
-  #scr-report.rounded-3xl,
-  #scr-qcm.rounded-3xl,
-  #scr-qcm-success.rounded-3xl{
-    border-radius:28px!important;
-  }
-
-  input,select,textarea{
-    border-radius:16px!important;
-    border-color:var(--r85-border)!important;
-    background:rgba(255,255,255,.72)!important;
-    color:var(--r85-text)!important;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.25)!important;
-  }
-  html.dark input,html.dark select,html.dark textarea,
-  body.dark input,body.dark select,body.dark textarea{
-    background:rgba(2,6,23,.72)!important;
-    color:#f8fafc!important;
-    border-color:#475569!important;
-  }
-  input::placeholder,textarea::placeholder{color:#94a3b8!important;}
-
-  button{
-    border-radius:16px!important;
-    transition:transform .18s ease, box-shadow .18s ease, filter .18s ease!important;
-  }
-  button:hover{transform:translateY(-1px);filter:brightness(1.03);}
-  button:active{transform:scale(.985);}
-
-  .shadow-premium{box-shadow:var(--r85-shadow)!important;}
-  .text-slate-400,.text-slate-500,.text-slate-600,.text-slate-700{color:var(--r85-muted)!important;}
-  html.dark .dark\:text-white,html.dark .text-slate-900,html.dark .text-slate-800{color:#f8fafc!important;}
-
-  table,td,th{color:var(--r85-text)!important;border-color:var(--r85-border)!important;}
-
-  #manager-risk-box{
-    scrollbar-color:rgba(58,123,213,.65) transparent;
-    scrollbar-width:thin;
-  }
-  #manager-risk-box > div{
-    background:rgba(15,23,42,.96)!important;
-    color:#f8fafc!important;
-    border:2px solid rgba(239,68,68,.75)!important;
-    box-shadow:0 15px 40px rgba(127,29,29,.22)!important;
-  }
-  #manager-risk-box input,#manager-risk-box select,#manager-risk-box textarea{
-    background:rgba(2,6,23,.78)!important;
-    color:#f8fafc!important;
-    border-color:rgba(226,232,240,.75)!important;
-  }
-
-  #r85-google-map-frame{filter:none!important;}
-  html.dark #r85-google-map-frame{filter:brightness(.82) contrast(1.08)!important;}
-
-  /* Salarié uniquement : verrouillage impératif des écrans non autorisés */
-  body.r85-employee-only #scr-home,
-  body.r85-employee-only #scr-auth,
-  body.r85-employee-only #scr-manager,
-  body.r85-employee-only #scr-direction,
-  body.r85-employee-only #scr-studio,
-  body.r85-employee-only button[onclick*="scr-home"],
-  body.r85-employee-only button[onclick*="scr-auth"],
-  body.r85-employee-only button[onclick*="scr-manager"],
-  body.r85-employee-only button[onclick*="scr-direction"],
-  body.r85-employee-only button[onclick*="createNewCompany"],
-  body.r85-employee-only #generated-code-box,
-  body.r85-employee-only #r85-maintenance-panel,
-  body.r85-employee-only #r85-manager-zones-panel{
-    display:none!important;
-    visibility:hidden!important;
-    pointer-events:none!important;
-  }
-
-  /* Alerte visuelle plus visible et professionnelle */
-  @keyframes r85AlertStrongPulse{
-    0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(239,68,68,.62),0 28px 90px rgba(127,29,29,.36)}
-    50%{transform:scale(1.018);box-shadow:0 0 0 24px rgba(239,68,68,0),0 32px 105px rgba(127,29,29,.52)}
-  }
-  @keyframes r85AlertHeaderPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.28)}}
-  #r85-clean-alert-overlay.r85-show{display:flex!important;background:rgba(2,6,23,.76)!important;backdrop-filter:blur(9px)!important;}
-  .r85-clean-alert-card{animation:r85AlertStrongPulse 1.18s ease-in-out infinite!important;border:4px solid #ef4444!important;box-shadow:var(--r85-shadow-strong)!important;}
-  #r85-clean-alert-head{animation:r85AlertHeaderPulse .95s ease-in-out infinite!important;}
-  #r85-clean-alert-title{font-size:1.55rem!important;letter-spacing:-.03em;}
+<!-- PATCH RESTEV 85 — NETTOYAGE UI + ALERTES PROPRES + GOOGLE MAPS + SALARIÉ VERROUILLÉ -->
+<style id="r85-clean-alerts-google-style">
+  #r85-google-map-frame{width:100%;height:310px;border:0;border-radius:1.25rem;background:#e2e8f0}.r85-map-card{border:1px solid rgba(148,163,184,.45);border-radius:1.35rem;overflow:hidden;background:white}html.dark .r85-map-card{background:#0f172a;border-color:#334155}html.dark #r85-google-map-frame{filter:brightness(.82) contrast(1.05)}
+  @keyframes r85CleanPulse{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.35),0 20px 55px rgba(15,23,42,.18)}50%{box-shadow:0 0 0 14px rgba(220,38,38,0),0 20px 55px rgba(15,23,42,.24)}}
+  #r85-clean-alert-overlay.r85-show{display:flex!important}.r85-clean-alert-card{animation:r85CleanPulse 1.8s ease-in-out infinite}.r85-hidden-force{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
 </style>
-
 <script>
 (function(){
-  const PATCH_VERSION='RESTEV85_APP_STORE_DARK_EMPLOYEE_LOCK_2026_07_06';
+  const PATCH_VERSION='RESTEV85_CLEAN_ALERTS_GOOGLE_EMPLOYEE_LOCK_2026_07_06';
+  let r85GoogleGps=null,r85GoogleGeoWatch=null,r85ManagerCleanChannel=null,r85EmployeeReportChannel=null,r85EmployeeMsgChannel=null,r85AudioCtx=null;
+  const BAD_PATTERNS=[/={8,}\s*-->/i,/Nouveau signalement prévention/i,/Pour recevoir les notifications hors écran/i,/Fermer\s+Voir le signalement/i,/^\s*-->\s*$/i,/^\s*<!--\s*={8,}/i];
+  function toast(m){if(typeof showToast==='function')showToast(m);else alert(m)}
+  function esc(v){if(typeof escapeHtml==='function')return escapeHtml(v||'');return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+  function sess(){try{return currentEmployeeSession||window.currentEmployeeSession||null}catch(e){return window.currentEmployeeSession||null}}
+  function company(){return (sess()?.company||document.getElementById('lbl-manager-comp-name')?.innerText||'').trim()}
+  function unlockAudio(){try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;if(!r85AudioCtx)r85AudioCtx=new AC();if(r85AudioCtx.state==='suspended')r85AudioCtx.resume()}catch(e){}}
+  function beep(kind){try{if(typeof soundMuted!=='undefined'&&soundMuted)return;unlockAudio();if(!r85AudioCtx)return;const base=kind==='down'?640:820;[0,.18,.36].forEach((d,i)=>{const now=r85AudioCtx.currentTime+d,o=r85AudioCtx.createOscillator(),g=r85AudioCtx.createGain();o.type='sine';o.frequency.setValueAtTime(base+(i*80),now);g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(.18,now+.02);g.gain.exponentialRampToValueAtTime(.0001,now+.18);o.connect(g);g.connect(r85AudioCtx.destination);o.start(now);o.stop(now+.2)})}catch(e){}}
+  function vibrate(kind){try{if(navigator.vibrate)navigator.vibrate(kind==='down'?[220,90,220]:[300,100,300,100,450])}catch(e){}}
+  function googleEmbedUrl(lat,lng,z=21){return `https://maps.google.com/maps?q=${encodeURIComponent(lat+','+lng)}&z=${z}&output=embed`}
+  function googleOpenUrl(lat,lng){return `https://www.google.com/maps?q=${encodeURIComponent(lat+','+lng)}`}
 
-  function isEmployeeUrl(){const p=new URLSearchParams(location.search);return !!(p.get('emp')&&p.get('comp'));}
-  function hasEmployeeSession(){try{return !!(currentEmployeeSession&&currentEmployeeSession.name&&currentEmployeeSession.company)}catch(e){return !!(window.currentEmployeeSession&&window.currentEmployeeSession.name&&window.currentEmployeeSession.company)}}
-  function isEmployeeMode(){return isEmployeeUrl()||hasEmployeeSession();}
-
-  function applyDarkFromStorage(){
+  /* 1) Nettoyage définitif des textes parasites */
+  function cleanBadTextNodes(){
     try{
-      if((safeStorage&&safeStorage.getItem('restev_dark_mode')==='1')||localStorage.getItem('restev_dark_mode')==='1'){
-        document.documentElement.classList.add('dark');
-        document.body.classList.add('dark');
-      }
+      const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,null);
+      const nodes=[];let n;while(n=walker.nextNode()){const t=n.nodeValue||'';if(BAD_PATTERNS.some(r=>r.test(t)))nodes.push(n)}
+      nodes.forEach(n=>{n.nodeValue=''});
+      document.querySelectorAll('body *').forEach(el=>{
+        if(['SCRIPT','STYLE','TEXTAREA','INPUT','SELECT','OPTION'].includes(el.tagName))return;
+        const txt=(el.innerText||'').trim(); if(!txt)return;
+        const hit=BAD_PATTERNS.some(r=>r.test(txt));
+        const popupLike=(el.className||'').toString().includes('fixed')||['fixed','absolute'].includes(getComputedStyle(el).position)||Number(getComputedStyle(el).zIndex)>40;
+        if(hit&&popupLike)el.remove();
+      });
     }catch(e){}
   }
+  new MutationObserver(cleanBadTextNodes).observe(document.documentElement,{childList:true,subtree:true,characterData:true});
 
-  const oldToggleDarkMode=window.toggleDarkMode;
-  window.toggleDarkMode=function(){
-    const before=document.documentElement.classList.contains('dark')||document.body.classList.contains('dark');
-    if(typeof oldToggleDarkMode==='function')oldToggleDarkMode();
-    const afterOld=document.documentElement.classList.contains('dark');
-    const next=afterOld!==before?afterOld:!before;
-    document.documentElement.classList.toggle('dark',next);
-    document.body.classList.toggle('dark',next);
-    try{safeStorage?.setItem('restev_dark_mode',next?'1':'0');localStorage.setItem('restev_dark_mode',next?'1':'0')}catch(e){}
-  };
-
-  function fillEmployeeLabelsFromUrl(){
-    if(!isEmployeeUrl())return;
-    const p=new URLSearchParams(location.search);
-    const emp=p.get('emp'),comp=p.get('comp'),sector=p.get('sector')||p.get('secteur')||'';
-    const welcome=document.getElementById('lbl-emp-welcome');
-    const company=document.getElementById('lbl-emp-company');
-    if(welcome&&emp)welcome.innerText='Bonjour, '+emp;
-    if(company&&comp)company.innerText='Établissement : '+comp+(sector?' | Secteur : '+sector:'');
+  /* 2) Notifications propres : visuel + vibration + notification navigateur */
+  function ensureCleanAlertUI(){
+    if(document.getElementById('r85-clean-alert-overlay'))return;
+    const overlay=document.createElement('div');overlay.id='r85-clean-alert-overlay';overlay.className='hidden fixed inset-0 z-[100000] items-center justify-center p-4 bg-slate-950/65 backdrop-blur-sm no-print';
+    overlay.innerHTML=`<div class="r85-clean-alert-card w-full max-w-xl bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden"><div id="r85-clean-alert-head" class="p-4 text-white flex items-center gap-3 bg-gradient-to-r from-red-600 to-orange-500"><div class="w-12 h-12 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center text-2xl"><i id="r85-clean-alert-icon" class="fa-solid fa-triangle-exclamation"></i></div><div><p id="r85-clean-alert-kicker" class="text-[10px] font-black uppercase tracking-widest text-white/80">Alerte</p><h2 id="r85-clean-alert-title" class="text-xl font-black">Signalement</h2></div></div><div class="p-5 space-y-3"><p id="r85-clean-alert-subtitle" class="text-sm font-black dark:text-white"></p><p id="r85-clean-alert-body" class="text-sm text-slate-600 dark:text-slate-300 font-semibold leading-relaxed"></p><div id="r85-clean-alert-mapbox" class="hidden"><a id="r85-clean-alert-maplink" target="_blank" class="block text-center bg-restev-blue text-white py-3 rounded-xl text-xs font-black"><i class="fa-solid fa-map-location-dot mr-1"></i>Ouvrir Google Maps</a></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2"><button onclick="closeR85CleanAlert()" class="bg-slate-100 dark:bg-slate-800 dark:text-white py-3 rounded-xl text-xs font-black">Fermer</button><button id="r85-clean-alert-action" class="bg-slate-900 dark:bg-white dark:text-slate-900 text-white py-3 rounded-xl text-xs font-black">Voir</button></div></div></div>`;
+    document.body.appendChild(overlay);
+  }
+  window.closeR85CleanAlert=function(){document.getElementById('r85-clean-alert-overlay')?.classList.remove('r85-show');document.getElementById('r85-clean-alert-overlay')?.classList.add('hidden');try{if(navigator.vibrate)navigator.vibrate(0)}catch(e){}};
+  async function requestNotif(){try{if(!('Notification'in window))return false;if(Notification.permission==='granted')return true;return(await Notification.requestPermission())==='granted'}catch(e){return false}}
+  window.activateR85Notifications=async function(){unlockAudio();const ok=await requestNotif();toast(ok?'Notifications activées.':'Notifications refusées ou non compatibles.');return ok};
+  async function nativeNotify(title,body,tag,lat,lng){try{if(!('Notification'in window))return;if(Notification.permission!=='granted')await requestNotif();if(Notification.permission!=='granted')return;const n=new Notification(title,{body,icon:'logo.png',badge:'logo.png',requireInteraction:true,tag:tag||'restev85',renotify:true,vibrate:[300,100,300]});if(lat&&lng)n.onclick=()=>window.open(googleOpenUrl(lat,lng),'_blank')}catch(e){}}
+  function showCleanAlert({kind='up',title='Alerte',subtitle='',body='',lat=null,lng=null,actionScreen=null}){
+    ensureCleanAlertUI();cleanBadTextNodes();
+    const down=kind==='down';
+    document.getElementById('r85-clean-alert-head').className=`p-4 text-white flex items-center gap-3 ${down?'bg-gradient-to-r from-restev-blue to-cyan-500':'bg-gradient-to-r from-red-600 to-orange-500'}`;
+    document.getElementById('r85-clean-alert-icon').className=down?'fa-solid fa-message':'fa-solid fa-triangle-exclamation';
+    document.getElementById('r85-clean-alert-kicker').innerText=down?'Message descendant':'Alerte terrain';
+    document.getElementById('r85-clean-alert-title').innerText=title;
+    document.getElementById('r85-clean-alert-subtitle').innerText=subtitle;
+    document.getElementById('r85-clean-alert-body').innerText=body;
+    const mapbox=document.getElementById('r85-clean-alert-mapbox'),maplink=document.getElementById('r85-clean-alert-maplink');
+    if(lat&&lng){mapbox.classList.remove('hidden');maplink.href=googleOpenUrl(lat,lng)}else mapbox.classList.add('hidden');
+    document.getElementById('r85-clean-alert-action').onclick=function(){closeR85CleanAlert();if(actionScreen&&typeof switchScreen==='function')switchScreen(actionScreen)};
+    const ov=document.getElementById('r85-clean-alert-overlay');ov.classList.remove('hidden');ov.classList.add('r85-show');
+    beep(kind);vibrate(kind);nativeNotify(title,`${subtitle} ${body}`.trim(),down?'restev85-descendant':'restev85-montant',lat,lng);
   }
 
-  function hardEmployeeLock(){
-    if(!isEmployeeMode())return;
-    document.body.classList.add('r85-employee-only');
-    fillEmployeeLabelsFromUrl();
-    const allowed=['scr-employee','scr-report','scr-qcm','scr-qcm-success','scr-resources','scr-training','scr-employee-messages'];
-    document.querySelectorAll('.screen').forEach(s=>{
-      if(!allowed.includes(s.id)){s.classList.remove('active');s.style.display='none';}
-    });
-    const active=document.querySelector('.screen.active');
-    if(!active||!allowed.includes(active.id)){
-      const emp=document.getElementById('scr-employee');
-      if(emp){
-        document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.style.display='none';});
-        emp.classList.add('active');emp.style.display='block';
-      }
-    }
-    document.querySelectorAll("button[onclick*='scr-home'],button[onclick*='scr-auth'],button[onclick*='scr-manager'],button[onclick*='scr-direction'],button[onclick*='createNewCompany']").forEach(b=>{b.style.display='none';b.style.visibility='hidden';b.style.pointerEvents='none';});
-  }
+  // Neutraliser les anciennes notifications/popup texte
+  window.showBrowserNotification=function(report){nativeNotify('RESTEV 85 — Signalement terrain',`${report?.employee_name||'Salarié'} — ${report?.category||'Danger signalé'}`,'restev85-montant',report?.gps_lat,report?.gps_lng)};
+  window.triggerNewReportAlert=function(report){showCleanAlert({kind:'up',title:'Nouveau signalement',subtitle:`${report?.employee_name||'Salarié'} — ${report?.category||'Danger signalé'}`,body:report?.description||'',lat:report?.gps_lat,lng:report?.gps_lng,actionScreen:'scr-manager'})};
 
-  const oldCheck=window.checkUrlParameters;
-  window.checkUrlParameters=function(){
-    if(typeof oldCheck==='function')oldCheck();
-    if(isEmployeeUrl())setTimeout(hardEmployeeLock,20);
-  };
+  /* 3) Google Maps simple avec zoom maximal */
+  async function fetchWorkZones(c){if(!supabaseClient||!c)return[];try{const{data,error}=await supabaseClient.from('work_zones').select('id,name,description').eq('company_code',c).order('name',{ascending:true});return error?[]:(data||[])}catch(e){return[]}}
+  async function loadZones(){const select=document.getElementById('r85-google-work-zone');if(!select)return;const prev=select.value,zones=await fetchWorkZones(company());select.innerHTML='<option value="">Zone de travail non renseignée</option>'+zones.map(z=>`<option value="${esc(z.name)}">${esc(z.name)}</option>`).join('');if(prev)select.value=prev}
+  window.installR85GoogleGpsBlock=function(){const screen=document.getElementById('scr-report');if(!screen)return;['map','r85-report-map-real','r85-real-map-block','r85-gps-permission-block'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('r85-hidden-force')});if(document.getElementById('r85-google-gps-block'))return;const block=document.createElement('div');block.id='r85-google-gps-block';block.className='space-y-3 bg-blue-50 dark:bg-slate-900 border border-blue-100 dark:border-slate-700 p-4 rounded-2xl';block.innerHTML=`<div class="flex items-start gap-3"><div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-slate-800 text-restev-blue flex items-center justify-center"><i class="fa-solid fa-map-location-dot"></i></div><div class="flex-1"><p class="text-xs font-black dark:text-white">Lieu du signalement</p><p class="text-[11px] text-slate-500 dark:text-slate-300 leading-relaxed">Choisissez une zone et affichez la position sur Google Maps. Zoom possible directement sur la carte.</p></div></div><select id="r85-google-work-zone" class="w-full p-3 bg-white dark:bg-slate-800 border rounded-xl text-xs font-black dark:text-white"><option value="">Zone de travail non renseignée</option></select><button type="button" onclick="requestR85GoogleGeolocation()" class="w-full bg-restev-blue text-white py-3 rounded-xl text-xs font-black"><i class="fa-solid fa-location-crosshairs mr-1"></i> Autoriser / actualiser ma position Google Maps</button><div class="r85-map-card"><iframe id="r85-google-map-frame" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=46.670,-1.426&z=13&output=embed"></iframe></div><div id="r85-google-gps-status" class="text-[11px] font-bold text-slate-500 dark:text-slate-300 bg-white dark:bg-slate-800 border rounded-xl p-3">Carte Google prête. Position non autorisée.</div><a id="r85-google-map-open" href="https://www.google.com/maps?q=46.670,-1.426" target="_blank" class="block text-center bg-white dark:bg-slate-800 border text-restev-blue dark:text-blue-300 py-2 rounded-xl text-[10px] font-black">Ouvrir dans Google Maps</a>`;const target=document.getElementById('risk-category-select')?.closest('div')||screen.querySelector('h3')?.nextSibling;if(target)screen.insertBefore(block,target);else screen.prepend(block);loadZones()};
+  function refreshMap(){const f=document.getElementById('r85-google-map-frame'),a=document.getElementById('r85-google-map-open');if(!f||!r85GoogleGps)return;f.src=googleEmbedUrl(r85GoogleGps.lat,r85GoogleGps.lng,21);if(a)a.href=googleOpenUrl(r85GoogleGps.lat,r85GoogleGps.lng)}
+  window.requestR85GoogleGeolocation=function(){installR85GoogleGpsBlock();const status=document.getElementById('r85-google-gps-status');if(!navigator.geolocation){if(status)status.innerHTML='Géolocalisation non compatible.';return}if(status)status.innerHTML='Demande d’autorisation GPS en cours…';if(r85GoogleGeoWatch!==null){try{navigator.geolocation.clearWatch(r85GoogleGeoWatch)}catch(e){}r85GoogleGeoWatch=null}let best=null;const ok=pos=>{const p={lat:pos.coords.latitude,lng:pos.coords.longitude,accuracy:pos.coords.accuracy,captured_at:new Date().toISOString()};if(!best||p.accuracy<best.accuracy){best=p;r85GoogleGps=p}refreshMap();if(status)status.innerHTML=`📍 Position affichée sur Google Maps — précision environ <b>${Math.round(r85GoogleGps.accuracy||0)} m</b>`};const ko=err=>{if(status)status.innerHTML=`<b>GPS refusé ou indisponible.</b><br>${esc(err.message||'')}`};r85GoogleGeoWatch=navigator.geolocation.watchPosition(ok,ko,{enableHighAccuracy:true,timeout:25000,maximumAge:0});setTimeout(()=>{if(r85GoogleGeoWatch!==null){try{navigator.geolocation.clearWatch(r85GoogleGeoWatch)}catch(e){}r85GoogleGeoWatch=null}},12000)};
+  window.submitRiskReport=async function(){installR85GoogleGpsBlock();if(!supabaseClient)return toast('Supabase non chargé.');const category=document.getElementById('risk-category-select')?.value||'Non renseigné',desc=document.getElementById('risk-description')?.value.trim(),lvl=document.getElementById('risk-level')?.value||'À qualifier',freq=document.getElementById('risk-frequency')?.value||'Non renseignée',zone=document.getElementById('r85-google-work-zone')?.value||'';if(!desc)return toast('Veuillez saisir une description du danger.');const s=sess(),employeeName=s?s.name:'Salarié terrain',companyCode=s?s.company:(company()||'Établissement non renseigné');const payload={company_code:companyCode,employee_name:employeeName,category,level:lvl,frequency:freq,description:desc,status:'Nouveau',work_zone:zone||null,gps_lat:r85GoogleGps?r85GoogleGps.lat:null,gps_lng:r85GoogleGps?r85GoogleGps.lng:null,gps_accuracy:r85GoogleGps?r85GoogleGps.accuracy:null,gps_captured_at:r85GoogleGps?r85GoogleGps.captured_at:null};let{error}=await supabaseClient.from('prevention_reports').insert([payload]);if(error&&/(work_zone|gps_)/i.test(error.message||'')){const fb={...payload};delete fb.work_zone;delete fb.gps_lat;delete fb.gps_lng;delete fb.gps_accuracy;delete fb.gps_captured_at;const res=await supabaseClient.from('prevention_reports').insert([fb]);error=res.error}if(error)return toast('Erreur Supabase : '+error.message);try{if(typeof submitAnonymizedPreventionStat==='function')await submitAnonymizedPreventionStat({category,level:lvl,frequency:freq,event_type:'Signalement prévention'})}catch(e){}document.getElementById('risk-description').value='';r85GoogleGps=null;toast('Signalement envoyé au responsable.');if(typeof switchScreen==='function')switchScreen('scr-employee')};
 
-  const oldSwitch=window.switchScreen;
-  window.switchScreen=function(screenId){
-    if(isEmployeeMode()){
-      const allowed=['scr-employee','scr-report','scr-qcm','scr-qcm-success','scr-resources','scr-training','scr-employee-messages'];
-      if(!allowed.includes(screenId))screenId='scr-employee';
-    }
-    if(typeof oldSwitch==='function')oldSwitch(screenId);
-    if(isEmployeeMode())setTimeout(hardEmployeeLock,20);
-  };
+  /* 4) Salarié jamais accès manager/centre */
+  function isEmployeeMode(){const p=new URLSearchParams(location.search);return !!(p.get('emp')&&p.get('comp'))||!!(sess()?.name&&sess()?.company)}
+  function lockEmployeeUI(){if(!isEmployeeMode())return;document.querySelectorAll("button[onclick*='scr-auth'],button[onclick*='scr-direction'],button[onclick*='scr-manager'],button[onclick*='createNewCompany']").forEach(b=>b.classList.add('r85-hidden-force'))}
+  const oldSwitch=window.switchScreen;window.switchScreen=function(id){if(isEmployeeMode()){const allowed=['scr-employee','scr-report','scr-qcm','scr-qcm-success','scr-resources','scr-training','scr-employee-messages'];if(!allowed.includes(id)){id='scr-employee'}}if(typeof oldSwitch==='function')oldSwitch(id);if(id==='scr-report')setTimeout(()=>{installR85GoogleGpsBlock();loadZones()},250);if(id==='scr-employee')setTimeout(()=>{startR85EmployeeRealtime();lockEmployeeUI()},250)};
 
-  const oldLogin=window.handleManagerLogin;
-  window.handleManagerLogin=function(){
-    if(isEmployeeMode())return hardEmployeeLock();
-    if(typeof oldLogin==='function')oldLogin();
-  };
+  /* 5) Realtime montantes manager + descendantes salarié */
+  window.startManagerRealtime=function(){if(!supabaseClient)return toast('Supabase non chargé.');const c=company();if(!c)return;unlockAudio();if(r85ManagerCleanChannel){try{supabaseClient.removeChannel(r85ManagerCleanChannel)}catch(e){}}r85ManagerCleanChannel=supabaseClient.channel('r85_clean_manager_'+c).on('postgres_changes',{event:'INSERT',schema:'public',table:'prevention_reports',filter:'company_code=eq.'+c},p=>{const r=p.new;showCleanAlert({kind:'up',title:'Nouveau signalement',subtitle:`${r.employee_name||'Salarié'} — ${r.category||'Danger signalé'}`,body:r.description||'',lat:r.gps_lat,lng:r.gps_lng,actionScreen:'scr-manager'});if(typeof loadManagerReports==='function')loadManagerReports();}).subscribe(s=>{if(s==='SUBSCRIBED')toast('Alertes montantes activées.')})};
+  window.startR85EmployeeRealtime=function(){const s=sess();if(!supabaseClient||!s?.company||!s?.name)return;if(r85EmployeeReportChannel){try{supabaseClient.removeChannel(r85EmployeeReportChannel)}catch(e){}}r85EmployeeReportChannel=supabaseClient.channel('r85_employee_reports_'+s.company+'_'+s.name).on('postgres_changes',{event:'UPDATE',schema:'public',table:'prevention_reports',filter:'company_code=eq.'+s.company},p=>{const r=p.new;if(r.employee_name!==s.name)return;if(r.manager_response||r.corrective_action||r.status==='Traité')showCleanAlert({kind:'down',title:'Message du responsable',subtitle:r.category||'Signalement prévention',body:r.manager_response||r.corrective_action||('Statut : '+r.status),actionScreen:'scr-employee-messages'})}).subscribe();
+    if(r85EmployeeMsgChannel){try{supabaseClient.removeChannel(r85EmployeeMsgChannel)}catch(e){}}r85EmployeeMsgChannel=supabaseClient.channel('r85_employee_msgs_'+s.company+'_'+s.name).on('postgres_changes',{event:'INSERT',schema:'public',table:'manager_messages',filter:'company_code=eq.'+s.company},p=>{const m=p.new;if(m.employee_name&&m.employee_name!==s.name)return;showCleanAlert({kind:'down',title:m.title||'Message du responsable',subtitle:m.priority||'Information',body:m.message||'',actionScreen:'scr-employee-messages'})}).subscribe();};
 
-  function strengthenAlert(){
-    const overlay=document.getElementById('r85-clean-alert-overlay');
-    if(!overlay)return;
-    const action=document.getElementById('r85-clean-alert-action');
-    if(action)action.className='bg-red-600 text-white py-3 rounded-xl text-xs font-black shadow-xl';
-  }
-
-  document.addEventListener('DOMContentLoaded',()=>{
-    applyDarkFromStorage();
-    setTimeout(hardEmployeeLock,30);
-    setTimeout(hardEmployeeLock,300);
-    setTimeout(hardEmployeeLock,900);
-    const mo=new MutationObserver(()=>{if(isEmployeeMode())hardEmployeeLock();strengthenAlert();applyDarkFromStorage();});
-    try{mo.observe(document.documentElement,{childList:true,subtree:true,attributes:true});}catch(e){}
-    console.log(PATCH_VERSION+' installé');
-  });
+  const oldLogin=window.handleManagerLogin;window.handleManagerLogin=function(){unlockAudio();if(typeof oldLogin==='function')oldLogin();setTimeout(()=>{startManagerRealtime();activateR85Notifications()},600)};
+  document.addEventListener('DOMContentLoaded',()=>{ensureCleanAlertUI();cleanBadTextNodes();lockEmployeeUI();setTimeout(()=>{if(isEmployeeMode())startR85EmployeeRealtime();installR85GoogleGpsBlock()},900);console.log(PATCH_VERSION+' installé')});
 })();
 </script>
 
@@ -3176,279 +2992,95 @@ PATCH FINAL RESTEV 85 — APP DESIGN + DARK MODE TOTAL + QR SALARIÉ VERROUILLÉ
 </script>
 
 
-<!-- =========================================================
-PATCH FINAL RESTEV 85 — APP DESIGN + DARK MODE TOTAL + QR SALARIÉ VERROUILLÉ + ALERTE VISUELLE RENFORCÉE
-À coller juste avant </body>. Ne modifie pas la logique métier existante.
-========================================================= -->
-<style id="r85-app-final-polish-style">
-  :root{
-    --r85-bg-a:#f8fbff;
-    --r85-bg-b:#eef7ff;
-    --r85-bg-c:#fff3fa;
-    --r85-card:rgba(255,255,255,.88);
-    --r85-card-strong:rgba(255,255,255,.96);
-    --r85-text:#0f172a;
-    --r85-muted:#64748b;
-    --r85-border:rgba(148,163,184,.26);
-    --r85-shadow:0 18px 45px rgba(15,23,42,.10);
-    --r85-shadow-strong:0 25px 70px rgba(15,23,42,.16);
-    --r85-blue:#3a7bd5;
-    --r85-blue-dark:#245ca6;
-    --r85-magenta:#e0248a;
-    --r85-teal:#4ec3b1;
-    --r85-gold:#ffb007;
-  }
-
-  html.dark{
-    --r85-bg-a:#020617;
-    --r85-bg-b:#0f172a;
-    --r85-bg-c:#111827;
-    --r85-card:rgba(15,23,42,.86);
-    --r85-card-strong:rgba(15,23,42,.96);
-    --r85-text:#f8fafc;
-    --r85-muted:#cbd5e1;
-    --r85-border:rgba(71,85,105,.82);
-    --r85-shadow:0 18px 45px rgba(0,0,0,.34);
-    --r85-shadow-strong:0 25px 75px rgba(0,0,0,.46);
-  }
-
-  body{
-    color:var(--r85-text)!important;
-    background:
-      radial-gradient(circle at 15% 12%, rgba(58,123,213,.20), transparent 32%),
-      radial-gradient(circle at 86% 18%, rgba(224,36,138,.16), transparent 30%),
-      radial-gradient(circle at 40% 90%, rgba(78,195,177,.13), transparent 34%),
-      linear-gradient(135deg,var(--r85-bg-a),var(--r85-bg-b) 48%,var(--r85-bg-c))!important;
-    min-height:100dvh;
-  }
-
-  html.dark body,
-  body.dark{
-    color:var(--r85-text)!important;
-    background:
-      radial-gradient(circle at 12% 10%, rgba(58,123,213,.22), transparent 32%),
-      radial-gradient(circle at 87% 17%, rgba(224,36,138,.18), transparent 30%),
-      radial-gradient(circle at 50% 95%, rgba(78,195,177,.10), transparent 34%),
-      linear-gradient(135deg,#020617,#0f172a 48%,#111827)!important;
-  }
-
-  header{
-    background:rgba(255,255,255,.72)!important;
-    border-color:var(--r85-border)!important;
-    backdrop-filter:blur(22px)!important;
-    box-shadow:0 8px 28px rgba(15,23,42,.06)!important;
-  }
-  html.dark header{background:rgba(15,23,42,.82)!important;box-shadow:0 8px 30px rgba(0,0,0,.28)!important;}
-
-  main{max-width:1120px!important;}
-
-  .screen{border-radius:30px;}
-  .screen.active{animation:r85AppIn .28s ease both!important;}
-  @keyframes r85AppIn{from{opacity:0;transform:translateY(8px) scale(.993)}to{opacity:1;transform:none}}
-
-  .bg-white,
-  .bg-slate-50,
-  .bg-blue-50,
-  .bg-emerald-50,
-  .bg-red-50,
-  .bg-amber-50,
-  .bg-pink-50,
-  .bg-cyan-50,
-  .bg-teal-50,
-  .bg-orange-50,
-  .dark\:bg-slate-800,
-  .dark\:bg-slate-900{
-    background:var(--r85-card)!important;
-    color:var(--r85-text)!important;
-    border-color:var(--r85-border)!important;
-    box-shadow:var(--r85-shadow)!important;
-    backdrop-filter:blur(20px)!important;
-  }
-
-  #scr-manager > .bg-white,
-  #scr-manager .rounded-2xl,
-  #scr-manager .rounded-3xl,
-  #scr-employee .rounded-2xl,
-  #scr-employee .rounded-3xl,
-  #scr-report.rounded-3xl,
-  #scr-qcm.rounded-3xl,
-  #scr-qcm-success.rounded-3xl{
-    border-radius:28px!important;
-  }
-
-  input,select,textarea{
-    border-radius:16px!important;
-    border-color:var(--r85-border)!important;
-    background:rgba(255,255,255,.72)!important;
-    color:var(--r85-text)!important;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.25)!important;
-  }
-  html.dark input,html.dark select,html.dark textarea,
-  body.dark input,body.dark select,body.dark textarea{
-    background:rgba(2,6,23,.72)!important;
-    color:#f8fafc!important;
-    border-color:#475569!important;
-  }
-  input::placeholder,textarea::placeholder{color:#94a3b8!important;}
-
-  button{
-    border-radius:16px!important;
-    transition:transform .18s ease, box-shadow .18s ease, filter .18s ease!important;
-  }
-  button:hover{transform:translateY(-1px);filter:brightness(1.03);}
-  button:active{transform:scale(.985);}
-
-  .shadow-premium{box-shadow:var(--r85-shadow)!important;}
-  .text-slate-400,.text-slate-500,.text-slate-600,.text-slate-700{color:var(--r85-muted)!important;}
-  html.dark .dark\:text-white,html.dark .text-slate-900,html.dark .text-slate-800{color:#f8fafc!important;}
-
-  table,td,th{color:var(--r85-text)!important;border-color:var(--r85-border)!important;}
-
-  #manager-risk-box{
-    scrollbar-color:rgba(58,123,213,.65) transparent;
-    scrollbar-width:thin;
-  }
-  #manager-risk-box > div{
-    background:rgba(15,23,42,.96)!important;
-    color:#f8fafc!important;
-    border:2px solid rgba(239,68,68,.75)!important;
-    box-shadow:0 15px 40px rgba(127,29,29,.22)!important;
-  }
-  #manager-risk-box input,#manager-risk-box select,#manager-risk-box textarea{
-    background:rgba(2,6,23,.78)!important;
-    color:#f8fafc!important;
-    border-color:rgba(226,232,240,.75)!important;
-  }
-
-  #r85-google-map-frame{filter:none!important;}
-  html.dark #r85-google-map-frame{filter:brightness(.82) contrast(1.08)!important;}
-
-  /* Salarié uniquement : verrouillage impératif des écrans non autorisés */
-  body.r85-employee-only #scr-home,
-  body.r85-employee-only #scr-auth,
-  body.r85-employee-only #scr-manager,
-  body.r85-employee-only #scr-direction,
-  body.r85-employee-only #scr-studio,
-  body.r85-employee-only button[onclick*="scr-home"],
-  body.r85-employee-only button[onclick*="scr-auth"],
-  body.r85-employee-only button[onclick*="scr-manager"],
-  body.r85-employee-only button[onclick*="scr-direction"],
-  body.r85-employee-only button[onclick*="createNewCompany"],
-  body.r85-employee-only #generated-code-box,
-  body.r85-employee-only #r85-maintenance-panel,
-  body.r85-employee-only #r85-manager-zones-panel{
-    display:none!important;
-    visibility:hidden!important;
-    pointer-events:none!important;
-  }
-
-  /* Alerte visuelle plus visible et professionnelle */
-  @keyframes r85AlertStrongPulse{
-    0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(239,68,68,.62),0 28px 90px rgba(127,29,29,.36)}
-    50%{transform:scale(1.018);box-shadow:0 0 0 24px rgba(239,68,68,0),0 32px 105px rgba(127,29,29,.52)}
-  }
-  @keyframes r85AlertHeaderPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.28)}}
-  #r85-clean-alert-overlay.r85-show{display:flex!important;background:rgba(2,6,23,.76)!important;backdrop-filter:blur(9px)!important;}
-  .r85-clean-alert-card{animation:r85AlertStrongPulse 1.18s ease-in-out infinite!important;border:4px solid #ef4444!important;box-shadow:var(--r85-shadow-strong)!important;}
-  #r85-clean-alert-head{animation:r85AlertHeaderPulse .95s ease-in-out infinite!important;}
-  #r85-clean-alert-title{font-size:1.55rem!important;letter-spacing:-.03em;}
+<!-- PATCH RESTEV 85 — NETTOYAGE UI + ALERTES PROPRES + GOOGLE MAPS + SALARIÉ VERROUILLÉ -->
+<style id="r85-clean-alerts-google-style">
+  #r85-google-map-frame{width:100%;height:310px;border:0;border-radius:1.25rem;background:#e2e8f0}.r85-map-card{border:1px solid rgba(148,163,184,.45);border-radius:1.35rem;overflow:hidden;background:white}html.dark .r85-map-card{background:#0f172a;border-color:#334155}html.dark #r85-google-map-frame{filter:brightness(.82) contrast(1.05)}
+  @keyframes r85CleanPulse{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.35),0 20px 55px rgba(15,23,42,.18)}50%{box-shadow:0 0 0 14px rgba(220,38,38,0),0 20px 55px rgba(15,23,42,.24)}}
+  #r85-clean-alert-overlay.r85-show{display:flex!important}.r85-clean-alert-card{animation:r85CleanPulse 1.8s ease-in-out infinite}.r85-hidden-force{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
 </style>
-
 <script>
 (function(){
-  const PATCH_VERSION='RESTEV85_APP_STORE_DARK_EMPLOYEE_LOCK_2026_07_06';
+  const PATCH_VERSION='RESTEV85_CLEAN_ALERTS_GOOGLE_EMPLOYEE_LOCK_2026_07_06';
+  let r85GoogleGps=null,r85GoogleGeoWatch=null,r85ManagerCleanChannel=null,r85EmployeeReportChannel=null,r85EmployeeMsgChannel=null,r85AudioCtx=null;
+  const BAD_PATTERNS=[/={8,}\s*-->/i,/Nouveau signalement prévention/i,/Pour recevoir les notifications hors écran/i,/Fermer\s+Voir le signalement/i,/^\s*-->\s*$/i,/^\s*<!--\s*={8,}/i];
+  function toast(m){if(typeof showToast==='function')showToast(m);else alert(m)}
+  function esc(v){if(typeof escapeHtml==='function')return escapeHtml(v||'');return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+  function sess(){try{return currentEmployeeSession||window.currentEmployeeSession||null}catch(e){return window.currentEmployeeSession||null}}
+  function company(){return (sess()?.company||document.getElementById('lbl-manager-comp-name')?.innerText||'').trim()}
+  function unlockAudio(){try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;if(!r85AudioCtx)r85AudioCtx=new AC();if(r85AudioCtx.state==='suspended')r85AudioCtx.resume()}catch(e){}}
+  function beep(kind){try{if(typeof soundMuted!=='undefined'&&soundMuted)return;unlockAudio();if(!r85AudioCtx)return;const base=kind==='down'?640:820;[0,.18,.36].forEach((d,i)=>{const now=r85AudioCtx.currentTime+d,o=r85AudioCtx.createOscillator(),g=r85AudioCtx.createGain();o.type='sine';o.frequency.setValueAtTime(base+(i*80),now);g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(.18,now+.02);g.gain.exponentialRampToValueAtTime(.0001,now+.18);o.connect(g);g.connect(r85AudioCtx.destination);o.start(now);o.stop(now+.2)})}catch(e){}}
+  function vibrate(kind){try{if(navigator.vibrate)navigator.vibrate(kind==='down'?[220,90,220]:[300,100,300,100,450])}catch(e){}}
+  function googleEmbedUrl(lat,lng,z=21){return `https://maps.google.com/maps?q=${encodeURIComponent(lat+','+lng)}&z=${z}&output=embed`}
+  function googleOpenUrl(lat,lng){return `https://www.google.com/maps?q=${encodeURIComponent(lat+','+lng)}`}
 
-  function isEmployeeUrl(){const p=new URLSearchParams(location.search);return !!(p.get('emp')&&p.get('comp'));}
-  function hasEmployeeSession(){try{return !!(currentEmployeeSession&&currentEmployeeSession.name&&currentEmployeeSession.company)}catch(e){return !!(window.currentEmployeeSession&&window.currentEmployeeSession.name&&window.currentEmployeeSession.company)}}
-  function isEmployeeMode(){return isEmployeeUrl()||hasEmployeeSession();}
-
-  function applyDarkFromStorage(){
+  /* 1) Nettoyage définitif des textes parasites */
+  function cleanBadTextNodes(){
     try{
-      if((safeStorage&&safeStorage.getItem('restev_dark_mode')==='1')||localStorage.getItem('restev_dark_mode')==='1'){
-        document.documentElement.classList.add('dark');
-        document.body.classList.add('dark');
-      }
+      const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,null);
+      const nodes=[];let n;while(n=walker.nextNode()){const t=n.nodeValue||'';if(BAD_PATTERNS.some(r=>r.test(t)))nodes.push(n)}
+      nodes.forEach(n=>{n.nodeValue=''});
+      document.querySelectorAll('body *').forEach(el=>{
+        if(['SCRIPT','STYLE','TEXTAREA','INPUT','SELECT','OPTION'].includes(el.tagName))return;
+        const txt=(el.innerText||'').trim(); if(!txt)return;
+        const hit=BAD_PATTERNS.some(r=>r.test(txt));
+        const popupLike=(el.className||'').toString().includes('fixed')||['fixed','absolute'].includes(getComputedStyle(el).position)||Number(getComputedStyle(el).zIndex)>40;
+        if(hit&&popupLike)el.remove();
+      });
     }catch(e){}
   }
+  new MutationObserver(cleanBadTextNodes).observe(document.documentElement,{childList:true,subtree:true,characterData:true});
 
-  const oldToggleDarkMode=window.toggleDarkMode;
-  window.toggleDarkMode=function(){
-    const before=document.documentElement.classList.contains('dark')||document.body.classList.contains('dark');
-    if(typeof oldToggleDarkMode==='function')oldToggleDarkMode();
-    const afterOld=document.documentElement.classList.contains('dark');
-    const next=afterOld!==before?afterOld:!before;
-    document.documentElement.classList.toggle('dark',next);
-    document.body.classList.toggle('dark',next);
-    try{safeStorage?.setItem('restev_dark_mode',next?'1':'0');localStorage.setItem('restev_dark_mode',next?'1':'0')}catch(e){}
-  };
-
-  function fillEmployeeLabelsFromUrl(){
-    if(!isEmployeeUrl())return;
-    const p=new URLSearchParams(location.search);
-    const emp=p.get('emp'),comp=p.get('comp'),sector=p.get('sector')||p.get('secteur')||'';
-    const welcome=document.getElementById('lbl-emp-welcome');
-    const company=document.getElementById('lbl-emp-company');
-    if(welcome&&emp)welcome.innerText='Bonjour, '+emp;
-    if(company&&comp)company.innerText='Établissement : '+comp+(sector?' | Secteur : '+sector:'');
+  /* 2) Notifications propres : visuel + vibration + notification navigateur */
+  function ensureCleanAlertUI(){
+    if(document.getElementById('r85-clean-alert-overlay'))return;
+    const overlay=document.createElement('div');overlay.id='r85-clean-alert-overlay';overlay.className='hidden fixed inset-0 z-[100000] items-center justify-center p-4 bg-slate-950/65 backdrop-blur-sm no-print';
+    overlay.innerHTML=`<div class="r85-clean-alert-card w-full max-w-xl bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden"><div id="r85-clean-alert-head" class="p-4 text-white flex items-center gap-3 bg-gradient-to-r from-red-600 to-orange-500"><div class="w-12 h-12 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center text-2xl"><i id="r85-clean-alert-icon" class="fa-solid fa-triangle-exclamation"></i></div><div><p id="r85-clean-alert-kicker" class="text-[10px] font-black uppercase tracking-widest text-white/80">Alerte</p><h2 id="r85-clean-alert-title" class="text-xl font-black">Signalement</h2></div></div><div class="p-5 space-y-3"><p id="r85-clean-alert-subtitle" class="text-sm font-black dark:text-white"></p><p id="r85-clean-alert-body" class="text-sm text-slate-600 dark:text-slate-300 font-semibold leading-relaxed"></p><div id="r85-clean-alert-mapbox" class="hidden"><a id="r85-clean-alert-maplink" target="_blank" class="block text-center bg-restev-blue text-white py-3 rounded-xl text-xs font-black"><i class="fa-solid fa-map-location-dot mr-1"></i>Ouvrir Google Maps</a></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2"><button onclick="closeR85CleanAlert()" class="bg-slate-100 dark:bg-slate-800 dark:text-white py-3 rounded-xl text-xs font-black">Fermer</button><button id="r85-clean-alert-action" class="bg-slate-900 dark:bg-white dark:text-slate-900 text-white py-3 rounded-xl text-xs font-black">Voir</button></div></div></div>`;
+    document.body.appendChild(overlay);
+  }
+  window.closeR85CleanAlert=function(){document.getElementById('r85-clean-alert-overlay')?.classList.remove('r85-show');document.getElementById('r85-clean-alert-overlay')?.classList.add('hidden');try{if(navigator.vibrate)navigator.vibrate(0)}catch(e){}};
+  async function requestNotif(){try{if(!('Notification'in window))return false;if(Notification.permission==='granted')return true;return(await Notification.requestPermission())==='granted'}catch(e){return false}}
+  window.activateR85Notifications=async function(){unlockAudio();const ok=await requestNotif();toast(ok?'Notifications activées.':'Notifications refusées ou non compatibles.');return ok};
+  async function nativeNotify(title,body,tag,lat,lng){try{if(!('Notification'in window))return;if(Notification.permission!=='granted')await requestNotif();if(Notification.permission!=='granted')return;const n=new Notification(title,{body,icon:'logo.png',badge:'logo.png',requireInteraction:true,tag:tag||'restev85',renotify:true,vibrate:[300,100,300]});if(lat&&lng)n.onclick=()=>window.open(googleOpenUrl(lat,lng),'_blank')}catch(e){}}
+  function showCleanAlert({kind='up',title='Alerte',subtitle='',body='',lat=null,lng=null,actionScreen=null}){
+    ensureCleanAlertUI();cleanBadTextNodes();
+    const down=kind==='down';
+    document.getElementById('r85-clean-alert-head').className=`p-4 text-white flex items-center gap-3 ${down?'bg-gradient-to-r from-restev-blue to-cyan-500':'bg-gradient-to-r from-red-600 to-orange-500'}`;
+    document.getElementById('r85-clean-alert-icon').className=down?'fa-solid fa-message':'fa-solid fa-triangle-exclamation';
+    document.getElementById('r85-clean-alert-kicker').innerText=down?'Message descendant':'Alerte terrain';
+    document.getElementById('r85-clean-alert-title').innerText=title;
+    document.getElementById('r85-clean-alert-subtitle').innerText=subtitle;
+    document.getElementById('r85-clean-alert-body').innerText=body;
+    const mapbox=document.getElementById('r85-clean-alert-mapbox'),maplink=document.getElementById('r85-clean-alert-maplink');
+    if(lat&&lng){mapbox.classList.remove('hidden');maplink.href=googleOpenUrl(lat,lng)}else mapbox.classList.add('hidden');
+    document.getElementById('r85-clean-alert-action').onclick=function(){closeR85CleanAlert();if(actionScreen&&typeof switchScreen==='function')switchScreen(actionScreen)};
+    const ov=document.getElementById('r85-clean-alert-overlay');ov.classList.remove('hidden');ov.classList.add('r85-show');
+    beep(kind);vibrate(kind);nativeNotify(title,`${subtitle} ${body}`.trim(),down?'restev85-descendant':'restev85-montant',lat,lng);
   }
 
-  function hardEmployeeLock(){
-    if(!isEmployeeMode())return;
-    document.body.classList.add('r85-employee-only');
-    fillEmployeeLabelsFromUrl();
-    const allowed=['scr-employee','scr-report','scr-qcm','scr-qcm-success','scr-resources','scr-training','scr-employee-messages'];
-    document.querySelectorAll('.screen').forEach(s=>{
-      if(!allowed.includes(s.id)){s.classList.remove('active');s.style.display='none';}
-    });
-    const active=document.querySelector('.screen.active');
-    if(!active||!allowed.includes(active.id)){
-      const emp=document.getElementById('scr-employee');
-      if(emp){
-        document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.style.display='none';});
-        emp.classList.add('active');emp.style.display='block';
-      }
-    }
-    document.querySelectorAll("button[onclick*='scr-home'],button[onclick*='scr-auth'],button[onclick*='scr-manager'],button[onclick*='scr-direction'],button[onclick*='createNewCompany']").forEach(b=>{b.style.display='none';b.style.visibility='hidden';b.style.pointerEvents='none';});
-  }
+  // Neutraliser les anciennes notifications/popup texte
+  window.showBrowserNotification=function(report){nativeNotify('RESTEV 85 — Signalement terrain',`${report?.employee_name||'Salarié'} — ${report?.category||'Danger signalé'}`,'restev85-montant',report?.gps_lat,report?.gps_lng)};
+  window.triggerNewReportAlert=function(report){showCleanAlert({kind:'up',title:'Nouveau signalement',subtitle:`${report?.employee_name||'Salarié'} — ${report?.category||'Danger signalé'}`,body:report?.description||'',lat:report?.gps_lat,lng:report?.gps_lng,actionScreen:'scr-manager'})};
 
-  const oldCheck=window.checkUrlParameters;
-  window.checkUrlParameters=function(){
-    if(typeof oldCheck==='function')oldCheck();
-    if(isEmployeeUrl())setTimeout(hardEmployeeLock,20);
-  };
+  /* 3) Google Maps simple avec zoom maximal */
+  async function fetchWorkZones(c){if(!supabaseClient||!c)return[];try{const{data,error}=await supabaseClient.from('work_zones').select('id,name,description').eq('company_code',c).order('name',{ascending:true});return error?[]:(data||[])}catch(e){return[]}}
+  async function loadZones(){const select=document.getElementById('r85-google-work-zone');if(!select)return;const prev=select.value,zones=await fetchWorkZones(company());select.innerHTML='<option value="">Zone de travail non renseignée</option>'+zones.map(z=>`<option value="${esc(z.name)}">${esc(z.name)}</option>`).join('');if(prev)select.value=prev}
+  window.installR85GoogleGpsBlock=function(){const screen=document.getElementById('scr-report');if(!screen)return;['map','r85-report-map-real','r85-real-map-block','r85-gps-permission-block'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('r85-hidden-force')});if(document.getElementById('r85-google-gps-block'))return;const block=document.createElement('div');block.id='r85-google-gps-block';block.className='space-y-3 bg-blue-50 dark:bg-slate-900 border border-blue-100 dark:border-slate-700 p-4 rounded-2xl';block.innerHTML=`<div class="flex items-start gap-3"><div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-slate-800 text-restev-blue flex items-center justify-center"><i class="fa-solid fa-map-location-dot"></i></div><div class="flex-1"><p class="text-xs font-black dark:text-white">Lieu du signalement</p><p class="text-[11px] text-slate-500 dark:text-slate-300 leading-relaxed">Choisissez une zone et affichez la position sur Google Maps. Zoom possible directement sur la carte.</p></div></div><select id="r85-google-work-zone" class="w-full p-3 bg-white dark:bg-slate-800 border rounded-xl text-xs font-black dark:text-white"><option value="">Zone de travail non renseignée</option></select><button type="button" onclick="requestR85GoogleGeolocation()" class="w-full bg-restev-blue text-white py-3 rounded-xl text-xs font-black"><i class="fa-solid fa-location-crosshairs mr-1"></i> Autoriser / actualiser ma position Google Maps</button><div class="r85-map-card"><iframe id="r85-google-map-frame" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=46.670,-1.426&z=13&output=embed"></iframe></div><div id="r85-google-gps-status" class="text-[11px] font-bold text-slate-500 dark:text-slate-300 bg-white dark:bg-slate-800 border rounded-xl p-3">Carte Google prête. Position non autorisée.</div><a id="r85-google-map-open" href="https://www.google.com/maps?q=46.670,-1.426" target="_blank" class="block text-center bg-white dark:bg-slate-800 border text-restev-blue dark:text-blue-300 py-2 rounded-xl text-[10px] font-black">Ouvrir dans Google Maps</a>`;const target=document.getElementById('risk-category-select')?.closest('div')||screen.querySelector('h3')?.nextSibling;if(target)screen.insertBefore(block,target);else screen.prepend(block);loadZones()};
+  function refreshMap(){const f=document.getElementById('r85-google-map-frame'),a=document.getElementById('r85-google-map-open');if(!f||!r85GoogleGps)return;f.src=googleEmbedUrl(r85GoogleGps.lat,r85GoogleGps.lng,21);if(a)a.href=googleOpenUrl(r85GoogleGps.lat,r85GoogleGps.lng)}
+  window.requestR85GoogleGeolocation=function(){installR85GoogleGpsBlock();const status=document.getElementById('r85-google-gps-status');if(!navigator.geolocation){if(status)status.innerHTML='Géolocalisation non compatible.';return}if(status)status.innerHTML='Demande d’autorisation GPS en cours…';if(r85GoogleGeoWatch!==null){try{navigator.geolocation.clearWatch(r85GoogleGeoWatch)}catch(e){}r85GoogleGeoWatch=null}let best=null;const ok=pos=>{const p={lat:pos.coords.latitude,lng:pos.coords.longitude,accuracy:pos.coords.accuracy,captured_at:new Date().toISOString()};if(!best||p.accuracy<best.accuracy){best=p;r85GoogleGps=p}refreshMap();if(status)status.innerHTML=`📍 Position affichée sur Google Maps — précision environ <b>${Math.round(r85GoogleGps.accuracy||0)} m</b>`};const ko=err=>{if(status)status.innerHTML=`<b>GPS refusé ou indisponible.</b><br>${esc(err.message||'')}`};r85GoogleGeoWatch=navigator.geolocation.watchPosition(ok,ko,{enableHighAccuracy:true,timeout:25000,maximumAge:0});setTimeout(()=>{if(r85GoogleGeoWatch!==null){try{navigator.geolocation.clearWatch(r85GoogleGeoWatch)}catch(e){}r85GoogleGeoWatch=null}},12000)};
+  window.submitRiskReport=async function(){installR85GoogleGpsBlock();if(!supabaseClient)return toast('Supabase non chargé.');const category=document.getElementById('risk-category-select')?.value||'Non renseigné',desc=document.getElementById('risk-description')?.value.trim(),lvl=document.getElementById('risk-level')?.value||'À qualifier',freq=document.getElementById('risk-frequency')?.value||'Non renseignée',zone=document.getElementById('r85-google-work-zone')?.value||'';if(!desc)return toast('Veuillez saisir une description du danger.');const s=sess(),employeeName=s?s.name:'Salarié terrain',companyCode=s?s.company:(company()||'Établissement non renseigné');const payload={company_code:companyCode,employee_name:employeeName,category,level:lvl,frequency:freq,description:desc,status:'Nouveau',work_zone:zone||null,gps_lat:r85GoogleGps?r85GoogleGps.lat:null,gps_lng:r85GoogleGps?r85GoogleGps.lng:null,gps_accuracy:r85GoogleGps?r85GoogleGps.accuracy:null,gps_captured_at:r85GoogleGps?r85GoogleGps.captured_at:null};let{error}=await supabaseClient.from('prevention_reports').insert([payload]);if(error&&/(work_zone|gps_)/i.test(error.message||'')){const fb={...payload};delete fb.work_zone;delete fb.gps_lat;delete fb.gps_lng;delete fb.gps_accuracy;delete fb.gps_captured_at;const res=await supabaseClient.from('prevention_reports').insert([fb]);error=res.error}if(error)return toast('Erreur Supabase : '+error.message);try{if(typeof submitAnonymizedPreventionStat==='function')await submitAnonymizedPreventionStat({category,level:lvl,frequency:freq,event_type:'Signalement prévention'})}catch(e){}document.getElementById('risk-description').value='';r85GoogleGps=null;toast('Signalement envoyé au responsable.');if(typeof switchScreen==='function')switchScreen('scr-employee')};
 
-  const oldSwitch=window.switchScreen;
-  window.switchScreen=function(screenId){
-    if(isEmployeeMode()){
-      const allowed=['scr-employee','scr-report','scr-qcm','scr-qcm-success','scr-resources','scr-training','scr-employee-messages'];
-      if(!allowed.includes(screenId))screenId='scr-employee';
-    }
-    if(typeof oldSwitch==='function')oldSwitch(screenId);
-    if(isEmployeeMode())setTimeout(hardEmployeeLock,20);
-  };
+  /* 4) Salarié jamais accès manager/centre */
+  function isEmployeeMode(){const p=new URLSearchParams(location.search);return !!(p.get('emp')&&p.get('comp'))||!!(sess()?.name&&sess()?.company)}
+  function lockEmployeeUI(){if(!isEmployeeMode())return;document.querySelectorAll("button[onclick*='scr-auth'],button[onclick*='scr-direction'],button[onclick*='scr-manager'],button[onclick*='createNewCompany']").forEach(b=>b.classList.add('r85-hidden-force'))}
+  const oldSwitch=window.switchScreen;window.switchScreen=function(id){if(isEmployeeMode()){const allowed=['scr-employee','scr-report','scr-qcm','scr-qcm-success','scr-resources','scr-training','scr-employee-messages'];if(!allowed.includes(id)){id='scr-employee'}}if(typeof oldSwitch==='function')oldSwitch(id);if(id==='scr-report')setTimeout(()=>{installR85GoogleGpsBlock();loadZones()},250);if(id==='scr-employee')setTimeout(()=>{startR85EmployeeRealtime();lockEmployeeUI()},250)};
 
-  const oldLogin=window.handleManagerLogin;
-  window.handleManagerLogin=function(){
-    if(isEmployeeMode())return hardEmployeeLock();
-    if(typeof oldLogin==='function')oldLogin();
-  };
+  /* 5) Realtime montantes manager + descendantes salarié */
+  window.startManagerRealtime=function(){if(!supabaseClient)return toast('Supabase non chargé.');const c=company();if(!c)return;unlockAudio();if(r85ManagerCleanChannel){try{supabaseClient.removeChannel(r85ManagerCleanChannel)}catch(e){}}r85ManagerCleanChannel=supabaseClient.channel('r85_clean_manager_'+c).on('postgres_changes',{event:'INSERT',schema:'public',table:'prevention_reports',filter:'company_code=eq.'+c},p=>{const r=p.new;showCleanAlert({kind:'up',title:'Nouveau signalement',subtitle:`${r.employee_name||'Salarié'} — ${r.category||'Danger signalé'}`,body:r.description||'',lat:r.gps_lat,lng:r.gps_lng,actionScreen:'scr-manager'});if(typeof loadManagerReports==='function')loadManagerReports();}).subscribe(s=>{if(s==='SUBSCRIBED')toast('Alertes montantes activées.')})};
+  window.startR85EmployeeRealtime=function(){const s=sess();if(!supabaseClient||!s?.company||!s?.name)return;if(r85EmployeeReportChannel){try{supabaseClient.removeChannel(r85EmployeeReportChannel)}catch(e){}}r85EmployeeReportChannel=supabaseClient.channel('r85_employee_reports_'+s.company+'_'+s.name).on('postgres_changes',{event:'UPDATE',schema:'public',table:'prevention_reports',filter:'company_code=eq.'+s.company},p=>{const r=p.new;if(r.employee_name!==s.name)return;if(r.manager_response||r.corrective_action||r.status==='Traité')showCleanAlert({kind:'down',title:'Message du responsable',subtitle:r.category||'Signalement prévention',body:r.manager_response||r.corrective_action||('Statut : '+r.status),actionScreen:'scr-employee-messages'})}).subscribe();
+    if(r85EmployeeMsgChannel){try{supabaseClient.removeChannel(r85EmployeeMsgChannel)}catch(e){}}r85EmployeeMsgChannel=supabaseClient.channel('r85_employee_msgs_'+s.company+'_'+s.name).on('postgres_changes',{event:'INSERT',schema:'public',table:'manager_messages',filter:'company_code=eq.'+s.company},p=>{const m=p.new;if(m.employee_name&&m.employee_name!==s.name)return;showCleanAlert({kind:'down',title:m.title||'Message du responsable',subtitle:m.priority||'Information',body:m.message||'',actionScreen:'scr-employee-messages'})}).subscribe();};
 
-  function strengthenAlert(){
-    const overlay=document.getElementById('r85-clean-alert-overlay');
-    if(!overlay)return;
-    const action=document.getElementById('r85-clean-alert-action');
-    if(action)action.className='bg-red-600 text-white py-3 rounded-xl text-xs font-black shadow-xl';
-  }
-
-  document.addEventListener('DOMContentLoaded',()=>{
-    applyDarkFromStorage();
-    setTimeout(hardEmployeeLock,30);
-    setTimeout(hardEmployeeLock,300);
-    setTimeout(hardEmployeeLock,900);
-    const mo=new MutationObserver(()=>{if(isEmployeeMode())hardEmployeeLock();strengthenAlert();applyDarkFromStorage();});
-    try{mo.observe(document.documentElement,{childList:true,subtree:true,attributes:true});}catch(e){}
-    console.log(PATCH_VERSION+' installé');
-  });
+  const oldLogin=window.handleManagerLogin;window.handleManagerLogin=function(){unlockAudio();if(typeof oldLogin==='function')oldLogin();setTimeout(()=>{startManagerRealtime();activateR85Notifications()},600)};
+  document.addEventListener('DOMContentLoaded',()=>{ensureCleanAlertUI();cleanBadTextNodes();lockEmployeeUI();setTimeout(()=>{if(isEmployeeMode())startR85EmployeeRealtime();installR85GoogleGpsBlock()},900);console.log(PATCH_VERSION+' installé')});
 })();
 </script>
 
