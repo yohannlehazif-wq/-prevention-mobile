@@ -335,6 +335,249 @@ async function loadRestevStats(){
 }
 
   </style> 
+
+
+<!-- =========================================================
+     RESTEV 85 — DESIGN APP MODERNE DYNAMIQUE V1
+     Couche visuelle uniquement : couleurs, lisibilité, cartes, boutons,
+     responsive mobile. Ne modifie pas la logique métier.
+     ========================================================= -->
+<style id="restev-modern-design-v1">
+  :root{
+    --r85-blue:#1f5fd2;
+    --r85-blue-2:#123d9f;
+    --r85-cyan:#35c7c9;
+    --r85-teal:#25b6b2;
+    --r85-pink:#e12b8f;
+    --r85-purple:#6b3dd0;
+    --r85-gold:#ffbd12;
+    --r85-ink:#10204a;
+    --r85-muted:#667085;
+    --r85-card:rgba(255,255,255,.88);
+    --r85-border:rgba(31,95,210,.12);
+    --r85-shadow:0 18px 45px rgba(18,61,159,.12),0 4px 14px rgba(16,32,74,.06);
+    --r85-radius-xl:28px;
+    --r85-radius:20px;
+  }
+
+  html{scroll-behavior:smooth;}
+  body{
+    color:var(--r85-ink);
+    background:
+      radial-gradient(circle at 12% 6%, rgba(255,189,18,.20), transparent 28%),
+      radial-gradient(circle at 86% 12%, rgba(225,43,143,.16), transparent 28%),
+      radial-gradient(circle at 16% 88%, rgba(53,199,201,.20), transparent 30%),
+      linear-gradient(135deg,#f8fbff 0%,#eef6ff 45%,#fff6fb 100%) !important;
+    background-attachment:fixed;
+  }
+  .dark body{
+    background:
+      radial-gradient(circle at 10% 5%, rgba(255,189,18,.14), transparent 28%),
+      radial-gradient(circle at 82% 10%, rgba(225,43,143,.16), transparent 30%),
+      linear-gradient(135deg,#061226 0%,#10142f 48%,#170b2c 100%) !important;
+  }
+
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    background-image:
+      linear-gradient(rgba(31,95,210,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(31,95,210,.035) 1px, transparent 1px);
+    background-size:34px 34px;
+    mask-image:linear-gradient(to bottom,rgba(0,0,0,.55),transparent 75%);
+    z-index:-1;
+  }
+
+  header{
+    border-bottom:1px solid rgba(31,95,210,.10) !important;
+    background:rgba(255,255,255,.72) !important;
+    backdrop-filter:blur(18px) saturate(1.25) !important;
+  }
+  .dark header{background:rgba(15,23,42,.78) !important;}
+
+  main{max-width:1120px !important;}
+  .screen.active{animation:r85ScreenIn .38s cubic-bezier(.2,.8,.2,1);}
+  @keyframes r85ScreenIn{from{opacity:0;transform:translateY(12px) scale(.992)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+  .bg-white,
+  .dark .dark\:bg-slate-800,
+  .dark .dark\:bg-slate-900{
+    border-color:var(--r85-border) !important;
+  }
+
+  .shadow-premium,
+  .shadow-lg,
+  .shadow-xl,
+  .shadow-sm{
+    box-shadow:var(--r85-shadow) !important;
+  }
+
+  .rounded-3xl{border-radius:var(--r85-radius-xl) !important;}
+  .rounded-2xl{border-radius:var(--r85-radius) !important;}
+  .rounded-xl{border-radius:16px !important;}
+
+  /* Cartes principales */
+  #scr-home .bg-white,
+  #scr-employee .bg-white,
+  #scr-manager .bg-white,
+  #scr-direction .bg-white,
+  #scr-report,
+  #scr-qcm,
+  #scr-qcm-success,
+  #scr-resources .bg-white,
+  #scr-employee-messages .bg-white{
+    background:var(--r85-card) !important;
+    backdrop-filter:blur(18px) saturate(1.15);
+    border:1px solid var(--r85-border) !important;
+  }
+  .dark #scr-home .bg-white,
+  .dark #scr-employee .bg-white,
+  .dark #scr-manager .bg-white,
+  .dark #scr-direction .bg-white,
+  .dark #scr-report,
+  .dark #scr-qcm,
+  .dark #scr-qcm-success,
+  .dark #scr-resources .bg-white,
+  .dark #scr-employee-messages .bg-white{
+    background:rgba(15,23,42,.82) !important;
+  }
+
+  /* Logo accueil */
+  #scr-home img[alt*="Logo"]{
+    filter:drop-shadow(0 18px 30px rgba(31,95,210,.18));
+    transform-origin:center;
+    animation:r85LogoFloat 4.8s ease-in-out infinite;
+  }
+  @keyframes r85LogoFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+  /* Grands titres */
+  h1,h2,h3{letter-spacing:-.025em;}
+  #scr-home h1{
+    background:linear-gradient(110deg,var(--r85-blue-2),var(--r85-blue),var(--r85-pink)) !important;
+    -webkit-background-clip:text !important;
+    background-clip:text !important;
+  }
+
+  /* Boutons : aspect application */
+  button{
+    transition:transform .18s ease, box-shadow .18s ease, filter .18s ease, background .18s ease;
+  }
+  button:hover{transform:translateY(-1px);filter:saturate(1.08);}
+  button:active{transform:translateY(0) scale(.985);}
+
+  button.bg-restev-blue,
+  .bg-restev-blue,
+  button[class*="from-restev-blue"],
+  button[class*="from-cyan"],
+  button[class*="from-emerald"],
+  button[class*="from-red"],
+  button[class*="from-restev-magenta"]{
+    box-shadow:0 14px 28px rgba(31,95,210,.22) !important;
+  }
+
+  .bg-restev-blue,
+  button.bg-restev-blue{
+    background:linear-gradient(135deg,#1970e8,#123d9f) !important;
+  }
+  .bg-restev-magenta,
+  button.bg-restev-magenta{
+    background:linear-gradient(135deg,#e12b8f,#a91672) !important;
+  }
+
+  /* Inputs lisibles */
+  input,select,textarea{
+    border-color:rgba(31,95,210,.16) !important;
+    background:rgba(255,255,255,.74) !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.58);
+    outline:none !important;
+  }
+  input:focus,select:focus,textarea:focus{
+    border-color:rgba(31,95,210,.42) !important;
+    box-shadow:0 0 0 4px rgba(31,95,210,.10) !important;
+  }
+  .dark input,.dark select,.dark textarea{background:rgba(15,23,42,.78) !important;}
+
+  /* Accueil : boutons menu */
+  #scr-home button.w-full{
+    position:relative;
+    overflow:hidden;
+  }
+  #scr-home button.w-full::after{
+    content:"";
+    position:absolute;
+    inset:auto -20% -70% -20%;
+    height:120%;
+    background:radial-gradient(circle at 50% 0%,rgba(53,199,201,.14),transparent 56%);
+    pointer-events:none;
+  }
+
+  /* Portail salarié : rendu app mobile */
+  #scr-employee > .bg-gradient-to-br,
+  #scr-direction > .bg-gradient-to-br,
+  #scr-resources > .bg-gradient-to-br,
+  #scr-employee-messages > .bg-gradient-to-br{
+    background:
+      radial-gradient(circle at 16% 18%,rgba(255,255,255,.22),transparent 22%),
+      linear-gradient(135deg,#123d9f 0%,#1f5fd2 43%,#e12b8f 100%) !important;
+    border:1px solid rgba(255,255,255,.22);
+  }
+
+  /* Centre RESTEV */
+  #scr-direction .grid > .bg-white p[id^="stats-"]{
+    line-height:1.05;
+  }
+  #scr-direction .grid > .bg-white{
+    position:relative;
+    overflow:hidden;
+  }
+  #scr-direction .grid > .bg-white::before{
+    content:"";
+    position:absolute;
+    right:-30px;
+    top:-30px;
+    width:92px;
+    height:92px;
+    border-radius:50%;
+    background:linear-gradient(135deg,rgba(31,95,210,.12),rgba(225,43,143,.10));
+  }
+
+  /* Messages : meilleure lecture */
+  #employee-messages-list > div,
+  #manager-risk-box > div,
+  #manager-history-list > div{
+    border-color:rgba(31,95,210,.12) !important;
+    box-shadow:0 12px 28px rgba(16,32,74,.08) !important;
+  }
+
+  /* QR code / certificat */
+  #qr-area,
+  #qcm-question-text,
+  #map{
+    border-color:rgba(31,95,210,.14) !important;
+  }
+
+  /* Mobile : lisible et aéré */
+  @media (max-width:640px){
+    main{padding:14px !important;}
+    #scr-home{padding-top:10px !important;}
+    #scr-home h1{font-size:2.55rem !important;line-height:1.02;}
+    #scr-direction .grid,
+    #scr-manager .grid{gap:14px !important;}
+    .p-6{padding:1.15rem !important;}
+    .p-5{padding:1rem !important;}
+    button{min-height:44px;}
+  }
+
+  /* Accessibilité : si réduction des animations */
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important;}
+  }
+</style>
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
 </head> 
  
 <body class="bg-gradient-to-tr from-slate-50 via-blue-50/40 to-pink-50/20 text-slate-800 antialiased min-h-screen flex flex-col dark:from-slate-950 dark:via-slate-900 dark:to-slate-950"> 
@@ -3625,6 +3868,38 @@ document.addEventListener('DOMContentLoaded', () => {
     try{ installCentreExtras(); }catch(e){ console.warn(R85_PATCH, e); }
     console.log(R85_PATCH + ' installé');
   });
+})();
+</script>
+
+
+<script>
+/* =========================================================
+   PATCH RESTEV 85 — CENTRE RESTEV STATS STABLES GITHUB
+   - Reset admin protégé
+   - Compteur passeports
+   - Camembert stable
+   - Affichage propre si prevention_stats indisponible
+   ========================================================= */
+(function(){
+  const R85_PATCH = 'RESTEV85_GITHUB_CENTRE_STATS_STABLES_2026_07_07';
+  const RESET_KEY = 'restev_centre_stats_reset_at';
+  const ADMIN_CODE = 'RESTEV85-ADMIN';
+  let r85StatsChart = null;
+  function esc(v){try{if(typeof escapeHtml==='function')return escapeHtml(v||'');}catch(e){}return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function getResetAt(){try{return safeStorage.getItem(RESET_KEY)||'';}catch(e){return'';}}
+  function setResetNow(){try{safeStorage.setItem(RESET_KEY,new Date().toISOString());}catch(e){}}
+  function isPassportRow(r){return String(r?.risk_category||'').toLowerCase().includes('validation passeport')||String(r?.event_type||'').toLowerCase().includes('passeport');}
+  function countBy(rows,field){return (rows||[]).reduce((a,r)=>{const v=r[field]||'Non renseigné';a[v]=(a[v]||0)+1;return a;},{});}
+  function topEntries(obj,limit){return Object.entries(obj||{}).sort((a,b)=>b[1]-a[1]).slice(0,limit||6);}
+  function renameSectorCard(){const el=document.getElementById('stats-sector-count');const card=el?el.closest('.bg-white, .dark\\:bg-slate-800'):null;const title=card?card.querySelector('p'):null;if(title)title.innerText='Secteurs avec signalements';}
+  function updateResetLabel(){const reset=getResetAt();const lbl=document.getElementById('restev-centre-reset-label');const info=document.getElementById('stats-passport-reset-info');if(lbl)lbl.innerText=reset?'Dernier reset admin : '+new Date(reset).toLocaleString('fr-FR')+' — seules les nouvelles données sont affichées.':'Reset protégé par code administrateur.';if(info)info.innerText=reset?'Depuis le reset du '+new Date(reset).toLocaleDateString('fr-FR'):'Tous les passeports enregistrés';}
+  function installCentreExtras(){const d=document.getElementById('scr-direction');if(!d)return;renameSectorCard();if(!document.getElementById('restev-centre-admin-reset-box')){const hero=d.querySelector('.bg-gradient-to-br');const box=document.createElement('div');box.id='restev-centre-admin-reset-box';box.className='bg-white dark:bg-slate-800 p-4 rounded-2xl border shadow-premium flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3';box.innerHTML=`<div><p class="text-xs font-black uppercase tracking-wider dark:text-white"><i class="fa-solid fa-user-shield text-restev-magenta mr-1"></i> Administration Centre RESTEV</p><p id="restev-centre-reset-label" class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Reset protégé par code administrateur.</p></div><button id="btn-reset-restev-centre" type="button" onclick="resetRestevCentreStats()" class="bg-red-50 text-red-600 hover:bg-red-100 px-4 py-3 rounded-xl text-[10px] font-black uppercase border border-red-100"><i class="fa-solid fa-lock mr-1"></i> Reset admin</button>`;if(hero&&hero.nextSibling)d.insertBefore(box,hero.nextSibling);else d.prepend(box);}if(!document.getElementById('stats-passport-created')){const grid=document.getElementById('stats-total')?.closest('.grid');if(grid){const card=document.createElement('div');card.className='bg-white dark:bg-slate-800 p-5 rounded-2xl border shadow-premium';card.innerHTML='<p class="text-[10px] font-black uppercase text-slate-400">Passeports prévention créés</p><p id="stats-passport-created" class="text-3xl font-black text-emerald-500 mt-1">0</p><p id="stats-passport-reset-info" class="text-[10px] text-slate-400 mt-1 font-bold">Tous les passeports enregistrés</p>';grid.appendChild(card);}}updateResetLabel();}
+  window.resetRestevCentreStats=function(){const code=prompt('Code administrateur requis pour remettre à zéro le Centre RESTEV :');if(code!==ADMIN_CODE){if(typeof showToast==='function')showToast('Accès refusé : code administrateur incorrect.');return;}setResetNow();updateResetLabel();if(typeof showToast==='function')showToast('Centre RESTEV remis à zéro par administrateur.');loadRestevStats();};
+  async function loadPassportCounterSafe(){const el=document.getElementById('stats-passport-created');if(!el)return;el.innerText='0';if(!supabaseClient)return;try{let q=supabaseClient.from('passport_registry').select('id,created_at',{count:'exact',head:false});const reset=getResetAt();if(reset)q=q.gte('created_at',reset);const {data,count,error}=await q.limit(1000);if(error){console.warn('Compteur passeports indisponible:',error.message);return;}el.innerText=String(typeof count==='number'?count:(data||[]).length);}catch(e){console.warn('Compteur passeports ignoré:',e);}}
+  window.loadRestevStats=async function(){installCentreExtras();let rows=[];try{if(supabaseClient){let q=supabaseClient.from('prevention_stats').select('period_month,sector,company_size_range,risk_category,risk_level,frequency,event_type,created_at').order('created_at',{ascending:false}).limit(1000);const reset=getResetAt();if(reset)q=q.gte('created_at',reset);const {data,error}=await q;if(error){console.warn('Statistiques RESTEV indisponibles, affichage à zéro:',error.message);rows=[];}else rows=data||[];}}catch(e){console.warn('Chargement statistiques RESTEV ignoré, affichage à zéro:',e);rows=[];}renderRestevStats(rows);loadPassportCounterSafe();};
+  window.renderRestevStats=function(rows){installCentreExtras();const riskRows=(rows||[]).filter(r=>!isPassportRow(r));const riskCounts=countBy(riskRows,'risk_category');const topRisks=topEntries(riskCounts,6);const sectorSet=new Set(riskRows.map(r=>r.sector||'Non renseigné').filter(s=>s&&s!=='Non renseigné'));const totalEl=document.getElementById('stats-total'),topRiskEl=document.getElementById('stats-top-risk'),sectorEl=document.getElementById('stats-sector-count');if(totalEl)totalEl.innerText=String(riskRows.length);if(topRiskEl)topRiskEl.innerText=topRisks[0]?.[0]||'—';if(sectorEl)sectorEl.innerText=String(sectorSet.size);renameSectorCard();const ctx=document.getElementById('chart-restev-risks');if(ctx&&window.Chart){try{if(r85StatsChart)r85StatsChart.destroy();}catch(e){}try{if(typeof restevStatsChart!=='undefined'&&restevStatsChart)restevStatsChart.destroy();}catch(e){}const labels=topRisks.length?topRisks.map(e=>e[0]):['Aucun risque signalé'];const values=topRisks.length?topRisks.map(e=>e[1]):[1];r85StatsChart=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data:values,backgroundColor:topRisks.length?['#3a7bd5','#e0248a','#ffb007','#4ec3b1','#245ca6','#b31269']:['#e2e8f0']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});try{restevStatsChart=r85StatsChart;}catch(e){}}const actionBox=document.getElementById('stats-actions-list');if(actionBox){if(!topRisks.length)actionBox.innerHTML='<p class="text-xs text-slate-400 italic">Aucun risque signalé pour le moment.</p>';else actionBox.innerHTML=topRisks.map((e,idx)=>{const risk=e[0],count=e[1];let suggestion='Proposer un contact prévention pour analyser les causes et prioriser une action simple.';try{if(typeof getPreventionSuggestion==='function')suggestion=getPreventionSuggestion(risk);}catch(err){}return `<div class="p-3 rounded-2xl border bg-slate-50 dark:bg-slate-900"><div class="flex justify-between gap-2"><p class="text-xs font-black dark:text-white">${idx+1}. ${esc(risk)}</p><span class="text-[10px] font-black text-restev-blue bg-blue-50 px-2 py-1 rounded-lg">${count}</span></div><p class="text-[11px] text-slate-500 dark:text-slate-300 mt-1 leading-relaxed">${esc(suggestion)}</p></div>`;}).join('');}};
+  const oldSwitch=window.switchScreen||(typeof switchScreen==='function'?switchScreen:null);if(oldSwitch){window.switchScreen=function(screenId){oldSwitch(screenId);if(screenId==='scr-direction')setTimeout(()=>{installCentreExtras();loadRestevStats();},250);};}
+  document.addEventListener('DOMContentLoaded',()=>{try{installCentreExtras();}catch(e){console.warn(R85_PATCH,e);}console.log(R85_PATCH+' installé');});
 })();
 </script>
 
