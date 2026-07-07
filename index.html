@@ -3080,8 +3080,8 @@ document.addEventListener('DOMContentLoaded', () => {
    PATCH RESTEV 85 — INFOS DESCENDANTES : TOUT PERSONNEL
    - Case "Tout personnel" dans Infos descendantes manager → salarié
    - Envoi global via manager_messages.employee_name = "TOUT_PERSONNEL"
-   - Réception par tous les salariés du même établissement
-   - Alerte visuelle + sonore + vibration côté salarié
+   - Lecture par tous les salariés du même établissement
+   - Alerte salarié visuelle + sonore + vibration
    ========================================================= */
 (function(){
   const R85_PATCH = 'RESTEV85_INFOS_DESC_TOUT_PERSONNEL_2026_07_07';
@@ -3090,10 +3090,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let employeeMsgPolling = null;
   let lastEmployeeMsgId = safeStorage.getItem('restev_employee_last_msg_id') || '';
 
-  function esc(v){
-    try{ if(typeof escapeHtml === 'function') return escapeHtml(v || ''); }catch(e){}
-    return String(v ?? '').replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
-  }
+  function esc(v){ try{ if(typeof escapeHtml === 'function') return escapeHtml(v || ''); }catch(e){} return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   function sess(){ try{ return window.currentEmployeeSession || currentEmployeeSession || null; }catch(e){ return null; } }
   function managerCode(){ return (document.getElementById('lbl-manager-comp-name')?.innerText || '').trim(); }
 
@@ -3101,23 +3098,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const panel = document.getElementById('restev-manager-message-panel');
     const employeeInput = document.getElementById('restev-msg-employee');
     if(!panel || !employeeInput || document.getElementById('restev-msg-all-personnel-wrap')) return;
-
     const wrap = document.createElement('label');
     wrap.id = 'restev-msg-all-personnel-wrap';
     wrap.className = 'md:col-span-4 flex items-center gap-3 p-3 bg-cyan-50 dark:bg-slate-900 border border-cyan-200 dark:border-slate-700 rounded-xl cursor-pointer';
-    wrap.innerHTML = `
-      <input id="restev-msg-all-personnel" type="checkbox" class="w-4 h-4 text-cyan-600">
-      <span class="text-xs font-black text-cyan-800 dark:text-cyan-300 uppercase tracking-wider">
-        <i class="fa-solid fa-users mr-1"></i> Tout personnel
-      </span>
-      <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 normal-case">
-        Pour les alertes globales : canicule, ligne 4 en maintenance, consigne générale...
-      </span>`;
-
+    wrap.innerHTML = `<input id="restev-msg-all-personnel" type="checkbox" class="w-4 h-4 text-cyan-600"><span class="text-xs font-black text-cyan-800 dark:text-cyan-300 uppercase tracking-wider"><i class="fa-solid fa-users mr-1"></i> Tout personnel</span><span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 normal-case">Pour les alertes globales : canicule, ligne 4 en maintenance, consigne générale...</span>`;
     const grid = employeeInput.closest('.grid');
-    if(grid) grid.appendChild(wrap);
-    else employeeInput.insertAdjacentElement('beforebegin', wrap);
-
+    if(grid) grid.appendChild(wrap); else employeeInput.insertAdjacentElement('beforebegin', wrap);
     const checkbox = document.getElementById('restev-msg-all-personnel');
     checkbox.addEventListener('change', function(){
       employeeInput.disabled = checkbox.checked;
@@ -3132,180 +3118,312 @@ document.addEventListener('DOMContentLoaded', () => {
     const overlay = document.createElement('div');
     overlay.id = 'employee-global-message-overlay';
     overlay.style.cssText = 'position:fixed;inset:0;z-index:2147482500;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(8,47,73,.72);backdrop-filter:blur(8px);box-sizing:border-box;';
-    overlay.innerHTML = `
-      <div style="width:min(520px,100%);background:linear-gradient(135deg,#ffffff,#ecfeff);border:3px solid #67e8f9;border-radius:28px;box-shadow:0 25px 70px rgba(14,116,144,.38);overflow:hidden;color:#0f172a;">
-        <div style="display:flex;align-items:center;gap:16px;padding:22px;color:#fff;background:linear-gradient(135deg,#0891b2,#2563eb);">
-          <div style="width:58px;height:58px;min-width:58px;border-radius:20px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.28);display:flex;align-items:center;justify-content:center;font-size:28px;"><i class="fa-solid fa-bullhorn"></i></div>
-          <div><p style="margin:0;font-size:20px;line-height:1.15;font-weight:950;letter-spacing:-.02em;">Nouvelle information prévention</p><p id="employee-global-alert-sub" style="margin:6px 0 0;font-size:13px;font-weight:800;color:#cffafe;">Message du responsable</p></div>
-        </div>
-        <div style="padding:22px;display:flex;flex-direction:column;gap:16px;background:linear-gradient(135deg,#ffffff,#f0fdfa);">
-          <div id="employee-global-alert-detail" style="background:#fff;border:1px solid #a5f3fc;border-left:6px solid #0891b2;border-radius:18px;padding:16px;color:#334155;font-size:14px;line-height:1.45;font-weight:800;white-space:pre-line;">Chargement...</div>
-          <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:10px;">
-            <button type="button" id="employee-global-alert-close" style="border:0;border-radius:16px;padding:13px 16px;font-size:12px;font-weight:950;cursor:pointer;background:#f1f5f9;color:#475569;">Fermer</button>
-            <button type="button" id="employee-global-alert-open" style="border:0;border-radius:16px;padding:13px 16px;font-size:12px;font-weight:950;cursor:pointer;background:linear-gradient(135deg,#0891b2,#2563eb);color:white;box-shadow:0 10px 24px rgba(37,99,235,.28);">Voir mes messages</button>
-          </div>
-        </div>
-      </div>`;
+    overlay.innerHTML = `<div style="width:min(520px,100%);background:linear-gradient(135deg,#ffffff,#ecfeff);border:3px solid #67e8f9;border-radius:28px;box-shadow:0 25px 70px rgba(14,116,144,.38);overflow:hidden;color:#0f172a;"><div style="display:flex;align-items:center;gap:16px;padding:22px;color:#fff;background:linear-gradient(135deg,#0891b2,#2563eb);"><div style="width:58px;height:58px;min-width:58px;border-radius:20px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.28);display:flex;align-items:center;justify-content:center;font-size:28px;"><i class="fa-solid fa-bullhorn"></i></div><div><p style="margin:0;font-size:20px;line-height:1.15;font-weight:950;letter-spacing:-.02em;">Nouvelle information prévention</p><p id="employee-global-alert-sub" style="margin:6px 0 0;font-size:13px;font-weight:800;color:#cffafe;">Message du responsable</p></div></div><div style="padding:22px;display:flex;flex-direction:column;gap:16px;background:linear-gradient(135deg,#ffffff,#f0fdfa);"><div id="employee-global-alert-detail" style="background:#fff;border:1px solid #a5f3fc;border-left:6px solid #0891b2;border-radius:18px;padding:16px;color:#334155;font-size:14px;line-height:1.45;font-weight:800;white-space:pre-line;">Chargement...</div><div style="display:grid;grid-template-columns:1fr 1.4fr;gap:10px;"><button type="button" id="employee-global-alert-close" style="border:0;border-radius:16px;padding:13px 16px;font-size:12px;font-weight:950;cursor:pointer;background:#f1f5f9;color:#475569;">Fermer</button><button type="button" id="employee-global-alert-open" style="border:0;border-radius:16px;padding:13px 16px;font-size:12px;font-weight:950;cursor:pointer;background:linear-gradient(135deg,#0891b2,#2563eb);color:white;box-shadow:0 10px 24px rgba(37,99,235,.28);">Voir mes messages</button></div></div></div>`;
     document.body.appendChild(overlay);
-    document.getElementById('employee-global-alert-close').onclick = function(){ overlay.style.display = 'none'; };
-    document.getElementById('employee-global-alert-open').onclick = function(){ overlay.style.display = 'none'; if(typeof openEmployeeMessages === 'function') openEmployeeMessages(); };
+    document.getElementById('employee-global-alert-close').onclick = () => overlay.style.display = 'none';
+    document.getElementById('employee-global-alert-open').onclick = () => { overlay.style.display = 'none'; if(typeof openEmployeeMessages === 'function') openEmployeeMessages(); };
   }
 
   function playEmployeeMessageSound(){
-    try{
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      if(!AudioContext) return;
-      const ctx = new AudioContext();
-      [740,920,740,1040].forEach(function(freq, i){
-        const start = ctx.currentTime + i * 0.20;
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, start);
-        gain.gain.setValueAtTime(0.0001, start);
-        gain.gain.exponentialRampToValueAtTime(0.28, start + 0.03);
-        gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.16);
-        osc.connect(gain); gain.connect(ctx.destination);
-        osc.start(start); osc.stop(start + 0.18);
-      });
-    }catch(e){ console.warn('Son message salarié indisponible:', e); }
+    try{ const AudioContext = window.AudioContext || window.webkitAudioContext; if(!AudioContext) return; const ctx = new AudioContext(); [740,920,740,1040].forEach((freq,i)=>{ const start=ctx.currentTime+i*.20, osc=ctx.createOscillator(), gain=ctx.createGain(); osc.type='sine'; osc.frequency.setValueAtTime(freq,start); gain.gain.setValueAtTime(.0001,start); gain.gain.exponentialRampToValueAtTime(.28,start+.03); gain.gain.exponentialRampToValueAtTime(.0001,start+.16); osc.connect(gain); gain.connect(ctx.destination); osc.start(start); osc.stop(start+.18); }); }catch(e){ console.warn('Son message salarié indisponible:', e); }
   }
-
   function triggerEmployeeMessageAlert(message){
     ensureEmployeeGlobalAlertOverlay();
+    const global = message?.employee_name === ALL_PERSONNEL;
     const sub = document.getElementById('employee-global-alert-sub');
     const detail = document.getElementById('employee-global-alert-detail');
-    const global = message?.employee_name === ALL_PERSONNEL;
-    const priority = message?.priority || 'Information';
-    if(sub) sub.innerText = (global ? 'Message à tout le personnel' : 'Message personnel') + ' — ' + priority;
+    if(sub) sub.innerText = (global ? 'Message à tout le personnel' : 'Message personnel') + ' — ' + (message?.priority || 'Information');
     if(detail) detail.innerHTML = '<div style="font-size:15px;color:#0e7490;font-weight:950;margin-bottom:6px;">' + esc(message?.title || 'Information prévention') + '</div><div>' + esc(message?.message || '') + '</div>';
-    const overlay = document.getElementById('employee-global-message-overlay');
-    if(overlay) overlay.style.display = 'flex';
-    playEmployeeMessageSound();
-    try{ if('vibrate' in navigator) navigator.vibrate([250,120,250,120,400]); }catch(e){}
+    const overlay = document.getElementById('employee-global-message-overlay'); if(overlay) overlay.style.display = 'flex';
+    playEmployeeMessageSound(); try{ if('vibrate' in navigator) navigator.vibrate([250,120,250,120,400]); }catch(e){}
     if(typeof showToast === 'function') showToast((global ? '📢 Alerte tout personnel : ' : '📢 Nouveau message : ') + (message?.title || 'Information prévention'));
   }
 
   window.sendManagerMessage = async function(){
     ensureAllPersonnelCheckbox();
     if(!supabaseClient) return showToast('Supabase non chargé.');
-    const code = managerCode();
-    if(!code) return showToast('Code établissement manager manquant.');
+    const code = managerCode(); if(!code) return showToast('Code établissement manager manquant.');
     const all = document.getElementById('restev-msg-all-personnel')?.checked;
     const employee = all ? ALL_PERSONNEL : document.getElementById('restev-msg-employee')?.value.trim();
     const title = document.getElementById('restev-msg-title')?.value.trim();
     const message = document.getElementById('restev-msg-content')?.value.trim();
     const priority = document.getElementById('restev-msg-priority')?.value || 'Information';
     if(!employee || !title || !message) return showToast(all ? 'Veuillez compléter titre et message.' : 'Veuillez compléter salarié, titre et message.');
-    const { error } = await supabaseClient.from('manager_messages').insert([{ company_code: code, employee_name: employee, title, message, priority, read_by_employee: false }]);
+    const { error } = await supabaseClient.from('manager_messages').insert([{company_code:code, employee_name:employee, title, message, priority, read_by_employee:false}]);
     if(error){ console.error('Erreur manager_messages:', error); return showToast('Erreur message : ' + error.message); }
-    const titleEl = document.getElementById('restev-msg-title');
-    const contentEl = document.getElementById('restev-msg-content');
-    if(titleEl) titleEl.value = '';
-    if(contentEl) contentEl.value = '';
+    document.getElementById('restev-msg-title').value = '';
+    document.getElementById('restev-msg-content').value = '';
     showToast(all ? 'Alerte envoyée à tout le personnel.' : 'Information envoyée au salarié.');
   };
 
   async function fetchEmployeeManagerMessages(){
-    const s = sess();
-    if(!s || !supabaseClient) return [];
+    const s = sess(); if(!s || !supabaseClient) return [];
     const fields = 'id,employee_name,title,message,priority,read_by_employee,created_at';
     const specific = await supabaseClient.from('manager_messages').select(fields).eq('company_code', s.company).eq('employee_name', s.name).order('created_at',{ascending:false}).limit(50);
     const global = await supabaseClient.from('manager_messages').select(fields).eq('company_code', s.company).eq('employee_name', ALL_PERSONNEL).order('created_at',{ascending:false}).limit(50);
-    let rows = [];
-    if(!specific.error) rows = rows.concat(specific.data || []); else console.warn('Messages salarié ciblés indisponibles:', specific.error.message);
-    if(!global.error) rows = rows.concat(global.data || []); else console.warn('Messages tout personnel indisponibles:', global.error.message);
-    const seen = new Set();
-    rows = rows.filter(function(m){ if(seen.has(m.id)) return false; seen.add(m.id); return true; });
-    rows.sort(function(a,b){ return new Date(b.created_at) - new Date(a.created_at); });
-    return rows;
+    let rows=[]; if(!specific.error) rows=rows.concat(specific.data||[]); if(!global.error) rows=rows.concat(global.data||[]);
+    const seen=new Set(); rows=rows.filter(m=>{ if(seen.has(m.id)) return false; seen.add(m.id); return true; });
+    rows.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)); return rows;
   }
 
-  const previousOpenEmployeeMessages = window.openEmployeeMessages;
+  const previousOpenEmployeeMessagesAll = window.openEmployeeMessages;
   window.openEmployeeMessages = async function(){
-    const s = sess();
-    if(!s) return showToast('Session salarié non reconnue.');
-    if(!supabaseClient) return showToast('Supabase non chargé. Vérifiez internet.');
+    const s = sess(); if(!s) return showToast('Session salarié non reconnue.'); if(!supabaseClient) return showToast('Supabase non chargé. Vérifiez internet.');
     let messages = [];
     const managerRows = await fetchEmployeeManagerMessages();
-    messages = messages.concat(managerRows.map(function(m){ return {...m, source: m.employee_name === ALL_PERSONNEL ? 'Alerte tout personnel' : 'Message manager'}; }));
+    messages = messages.concat(managerRows.map(m => ({...m, source: m.employee_name === ALL_PERSONNEL ? 'Alerte tout personnel' : 'Message manager'})));
     const unreadIds = managerRows.filter(m => !m.read_by_employee && m.employee_name !== ALL_PERSONNEL).map(m => m.id);
     if(unreadIds.length){ try{ await supabaseClient.from('manager_messages').update({read_by_employee:true}).in('id', unreadIds); }catch(e){} }
-
-    const repRes = await supabaseClient.from('prevention_reports')
-      .select('id,category,description,status,manager_response,corrective_action,created_at')
-      .eq('company_code', s.company).eq('employee_name', s.name).order('created_at',{ascending:false}).limit(50);
-    if(!repRes.error){
-      messages = messages.concat((repRes.data || []).filter(r => r.manager_response || r.corrective_action).map(r => ({
-        id: r.id,
-        title: 'Suite à votre signalement : ' + (r.category || 'prévention'),
-        message: (r.manager_response || 'Votre signalement est en cours de traitement.') + (r.corrective_action ? '\n\nAction corrective : ' + r.corrective_action : ''),
-        priority: r.status || 'Suivi', created_at: r.created_at, source: 'Suivi signalement', original_description: r.description
-      })));
-    }
-    messages.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
-    if(typeof renderEmployeeMessages360 === 'function') renderEmployeeMessages360(messages);
-    else if(previousOpenEmployeeMessages) return previousOpenEmployeeMessages();
+    const repRes = await supabaseClient.from('prevention_reports').select('id,category,description,status,manager_response,corrective_action,created_at').eq('company_code', s.company).eq('employee_name', s.name).order('created_at',{ascending:false}).limit(50);
+    if(!repRes.error){ messages = messages.concat((repRes.data||[]).filter(r=>r.manager_response||r.corrective_action).map(r=>({ id:r.id, title:'Suite à votre signalement : '+(r.category||'prévention'), message:(r.manager_response||'Votre signalement est en cours de traitement.')+(r.corrective_action?'\n\nAction corrective : '+r.corrective_action:''), priority:r.status||'Suivi', created_at:r.created_at, source:'Suivi signalement', original_description:r.description }))); }
+    messages.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+    if(typeof renderEmployeeMessages360 === 'function') renderEmployeeMessages360(messages); else if(previousOpenEmployeeMessagesAll) return previousOpenEmployeeMessagesAll();
     switchScreen('scr-employee-messages');
   };
 
   async function pollEmployeeMessages(initial){
-    const rows = await fetchEmployeeManagerMessages();
-    if(!rows.length) return;
-    const latest = rows[0];
-    if(initial){
-      const alreadySeen = latest.id && latest.id === lastEmployeeMsgId;
-      lastEmployeeMsgId = latest.id;
-      safeStorage.setItem('restev_employee_last_msg_id', latest.id);
-      if(!alreadySeen && (!latest.read_by_employee || latest.employee_name === ALL_PERSONNEL)) triggerEmployeeMessageAlert(latest);
+    const rows = await fetchEmployeeManagerMessages(); if(!rows.length) return; const latest = rows[0];
+    if(initial){ const alreadySeen = latest.id && latest.id === lastEmployeeMsgId; lastEmployeeMsgId = latest.id; safeStorage.setItem('restev_employee_last_msg_id', latest.id); if(!alreadySeen && (!latest.read_by_employee || latest.employee_name === ALL_PERSONNEL)) triggerEmployeeMessageAlert(latest); return; }
+    if(latest.id && latest.id !== lastEmployeeMsgId){ lastEmployeeMsgId = latest.id; safeStorage.setItem('restev_employee_last_msg_id', latest.id); triggerEmployeeMessageAlert(latest); }
+  }
+  window.startEmployeeManagerMessagesRealtime = function(){
+    const s = sess(); if(!s || !supabaseClient) return;
+    if(employeeMsgChannel){ try{supabaseClient.removeChannel(employeeMsgChannel);}catch(e){} employeeMsgChannel=null; }
+    employeeMsgChannel = supabaseClient.channel('restev_employee_manager_messages_' + s.company + '_' + s.name).on('postgres_changes', {event:'INSERT', schema:'public', table:'manager_messages', filter:'company_code=eq.' + s.company}, payload => { const msg=payload.new||{}; if(msg.employee_name===s.name || msg.employee_name===ALL_PERSONNEL){ lastEmployeeMsgId=msg.id||lastEmployeeMsgId; if(msg.id) safeStorage.setItem('restev_employee_last_msg_id', msg.id); triggerEmployeeMessageAlert(msg); } }).subscribe(status => console.log('Realtime messages salarié:', status));
+    if(employeeMsgPolling) clearInterval(employeeMsgPolling); pollEmployeeMessages(true); employeeMsgPolling=setInterval(()=>pollEmployeeMessages(false),15000);
+  };
+
+  const oldSwitchAll = window.switchScreen || (typeof switchScreen === 'function' ? switchScreen : null);
+  if(oldSwitchAll){ window.switchScreen = function(screenId){ oldSwitchAll(screenId); if(screenId==='scr-manager') setTimeout(ensureAllPersonnelCheckbox,350); if(screenId==='scr-employee') setTimeout(()=>{ try{ startEmployeeManagerMessagesRealtime(); }catch(e){ console.warn('Realtime messages salarié non activé:', e); } },650); }; }
+  document.addEventListener('DOMContentLoaded', function(){ try{ ensureAllPersonnelCheckbox(); ensureEmployeeGlobalAlertOverlay(); if(sess()) startEmployeeManagerMessagesRealtime(); }catch(e){ console.warn(R85_PATCH,e); } console.log(R85_PATCH + ' installé'); });
+})();
+</script>
+
+<script>
+/* =========================================================
+   PATCH RESTEV 85 — MESSAGES LUS + APPAREIL PHOTO SALARIÉ
+   Ajouts uniquement :
+   - Salarié : bouton "Classer comme lu" pour masquer un message lu
+   - Salarié : appareil photo dans le signalement terrain
+   - Manager : affichage photo si la colonne Supabase photo_base64 existe
+   ========================================================= */
+(function(){
+  const R85_PATCH = 'RESTEV85_MESSAGES_LUS_CAMERA_2026_07_07';
+  let r85CurrentReportPhoto = null;
+
+  function esc(v){
+    try{ if(typeof escapeHtml === 'function') return escapeHtml(v || ''); }catch(e){}
+    return String(v ?? '').replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
+  }
+  function sess(){ try{ return window.currentEmployeeSession || currentEmployeeSession || null; }catch(e){ return null; } }
+  function msgArchiveKey(){
+    const s = sess();
+    return 'restev_employee_archived_messages_' + (s?.company || 'no_company') + '_' + (s?.name || 'no_employee');
+  }
+  function getArchivedMessageIds(){
+    try{ return JSON.parse(safeStorage.getItem(msgArchiveKey()) || '[]'); }catch(e){ return []; }
+  }
+  function setArchivedMessageIds(ids){
+    try{ safeStorage.setItem(msgArchiveKey(), JSON.stringify(Array.from(new Set(ids)))); }catch(e){}
+  }
+  function messageDomId(m){
+    return String((m.source || 'msg') + '_' + (m.id || m.created_at || m.title || '')).replace(/[^a-zA-Z0-9_-]/g,'_');
+  }
+  function isArchivedMessage(m){ return getArchivedMessageIds().includes(messageDomId(m)); }
+
+  window.archiveEmployeeMessage = async function(domId, source, realId){
+    const ids = getArchivedMessageIds();
+    ids.push(domId);
+    setArchivedMessageIds(ids);
+    // Si message individuel manager_messages : on tente aussi de le marquer lu côté Supabase.
+    try{
+      if(supabaseClient && source !== 'Alerte tout personnel' && realId && source !== 'Suivi signalement'){
+        await supabaseClient.from('manager_messages').update({read_by_employee:true}).eq('id', realId);
+      }
+    }catch(e){ console.warn('Marquage lu Supabase ignoré:', e); }
+    if(typeof showToast === 'function') showToast('Message classé comme lu.');
+    if(typeof openEmployeeMessages === 'function') openEmployeeMessages();
+  };
+
+  const previousRenderEmployeeMessages360 = window.renderEmployeeMessages360;
+  window.renderEmployeeMessages360 = function(msgs){
+    const c = document.getElementById('employee-messages-list');
+    if(!c){ if(previousRenderEmployeeMessages360) return previousRenderEmployeeMessages360(msgs); return; }
+    const visible = (msgs || []).filter(m => !isArchivedMessage(m));
+    c.innerHTML = '';
+    if(!visible.length){
+      c.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-6">Aucun message non classé. Les messages lus sont masqués pour garder cette page claire.</p>';
       return;
     }
-    if(latest.id && latest.id !== lastEmployeeMsgId){
-      lastEmployeeMsgId = latest.id;
-      safeStorage.setItem('restev_employee_last_msg_id', latest.id);
-      triggerEmployeeMessageAlert(latest);
-    }
+    c.innerHTML = visible.map(m => {
+      const urgent = (m.priority || '').toLowerCase().includes('urgent');
+      const global = (m.source || '').toLowerCase().includes('tout personnel');
+      const border = urgent ? 'border-red-300 bg-red-50 dark:bg-red-950/20' : global ? 'border-blue-300 bg-blue-50 dark:bg-blue-950/20' : 'border-cyan-200 bg-white dark:bg-slate-800';
+      const domId = messageDomId(m);
+      return `
+        <div class="p-4 rounded-2xl border shadow-sm space-y-2 ${border}">
+          <div class="flex justify-between items-start gap-2">
+            <div>
+              <p class="text-xs font-black dark:text-white">${esc(m.title || 'Message prévention')}</p>
+              <p class="text-[10px] text-slate-400">${esc(m.source || 'Message')} - ${new Date(m.created_at).toLocaleString('fr-FR')}</p>
+            </div>
+            <span class="text-[10px] font-black px-2 py-1 rounded bg-cyan-50 text-cyan-700">${esc(m.priority || 'Information')}</span>
+          </div>
+          ${m.original_description ? `<div class="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl"><p class="text-[10px] font-black uppercase text-slate-400 mb-1">Votre signalement initial</p><p class="text-xs text-slate-600 dark:text-slate-300">${esc(m.original_description)}</p></div>` : ''}
+          <div class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-xl border border-emerald-100 dark:border-emerald-900">
+            <p class="text-[10px] font-black uppercase text-emerald-600 mb-1">Message du responsable</p>
+            <p class="text-xs text-slate-700 dark:text-slate-300 whitespace-pre-line">${esc(m.message || '')}</p>
+          </div>
+          <button onclick="archiveEmployeeMessage('${esc(domId)}','${esc(m.source || '')}','${esc(m.id || '')}')" class="w-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-white py-2.5 rounded-xl text-[10px] font-black uppercase">
+            <i class="fa-solid fa-box-archive mr-1"></i> Classer comme lu
+          </button>
+        </div>`;
+    }).join('');
+  };
+
+  function ensureCameraField(){
+    const report = document.getElementById('scr-report');
+    const desc = document.getElementById('risk-description');
+    if(!report || !desc || document.getElementById('risk-photo-input')) return;
+    const box = document.createElement('div');
+    box.id = 'risk-photo-box';
+    box.className = 'space-y-2';
+    box.innerHTML = `
+      <label class="block text-xs font-black text-slate-700 dark:text-slate-300"><i class="fa-solid fa-camera text-restev-blue mr-1"></i> Photo de la situation :</label>
+      <input id="risk-photo-input" type="file" accept="image/*" capture="environment" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white">
+      <div id="risk-photo-preview-wrap" class="hidden bg-slate-50 dark:bg-slate-900 border rounded-2xl p-3 space-y-2">
+        <img id="risk-photo-preview" alt="Aperçu photo" class="w-full max-h-64 object-contain rounded-xl border bg-white">
+        <button type="button" id="risk-photo-remove" class="w-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white py-2 rounded-xl text-[10px] font-black uppercase">Retirer la photo</button>
+      </div>`;
+    desc.closest('div').insertAdjacentElement('beforebegin', box);
+    const input = document.getElementById('risk-photo-input');
+    const previewWrap = document.getElementById('risk-photo-preview-wrap');
+    const preview = document.getElementById('risk-photo-preview');
+    input.addEventListener('change', async function(){
+      const file = input.files && input.files[0];
+      if(!file) return;
+      try{
+        r85CurrentReportPhoto = await resizePhotoToBase64(file, 1100, 0.72);
+        if(preview) preview.src = r85CurrentReportPhoto.data;
+        previewWrap?.classList.remove('hidden');
+        if(typeof showToast === 'function') showToast('Photo ajoutée au signalement.');
+      }catch(e){
+        console.warn('Photo non lisible:', e);
+        r85CurrentReportPhoto = null;
+        if(typeof showToast === 'function') showToast('Photo non lisible sur cet appareil.');
+      }
+    });
+    document.getElementById('risk-photo-remove').onclick = function(){
+      r85CurrentReportPhoto = null;
+      input.value = '';
+      if(preview) preview.removeAttribute('src');
+      previewWrap?.classList.add('hidden');
+    };
   }
 
-  window.startEmployeeManagerMessagesRealtime = function(){
+  function resizePhotoToBase64(file, maxSize, quality){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = function(ev){
+        const img = new Image();
+        img.onload = function(){
+          let w = img.width, h = img.height;
+          const ratio = Math.min(1, maxSize / Math.max(w, h));
+          w = Math.round(w * ratio); h = Math.round(h * ratio);
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve({data: canvas.toDataURL('image/jpeg', quality), name: file.name || 'photo-signalement.jpg'});
+        };
+        img.onerror = reject;
+        img.src = ev.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function insertReportWithOptionalPhoto(payload){
+    if(r85CurrentReportPhoto){
+      const withPhoto = Object.assign({}, payload, { photo_base64: r85CurrentReportPhoto.data, photo_name: r85CurrentReportPhoto.name || 'photo-signalement.jpg' });
+      const first = await supabaseClient.from('prevention_reports').insert([withPhoto]);
+      if(!first.error) return first;
+      console.warn('Insertion photo impossible, tentative sans photo:', first.error.message);
+    }
+    return await supabaseClient.from('prevention_reports').insert([payload]);
+  }
+
+  window.submitRiskReport = async function(){
+    if(!supabaseClient) return showToast('Supabase non chargé. Vérifiez internet.');
+    const category = document.getElementById('risk-category-select')?.value || 'Non renseigné';
+    const desc = document.getElementById('risk-description')?.value.trim();
+    const lvl = document.getElementById('risk-level')?.value || 'Non renseigné';
+    const freq = document.getElementById('risk-frequency')?.value || 'Non renseigné';
+    const latitude = document.getElementById('risk-latitude')?.value || null;
+    const longitude = document.getElementById('risk-longitude')?.value || null;
+    const mapUrl = document.getElementById('risk-map-url')?.value || (latitude && longitude ? `https://www.google.com/maps?q=${latitude},${longitude}` : null);
+    if(!desc) return showToast('Veuillez saisir une description du danger.');
     const s = sess();
-    if(!s || !supabaseClient) return;
-    if(employeeMsgChannel){ try{supabaseClient.removeChannel(employeeMsgChannel);}catch(e){} employeeMsgChannel = null; }
-    employeeMsgChannel = supabaseClient
-      .channel('restev_employee_manager_messages_' + s.company + '_' + s.name)
-      .on('postgres_changes', {event:'INSERT', schema:'public', table:'manager_messages', filter:'company_code=eq.' + s.company}, function(payload){
-        const msg = payload.new || {};
-        if(msg.employee_name === s.name || msg.employee_name === ALL_PERSONNEL){
-          lastEmployeeMsgId = msg.id || lastEmployeeMsgId;
-          if(msg.id) safeStorage.setItem('restev_employee_last_msg_id', msg.id);
-          triggerEmployeeMessageAlert(msg);
-        }
-      })
-      .subscribe(function(status){ console.log('Realtime messages salarié:', status); });
-    if(employeeMsgPolling) clearInterval(employeeMsgPolling);
-    pollEmployeeMessages(true);
-    employeeMsgPolling = setInterval(function(){ pollEmployeeMessages(false); }, 15000);
+    const employeeName = s ? s.name : 'Salarié terrain';
+    const companyCode = s ? s.company : (document.getElementById('lbl-manager-comp-name')?.innerText || 'Établissement non renseigné');
+    const payload = { company_code: companyCode, employee_name: employeeName, category, level: lvl, frequency: freq, description: desc, latitude, longitude, map_url: mapUrl, status:'Nouveau', read_by_manager:false };
+    const { error } = await insertReportWithOptionalPhoto(payload);
+    if(error){ console.error('Erreur insertion prevention_reports:', error); return showToast('Erreur signalement : ' + error.message); }
+    try{ if(typeof submitAnonymizedPreventionStat === 'function') await submitAnonymizedPreventionStat({category, level:lvl, frequency:freq, event_type:'Signalement prévention'}); }catch(e){ console.warn('Stat RESTEV ignorée:', e); }
+    const area = document.getElementById('risk-description'); if(area) area.value = '';
+    const input = document.getElementById('risk-photo-input'); if(input) input.value = '';
+    document.getElementById('risk-photo-preview-wrap')?.classList.add('hidden');
+    r85CurrentReportPhoto = null;
+    showToast('Signalement envoyé au responsable' + (payload.photo_base64 ? ' avec photo.' : '.'));
+    switchScreen('scr-employee');
+  };
+
+  window.loadManagerReports = async function(){
+    if(!supabaseClient) return showToast('Supabase non chargé.');
+    const companyCode = document.getElementById('lbl-manager-comp-name')?.innerText?.trim();
+    if(!companyCode) return;
+    let res = await supabaseClient.from('prevention_reports')
+      .select('id,company_code,employee_name,category,level,frequency,description,latitude,longitude,map_url,status,manager_response,corrective_action,created_at,photo_base64,photo_name')
+      .eq('company_code', companyCode).order('created_at',{ascending:false}).limit(100);
+    if(res.error){
+      res = await supabaseClient.from('prevention_reports')
+        .select('id,company_code,employee_name,category,level,frequency,description,latitude,longitude,map_url,status,manager_response,corrective_action,created_at')
+        .eq('company_code', companyCode).order('created_at',{ascending:false}).limit(100);
+    }
+    if(res.error){ console.error('Erreur chargement signalements:', res.error); return showToast('Erreur Supabase : ' + res.error.message); }
+    renderManagerReports(res.data || []);
+  };
+
+  window.renderManagerReports = function(reports){
+    const c = document.getElementById('manager-risk-box');
+    if(!c) return;
+    const activeReports = (reports || []).filter(r => ['Nouveau','Vu par le responsable','En cours de traitement'].includes(r.status || 'Nouveau'));
+    c.innerHTML = '';
+    if(!activeReports.length){ c.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-8">Aucun signalement actif. Les dossiers traités et archivés sont disponibles dans Historique.</p>'; return; }
+    activeReports.forEach(r => {
+      const card = document.createElement('div');
+      card.className = 'p-3 bg-red-50 dark:bg-slate-900 border border-red-200 dark:border-red-800 rounded-xl space-y-2 text-xs';
+      const mapUrl = r.map_url || (r.latitude && r.longitude ? `https://www.google.com/maps?q=${r.latitude},${r.longitude}` : '');
+      const mapHtml = mapUrl ? `<a href="${esc(mapUrl)}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-[10px] font-black text-restev-blue bg-blue-50 dark:bg-slate-800 px-2 py-1 rounded-lg border"><i class="fa-solid fa-map-location-dot"></i> Voir sur Google Maps</a>` : '<p class="text-[10px] text-slate-400 italic">Aucune localisation transmise.</p>';
+      const photoHtml = r.photo_base64 ? `<div class="bg-white dark:bg-slate-800 p-2 rounded-xl border"><p class="text-[10px] font-black uppercase text-slate-400 mb-2"><i class="fa-solid fa-camera mr-1"></i> Photo transmise</p><img src="${esc(r.photo_base64)}" alt="Photo signalement" class="w-full max-h-72 object-contain rounded-xl border bg-white"></div>` : '';
+      card.innerHTML = `<div class="flex justify-between items-start gap-2"><div><p class="font-black text-slate-900 dark:text-white">${esc(r.category || 'Signalement')}</p><p class="text-[10px] text-slate-400">Par ${esc(r.employee_name || '')} - ${new Date(r.created_at).toLocaleString('fr-FR')}</p></div><span class="text-[10px] font-black px-2 py-1 rounded bg-white dark:bg-slate-800 text-red-600">${esc(r.level || 'Non défini')}</span></div><p class="text-slate-600 dark:text-slate-300 font-medium">${esc(r.description || '')}</p>${photoHtml}${mapHtml}<select onchange="updateReportStatus('${r.id}', this.value)" class="w-full p-2 rounded-lg border text-xs font-bold dark:bg-slate-900 dark:text-white"><option value="Nouveau" ${r.status==='Nouveau'?'selected':''}>Nouveau</option><option value="Vu par le responsable" ${r.status==='Vu par le responsable'?'selected':''}>Vu par le responsable</option><option value="En cours de traitement" ${r.status==='En cours de traitement'?'selected':''}>En cours de traitement</option><option value="Traité" ${r.status==='Traité'?'selected':''}>Traité</option></select><textarea id="response-${r.id}" rows="2" placeholder="Réponse au salarié..." class="w-full p-2 rounded-lg border text-xs dark:bg-slate-900 dark:text-white">${esc(r.manager_response || '')}</textarea><textarea id="action-${r.id}" rows="2" placeholder="Action corrective..." class="w-full p-2 rounded-lg border text-xs dark:bg-slate-900 dark:text-white">${esc(r.corrective_action || '')}</textarea><button onclick="sendManagerResponse('${r.id}')" class="w-full bg-restev-blue text-white py-2 rounded-lg text-[10px] font-black uppercase">Répondre / enregistrer</button>`;
+      c.appendChild(card);
+    });
   };
 
   const oldSwitch = window.switchScreen || (typeof switchScreen === 'function' ? switchScreen : null);
   if(oldSwitch){
     window.switchScreen = function(screenId){
       oldSwitch(screenId);
-      if(screenId === 'scr-manager') setTimeout(ensureAllPersonnelCheckbox, 350);
-      if(screenId === 'scr-employee') setTimeout(function(){ try{ startEmployeeManagerMessagesRealtime(); }catch(e){ console.warn('Realtime messages salarié non activé:', e); } }, 650);
+      if(screenId === 'scr-report') setTimeout(ensureCameraField, 250);
     };
   }
-
   document.addEventListener('DOMContentLoaded', function(){
-    try{
-      ensureAllPersonnelCheckbox();
-      ensureEmployeeGlobalAlertOverlay();
-      if(sess()) startEmployeeManagerMessagesRealtime();
-    }catch(e){ console.warn(R85_PATCH, e); }
+    try{ ensureCameraField(); }catch(e){ console.warn(R85_PATCH, e); }
     console.log(R85_PATCH + ' installé');
   });
 })();
 </script>
-
 </body>
 </html>
