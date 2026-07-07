@@ -11,7 +11,8 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script> 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script> 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+ 
  
  
  
@@ -318,6 +319,21 @@ async function loadRestevStats(){
   
     .signature-pad { min-height: 128px; }
     @media print { .signature-pad { border: 1px solid #94a3b8 !important; } }
+  
+
+/* =========================================================
+   PATCH RESTEV 85 — ALERTES FIABILISÉES MANAGER + SALARIÉ
+   ========================================================= */
+#manager-alert-overlay.r85-force-overlay,
+#employee-seen-alert-overlay.r85-force-overlay {
+  font-family: 'Plus Jakarta Sans', Arial, sans-serif !important;
+}
+#map.map-error {
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  padding:16px;color:#b91c1c;font-size:12px;font-weight:800;
+  background:#fff1f2;border-color:#fecdd3;
+}
+
   </style> 
 </head> 
  
@@ -2887,36 +2903,174 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 </script>
 
-<style>
-/* PATCH RESTEV85 - messages importants manager vers salarié */
-#r85-msg-alert{font-family:'Plus Jakarta Sans',Arial,sans-serif;position:fixed;inset:0;z-index:2147482500;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(15,23,42,.58);backdrop-filter:blur(7px)}
-#r85-msg-alert-card{width:min(520px,100%);border-radius:28px;overflow:hidden;background:#fff;box-shadow:0 25px 70px rgba(2,8,23,.35);border:3px solid #bae6fd}.r85-msg-urgent #r85-msg-alert-card{border-color:#fdba74;box-shadow:0 0 0 8px rgba(251,146,60,.18),0 25px 70px rgba(124,45,18,.42)}.r85-msg-important #r85-msg-alert-card{border-color:#a5f3fc}#r85-msg-alert-top{padding:22px;color:white;background:linear-gradient(135deg,#0891b2,#2563eb);display:flex;gap:14px;align-items:center}.r85-msg-urgent #r85-msg-alert-top{background:linear-gradient(135deg,#f97316,#ea580c,#dc2626)}#r85-msg-alert-icon{width:58px;height:58px;min-width:58px;border-radius:20px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:26px;animation:r85msgpulse .7s infinite alternate}@keyframes r85msgpulse{from{transform:scale(1)}to{transform:scale(1.12)}}#r85-msg-alert-body{padding:20px;background:linear-gradient(135deg,#fff,#f8fafc)}#r85-msg-alert-text{white-space:pre-line;font-size:14px;font-weight:750;color:#334155;line-height:1.45;background:#f8fafc;border-radius:18px;border:1px solid #e2e8f0;padding:14px}#r85-msg-alert-actions{margin-top:14px;display:grid;grid-template-columns:1fr 1.3fr;gap:10px}.r85-msg-btn{border:0;border-radius:15px;padding:12px;font-size:12px;font-weight:950;cursor:pointer}.r85-msg-btn.secondary{background:#f1f5f9;color:#475569}.r85-msg-btn.primary{background:linear-gradient(135deg,#0891b2,#2563eb);color:white}.r85-msg-urgent .r85-msg-btn.primary{background:linear-gradient(135deg,#f97316,#dc2626)}
-</style>
 <script>
-/* PATCH RESTEV85 - messages ciblés ou généraux + alerte salarié renforcée */
+/* =========================================================
+   PATCH FINAL ROBUSTE RESTEV 85 — POP-UP MANAGER NON-BRUTE
+   Objectif : empêcher définitivement l'affichage en texte brut.
+   Technique : la pop-up est reconstruite avec styles inline prioritaires.
+   ========================================================= */
 (function(){
- const ALL='__ALL__'; let msgChan=null,msgPoll=null,msgSeen=new Set(),msgAudio=null;
- function S(){try{return window.currentEmployeeSession||currentEmployeeSession||null}catch(e){return null}}
- function M(){return (document.getElementById('lbl-manager-comp-name')?.innerText||'').trim()}
- function E(v){try{return escapeHtml(v||'')}catch(e){return String(v??'')}}
- function key(){const s=S();return s?'r85_seen_manager_msgs_'+s.company+'_'+s.name:'r85_seen_manager_msgs_unknown'}
- function loadSeen(){try{msgSeen=new Set(JSON.parse(safeStorage.getItem(key())||'[]'))}catch(e){msgSeen=new Set()}}
- function saveSeen(id){if(!id)return; msgSeen.add(id); try{safeStorage.setItem(key(),JSON.stringify(Array.from(msgSeen).slice(-120)))}catch(e){}}
- function sound(priority){try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;if(!msgAudio)msgAudio=new AC();if(msgAudio.state==='suspended')msgAudio.resume();const urgent=(priority||'').toLowerCase().includes('urgent');const notes=urgent?[880,740,980,740,1120,880]:[660,880,1040];notes.forEach((f,i)=>{const t=msgAudio.currentTime+i*(urgent?.18:.16),o=msgAudio.createOscillator(),g=msgAudio.createGain();o.type='sine';o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(urgent?.28:.18,t+.03);g.gain.exponentialRampToValueAtTime(.0001,t+.16);o.connect(g);g.connect(msgAudio.destination);o.start(t);o.stop(t+.18)})}catch(e){}}
- function vib(priority){try{if('vibrate'in navigator)navigator.vibrate((priority||'').toLowerCase().includes('urgent')?[350,130,350,130,650]:[180,90,180])}catch(e){}}
- function ensureAlert(){let o=document.getElementById('r85-msg-alert');if(o)return o;o=document.createElement('div');o.id='r85-msg-alert';o.innerHTML='<div id="r85-msg-alert-card"><div id="r85-msg-alert-top"><div id="r85-msg-alert-icon"><i class="fa-solid fa-bullhorn"></i></div><div><p id="r85-msg-alert-prio" style="margin:0;font-size:11px;font-weight:950;text-transform:uppercase;letter-spacing:.08em;opacity:.9">Information prévention</p><p id="r85-msg-alert-title" style="margin:5px 0 0;font-size:21px;font-weight:950;line-height:1.15">Message du responsable</p><p id="r85-msg-alert-scope" style="margin:5px 0 0;font-size:12px;font-weight:800;opacity:.9"></p></div></div><div id="r85-msg-alert-body"><div id="r85-msg-alert-text"></div><div id="r85-msg-alert-actions"><button class="r85-msg-btn secondary" onclick="hideManagerMessageAlert()">Fermer</button><button class="r85-msg-btn primary" onclick="hideManagerMessageAlert();openEmployeeMessages();">Voir les messages</button></div></div></div>';document.body.appendChild(o);return o}
- window.hideManagerMessageAlert=function(){const o=document.getElementById('r85-msg-alert');if(o)o.style.display='none'}
- window.showManagerMessageAlert=function(m){const o=ensureAlert(),p=(m.priority||'Information');o.className=(p.toLowerCase().includes('urgent')?'r85-msg-urgent':p.toLowerCase().includes('important')?'r85-msg-important':'');document.getElementById('r85-msg-alert-prio').innerText=p;document.getElementById('r85-msg-alert-title').innerText=m.title||'Message prévention';document.getElementById('r85-msg-alert-scope').innerText=(m.employee_name===ALL?'Message général à tous les salariés':'Message personnel');document.getElementById('r85-msg-alert-text').innerText=m.message||'';o.style.display='flex';sound(p);vib(p);try{showToast((p==='Urgent'?'⚠️ ':'📣 ')+(m.title||'Message prévention'))}catch(e){}; if(p!=='Urgent')setTimeout(()=>hideManagerMessageAlert(),12000)}
- function enhancePanel(){const panel=document.getElementById('restev-manager-message-panel');if(!panel||document.getElementById('r85-msg-all'))return;const employee=document.getElementById('restev-msg-employee');if(employee){employee.placeholder='Nom exact du salarié ou cochez Tous';employee.insertAdjacentHTML('beforebegin','<label id="r85-msg-all-wrap" class="flex items-center gap-2 p-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] font-black text-amber-700"><input id="r85-msg-all" type="checkbox" class="w-4 h-4"> Envoyer à tous les salariés</label>')}const pr=document.getElementById('restev-msg-priority');if(pr){pr.innerHTML='<option value="Information">Information</option><option value="Important">Important - alerte visuelle et sonore</option><option value="Urgent">Urgent - alerte forte maintenue</option>'}const txt=document.getElementById('restev-msg-content');if(txt){txt.placeholder='Exemples : Canicule, pensez à vous hydrater. / Ligne 4 consignée. / Port des EPI obligatoire zone atelier...'}}
- window.sendManagerMessage=async function(){if(!supabaseClient)return showToast('Supabase non chargé.');const company=M();if(!company)return showToast('Code établissement manager manquant.');const all=document.getElementById('r85-msg-all')?.checked;const employee=(document.getElementById('restev-msg-employee')?.value||'').trim();const title=(document.getElementById('restev-msg-title')?.value||'').trim();const message=(document.getElementById('restev-msg-content')?.value||'').trim();const priority=document.getElementById('restev-msg-priority')?.value||'Information';if(!all&&!employee)return showToast('Saisir un salarié ou cocher Tous les salariés.');if(!title||!message)return showToast('Veuillez compléter le titre et le message.');const payload={company_code:company,employee_name:all?ALL:employee,title,message,priority,read_by_employee:false};const {error}=await supabaseClient.from('manager_messages').insert([payload]);if(error){console.error(error);return showToast('Erreur message : '+error.message)}document.getElementById('restev-msg-title').value='';document.getElementById('restev-msg-content').value='';if(!all)document.getElementById('restev-msg-employee').value='';showToast(all?'Message général envoyé à tous les salariés.':'Message envoyé au salarié.');}
- function relevant(m){const s=S();return s&&m&&m.company_code===s.company&&(m.employee_name===s.name||m.employee_name===ALL)&&!msgSeen.has(m.id)}
- function handle(m){if(!relevant(m))return;saveSeen(m.id);if((m.priority||'Information')!=='Information')showManagerMessageAlert(m);else try{showToast('📣 Nouveau message du responsable : '+(m.title||''))}catch(e){}}
- window.startManagerMessagesRealtime=function(){const s=S();if(!s||!supabaseClient)return;loadSeen();if(msgChan)try{supabaseClient.removeChannel(msgChan)}catch(e){};msgChan=supabaseClient.channel('r85_manager_messages_'+String(s.company).replace(/[^a-zA-Z0-9_-]/g,'_')).on('postgres_changes',{event:'INSERT',schema:'public',table:'manager_messages',filter:'company_code=eq.'+s.company},payload=>handle(payload.new)).subscribe(status=>console.log('Realtime messages manager salarié:',status));startManagerMessagesPolling();}
- window.startManagerMessagesPolling=function(){if(msgPoll)clearInterval(msgPoll);pollMsgs(true);msgPoll=setInterval(()=>pollMsgs(false),15000)}
- async function pollMsgs(initial){const s=S();if(!s||!supabaseClient)return;try{let rows=[];for(const target of [s.name,ALL]){const {data,error}=await supabaseClient.from('manager_messages').select('id,company_code,employee_name,title,message,priority,read_by_employee,created_at').eq('company_code',s.company).eq('employee_name',target).order('created_at',{ascending:false}).limit(5);if(!error&&data)rows=rows.concat(data)}rows.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));rows.forEach(m=>initial?saveSeen(m.id):handle(m))}catch(e){console.warn('Polling messages manager impossible',e)}}
- window.openEmployeeMessages=async function(){const s=S();if(!s)return showToast('Session salarié non reconnue.');if(!supabaseClient)return showToast('Supabase non chargé.');let messages=[];for(const target of [s.name,ALL]){const res=await supabaseClient.from('manager_messages').select('id,title,message,priority,read_by_employee,created_at,employee_name').eq('company_code',s.company).eq('employee_name',target).order('created_at',{ascending:false}).limit(50);if(!res.error&&res.data){messages=messages.concat(res.data.map(m=>({...m,source:m.employee_name===ALL?'Message général':'Message manager'})));const unread=res.data.filter(m=>!m.read_by_employee).map(m=>m.id);if(unread.length)try{await supabaseClient.from('manager_messages').update({read_by_employee:true}).in('id',unread)}catch(e){}}}
- const rep=await supabaseClient.from('prevention_reports').select('id,category,description,status,manager_response,corrective_action,created_at').eq('company_code',s.company).eq('employee_name',s.name).order('created_at',{ascending:false}).limit(50);if(!rep.error&&rep.data)messages=messages.concat(rep.data.filter(r=>r.manager_response||r.corrective_action).map(r=>({id:r.id,title:'Suite à votre signalement : '+(r.category||'prévention'),message:(r.manager_response||'Votre signalement est en cours de traitement.')+(r.corrective_action?'\n\nAction corrective : '+r.corrective_action:''),priority:r.status||'Suivi',created_at:r.created_at,source:'Suivi signalement',original_description:r.description})));messages.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));renderEmployeeMessages360?renderEmployeeMessages360(messages):renderEmployeeMessages(messages);switchScreen('scr-employee-messages')}
- const oldSwitch=window.switchScreen||switchScreen;window.switchScreen=function(id){oldSwitch(id);if(id==='scr-manager')setTimeout(enhancePanel,500);if(id==='scr-employee')setTimeout(startManagerMessagesRealtime,600)};document.addEventListener('DOMContentLoaded',()=>{setTimeout(enhancePanel,800);ensureAlert();if(S())startManagerMessagesRealtime();});
+  const R85_PATCH = 'RESTEV85_ALERTES_INLINE_ROBUSTES_2026_07_07';
+  function esc(v){
+    try{ if(typeof escapeHtml === 'function') return escapeHtml(v || ''); }catch(e){}
+    return String(v ?? '').replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
+  }
+  function st(el, css){ if(el) el.setAttribute('style', css); return el; }
+  function iconHtml(cls){ return '<i class="' + cls + '"></i>'; }
+
+  window.hideManagerAlertOverlay = function(){
+    const overlay = document.getElementById('manager-alert-overlay');
+    if(overlay){ overlay.style.display = 'none'; overlay.classList.remove('show'); }
+    document.body.classList.remove('manager-alert-flash');
+  };
+
+  window.setupManagerAlertOverlay = function(){
+    const old = document.getElementById('manager-alert-overlay');
+    if(old) old.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'manager-alert-overlay';
+    overlay.className = 'r85-force-overlay';
+    st(overlay, 'position:fixed;inset:0;z-index:2147483000;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.74);backdrop-filter:blur(8px);box-sizing:border-box;');
+
+    const card = document.createElement('div');
+    card.id = 'manager-alert-card-inline';
+    st(card, 'width:min(540px,100%);background:linear-gradient(135deg,#ffffff 0%,#fff1f2 100%);border:3px solid #fecdd3;border-radius:28px;box-shadow:0 25px 70px rgba(127,29,29,.38);overflow:hidden;color:#0f172a;box-sizing:border-box;');
+
+    const top = document.createElement('div');
+    st(top, 'display:flex;align-items:center;gap:16px;padding:22px;color:#fff;background:linear-gradient(135deg,#dc2626,#e11d48,#be123c);');
+    const icon = document.createElement('div');
+    st(icon, 'width:58px;height:58px;min-width:58px;border-radius:20px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.28);display:flex;align-items:center;justify-content:center;font-size:28px;');
+    icon.innerHTML = iconHtml('fa-solid fa-triangle-exclamation');
+    const titles = document.createElement('div');
+    titles.innerHTML = '<p style="margin:0;font-size:20px;line-height:1.15;font-weight:950;letter-spacing:-.02em;">Nouveau signalement prévention</p><p id="manager-alert-sub" style="margin:6px 0 0;font-size:13px;font-weight:800;color:#ffe4e6;">Une situation dangereuse vient d’être déclarée.</p>';
+    top.appendChild(icon); top.appendChild(titles);
+
+    const body = document.createElement('div');
+    st(body, 'padding:22px;display:flex;flex-direction:column;gap:16px;background:linear-gradient(135deg,#ffffff,#fff7f7);');
+    const detail = document.createElement('div');
+    detail.id = 'manager-alert-detail';
+    st(detail, 'background:#fff;border:1px solid #fecdd3;border-left:6px solid #dc2626;border-radius:18px;padding:16px;color:#334155;font-size:14px;line-height:1.45;font-weight:800;');
+    detail.innerHTML = 'Chargement du détail...';
+    const perm = document.createElement('div');
+    perm.id = 'manager-alert-permission';
+    st(perm, 'display:none;padding:12px;border-radius:14px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:11px;font-weight:850;line-height:1.35;');
+    perm.innerText = 'Astuce : pour recevoir les notifications hors écran, cliquez sur “Activer notifications”.';
+    const actions = document.createElement('div');
+    st(actions, 'display:grid;grid-template-columns:1fr 1.4fr;gap:10px;');
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.innerText = 'Fermer';
+    st(close, 'border:0;border-radius:16px;padding:13px 16px;font-size:12px;font-weight:950;cursor:pointer;background:#f1f5f9;color:#475569;');
+    close.onclick = function(){ try{ stopManagerAlertEffects(); }catch(e){} hideManagerAlertOverlay(); };
+    const see = document.createElement('button');
+    see.type = 'button';
+    see.innerText = 'Voir le signalement';
+    st(see, 'border:0;border-radius:16px;padding:13px 16px;font-size:12px;font-weight:950;cursor:pointer;background:linear-gradient(135deg,#dc2626,#e11d48);color:white;box-shadow:0 10px 24px rgba(225,29,72,.32);');
+    see.onclick = function(){ try{ stopManagerAlertEffects(); }catch(e){} hideManagerAlertOverlay(); if(typeof switchScreen === 'function') switchScreen('scr-manager'); if(typeof loadManagerReports === 'function') loadManagerReports(); };
+    actions.appendChild(close); actions.appendChild(see);
+    body.appendChild(detail); body.appendChild(perm); body.appendChild(actions);
+    card.appendChild(top); card.appendChild(body); overlay.appendChild(card); document.body.appendChild(overlay);
+  };
+
+  window.showManagerAlertOverlay = function(report){
+    setupManagerAlertOverlay();
+    const employee = report?.employee_name || 'Un salarié';
+    const category = report?.category || 'Danger signalé';
+    const level = report?.level || 'Niveau non précisé';
+    const desc = report?.description || 'Aucun commentaire.';
+    const sub = document.getElementById('manager-alert-sub');
+    const detail = document.getElementById('manager-alert-detail');
+    const perm = document.getElementById('manager-alert-permission');
+    if(sub) sub.innerText = `${employee} — ${category}`;
+    if(detail) detail.innerHTML = `<div style="font-size:15px;color:#b91c1c;font-weight:950;margin-bottom:6px;">${esc(level)}</div><div style="white-space:pre-line;">${esc(desc)}</div>`;
+    if(perm) perm.style.display = (!('Notification' in window) || Notification.permission !== 'granted') ? 'block' : 'none';
+    const overlay = document.getElementById('manager-alert-overlay');
+    if(overlay){ overlay.style.display = 'flex'; overlay.classList.add('show'); }
+  };
+
+  window.triggerNewReportAlert = function(report){
+    const now = Date.now();
+    try{ if(typeof lastReportAlertAt !== 'undefined' && now - lastReportAlertAt < 1200) return; lastReportAlertAt = now; }catch(e){}
+    try{ if(typeof playManagerAlertSound === 'function') playManagerAlertSound(); else if(typeof playAlertSound === 'function') playAlertSound(); }catch(e){}
+    try{ if(typeof vibrateManagerAlert === 'function') vibrateManagerAlert(); else if(typeof vibrateAlert === 'function') vibrateAlert(); }catch(e){}
+    showManagerAlertOverlay(report);
+    try{ if(typeof showBrowserNotification === 'function') showBrowserNotification(report); }catch(e){}
+    try{ if(typeof showToast === 'function') showToast(`🚨 Nouveau signalement : ${(report?.employee_name || 'Un salarié')} - ${(report?.category || 'un danger')}`); }catch(e){}
+  };
+
+  /* Petite alerte bleue côté salarié quand le responsable a vu le signalement */
+  let employeeSeenRealtimeChannel = null;
+  let employeeSeenPolling = null;
+  let employeeSeenIds = new Set();
+  function sess(){ try{return window.currentEmployeeSession || currentEmployeeSession || null;}catch(e){return null;} }
+  function key(){ const s=sess(); return s ? `restev_employee_seen_reports_${s.company}_${s.name}` : 'restev_employee_seen_reports_unknown'; }
+  function loadIds(){ try{ employeeSeenIds = new Set(JSON.parse(safeStorage.getItem(key()) || '[]')); }catch(e){ employeeSeenIds = new Set(); } }
+  function saveId(id){ if(!id) return; employeeSeenIds.add(id); try{ safeStorage.setItem(key(), JSON.stringify(Array.from(employeeSeenIds).slice(-80))); }catch(e){} }
+  window.hideEmployeeSeenAlert = function(){ const o=document.getElementById('employee-seen-alert-overlay'); if(o) o.style.display='none'; };
+  function ensureEmployeeSeenOverlay(){
+    let o = document.getElementById('employee-seen-alert-overlay');
+    if(o) return o;
+    o = document.createElement('div');
+    o.id = 'employee-seen-alert-overlay';
+    o.className = 'r85-force-overlay';
+    st(o, 'position:fixed;left:14px;right:14px;bottom:18px;z-index:2147482000;display:none;justify-content:center;pointer-events:none;');
+    o.innerHTML = '<div style="width:min(460px,100%);pointer-events:auto;background:linear-gradient(135deg,#ffffff 0%,#ecfeff 100%);border:2px solid #a5f3fc;border-left:7px solid #0891b2;border-radius:22px;box-shadow:0 18px 45px rgba(8,145,178,.24);padding:16px;display:flex;align-items:flex-start;gap:13px;color:#0f172a;box-sizing:border-box;"><div style="width:46px;height:46px;min-width:46px;border-radius:16px;background:linear-gradient(135deg,#06b6d4,#2563eb);color:white;display:flex;align-items:center;justify-content:center;font-size:20px;">' + iconHtml('fa-solid fa-eye') + '</div><div style="flex:1;"><span style="display:inline-flex;align-items:center;gap:5px;background:#ecfeff;color:#0e7490;border:1px solid #a5f3fc;border-radius:999px;padding:4px 8px;font-size:9px;font-weight:950;text-transform:uppercase;letter-spacing:.04em;">✓ Vu par le responsable</span><p style="margin:8px 0 0;font-size:14px;line-height:1.2;font-weight:950;color:#0f172a;">Votre signalement a été consulté</p><p id="employee-seen-alert-text" style="margin:5px 0 0;font-size:12px;line-height:1.35;font-weight:750;color:#475569;">Le responsable a pris connaissance de votre alerte prévention.</p><div style="display:flex;gap:8px;margin-top:10px;"><button type="button" onclick="hideEmployeeSeenAlert()" style="border:0;border-radius:12px;padding:9px 12px;font-size:10px;font-weight:950;cursor:pointer;background:#f1f5f9;color:#475569;">Fermer</button><button type="button" onclick="hideEmployeeSeenAlert();openEmployeeMessages();" style="border:0;border-radius:12px;padding:9px 12px;font-size:10px;font-weight:950;cursor:pointer;background:linear-gradient(135deg,#0891b2,#2563eb);color:white;">Voir le suivi</button></div></div></div>';
+    document.body.appendChild(o);
+    return o;
+  }
+  window.showEmployeeSeenAlert = function(report){
+    const o = ensureEmployeeSeenOverlay();
+    const t = document.getElementById('employee-seen-alert-text');
+    if(t) t.innerText = 'Le responsable a vu votre signalement : ' + (report?.category || 'prévention') + '. Une réponse ou une action corrective pourra suivre.';
+    o.style.display = 'flex';
+    try{ if('vibrate' in navigator) navigator.vibrate([120,80,120]); }catch(e){}
+    try{ if(typeof showToast === 'function') showToast('Votre signalement a été vu par le responsable.'); }catch(e){}
+    setTimeout(function(){ hideEmployeeSeenAlert(); }, 9000);
+  };
+  function shouldNotifySeen(r){ const s=sess(); return !!(s && r && r.status === 'Vu par le responsable' && r.company_code === s.company && r.employee_name === s.name && !employeeSeenIds.has(r.id)); }
+  function handleSeen(r){ if(!shouldNotifySeen(r)) return; saveId(r.id); showEmployeeSeenAlert(r); }
+  window.startEmployeeSeenRealtime = function(){
+    const s=sess(); if(!s || !supabaseClient) return; loadIds();
+    if(employeeSeenRealtimeChannel){ try{supabaseClient.removeChannel(employeeSeenRealtimeChannel);}catch(e){} employeeSeenRealtimeChannel=null; }
+    employeeSeenRealtimeChannel = supabaseClient.channel('restev_employee_seen_' + String(s.company).replace(/[^a-zA-Z0-9_-]/g,'_'))
+      .on('postgres_changes', {event:'UPDATE', schema:'public', table:'prevention_reports', filter:'company_code=eq.' + s.company}, function(payload){ handleSeen(payload.new); })
+      .subscribe(function(status){ console.log('Realtime salarié vu manager:', status); });
+    startEmployeeSeenPolling();
+  };
+  window.startEmployeeSeenPolling = function(){ if(employeeSeenPolling) clearInterval(employeeSeenPolling); pollEmployeeSeenReports(true); employeeSeenPolling=setInterval(function(){pollEmployeeSeenReports(false);},15000); };
+  async function pollEmployeeSeenReports(initial){
+    const s=sess(); if(!s || !supabaseClient) return;
+    try{
+      const {data,error}=await supabaseClient.from('prevention_reports').select('id,company_code,employee_name,category,status,created_at').eq('company_code',s.company).eq('employee_name',s.name).eq('status','Vu par le responsable').order('created_at',{ascending:false}).limit(5);
+      if(error || !data) return;
+      data.forEach(function(r){ initial ? saveId(r.id) : handleSeen(r); });
+    }catch(e){ console.warn('Polling salarié vu manager impossible', e); }
+  }
+
+  /* Carte + GPS : fallback Leaflet et stockage latitude/longitude */
+  function ensureGpsFields(){
+    const screen=document.getElementById('scr-report'); if(!screen) return;
+    ['risk-latitude','risk-longitude','risk-map-url'].forEach(function(id){ if(!document.getElementById(id)){ const i=document.createElement('input'); i.type='hidden'; i.id=id; screen.appendChild(i); } });
+  }
+  function setGps(lat,lng){ ensureGpsFields(); const url=`https://www.google.com/maps?q=${lat},${lng}`; const a=document.getElementById('risk-latitude'), b=document.getElementById('risk-longitude'), c=document.getElementById('risk-map-url'); if(a)a.value=String(lat); if(b)b.value=String(lng); if(c)c.value=url; }
+  window.initLeafletMap = function(){
+    ensureGpsFields(); const mapEl=document.getElementById('map'), geo=document.getElementById('geo-status'); if(!mapEl) return;
+    if(!window.L){ mapEl.classList.add('map-error'); mapEl.innerHTML='Carte indisponible : Leaflet n’est pas chargé. Vérifiez la connexion internet.'; return; }
+    try{
+      if(window.mapInstance){ setTimeout(function(){ window.mapInstance.invalidateSize(); },250); return; }
+      const start=[46.670,-1.426]; window.mapInstance=L.map('map',{zoomControl:true}).setView(start,13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19, attribution:'© OpenStreetMap'}).addTo(window.mapInstance);
+      let marker=L.marker(start).addTo(window.mapInstance).bindPopup('Vendée — position par défaut');
+      if(geo) geo.innerText='Recherche GPS...';
+      if(navigator.geolocation){ navigator.geolocation.getCurrentPosition(function(pos){ const lat=pos.coords.latitude,lng=pos.coords.longitude; setGps(lat,lng); window.mapInstance.setView([lat,lng],16); marker.setLatLng([lat,lng]).bindPopup('Position terrain').openPopup(); if(geo) geo.innerText='📍 Coordonnées GPS verrouillées'; setTimeout(function(){window.mapInstance.invalidateSize();},250); }, function(err){ if(geo) geo.innerText='GPS non autorisé ou indisponible. Signalement possible sans position.'; console.warn('GPS indisponible',err); }, {enableHighAccuracy:true,timeout:10000,maximumAge:60000}); }
+    }catch(e){ console.warn('Erreur carte Leaflet', e); mapEl.classList.add('map-error'); mapEl.innerHTML='Carte indisponible : rechargez la page ou vérifiez la connexion internet.'; }
+  };
+  window.fixMapSize = function(){ if(window.mapInstance) setTimeout(function(){window.mapInstance.invalidateSize();},250); else initLeafletMap(); };
+
+  const oldSwitch = window.switchScreen || (typeof switchScreen === 'function' ? switchScreen : null);
+  if(oldSwitch){ window.switchScreen = function(screenId){ oldSwitch(screenId); if(screenId==='scr-report') setTimeout(function(){ initLeafletMap(); fixMapSize(); },350); if(screenId==='scr-employee') setTimeout(function(){ startEmployeeSeenRealtime(); },500); }; }
+  document.addEventListener('DOMContentLoaded', function(){ try{setupManagerAlertOverlay(); ensureEmployeeSeenOverlay(); ensureGpsFields(); if(sess()) startEmployeeSeenRealtime();}catch(e){console.warn(R85_PATCH,e);} });
+  console.log(R85_PATCH + ' installé');
 })();
 </script>
 
