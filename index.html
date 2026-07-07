@@ -3428,33 +3428,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <script>
 /* =========================================================
-   PATCH RESTEV 85 — RESET CENTRE RESTEV PROTÉGÉ ADMIN
-   Ajout ciblé : protection administrateur + reset affichage tendances,
-   compteur passeports et camembert évolutif selon risques signalés.
+   PATCH RESTEV 85 — CENTRE RESTEV STATS STABLES
+   Ajustements uniquement :
+   - plus de message "Erreur chargement statistiques" au rafraîchissement
+   - libellé "Secteurs représentés" -> "Secteurs avec signalements"
+   - affichage 0 / camembert stable si Supabase ou prevention_stats indisponible
+   - conservation reset admin + compteur passeports si déjà utilisés
    ========================================================= */
 (function(){
-  const R85_PATCH = 'RESTEV85_RESET_ADMIN_PROTEGE_2026_07_07';
-  const RESTEV_ADMIN_RESET_CODE = 'RESTEV85-ADMIN';
+  const R85_PATCH = 'RESTEV85_CENTRE_STATS_STABLES_2026_07_07';
   const RESET_KEY = 'restev_centre_stats_reset_at';
-  let r85CentreChart = null;
+  const ADMIN_CODE = 'RESTEV85-ADMIN';
+  let r85StatsChart = null;
 
   function esc(v){
     try{ if(typeof escapeHtml === 'function') return escapeHtml(v || ''); }catch(e){}
     return String(v ?? '').replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
   }
   function getResetAt(){ try{ return safeStorage.getItem(RESET_KEY) || ''; }catch(e){ return ''; } }
-  function setResetAtNow(){ try{ safeStorage.setItem(RESET_KEY, new Date().toISOString()); }catch(e){} }
-  function countBy(rows, field){
-    return (rows || []).reduce(function(acc, r){ const k = r[field] || 'Non renseigné'; acc[k] = (acc[k] || 0) + 1; return acc; }, {});
-  }
-  function topEntries(obj, limit){ return Object.entries(obj || {}).sort(function(a,b){ return b[1]-a[1]; }).slice(0, limit || 6); }
+  function setResetNow(){ try{ safeStorage.setItem(RESET_KEY, new Date().toISOString()); }catch(e){} }
   function isPassportRow(r){
     return String(r?.risk_category || '').toLowerCase().includes('validation passeport') || String(r?.event_type || '').toLowerCase().includes('passeport');
   }
+  function countBy(rows, field){
+    return (rows || []).reduce(function(acc, r){
+      const v = r[field] || 'Non renseigné';
+      acc[v] = (acc[v] || 0) + 1;
+      return acc;
+    }, {});
+  }
+  function topEntries(obj, limit){
+    return Object.entries(obj || {}).sort(function(a,b){ return b[1] - a[1]; }).slice(0, limit || 6);
+  }
 
-  function installCentreAdminPanel(){
+  function renameSectorCard(){
+    const el = document.getElementById('stats-sector-count');
+    const card = el ? el.closest('.bg-white, .dark\\:bg-slate-800') : null;
+    const title = card ? card.querySelector('p') : null;
+    if(title) title.innerText = 'Secteurs avec signalements';
+  }
+
+  function installCentreExtras(){
     const direction = document.getElementById('scr-direction');
     if(!direction) return;
+    renameSectorCard();
 
     if(!document.getElementById('restev-centre-admin-reset-box')){
       const hero = direction.querySelector('.bg-gradient-to-br');
@@ -3474,12 +3491,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if(!document.getElementById('stats-passport-created')){
-      const firstStatsCard = document.getElementById('stats-total')?.closest('.bg-white, .dark\\:bg-slate-800');
-      if(firstStatsCard && firstStatsCard.parentElement){
+      const grid = document.getElementById('stats-total')?.closest('.grid');
+      if(grid){
         const card = document.createElement('div');
         card.className = 'bg-white dark:bg-slate-800 p-5 rounded-2xl border shadow-premium';
         card.innerHTML = '<p class="text-[10px] font-black uppercase text-slate-400">Passeports prévention créés</p><p id="stats-passport-created" class="text-3xl font-black text-emerald-500 mt-1">0</p><p id="stats-passport-reset-info" class="text-[10px] text-slate-400 mt-1 font-bold">Tous les passeports enregistrés</p>';
-        firstStatsCard.parentElement.appendChild(card);
+        grid.appendChild(card);
       }
     }
     updateResetLabel();
@@ -3495,106 +3512,117 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.resetRestevCentreStats = function(){
     const code = prompt('Code administrateur requis pour remettre à zéro le Centre RESTEV :');
-    if(code !== RESTEV_ADMIN_RESET_CODE){
+    if(code !== ADMIN_CODE){
       if(typeof showToast === 'function') showToast('Accès refusé : code administrateur incorrect.');
-      else alert('Accès refusé : code administrateur incorrect.');
       return;
     }
-    setResetAtNow();
+    setResetNow();
     updateResetLabel();
-    try{ if(window.restevStatsChart && typeof window.restevStatsChart.destroy === 'function') window.restevStatsChart.destroy(); }catch(e){}
-    try{ if(typeof restevStatsChart !== 'undefined' && restevStatsChart && typeof restevStatsChart.destroy === 'function') restevStatsChart.destroy(); }catch(e){}
-    try{ if(r85CentreChart && typeof r85CentreChart.destroy === 'function') r85CentreChart.destroy(); }catch(e){}
-    r85CentreChart = null;
     if(typeof showToast === 'function') showToast('Centre RESTEV remis à zéro par administrateur.');
-    if(typeof loadRestevStats === 'function') loadRestevStats();
+    loadRestevStats();
   };
 
-  async function loadPassportCounter(){
+  async function loadPassportCounterSafe(){
     const el = document.getElementById('stats-passport-created');
-    if(!el || !supabaseClient) return;
-    let query = supabaseClient.from('passport_registry').select('id,created_at', {count:'exact', head:false});
-    const reset = getResetAt();
-    if(reset) query = query.gte('created_at', reset);
+    if(!el) return;
+    el.innerText = '0';
+    if(!supabaseClient) return;
     try{
-      const {data, count, error} = await query.limit(1000);
+      let q = supabaseClient.from('passport_registry').select('id,created_at', {count:'exact', head:false});
+      const reset = getResetAt();
+      if(reset) q = q.gte('created_at', reset);
+      const {data, count, error} = await q.limit(1000);
       if(error){ console.warn('Compteur passeports indisponible:', error.message); return; }
       el.innerText = String(typeof count === 'number' ? count : (data || []).length);
     }catch(e){ console.warn('Compteur passeports ignoré:', e); }
   }
 
   window.loadRestevStats = async function(){
-    installCentreAdminPanel();
-    if(!supabaseClient){ if(typeof showToast === 'function') showToast('Supabase non chargé : statistiques indisponibles.'); return; }
+    installCentreExtras();
+    let rows = [];
     try{
-      let query = supabaseClient
-        .from('prevention_stats')
-        .select('period_month,sector,company_size_range,risk_category,risk_level,frequency,event_type,created_at')
-        .order('created_at', {ascending:false})
-        .limit(1000);
-      const reset = getResetAt();
-      if(reset) query = query.gte('created_at', reset);
-      const {data, error} = await query;
-      if(error){ console.error(error); if(typeof showToast === 'function') showToast('Statistiques non disponibles : ' + error.message); return; }
-      renderRestevStats(data || []);
-      loadPassportCounter();
-    }catch(e){ console.error(e); if(typeof showToast === 'function') showToast('Erreur chargement statistiques.'); }
+      if(supabaseClient){
+        let q = supabaseClient
+          .from('prevention_stats')
+          .select('period_month,sector,company_size_range,risk_category,risk_level,frequency,event_type,created_at')
+          .order('created_at', {ascending:false})
+          .limit(1000);
+        const reset = getResetAt();
+        if(reset) q = q.gte('created_at', reset);
+        const {data, error} = await q;
+        if(error){
+          console.warn('Statistiques RESTEV indisponibles, affichage à zéro:', error.message);
+          rows = [];
+        } else {
+          rows = data || [];
+        }
+      }
+    }catch(e){
+      console.warn('Chargement statistiques RESTEV ignoré, affichage à zéro:', e);
+      rows = [];
+    }
+    renderRestevStats(rows);
+    loadPassportCounterSafe();
   };
 
   window.renderRestevStats = function(rows){
-    rows = (rows || []).filter(function(r){ return !isPassportRow(r); });
-    const riskCounts = countBy(rows, 'risk_category');
-    const sectorCounts = countBy(rows, 'sector');
+    installCentreExtras();
+    const riskRows = (rows || []).filter(function(r){ return !isPassportRow(r); });
+    const riskCounts = countBy(riskRows, 'risk_category');
     const topRisks = topEntries(riskCounts, 6);
+    const sectorSet = new Set(
+      riskRows
+        .map(r => r.sector || 'Non renseigné')
+        .filter(s => s && s !== 'Non renseigné')
+    );
+
     const totalEl = document.getElementById('stats-total');
     const topRiskEl = document.getElementById('stats-top-risk');
     const sectorEl = document.getElementById('stats-sector-count');
-    if(totalEl) totalEl.innerText = String(rows.length);
+    if(totalEl) totalEl.innerText = String(riskRows.length);
     if(topRiskEl) topRiskEl.innerText = topRisks[0]?.[0] || '—';
-    if(sectorEl) sectorEl.innerText = String(Object.keys(sectorCounts).filter(s => s !== 'Non renseigné').length || Object.keys(sectorCounts).length);
+    if(sectorEl) sectorEl.innerText = String(sectorSet.size);
+    renameSectorCard();
 
     const ctx = document.getElementById('chart-restev-risks');
     if(ctx && window.Chart){
-      try{ if(window.restevStatsChart && typeof window.restevStatsChart.destroy === 'function') window.restevStatsChart.destroy(); }catch(e){}
-      try{ if(typeof restevStatsChart !== 'undefined' && restevStatsChart && typeof restevStatsChart.destroy === 'function') restevStatsChart.destroy(); }catch(e){}
-      try{ if(r85CentreChart && typeof r85CentreChart.destroy === 'function') r85CentreChart.destroy(); }catch(e){}
+      try{ if(r85StatsChart) r85StatsChart.destroy(); }catch(e){}
+      try{ if(typeof restevStatsChart !== 'undefined' && restevStatsChart) restevStatsChart.destroy(); }catch(e){}
       const labels = topRisks.length ? topRisks.map(e => e[0]) : ['Aucun risque signalé'];
       const values = topRisks.length ? topRisks.map(e => e[1]) : [1];
-      r85CentreChart = new Chart(ctx, {
+      r85StatsChart = new Chart(ctx, {
         type:'doughnut',
-        data:{labels, datasets:[{data:values, backgroundColor:topRisks.length ? ['#3a7bd5','#e0248a','#ffb007','#4ec3b1','#245ca6','#b31269'] : ['#e2e8f0']}]},
+        data:{labels, datasets:[{data:values, backgroundColor: topRisks.length ? ['#3a7bd5','#e0248a','#ffb007','#4ec3b1','#245ca6','#b31269'] : ['#e2e8f0']}]},
         options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}}
       });
-      window.restevStatsChart = r85CentreChart;
-      try{ restevStatsChart = r85CentreChart; }catch(e){}
+      try{ restevStatsChart = r85StatsChart; }catch(e){}
     }
 
     const actionBox = document.getElementById('stats-actions-list');
     if(actionBox){
       if(!topRisks.length){
-        actionBox.innerHTML = '<p class="text-xs text-slate-400 italic">Aucun risque signalé depuis la dernière remise à zéro.</p>';
+        actionBox.innerHTML = '<p class="text-xs text-slate-400 italic">Aucun risque signalé pour le moment.</p>';
       } else {
         actionBox.innerHTML = topRisks.map(function(e, idx){
           const risk = e[0], count = e[1];
-          let suggestion = 'Proposer un contact prévention pour analyser les causes récurrentes et prioriser des actions simples.';
+          let suggestion = 'Proposer un contact prévention pour analyser les causes et prioriser une action simple.';
           try{ if(typeof getPreventionSuggestion === 'function') suggestion = getPreventionSuggestion(risk); }catch(err){}
           return `<div class="p-3 rounded-2xl border bg-slate-50 dark:bg-slate-900"><div class="flex justify-between gap-2"><p class="text-xs font-black dark:text-white">${idx+1}. ${esc(risk)}</p><span class="text-[10px] font-black text-restev-blue bg-blue-50 px-2 py-1 rounded-lg">${count}</span></div><p class="text-[11px] text-slate-500 dark:text-slate-300 mt-1 leading-relaxed">${esc(suggestion)}</p></div>`;
         }).join('');
       }
     }
-    loadPassportCounter();
   };
 
-  const previousSwitchScreenAdmin = window.switchScreen || (typeof switchScreen === 'function' ? switchScreen : null);
-  if(previousSwitchScreenAdmin){
+  const previousSwitchScreenR85 = window.switchScreen || (typeof switchScreen === 'function' ? switchScreen : null);
+  if(previousSwitchScreenR85){
     window.switchScreen = function(screenId){
-      previousSwitchScreenAdmin(screenId);
-      if(screenId === 'scr-direction') setTimeout(function(){ installCentreAdminPanel(); loadRestevStats(); }, 300);
+      previousSwitchScreenR85(screenId);
+      if(screenId === 'scr-direction') setTimeout(function(){ installCentreExtras(); loadRestevStats(); }, 250);
     };
   }
 
   document.addEventListener('DOMContentLoaded', function(){
-    try{ installCentreAdminPanel(); }catch(e){ console.warn(R85_PATCH, e); }
+    try{ installCentreExtras(); }catch(e){ console.warn(R85_PATCH, e); }
     console.log(R85_PATCH + ' installé');
   });
 })();
