@@ -9,10 +9,7 @@
   <script src="https://cdn.tailwindcss.com"></script> 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script> 
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
- 
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" /> 
  
  
  
@@ -322,151 +319,105 @@ async function loadRestevStats(){
   
 
 /* =========================================================
-   PATCH RESTEV 85 — AFFICHAGE POP-UP ALERTE MANAGER
-   Corrige l'affichage en texte brut des nouveaux signalements
+   PATCH RESTEV 85 — ALERTE SALARIÉ : SIGNALEMENT VU MANAGER
+   Petite alerte bleue/cyan quand le responsable a vu le signalement
    ========================================================= */
-#manager-alert-overlay {
+#employee-seen-alert-overlay {
   position: fixed;
-  inset: 0;
-  z-index: 99999;
+  inset: auto 16px 24px 16px;
+  z-index: 99998;
   display: none;
-  align-items: center;
   justify-content: center;
-  padding: 20px;
-  background: rgba(15, 23, 42, 0.72);
-  backdrop-filter: blur(8px);
+  pointer-events: none;
 }
-#manager-alert-overlay.show { display: flex; }
-.manager-alert-card {
-  width: min(520px, 100%);
-  background: linear-gradient(135deg, #ffffff 0%, #fff1f2 100%);
-  border-radius: 28px;
-  border: 3px solid #fecdd3;
-  box-shadow: 0 25px 70px rgba(127, 29, 29, 0.35);
-  overflow: hidden;
-  animation: managerAlertPop 0.28s ease-out;
-}
-.dark .manager-alert-card {
-  background: linear-gradient(135deg, #0f172a 0%, #450a0a 100%);
-  border-color: #991b1b;
-}
-@keyframes managerAlertPop {
-  from { opacity: 0; transform: scale(0.92) translateY(12px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
-}
-.manager-alert-top {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 22px;
-  color: white;
-  background: linear-gradient(135deg, #dc2626, #e11d48, #be123c);
-}
-.manager-alert-icon {
-  width: 58px;
-  height: 58px;
-  min-width: 58px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 28px;
-  animation: managerAlertIconPulse 0.85s infinite alternate;
-}
-@keyframes managerAlertIconPulse { from { transform: scale(1); } to { transform: scale(1.12); } }
-.manager-alert-title {
-  margin: 0;
-  font-size: 20px;
-  line-height: 1.15;
-  font-weight: 900;
-  letter-spacing: -0.02em;
-}
-.manager-alert-sub {
-  margin: 6px 0 0;
-  font-size: 13px;
-  font-weight: 700;
-  color: #ffe4e6;
-}
-.manager-alert-body {
-  padding: 22px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-.manager-alert-detail {
-  background: #fff;
-  border: 1px solid #fecdd3;
-  border-left: 6px solid #dc2626;
-  border-radius: 18px;
+#employee-seen-alert-overlay.show { display: flex; }
+.employee-seen-card {
+  width: min(460px, 100%);
+  pointer-events: auto;
+  background: linear-gradient(135deg, #ffffff 0%, #ecfeff 100%);
+  border: 2px solid #a5f3fc;
+  border-left: 7px solid #0891b2;
+  border-radius: 22px;
+  box-shadow: 0 18px 45px rgba(8, 145, 178, 0.24);
   padding: 16px;
-  color: #334155;
-  font-size: 14px;
-  line-height: 1.45;
-  font-weight: 700;
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  animation: employeeSeenSlideUp .28s ease-out;
 }
-.dark .manager-alert-detail {
-  background: #020617;
-  border-color: #7f1d1d;
+.dark .employee-seen-card {
+  background: linear-gradient(135deg, #0f172a 0%, #083344 100%);
+  border-color: #155e75;
   color: #e2e8f0;
 }
-#manager-alert-permission {
-  display: none;
-  padding: 12px;
-  border-radius: 14px;
-  background: #eff6ff;
-  color: #1d4ed8;
-  border: 1px solid #bfdbfe;
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 1.35;
+@keyframes employeeSeenSlideUp {
+  from { opacity: 0; transform: translateY(18px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
-#manager-alert-permission.show { display: block; }
-.manager-alert-actions {
-  display: grid;
-  grid-template-columns: 1fr 1.4fr;
-  gap: 10px;
-}
-.manager-alert-btn {
-  border: 0;
+.employee-seen-icon {
+  width: 46px;
+  height: 46px;
+  min-width: 46px;
   border-radius: 16px;
-  padding: 13px 16px;
-  font-size: 12px;
-  font-weight: 900;
-  cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
-}
-.manager-alert-btn:hover { transform: translateY(-1px); }
-.manager-alert-btn.secondary { background: #f1f5f9; color: #475569; }
-.manager-alert-btn.primary {
-  background: linear-gradient(135deg, #dc2626, #e11d48);
+  background: linear-gradient(135deg, #06b6d4, #2563eb);
   color: white;
-  box-shadow: 0 10px 24px rgba(225, 29, 72, 0.32);
-}
-.dark .manager-alert-btn.secondary { background: #1e293b; color: #e2e8f0; }
-.manager-alert-flash { animation: managerBodyFlash 0.28s alternate 6; }
-@keyframes managerBodyFlash {
-  from { box-shadow: inset 0 0 0 0 rgba(220, 38, 38, 0); }
-  to { box-shadow: inset 0 0 0 9999px rgba(220, 38, 38, 0.08); }
-}
-#map.map-error {
   display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  padding: 16px;
-  color: #b91c1c;
-  font-size: 12px;
-  font-weight: 800;
-  background: #fff1f2;
-  border-color: #fecdd3;
+  font-size: 20px;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, .25);
 }
+.employee-seen-content { flex: 1; }
+.employee-seen-title {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.2;
+  font-weight: 950;
+  color: #0f172a;
+}
+.dark .employee-seen-title { color: #ffffff; }
+.employee-seen-text {
+  margin: 5px 0 0;
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 700;
+  color: #475569;
+}
+.dark .employee-seen-text { color: #cbd5e1; }
+.employee-seen-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.employee-seen-btn {
+  border: 0;
+  border-radius: 12px;
+  padding: 9px 12px;
+  font-size: 10px;
+  font-weight: 950;
+  cursor: pointer;
+}
+.employee-seen-btn.secondary { background: #f1f5f9; color: #475569; }
+.employee-seen-btn.primary { background: linear-gradient(135deg, #0891b2, #2563eb); color: white; }
+.dark .employee-seen-btn.secondary { background: #1e293b; color: #e2e8f0; }
+.employee-seen-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #ecfeff;
+  color: #0e7490;
+  border: 1px solid #a5f3fc;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 9px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.dark .employee-seen-badge { background: #164e63; color: #cffafe; border-color: #155e75; }
 @media screen and (max-width: 520px) {
-  .manager-alert-card { border-radius: 22px; }
-  .manager-alert-top { padding: 18px; }
-  .manager-alert-title { font-size: 17px; }
-  .manager-alert-actions { grid-template-columns: 1fr; }
+  #employee-seen-alert-overlay { inset: auto 10px 14px 10px; }
+  .employee-seen-card { border-radius: 18px; padding: 14px; }
 }
 
   </style> 
@@ -929,10 +880,7 @@ async function loadRestevStats(){
     <section id="scr-report" class="screen max-w-md mx-auto w-full bg-white dark:bg-slate-800 p-5 rounded-3xl border shadow-premium space-y-4"> 
       <h3 class="text-base font-black dark:text-white flex items-center space-x-2"><i class="fa-solid fa-triangle-exclamation text-restev-magenta animate-pulse"></i><span>Signalement Incident</span></h3> 
       <div class="p-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border text-center"><p id="geo-status" class="text-[11px] font-bold text-slate-500">Recherche GPS...</p></div> 
-      <div id="map" class="h-44 w-full rounded-2xl border shadow-inner bg-slate-100 z-0"></div>
-      <input type="hidden" id="risk-latitude" />
-      <input type="hidden" id="risk-longitude" />
-      <input type="hidden" id="risk-map-url" /> 
+      <div id="map" class="h-44 w-full rounded-2xl border shadow-inner bg-slate-100 z-0"></div> 
       <div class="space-y-2"><label class="block text-xs font-black text-slate-700 dark:text-slate-300">Type de Risque :</label><select id="risk-category-select" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white"></select></div> 
       <div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-black text-slate-700 dark:text-slate-300">Gravité :</label><select id="risk-level" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold text-red-600"><option value="Critique 🔴">Danger Grave</option><option value="Modéré 🟠">Anomalie Simple</option></select></div><div><label class="block text-xs font-black text-slate-700 dark:text-slate-300">Fréquence :</label><select id="risk-frequency" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white"><option value="Ponctuelle">Ponctuelle</option><option value="Régulière">Régulière</option><option value="Permanente">Permanente</option></select></div></div> 
       <div><label class="block text-xs font-black text-slate-700 dark:text-slate-300">Commentaires :</label><textarea id="risk-description" rows="3" placeholder="Décrivez la situation..." class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white"></textarea></div> 
@@ -2129,7 +2077,7 @@ function setupManagerAlertOverlay(){
         <div id="manager-alert-permission">Pour recevoir les notifications hors écran, cliquez sur “Activer notifications”.</div>
         <div class="manager-alert-actions">
           <button class="manager-alert-btn secondary" onclick="stopManagerAlertEffects();hideManagerAlertOverlay()">Fermer</button>
-          <button class="manager-alert-btn primary" onclick="stopManagerAlertEffects();hideManagerAlertOverlay();switchScreen('scr-manager');loadManagerReports();">Voir le signalement</button>
+          <button class="manager-alert-btn primary" onclick="stopManagerAlertEffects();hideManagerAlertOverlay();appNavigate('scr-manager', true);loadManagerReports();">Voir le signalement</button>
         </div>
       </div>
     </div>`;
@@ -3037,117 +2985,164 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 })();
 </script>
+<!-- Google Maps RESTEV : remplacez VOTRE_CLE_API_GOOGLE_MAPS par une clé API Google Maps JavaScript valide -->
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=VOTRE_CLE_API_GOOGLE_MAPS&callback=initGoogleMapsLoader"></script>
+
 
 <script>
 /* =========================================================
-   PATCH FINAL RESTEV 85 — ALERTES MANAGER + GPS SIGNALISATION
-   - Sécurise l'affichage de la pop-up d'alerte
-   - Ajoute stockage GPS dans les champs cachés
-   - Conserve latitude/longitude/map_url lors de l'envoi Supabase
+   PATCH RESTEV 85 — NOTIFICATION SALARIÉ : VU PAR RESPONSABLE
+   Affiche une petite alerte bleue quand le manager passe un signalement
+   au statut "Vu par le responsable".
    ========================================================= */
 (function(){
-  function r85Escape(value){
-    if(typeof escapeHtml === 'function') return escapeHtml(value || '');
-    return String(value ?? '').replace(/[&<>"']/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
+  let employeeSeenRealtimeChannel = null;
+  let employeeSeenPolling = null;
+  let employeeSeenLastIds = new Set();
+  let employeeSeenAudioCtx = null;
+
+  function r85EmployeeSession(){
+    try { return window.currentEmployeeSession || currentEmployeeSession || null; }
+    catch(e){ return null; }
   }
-  function r85EnsureRiskHiddenFields(){
-    const report = document.getElementById('scr-report');
-    if(!report) return;
-    ['risk-latitude','risk-longitude','risk-map-url'].forEach(function(id){
-      if(!document.getElementById(id)){
-        const input=document.createElement('input');
-        input.type='hidden';
-        input.id=id;
-        report.appendChild(input);
-      }
-    });
+  function r85EmployeeKey(){
+    const s = r85EmployeeSession();
+    return s ? `restev_employee_seen_reports_${s.company}_${s.name}` : 'restev_employee_seen_reports_unknown';
   }
-  function r85SetRiskLocation(lat,lng){
-    r85EnsureRiskHiddenFields();
-    const mapUrl = `https://www.google.com/maps?q=${lat},${lng}`;
-    const latEl=document.getElementById('risk-latitude');
-    const lngEl=document.getElementById('risk-longitude');
-    const urlEl=document.getElementById('risk-map-url');
-    if(latEl) latEl.value=String(lat);
-    if(lngEl) lngEl.value=String(lng);
-    if(urlEl) urlEl.value=mapUrl;
-  }
-  window.initLeafletMap = function(){
-    r85EnsureRiskHiddenFields();
-    const mapEl=document.getElementById('map');
-    const geo=document.getElementById('geo-status');
-    if(!mapEl) return;
-    if(!window.L){
-      mapEl.classList.add('map-error');
-      mapEl.innerHTML='Carte indisponible : Leaflet n’est pas chargé. Vérifiez la connexion internet.';
-      if(geo) geo.innerText='Carte indisponible.';
-      return;
-    }
+  function r85LoadSeenIds(){
     try{
-      if(window.mapInstance){ setTimeout(function(){ window.mapInstance.invalidateSize(); }, 250); return; }
-      const start=[46.670,-1.426];
-      window.mapInstance=L.map('map',{zoomControl:true}).setView(start,13);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19, attribution:'© OpenStreetMap'}).addTo(window.mapInstance);
-      let marker=L.marker(start).addTo(window.mapInstance).bindPopup('Vendée — position par défaut');
-      if(geo) geo.innerText='Recherche GPS...';
-      if(navigator.geolocation){
-        navigator.geolocation.getCurrentPosition(function(pos){
-          const lat=pos.coords.latitude, lng=pos.coords.longitude;
-          r85SetRiskLocation(lat,lng);
-          window.mapInstance.setView([lat,lng],16);
-          marker.setLatLng([lat,lng]).bindPopup('Position terrain').openPopup();
-          if(geo) geo.innerText='📍 Coordonnées GPS verrouillées';
-          setTimeout(function(){ window.mapInstance.invalidateSize(); }, 250);
-        }, function(err){
-          console.warn('GPS indisponible', err);
-          if(geo) geo.innerText='GPS non autorisé ou indisponible. Signalement possible sans position.';
-        }, {enableHighAccuracy:true, timeout:10000, maximumAge:60000});
-      } else if(geo){
-        geo.innerText='GPS non disponible sur cet appareil.';
-      }
-    }catch(e){
-      console.warn('Erreur carte Leaflet', e);
-      mapEl.classList.add('map-error');
-      mapEl.innerHTML='Carte indisponible : rechargez la page ou vérifiez la connexion internet.';
-    }
-  };
-  window.fixMapSize = function(){
-    if(window.mapInstance) setTimeout(function(){ window.mapInstance.invalidateSize(); }, 250);
-    else window.initLeafletMap();
-  };
-  window.submitRiskReport = async function(){
-    if(!supabaseClient) return showToast('Supabase non chargé. Vérifiez internet.');
-    r85EnsureRiskHiddenFields();
-    const category=document.getElementById('risk-category-select')?.value || 'Non renseigné';
-    const desc=document.getElementById('risk-description')?.value.trim();
-    const lvl=document.getElementById('risk-level')?.value || 'Non renseigné';
-    const freq=document.getElementById('risk-frequency')?.value || 'Non renseigné';
-    const latitude=document.getElementById('risk-latitude')?.value || null;
-    const longitude=document.getElementById('risk-longitude')?.value || null;
-    const mapUrl=document.getElementById('risk-map-url')?.value || (latitude && longitude ? `https://www.google.com/maps?q=${latitude},${longitude}` : null);
-    if(!desc) return showToast('Veuillez saisir une description du danger.');
-    const session=(window.currentEmployeeSession || currentEmployeeSession || null);
-    const employeeName=session ? session.name : 'Salarié terrain';
-    const companyCode=session ? session.company : ((document.getElementById('lbl-manager-comp-name')?.innerText || '').trim() || 'Établissement non renseigné');
-    const payload={company_code:companyCode, employee_name:employeeName, category, level:lvl, frequency:freq, description:desc, latitude, longitude, map_url:mapUrl, status:'Nouveau', read_by_manager:false};
-    const { error } = await supabaseClient.from('prevention_reports').insert([payload]);
-    if(error){ console.error('Erreur insertion prevention_reports:', error); return showToast('Erreur signalement : ' + error.message); }
+      const rows = JSON.parse(safeStorage.getItem(r85EmployeeKey()) || '[]');
+      employeeSeenLastIds = new Set(Array.isArray(rows) ? rows : []);
+    }catch(e){ employeeSeenLastIds = new Set(); }
+  }
+  function r85SaveSeenId(id){
+    if(!id) return;
+    employeeSeenLastIds.add(id);
+    try{ safeStorage.setItem(r85EmployeeKey(), JSON.stringify(Array.from(employeeSeenLastIds).slice(-80))); }catch(e){}
+  }
+  function r85SoftEmployeeSound(){
     try{
-      if(typeof submitAnonymizedPreventionStat === 'function'){
-        await submitAnonymizedPreventionStat({category, level:lvl, frequency:freq, event_type:'Signalement prévention'});
-      }
-    }catch(e){ console.warn('Stat RESTEV ignorée:', e); }
-    const area=document.getElementById('risk-description');
-    if(area) area.value='';
-    showToast('Signalement envoyé au responsable + remontée RESTEV anonymisée.');
-    switchScreen('scr-employee');
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if(!AudioContext) return;
+      if(!employeeSeenAudioCtx) employeeSeenAudioCtx = new AudioContext();
+      if(employeeSeenAudioCtx.state === 'suspended') employeeSeenAudioCtx.resume();
+      const now = employeeSeenAudioCtx.currentTime;
+      [523, 659, 784].forEach(function(freq, i){
+        const start = now + i * 0.12;
+        const osc = employeeSeenAudioCtx.createOscillator();
+        const gain = employeeSeenAudioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, start);
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.exponentialRampToValueAtTime(0.10, start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.16);
+        osc.connect(gain); gain.connect(employeeSeenAudioCtx.destination);
+        osc.start(start); osc.stop(start + 0.18);
+      });
+    }catch(e){ console.warn('Son salarié indisponible', e); }
+  }
+  function r85VibrateSoft(){
+    try{ if('vibrate' in navigator) navigator.vibrate([120,80,120]); }catch(e){}
+  }
+  window.hideEmployeeSeenAlert = function(){
+    document.getElementById('employee-seen-alert-overlay')?.classList.remove('show');
   };
-  const oldSwitch = window.switchScreen || switchScreen;
+  function r85EnsureEmployeeSeenOverlay(){
+    if(document.getElementById('employee-seen-alert-overlay')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'employee-seen-alert-overlay';
+    overlay.innerHTML = `
+      <div class="employee-seen-card">
+        <div class="employee-seen-icon"><i class="fa-solid fa-eye"></i></div>
+        <div class="employee-seen-content">
+          <span class="employee-seen-badge"><i class="fa-solid fa-check"></i> Vu par le responsable</span>
+          <p class="employee-seen-title">Votre signalement a été consulté</p>
+          <p id="employee-seen-alert-text" class="employee-seen-text">Le responsable a pris connaissance de votre alerte prévention.</p>
+          <div class="employee-seen-actions">
+            <button class="employee-seen-btn secondary" onclick="hideEmployeeSeenAlert()">Fermer</button>
+            <button class="employee-seen-btn primary" onclick="hideEmployeeSeenAlert();openEmployeeMessages();">Voir le suivi</button>
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+  }
+  window.showEmployeeSeenAlert = function(report){
+    r85EnsureEmployeeSeenOverlay();
+    const txt = document.getElementById('employee-seen-alert-text');
+    const category = report?.category || 'votre signalement prévention';
+    if(txt) txt.innerText = `Le responsable a vu votre signalement : ${category}. Une réponse ou une action corrective pourra suivre.`;
+    document.getElementById('employee-seen-alert-overlay')?.classList.add('show');
+    r85SoftEmployeeSound();
+    r85VibrateSoft();
+    if(typeof showToast === 'function') showToast('Votre signalement a été vu par le responsable.');
+    setTimeout(function(){ hideEmployeeSeenAlert(); }, 9000);
+  };
+  function r85ShouldNotifySeen(report){
+    const s = r85EmployeeSession();
+    if(!s || !report) return false;
+    if((report.status || '') !== 'Vu par le responsable') return false;
+    if((report.company_code || '') !== s.company) return false;
+    if((report.employee_name || '') !== s.name) return false;
+    if(employeeSeenLastIds.has(report.id)) return false;
+    return true;
+  }
+  function r85HandleSeenReport(report){
+    if(!r85ShouldNotifySeen(report)) return;
+    r85SaveSeenId(report.id);
+    showEmployeeSeenAlert(report);
+  }
+  window.startEmployeeSeenRealtime = function(){
+    const s = r85EmployeeSession();
+    if(!s || !supabaseClient) return;
+    r85LoadSeenIds();
+    if(employeeSeenRealtimeChannel){
+      try{ supabaseClient.removeChannel(employeeSeenRealtimeChannel); }catch(e){}
+      employeeSeenRealtimeChannel = null;
+    }
+    // Supabase Realtime ne filtre ici que l'établissement ; on vérifie ensuite le nom salarié côté app.
+    employeeSeenRealtimeChannel = supabaseClient
+      .channel('restev_employee_seen_' + String(s.company).replace(/[^a-zA-Z0-9_-]/g,'_'))
+      .on('postgres_changes', {
+        event:'UPDATE', schema:'public', table:'prevention_reports', filter:'company_code=eq.' + s.company
+      }, function(payload){
+        r85HandleSeenReport(payload.new);
+      })
+      .subscribe(function(status){ console.log('Realtime salarié vu manager:', status); });
+    startEmployeeSeenPolling();
+  };
+  window.startEmployeeSeenPolling = function(){
+    if(employeeSeenPolling) clearInterval(employeeSeenPolling);
+    pollEmployeeSeenReports(true);
+    employeeSeenPolling = setInterval(function(){ pollEmployeeSeenReports(false); }, 15000);
+  };
+  async function pollEmployeeSeenReports(initial){
+    const s = r85EmployeeSession();
+    if(!s || !supabaseClient) return;
+    try{
+      const {data,error} = await supabaseClient.from('prevention_reports')
+        .select('id,company_code,employee_name,category,status,created_at')
+        .eq('company_code', s.company)
+        .eq('employee_name', s.name)
+        .eq('status', 'Vu par le responsable')
+        .order('created_at', {ascending:false})
+        .limit(5);
+      if(error || !data) return;
+      data.forEach(function(r){
+        if(initial) r85SaveSeenId(r.id);
+        else r85HandleSeenReport(r);
+      });
+    }catch(e){ console.warn('Polling salarié vu manager impossible', e); }
+  }
+  // Démarrage automatique après lecture du QR salarié et à chaque retour portail salarié.
+  const oldSwitchScreenEmployeeSeen = window.switchScreen || switchScreen;
   window.switchScreen = function(screenId){
-    oldSwitch(screenId);
-    if(screenId === 'scr-report') setTimeout(function(){ window.initLeafletMap(); window.fixMapSize(); }, 350);
+    oldSwitchScreenEmployeeSeen(screenId);
+    if(screenId === 'scr-employee') setTimeout(function(){ startEmployeeSeenRealtime(); }, 500);
   };
-  document.addEventListener('DOMContentLoaded', function(){ r85EnsureRiskHiddenFields(); });
+  document.addEventListener('DOMContentLoaded', function(){
+    r85EnsureEmployeeSeenOverlay();
+    setTimeout(function(){ if(r85EmployeeSession()) startEmployeeSeenRealtime(); }, 1200);
+  });
 })();
 </script>
 
