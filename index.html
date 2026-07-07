@@ -3425,5 +3425,180 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 })();
 </script>
+
+<script>
+/* =========================================================
+   PATCH RESTEV 85 — RESET CENTRE RESTEV PROTÉGÉ ADMIN
+   Ajout ciblé : protection administrateur + reset affichage tendances,
+   compteur passeports et camembert évolutif selon risques signalés.
+   ========================================================= */
+(function(){
+  const R85_PATCH = 'RESTEV85_RESET_ADMIN_PROTEGE_2026_07_07';
+  const RESTEV_ADMIN_RESET_CODE = 'RESTEV85-ADMIN';
+  const RESET_KEY = 'restev_centre_stats_reset_at';
+  let r85CentreChart = null;
+
+  function esc(v){
+    try{ if(typeof escapeHtml === 'function') return escapeHtml(v || ''); }catch(e){}
+    return String(v ?? '').replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
+  }
+  function getResetAt(){ try{ return safeStorage.getItem(RESET_KEY) || ''; }catch(e){ return ''; } }
+  function setResetAtNow(){ try{ safeStorage.setItem(RESET_KEY, new Date().toISOString()); }catch(e){} }
+  function countBy(rows, field){
+    return (rows || []).reduce(function(acc, r){ const k = r[field] || 'Non renseigné'; acc[k] = (acc[k] || 0) + 1; return acc; }, {});
+  }
+  function topEntries(obj, limit){ return Object.entries(obj || {}).sort(function(a,b){ return b[1]-a[1]; }).slice(0, limit || 6); }
+  function isPassportRow(r){
+    return String(r?.risk_category || '').toLowerCase().includes('validation passeport') || String(r?.event_type || '').toLowerCase().includes('passeport');
+  }
+
+  function installCentreAdminPanel(){
+    const direction = document.getElementById('scr-direction');
+    if(!direction) return;
+
+    if(!document.getElementById('restev-centre-admin-reset-box')){
+      const hero = direction.querySelector('.bg-gradient-to-br');
+      const box = document.createElement('div');
+      box.id = 'restev-centre-admin-reset-box';
+      box.className = 'bg-white dark:bg-slate-800 p-4 rounded-2xl border shadow-premium flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3';
+      box.innerHTML = `
+        <div>
+          <p class="text-xs font-black uppercase tracking-wider dark:text-white"><i class="fa-solid fa-user-shield text-restev-magenta mr-1"></i> Administration Centre RESTEV</p>
+          <p id="restev-centre-reset-label" class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Reset protégé par code administrateur.</p>
+        </div>
+        <button id="btn-reset-restev-centre" type="button" onclick="resetRestevCentreStats()" class="bg-red-50 text-red-600 hover:bg-red-100 px-4 py-3 rounded-xl text-[10px] font-black uppercase border border-red-100">
+          <i class="fa-solid fa-lock mr-1"></i> Reset admin
+        </button>`;
+      if(hero && hero.nextSibling) direction.insertBefore(box, hero.nextSibling);
+      else direction.prepend(box);
+    }
+
+    if(!document.getElementById('stats-passport-created')){
+      const firstStatsCard = document.getElementById('stats-total')?.closest('.bg-white, .dark\\:bg-slate-800');
+      if(firstStatsCard && firstStatsCard.parentElement){
+        const card = document.createElement('div');
+        card.className = 'bg-white dark:bg-slate-800 p-5 rounded-2xl border shadow-premium';
+        card.innerHTML = '<p class="text-[10px] font-black uppercase text-slate-400">Passeports prévention créés</p><p id="stats-passport-created" class="text-3xl font-black text-emerald-500 mt-1">0</p><p id="stats-passport-reset-info" class="text-[10px] text-slate-400 mt-1 font-bold">Tous les passeports enregistrés</p>';
+        firstStatsCard.parentElement.appendChild(card);
+      }
+    }
+    updateResetLabel();
+  }
+
+  function updateResetLabel(){
+    const reset = getResetAt();
+    const lbl = document.getElementById('restev-centre-reset-label');
+    const info = document.getElementById('stats-passport-reset-info');
+    if(lbl) lbl.innerText = reset ? 'Dernier reset admin : ' + new Date(reset).toLocaleString('fr-FR') + ' — seules les nouvelles données sont affichées.' : 'Reset protégé par code administrateur.';
+    if(info) info.innerText = reset ? 'Depuis le reset du ' + new Date(reset).toLocaleDateString('fr-FR') : 'Tous les passeports enregistrés';
+  }
+
+  window.resetRestevCentreStats = function(){
+    const code = prompt('Code administrateur requis pour remettre à zéro le Centre RESTEV :');
+    if(code !== RESTEV_ADMIN_RESET_CODE){
+      if(typeof showToast === 'function') showToast('Accès refusé : code administrateur incorrect.');
+      else alert('Accès refusé : code administrateur incorrect.');
+      return;
+    }
+    setResetAtNow();
+    updateResetLabel();
+    try{ if(window.restevStatsChart && typeof window.restevStatsChart.destroy === 'function') window.restevStatsChart.destroy(); }catch(e){}
+    try{ if(typeof restevStatsChart !== 'undefined' && restevStatsChart && typeof restevStatsChart.destroy === 'function') restevStatsChart.destroy(); }catch(e){}
+    try{ if(r85CentreChart && typeof r85CentreChart.destroy === 'function') r85CentreChart.destroy(); }catch(e){}
+    r85CentreChart = null;
+    if(typeof showToast === 'function') showToast('Centre RESTEV remis à zéro par administrateur.');
+    if(typeof loadRestevStats === 'function') loadRestevStats();
+  };
+
+  async function loadPassportCounter(){
+    const el = document.getElementById('stats-passport-created');
+    if(!el || !supabaseClient) return;
+    let query = supabaseClient.from('passport_registry').select('id,created_at', {count:'exact', head:false});
+    const reset = getResetAt();
+    if(reset) query = query.gte('created_at', reset);
+    try{
+      const {data, count, error} = await query.limit(1000);
+      if(error){ console.warn('Compteur passeports indisponible:', error.message); return; }
+      el.innerText = String(typeof count === 'number' ? count : (data || []).length);
+    }catch(e){ console.warn('Compteur passeports ignoré:', e); }
+  }
+
+  window.loadRestevStats = async function(){
+    installCentreAdminPanel();
+    if(!supabaseClient){ if(typeof showToast === 'function') showToast('Supabase non chargé : statistiques indisponibles.'); return; }
+    try{
+      let query = supabaseClient
+        .from('prevention_stats')
+        .select('period_month,sector,company_size_range,risk_category,risk_level,frequency,event_type,created_at')
+        .order('created_at', {ascending:false})
+        .limit(1000);
+      const reset = getResetAt();
+      if(reset) query = query.gte('created_at', reset);
+      const {data, error} = await query;
+      if(error){ console.error(error); if(typeof showToast === 'function') showToast('Statistiques non disponibles : ' + error.message); return; }
+      renderRestevStats(data || []);
+      loadPassportCounter();
+    }catch(e){ console.error(e); if(typeof showToast === 'function') showToast('Erreur chargement statistiques.'); }
+  };
+
+  window.renderRestevStats = function(rows){
+    rows = (rows || []).filter(function(r){ return !isPassportRow(r); });
+    const riskCounts = countBy(rows, 'risk_category');
+    const sectorCounts = countBy(rows, 'sector');
+    const topRisks = topEntries(riskCounts, 6);
+    const totalEl = document.getElementById('stats-total');
+    const topRiskEl = document.getElementById('stats-top-risk');
+    const sectorEl = document.getElementById('stats-sector-count');
+    if(totalEl) totalEl.innerText = String(rows.length);
+    if(topRiskEl) topRiskEl.innerText = topRisks[0]?.[0] || '—';
+    if(sectorEl) sectorEl.innerText = String(Object.keys(sectorCounts).filter(s => s !== 'Non renseigné').length || Object.keys(sectorCounts).length);
+
+    const ctx = document.getElementById('chart-restev-risks');
+    if(ctx && window.Chart){
+      try{ if(window.restevStatsChart && typeof window.restevStatsChart.destroy === 'function') window.restevStatsChart.destroy(); }catch(e){}
+      try{ if(typeof restevStatsChart !== 'undefined' && restevStatsChart && typeof restevStatsChart.destroy === 'function') restevStatsChart.destroy(); }catch(e){}
+      try{ if(r85CentreChart && typeof r85CentreChart.destroy === 'function') r85CentreChart.destroy(); }catch(e){}
+      const labels = topRisks.length ? topRisks.map(e => e[0]) : ['Aucun risque signalé'];
+      const values = topRisks.length ? topRisks.map(e => e[1]) : [1];
+      r85CentreChart = new Chart(ctx, {
+        type:'doughnut',
+        data:{labels, datasets:[{data:values, backgroundColor:topRisks.length ? ['#3a7bd5','#e0248a','#ffb007','#4ec3b1','#245ca6','#b31269'] : ['#e2e8f0']}]},
+        options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}}
+      });
+      window.restevStatsChart = r85CentreChart;
+      try{ restevStatsChart = r85CentreChart; }catch(e){}
+    }
+
+    const actionBox = document.getElementById('stats-actions-list');
+    if(actionBox){
+      if(!topRisks.length){
+        actionBox.innerHTML = '<p class="text-xs text-slate-400 italic">Aucun risque signalé depuis la dernière remise à zéro.</p>';
+      } else {
+        actionBox.innerHTML = topRisks.map(function(e, idx){
+          const risk = e[0], count = e[1];
+          let suggestion = 'Proposer un contact prévention pour analyser les causes récurrentes et prioriser des actions simples.';
+          try{ if(typeof getPreventionSuggestion === 'function') suggestion = getPreventionSuggestion(risk); }catch(err){}
+          return `<div class="p-3 rounded-2xl border bg-slate-50 dark:bg-slate-900"><div class="flex justify-between gap-2"><p class="text-xs font-black dark:text-white">${idx+1}. ${esc(risk)}</p><span class="text-[10px] font-black text-restev-blue bg-blue-50 px-2 py-1 rounded-lg">${count}</span></div><p class="text-[11px] text-slate-500 dark:text-slate-300 mt-1 leading-relaxed">${esc(suggestion)}</p></div>`;
+        }).join('');
+      }
+    }
+    loadPassportCounter();
+  };
+
+  const previousSwitchScreenAdmin = window.switchScreen || (typeof switchScreen === 'function' ? switchScreen : null);
+  if(previousSwitchScreenAdmin){
+    window.switchScreen = function(screenId){
+      previousSwitchScreenAdmin(screenId);
+      if(screenId === 'scr-direction') setTimeout(function(){ installCentreAdminPanel(); loadRestevStats(); }, 300);
+    };
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    try{ installCentreAdminPanel(); }catch(e){ console.warn(R85_PATCH, e); }
+    console.log(R85_PATCH + ' installé');
+  });
+})();
+</script>
+
 </body>
 </html>
