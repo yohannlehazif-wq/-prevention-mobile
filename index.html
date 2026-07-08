@@ -4054,5 +4054,492 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 </script>
 
+
+
+<script id="restev85-hotfix-centre-passeports-risques-auto-20260708">
+/* =========================================================
+   HOTFIX CENTRE RESTEV 85 — VERSION CORRIGÉE COMPLÈTE
+   Corrige :
+   1) Affichage du compteur "Passeports prévention créés".
+   2) Mise à jour automatique du Top risques / OP risques.
+   3) Sauvegarde fiable des statistiques anonymisées.
+   4) Rafraîchissement Realtime + polling de secours.
+   À conserver tout en bas du HTML, après tous les autres scripts.
+   ========================================================= */
+(function(){
+  'use strict';
+
+  const PATCH_NAME = 'RESTEV85_CENTRE_PASSEPORTS_RISQUES_AUTO_20260708';
+  let centreRealtimeChannel = null;
+  let centrePollingTimer = null;
+  let centreChart = null;
+  let passportStatLock = false;
+
+  function getSB(){
+    try{
+      if(window.supabaseClient) return window.supabaseClient;
+    }catch(e){}
+    try{
+      if(typeof supabaseClient !== 'undefined' && supabaseClient) return supabaseClient;
+    }catch(e){}
+    return null;
+  }
+
+  // Rend aussi le client accessible à certains patchs qui utilisent window.supabaseClient.
+  try{
+    const c = getSB();
+    if(c && !window.supabaseClient) window.supabaseClient = c;
+  }catch(e){}
+
+  function esc(value){
+    if(typeof window.escapeHtml === 'function') return window.escapeHtml(value);
+    try{
+      if(typeof escapeHtml === 'function') return escapeHtml(value);
+    }catch(e){}
+    return String(value ?? '').replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function toast(message){
+    if(typeof window.showToast === 'function') return window.showToast(message);
+    try{ if(typeof showToast === 'function') return showToast(message); }catch(e){}
+    console.log(message);
+  }
+
+  function getCleanLabel(value, fallback){
+    const v = String(value || '').trim();
+    return (!v || v === 'undefined' || v === 'null') ? fallback : v;
+  }
+
+  function currentCompanyCode(){
+    return getCleanLabel(
+      document.getElementById('lbl-manager-comp-name')?.innerText ||
+      window.currentEmployeeSession?.company ||
+      (typeof currentEmployeeSession !== 'undefined' ? currentEmployeeSession?.company : '') ||
+      '',
+      ''
+    );
+  }
+
+  function getSectorSafe(){
+    const code = currentCompanyCode();
+    let sessionSector = '';
+    try{ sessionSector = currentEmployeeSession?.sector || ''; }catch(e){}
+    let mSector = '';
+    try{ mSector = managerSector || ''; }catch(e){}
+    let stored = '';
+    try{ stored = safeStorage?.getItem('restev_manager_sector_' + code) || ''; }catch(e){}
+    return getCleanLabel(sessionSector || mSector || document.getElementById('manager-login-sector')?.value || stored, 'Non renseigné');
+  }
+
+  function getCompanySizeSafe(){
+    const code = currentCompanyCode();
+    let mSize = '';
+    try{ mSize = managerCompanySize || ''; }catch(e){}
+    let stored = '';
+    try{ stored = safeStorage?.getItem('restev_manager_size_' + code) || ''; }catch(e){}
+    return getCleanLabel(mSize || document.getElementById('manager-login-size')?.value || stored, 'Non renseigné');
+  }
+
+  function getPeriodMonthSafe(){
+    return new Date().toISOString().slice(0,7);
+  }
+
+  function centreVisible(){
+    const el = document.getElementById('scr-direction');
+    return !!(el && el.classList.contains('active'));
+  }
+
+  function countBy(list, key){
+    return (list || []).reduce(function(acc, item){
+      const v = item?.[key] || 'Non renseigné';
+      acc[v] = (acc[v] || 0) + 1;
+      return acc;
+    }, {});
+  }
+
+  function topEntries(obj, limit){
+    return Object.entries(obj || {})
+      .sort(function(a,b){ return b[1] - a[1]; })
+      .slice(0, limit || 6);
+  }
+
+  function suggestion(risk){
+    try{
+      if(typeof getPreventionSuggestion === 'function') return getPreventionSuggestion(risk);
+    }catch(e){}
+    const r = String(risk || '').toLowerCase();
+    if(r.includes('chute')) return 'Proposer une action ciblée sur les chutes : rangement, balisage, circulation et équipements adaptés.';
+    if(r.includes('manutention') || r.includes('charge') || r.includes('tms')) return 'Proposer un atelier TMS/manutention : aides techniques, organisation des flux et gestes adaptés.';
+    if(r.includes('routier')) return 'Proposer une action risque routier : préparation des trajets, fatigue, téléphone, arrimage et entretien véhicule.';
+    if(r.includes('chimique')) return 'Proposer un appui produits chimiques : FDS, étiquetage, stockage, substitution et EPI.';
+    if(r.includes('psycho') || r.includes('rps')) return 'Proposer un accompagnement RPS : charge de travail, isolement, dialogue et alerte précoce.';
+    if(r.includes('élect') || r.includes('elect')) return 'Proposer une vérification ciblée : habilitations, consignation, câbles et signalement des anomalies.';
+    return 'Proposer un contact prévention pour analyser les causes récurrentes et prioriser des actions simples.';
+  }
+
+  function ensureCentrePassportCard(){
+    const direction = document.getElementById('scr-direction');
+    if(!direction) return;
+
+    const sectorLabel = Array.from(direction.querySelectorAll('p')).find(p =>
+      (p.textContent || '').trim().toLowerCase() === 'secteurs représentés'
+    );
+    if(sectorLabel) sectorLabel.textContent = 'Secteurs avec signalements';
+
+    if(document.getElementById('stats-passport-created')) return;
+
+    const statsGrid =
+      direction.querySelector('.grid.grid-cols-1.sm\\:grid-cols-3') ||
+      Array.from(direction.querySelectorAll('.grid')).find(g =>
+        g.querySelector('#stats-total') || g.querySelector('#stats-top-risk') || g.querySelector('#stats-sector-count')
+      );
+
+    if(!statsGrid) return;
+
+    statsGrid.className = statsGrid.className.replace('sm:grid-cols-3', 'sm:grid-cols-4');
+
+    const card = document.createElement('div');
+    card.className = 'bg-white dark:bg-slate-800 p-5 rounded-2xl border shadow-premium';
+    card.innerHTML = '<p class="text-[10px] font-black uppercase text-slate-400">Passeports prévention créés</p><p id="stats-passport-created" class="text-3xl font-black text-emerald-500 mt-1">0</p>';
+    statsGrid.appendChild(card);
+  }
+
+  async function insertAnonymizedStatSafe(evt){
+    const client = getSB();
+    if(!client) return false;
+    try{
+      const payload = {
+        period_month: getPeriodMonthSafe(),
+        sector: evt?.sector || getSectorSafe(),
+        company_size_range: evt?.company_size_range || getCompanySizeSafe(),
+        risk_category: evt?.category || evt?.risk_category || 'Non renseigné',
+        risk_level: evt?.level || evt?.risk_level || 'Non renseigné',
+        frequency: evt?.frequency || 'Non renseigné',
+        event_type: evt?.event_type || 'Signalement prévention',
+        corrective_action_type: evt?.corrective_action_type || 'À définir'
+      };
+      const { error } = await client.from('prevention_stats').insert([payload]);
+      if(error){
+        console.warn(PATCH_NAME + ' stat non enregistrée :', error.message);
+        return false;
+      }
+      return true;
+    }catch(e){
+      console.warn(PATCH_NAME + ' erreur insertion stat :', e);
+      return false;
+    }
+  }
+
+  window.submitAnonymizedPreventionStat = insertAnonymizedStatSafe;
+  try{ submitAnonymizedPreventionStat = insertAnonymizedStatSafe; }catch(e){}
+
+  async function loadPassportCounterSafe(){
+    ensureCentrePassportCard();
+    const el = document.getElementById('stats-passport-created');
+    if(!el) return;
+
+    const client = getSB();
+    if(!client){ el.textContent = '0'; return; }
+
+    try{
+      const res = await client
+        .from('passport_registry')
+        .select('*', { count:'exact', head:true });
+
+      if(res.error){
+        console.warn(PATCH_NAME + ' compteur passeports indisponible :', res.error.message);
+        el.textContent = '0';
+        return;
+      }
+      el.textContent = String(res.count || 0);
+    }catch(e){
+      console.warn(PATCH_NAME + ' erreur compteur passeports :', e);
+      el.textContent = '0';
+    }
+  }
+
+  window.loadPassportCounterSafe = loadPassportCounterSafe;
+
+  async function loadRestevStatsFixed(){
+    ensureCentrePassportCard();
+
+    const totalEl = document.getElementById('stats-total');
+    const topRiskEl = document.getElementById('stats-top-risk');
+    const sectorEl = document.getElementById('stats-sector-count');
+    const actionBox = document.getElementById('stats-actions-list');
+    const canvas = document.getElementById('chart-restev-risks');
+
+    if(!totalEl) return;
+
+    const client = getSB();
+    if(!client){
+      totalEl.textContent = '0';
+      if(topRiskEl) topRiskEl.textContent = '—';
+      if(sectorEl) sectorEl.textContent = '0';
+      if(actionBox) actionBox.innerHTML = '<p class="text-xs text-slate-400 italic">Supabase non chargé.</p>';
+      await loadPassportCounterSafe();
+      return;
+    }
+
+    try{
+      const { data, error } = await client
+        .from('prevention_stats')
+        .select('period_month,sector,company_size_range,risk_category,risk_level,frequency,event_type,created_at')
+        .order('created_at', { ascending:false })
+        .limit(1000);
+
+      if(error){
+        console.warn(PATCH_NAME + ' stats indisponibles :', error.message);
+      }
+
+      const allRows = data || [];
+
+      // Le Top risques doit décrire uniquement les risques terrain.
+      // Les validations de passeport sont comptées séparément dans la carte verte.
+      const riskRows = allRows.filter(function(r){
+        const eventType = String(r.event_type || '').toLowerCase();
+        const category = String(r.risk_category || '').toLowerCase();
+        return !eventType.includes('passeport') && !category.includes('passeport');
+      });
+
+      const riskCounts = countBy(riskRows, 'risk_category');
+      const sectorCounts = countBy(riskRows, 'sector');
+      const topRisks = topEntries(riskCounts, 6);
+      const topRisk = topRisks[0]?.[0] || '—';
+
+      totalEl.textContent = String(riskRows.length);
+      if(topRiskEl) topRiskEl.textContent = topRisk;
+
+      if(sectorEl){
+        const represented = Object.keys(sectorCounts).filter(s => s && s !== 'Non renseigné');
+        sectorEl.textContent = String(represented.length || Object.keys(sectorCounts).length || 0);
+      }
+
+      if(canvas && window.Chart){
+        const labels = topRisks.length ? topRisks.map(e => e[0]) : ['Aucun risque signalé'];
+        const values = topRisks.length ? topRisks.map(e => e[1]) : [1];
+        try{ if(centreChart) centreChart.destroy(); }catch(e){}
+        centreChart = new Chart(canvas, {
+          type: 'doughnut',
+          data: {
+            labels: labels,
+            datasets: [{
+              data: values,
+              backgroundColor: ['#3a7bd5','#e0248a','#ffb007','#4ec3b1','#245ca6','#b31269']
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+          }
+        });
+      }
+
+      if(actionBox){
+        if(!topRisks.length){
+          actionBox.innerHTML = '<p class="text-xs text-slate-400 italic">Aucun risque signalé pour le moment.</p>';
+        }else{
+          actionBox.innerHTML = topRisks.map(function(entry, idx){
+            const risk = entry[0], count = entry[1];
+            return '<div class="p-3 rounded-2xl border bg-slate-50 dark:bg-slate-900">' +
+              '<div class="flex justify-between gap-2">' +
+                '<p class="text-xs font-black dark:text-white">' + (idx + 1) + '. ' + esc(risk) + '</p>' +
+                '<span class="text-[10px] font-black text-restev-blue bg-blue-50 px-2 py-1 rounded-lg">' + count + '</span>' +
+              '</div>' +
+              '<p class="text-[11px] text-slate-500 dark:text-slate-300 mt-1 leading-relaxed">' + esc(suggestion(risk)) + '</p>' +
+            '</div>';
+          }).join('');
+        }
+      }
+
+      await loadPassportCounterSafe();
+    }catch(e){
+      console.error(PATCH_NAME + ' erreur chargement Centre RESTEV :', e);
+      if(actionBox) actionBox.innerHTML = '<p class="text-xs text-red-500 italic">Erreur chargement statistiques.</p>';
+      await loadPassportCounterSafe();
+    }
+  }
+
+  window.loadRestevStats = loadRestevStatsFixed;
+  try{ loadRestevStats = loadRestevStatsFixed; }catch(e){}
+
+  function startCentreAutoRefresh(){
+    const client = getSB();
+    if(!client) return;
+
+    try{
+      if(centreRealtimeChannel){
+        client.removeChannel(centreRealtimeChannel);
+        centreRealtimeChannel = null;
+      }
+    }catch(e){}
+
+    try{
+      centreRealtimeChannel = client
+        .channel('restev85_centre_stats_passeports_risques_auto')
+        .on('postgres_changes', { event:'INSERT', schema:'public', table:'prevention_stats' }, function(){
+          if(centreVisible()) loadRestevStatsFixed();
+        })
+        .on('postgres_changes', { event:'UPDATE', schema:'public', table:'prevention_stats' }, function(){
+          if(centreVisible()) loadRestevStatsFixed();
+        })
+        .on('postgres_changes', { event:'INSERT', schema:'public', table:'passport_registry' }, function(){
+          if(centreVisible()) loadRestevStatsFixed();
+        })
+        .subscribe(function(status){
+          console.log(PATCH_NAME + ' realtime centre :', status);
+        });
+    }catch(e){
+      console.warn(PATCH_NAME + ' realtime centre non activé :', e);
+    }
+
+    if(centrePollingTimer) clearInterval(centrePollingTimer);
+    centrePollingTimer = setInterval(function(){
+      if(centreVisible()) loadRestevStatsFixed();
+    }, 15000);
+  }
+
+  window.startRestevCentreAutoRefresh = startCentreAutoRefresh;
+
+  // Fonction robuste d'envoi d'un signalement : insertion prevention_reports + copie anonymisée prevention_stats.
+  async function submitRiskReportFixed(){
+    const client = getSB();
+    if(!client) return toast('Supabase non chargé. Vérifiez internet.');
+
+    const category = document.getElementById('risk-category-select')?.value || 'Non renseigné';
+    const desc = document.getElementById('risk-description')?.value.trim();
+    const lvl = document.getElementById('risk-level')?.value || 'Non renseigné';
+    const freq = document.getElementById('risk-frequency')?.value || 'Non renseigné';
+    const latitude = document.getElementById('risk-latitude')?.value || null;
+    const longitude = document.getElementById('risk-longitude')?.value || null;
+    const mapUrl = document.getElementById('risk-map-url')?.value || (latitude && longitude ? 'https://www.google.com/maps?q=' + latitude + ',' + longitude : null);
+
+    if(!desc) return toast('Veuillez saisir une description du danger.');
+
+    let session = null;
+    try{ session = currentEmployeeSession || window.currentEmployeeSession || null; }catch(e){ session = window.currentEmployeeSession || null; }
+
+    const employeeName = session ? session.name : 'Salarié terrain';
+    const companyCode = session ? session.company : (currentCompanyCode() || 'Établissement non renseigné');
+
+    const reportPayload = {
+      company_code: companyCode,
+      employee_name: employeeName,
+      category: category,
+      level: lvl,
+      frequency: freq,
+      description: desc,
+      latitude: latitude,
+      longitude: longitude,
+      map_url: mapUrl,
+      status: 'Nouveau'
+    };
+
+    // Si le champ photo existe dans l'interface, on l'ajoute seulement si renseigné.
+    const photoValue = document.getElementById('risk-photo-base64')?.value || window.currentRiskPhotoBase64 || null;
+    if(photoValue) reportPayload.photo_base64 = photoValue;
+
+    let insertReport = await client.from('prevention_reports').insert([reportPayload]);
+
+    // Compatibilité : si la colonne photo_base64 n'existe pas, on réessaie sans photo.
+    if(insertReport.error && reportPayload.photo_base64){
+      console.warn(PATCH_NAME + ' insertion avec photo impossible, nouvelle tentative sans photo :', insertReport.error.message);
+      delete reportPayload.photo_base64;
+      insertReport = await client.from('prevention_reports').insert([reportPayload]);
+    }
+
+    if(insertReport.error){
+      console.error(PATCH_NAME + ' erreur Supabase signalement :', insertReport.error);
+      return toast('Erreur Supabase signalement : ' + insertReport.error.message);
+    }
+
+    await insertAnonymizedStatSafe({
+      category: category,
+      level: lvl,
+      frequency: freq,
+      event_type: 'Signalement prévention',
+      corrective_action_type: 'À définir'
+    });
+
+    const descEl = document.getElementById('risk-description');
+    if(descEl) descEl.value = '';
+    const photoPreview = document.getElementById('risk-photo-preview');
+    if(photoPreview) photoPreview.innerHTML = '';
+    window.currentRiskPhotoBase64 = '';
+
+    toast('Signalement envoyé + statistique agrégée enregistrée.');
+    try{ if(typeof switchScreen === 'function') switchScreen('scr-employee'); }catch(e){}
+    if(centreVisible()) loadRestevStatsFixed();
+  }
+
+  window.submitRiskReport = submitRiskReportFixed;
+  try{ submitRiskReport = submitRiskReportFixed; }catch(e){}
+
+  // On conserve la sauvegarde existante des passeports, puis on ajoute la stat anonymisée passeport.
+  const oldSavePassportEntry = window.savePassportEntry || (function(){ try{return savePassportEntry;}catch(e){return null;} })();
+  if(oldSavePassportEntry){
+    const savePassportEntryFixed = async function(entry){
+      const result = await oldSavePassportEntry(entry);
+
+      // Anti double-clic / double insertion immédiate.
+      if(!passportStatLock){
+        passportStatLock = true;
+        try{
+          let total = 0, score = 0;
+          try{ total = qcmActiveQuestions?.length || 0; score = qcmScore || 0; }catch(e){}
+          await insertAnonymizedStatSafe({
+            sector: entry?.sector || getSectorSafe(),
+            company_size_range: getCompanySizeSafe(),
+            category: 'Validation passeport prévention',
+            level: score && total && Number(score) === Number(total) ? 'Acquis complet' : 'Points à renforcer',
+            frequency: 'Ponctuelle',
+            event_type: 'Passeport validé',
+            corrective_action_type: score && total && Number(score) === Number(total) ? 'Aucune' : 'Reprise des points faibles'
+          });
+        }finally{
+          setTimeout(function(){ passportStatLock = false; }, 1200);
+        }
+      }
+
+      if(centreVisible()) loadRestevStatsFixed();
+      return result;
+    };
+
+    window.savePassportEntry = savePassportEntryFixed;
+    try{ savePassportEntry = savePassportEntryFixed; }catch(e){}
+  }
+
+  // Renforce la navigation : chaque ouverture du Centre recharge les données.
+  const oldSwitch = window.switchScreen || (function(){ try{return switchScreen;}catch(e){return null;} })();
+  if(oldSwitch && !window.__restev85CentreSwitchPatched){
+    window.__restev85CentreSwitchPatched = true;
+    const switchFixed = function(screenId){
+      const ret = oldSwitch(screenId);
+      if(screenId === 'scr-direction'){
+        setTimeout(function(){
+          ensureCentrePassportCard();
+          loadRestevStatsFixed();
+          startCentreAutoRefresh();
+        }, 250);
+      }
+      return ret;
+    };
+    window.switchScreen = switchFixed;
+    try{ switchScreen = switchFixed; }catch(e){}
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    ensureCentrePassportCard();
+    startCentreAutoRefresh();
+    if(centreVisible()) loadRestevStatsFixed();
+    console.log(PATCH_NAME + ' installé');
+  });
+
+})();
+</script>
+
 </body>
 </html>
