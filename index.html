@@ -4927,5 +4927,153 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 </script>
 
+
+<style id="restev85-role-security-v1">
+  body.restev-employee-session [data-manager-access],
+  body.restev-employee-session .restev-manager-entry-hidden { display:none !important; }
+</style>
+<script id="restev85-role-security-v1">
+(function(){
+  'use strict';
+  const PROTECTED_MANAGER_SCREENS = new Set([
+    'scr-auth', 'scr-manager', 'scr-manager-history', 'scr-studio', 'scr-direction'
+  ]);
+
+  function employeeSession(){
+    try {
+      if (window.currentEmployeeSession) return window.currentEmployeeSession;
+      if (typeof currentEmployeeSession !== 'undefined' && currentEmployeeSession) return currentEmployeeSession;
+    } catch(e) {}
+    return null;
+  }
+
+  function isEmployee(){ return !!employeeSession(); }
+
+  function toast(message){
+    try { if (typeof showToast === 'function') return showToast(message); } catch(e) {}
+    console.warn(message);
+  }
+
+  function hideManagerEntries(){
+    const employee = isEmployee();
+    document.body.classList.toggle('restev-employee-session', employee);
+    const selectors = [
+      '[onclick*="scr-auth"]',
+      '[onclick*="scr-manager"]',
+      '[onclick*="scr-manager-history"]',
+      '[onclick*="scr-studio"]',
+      '[onclick*="scr-direction"]',
+      '[onclick*="forceOpenManagerSpace"]',
+      '#btn-manager-login'
+    ];
+    document.querySelectorAll(selectors.join(',')).forEach(function(el){
+      if (el.closest('#scr-manager, #scr-manager-history, #scr-studio, #scr-direction')) return;
+      el.dataset.managerAccess = 'true';
+      el.classList.toggle('restev-manager-entry-hidden', employee);
+      el.setAttribute('aria-hidden', employee ? 'true' : 'false');
+      if ('disabled' in el) el.disabled = employee;
+    });
+  }
+
+  function sendEmployeeBack(){
+    const employeeScreen = document.getElementById('scr-employee');
+    document.querySelectorAll('.screen').forEach(function(screen){
+      screen.classList.remove('active');
+      screen.style.display = 'none';
+    });
+    if (employeeScreen){
+      employeeScreen.classList.add('active');
+      employeeScreen.style.display = 'block';
+      try { window.scrollTo({top:0, behavior:'smooth'}); } catch(e) { window.scrollTo(0,0); }
+    }
+    toast('Accès réservé au manager. Vous restez dans votre espace salarié.');
+    return false;
+  }
+
+  function installNavigationGuard(){
+    let currentSwitch = null;
+    try { currentSwitch = window.switchScreen || switchScreen; } catch(e) { currentSwitch = window.switchScreen; }
+    if (typeof currentSwitch !== 'function' || currentSwitch.__restevRoleGuard) return;
+    const guarded = function(screenId){
+      if (isEmployee() && PROTECTED_MANAGER_SCREENS.has(screenId)) return sendEmployeeBack();
+      const result = currentSwitch.apply(this, arguments);
+      setTimeout(hideManagerEntries, 0);
+      return result;
+    };
+    guarded.__restevRoleGuard = true;
+    guarded.__restevOriginal = currentSwitch;
+    window.switchScreen = guarded;
+    try { switchScreen = guarded; } catch(e) {}
+  }
+
+  function installManagerLoginGuard(){
+    let login = null;
+    try { login = window.handleManagerLogin || handleManagerLogin; } catch(e) { login = window.handleManagerLogin; }
+    if (typeof login === 'function' && !login.__restevEmployeeBlocked){
+      const guardedLogin = function(){
+        if (isEmployee()) return sendEmployeeBack();
+        return login.apply(this, arguments);
+      };
+      guardedLogin.__restevEmployeeBlocked = true;
+      window.handleManagerLogin = guardedLogin;
+      try { handleManagerLogin = guardedLogin; } catch(e) {}
+      const button = document.getElementById('btn-manager-login');
+      if (button) button.onclick = function(event){ if(event) event.preventDefault(); guardedLogin(); return false; };
+    }
+
+    if (typeof window.forceOpenManagerSpace === 'function' && !window.forceOpenManagerSpace.__restevEmployeeBlocked){
+      const forceOpen = window.forceOpenManagerSpace;
+      const guardedForceOpen = function(){
+        if (isEmployee()) return sendEmployeeBack();
+        return forceOpen.apply(this, arguments);
+      };
+      guardedForceOpen.__restevEmployeeBlocked = true;
+      window.forceOpenManagerSpace = guardedForceOpen;
+    }
+  }
+
+  function enforceCurrentScreen(){
+    if (!isEmployee()) return;
+    for (const id of PROTECTED_MANAGER_SCREENS){
+      const screen = document.getElementById(id);
+      if (screen && (screen.classList.contains('active') || screen.style.display === 'block')){
+        sendEmployeeBack();
+        break;
+      }
+    }
+  }
+
+  function refreshSecurity(){
+    installNavigationGuard();
+    installManagerLoginGuard();
+    hideManagerEntries();
+    enforceCurrentScreen();
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    refreshSecurity();
+    setTimeout(refreshSecurity, 150);
+    setTimeout(refreshSecurity, 800);
+    setTimeout(refreshSecurity, 1800);
+    const observer = new MutationObserver(function(){ hideManagerEntries(); enforceCurrentScreen(); });
+    observer.observe(document.body, {subtree:true, childList:true, attributes:true, attributeFilter:['class','style']});
+  });
+
+  document.addEventListener('click', function(event){
+    if (!isEmployee()) return;
+    const target = event.target.closest('[onclick], #btn-manager-login');
+    if (!target) return;
+    const action = target.getAttribute('onclick') || '';
+    if (/scr-auth|scr-manager|scr-manager-history|scr-studio|scr-direction|forceOpenManagerSpace|handleManagerLogin/.test(action) || target.id === 'btn-manager-login'){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      sendEmployeeBack();
+    }
+  }, true);
+
+  window.restevRefreshRoleSecurity = refreshSecurity;
+})();
+</script>
+
 </body>
 </html>
