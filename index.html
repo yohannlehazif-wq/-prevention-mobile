@@ -752,6 +752,31 @@ async function loadRestevStats(){
   @media(prefers-reduced-motion:reduce){.prevy-avatar,#previa-fab .fab-face,.previa-thinking{animation:none!important}}
 </style>
 
+
+<style id="prevy-dynamic-v3">
+  .prevy-avatar{width:92px!important;height:92px!important;overflow:hidden!important;padding:3px!important}
+  .prevy-avatar img{width:100%!important;height:100%!important;object-fit:contain!important;border-radius:20px!important}
+  #previa-fab .fab-face{overflow:hidden!important}
+  #previa-fab .fab-face img{width:100%!important;height:100%!important;object-fit:cover!important;border-radius:12px!important}
+  #prevy-welcome{position:fixed;inset:0;z-index:2147483000;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(4,12,35,.74);backdrop-filter:blur(10px)}
+  #prevy-welcome.show{display:flex;animation:prevyWelcomeFade .25s ease-out}
+  .prevy-welcome-card{position:relative;width:min(390px,96vw);max-height:92vh;overflow:auto;text-align:center;padding:24px 22px 20px;border-radius:32px;color:#fff;background:linear-gradient(145deg,#07183f,#0d2f66 58%,#51237e);border:1px solid rgba(37,200,206,.45);box-shadow:0 28px 90px rgba(3,10,33,.55)}
+  #prevy-welcome-img{display:block;width:min(235px,66vw);height:235px;object-fit:contain;margin:0 auto 4px;border-radius:26px;animation:prevyHello 1.7s ease-in-out 2;filter:drop-shadow(0 18px 25px rgba(0,0,0,.25))}
+  .prevy-welcome-card h2{font-size:1.55rem;font-weight:900;margin:5px 0 8px}
+  .prevy-welcome-card p{font-size:.88rem;line-height:1.58;color:#dcf8ff;margin:0 auto 18px}
+  .prevy-welcome-close{position:absolute;right:14px;top:12px;width:34px;height:34px;border-radius:12px;border:1px solid rgba(255,255,255,.24);background:rgba(255,255,255,.1);color:#fff;font-size:22px;font-weight:800}
+  .prevy-welcome-start,.prevy-welcome-skip{width:100%;border:0;border-radius:16px;padding:12px 16px;font-weight:900;font-size:.8rem}
+  .prevy-welcome-start{color:#fff;background:linear-gradient(90deg,#25c8ce,#1159df,#e72c91);box-shadow:0 12px 28px rgba(17,89,223,.28)}
+  .prevy-welcome-skip{margin-top:8px;color:#d9f8ff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15)}
+  @keyframes prevyWelcomeFade{from{opacity:0}to{opacity:1}}
+  @keyframes prevyHello{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-8px) rotate(-2deg)}55%{transform:translateY(-3px) rotate(2deg)}75%{transform:translateY(-8px) rotate(-1deg)}}
+  .prevy-state-thinking{animation:previaPulse .75s ease-in-out infinite!important;box-shadow:0 0 0 6px rgba(37,200,206,.16),0 16px 36px rgba(37,200,206,.35)!important}
+  .prevy-state-attention{box-shadow:0 0 0 6px rgba(255,159,16,.15),0 16px 36px rgba(255,159,16,.35)!important}
+  .prevy-state-stop{box-shadow:0 0 0 6px rgba(225,29,72,.15),0 16px 36px rgba(225,29,72,.38)!important}
+  .prevy-state-success{box-shadow:0 0 0 6px rgba(16,185,129,.14),0 16px 36px rgba(16,185,129,.32)!important}
+  @media(prefers-reduced-motion:reduce){#prevy-welcome-img,.prevy-state-thinking{animation:none!important}}
+</style>
+
 </head>
 
 <body class="bg-gradient-to-tr from-slate-50 via-blue-50/40 to-pink-50/20 text-slate-800 antialiased min-h-screen flex flex-col dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
@@ -776,7 +801,19 @@ async function loadRestevStats(){
     <span id="toast-text">Notification</span>
   </div>
 
-  <main class="max-w-5xl mx-auto p-4 md:p-6 flex-1 w-full">
+  
+<div id="prevy-welcome" role="dialog" aria-modal="true" aria-labelledby="prevy-welcome-title">
+  <div class="prevy-welcome-card">
+    <button type="button" class="prevy-welcome-close" onclick="closePrevyWelcome()" aria-label="Fermer">×</button>
+    <img id="prevy-welcome-img" src="Prevy-Accueil.png" alt="Prevy salue à l'ouverture">
+    <h2 id="prevy-welcome-title">Bonjour ! 👋</h2>
+    <p>Je suis <strong>Prevy</strong>, votre copilote prévention. Je peux vous aider à préparer une tâche, analyser une situation ou créer un signalement.</p>
+    <button type="button" class="prevy-welcome-start" onclick="closePrevyWelcome(); openPrevia();">Parler à Prevy</button>
+    <button type="button" class="prevy-welcome-skip" onclick="closePrevyWelcome()">Continuer dans l'application</button>
+  </div>
+</div>
+
+<main class="max-w-5xl mx-auto p-4 md:p-6 flex-1 w-full">
 
     <!-- ACCUEIL -->
     <section id="scr-home" class="screen active max-w-xl mx-auto w-full space-y-8 py-6">
@@ -1169,7 +1206,7 @@ async function loadRestevStats(){
     <section id="scr-previa" class="screen max-w-md mx-auto w-full space-y-4 py-4">
       <button onclick="switchScreen('scr-employee')" class="text-xs bg-white dark:bg-slate-800 border px-4 py-2 rounded-xl font-bold flex items-center gap-1.5 shadow-sm"><i class="fa-solid fa-arrow-left"></i> Retour au portail</button>
       <div class="bg-gradient-to-br from-indigo-700 via-restev-blue to-cyan-500 text-white p-6 rounded-3xl shadow-xl relative overflow-hidden">
-        <div class="flex items-center gap-4"><div class="prevy-avatar" aria-label="Prevy, assistant PREV'IA"><img src="logo.png" alt="Logo RESTEV 85" onerror="this.style.display='none'"><span class="prevy-spark"><i class="fa-solid fa-sparkles"></i></span></div><div><p class="text-[10px] font-black uppercase tracking-widest text-cyan-100">Copilote prévention</p><h2 class="text-2xl font-black mt-1">PREV’IA <span class="text-sm font-bold text-cyan-100">avec Prevy</span></h2></div></div>
+        <div class="flex items-center gap-4"><div class="prevy-avatar" aria-label="Prevy, assistant PREV'IA"><img id="prevy-main-img" src="Prevy-Accueil.png" alt="Prevy, assistant prévention RESTEV" onerror="this.style.display='none'"><span class="prevy-spark"><i class="fa-solid fa-sparkles"></i></span></div><div><p class="text-[10px] font-black uppercase tracking-widest text-cyan-100">Copilote prévention</p><h2 class="text-2xl font-black mt-1">PREV’IA <span class="text-sm font-bold text-cyan-100">avec Prevy</span></h2></div></div>
         <p class="text-xs text-blue-50 mt-2 leading-relaxed">Aide à comprendre une situation, préparer une tâche et créer un signalement. PREV’IA ne remplace pas les consignes de l’entreprise ni le responsable.</p>
       </div>
       <div class="grid grid-cols-2 gap-3">
@@ -1251,7 +1288,7 @@ async function loadRestevStats(){
       <div id="employee-messages-list" class="space-y-3"><p class="text-xs text-slate-400 italic text-center py-6">Aucun message pour le moment.</p></div>
     </section>
   
-<button id="previa-fab" type="button" onclick="openPrevia()" aria-label="Ouvrir PREV'IA"><span class="fab-face"><img src="logo.png" alt="" onerror="this.style.display='none'"></span><span>PREV’IA</span></button>
+<button id="previa-fab" type="button" onclick="openPrevia()" aria-label="Ouvrir PREV'IA"><span class="fab-face"><img id="prevy-fab-img" src="Prevy-Accueil.png" alt="" onerror="this.style.display='none'"></span><span>PREV’IA</span></button>
 
 </main>
 
@@ -4586,23 +4623,49 @@ document.addEventListener('DOMContentLoaded', () => {
   const PREVIA_ENDPOINT = 'https://qahamxdomftqodziluci.supabase.co/functions/v1/previa';
   function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   function status(t,thinking=false){const e=document.getElementById('previa-status');if(e){e.textContent=t;e.classList.toggle('previa-thinking',thinking);}}
+  const PREVY_IMAGES={idle:'Prevy-Accueil.png',thinking:'Prevy-Reflexion.png',advice:'Prevy-Conseil.png',attention:'Prevy-Attention.png',stop:'Prevy-Stop.png',report:'Prevy-Signalement.png',success:'Prevy-Validation.png'};
+  window.setPrevyState=function(state='idle'){
+    const src=PREVY_IMAGES[state]||PREVY_IMAGES.idle;
+    const main=document.getElementById('prevy-main-img'); if(main)main.src=src;
+    const fab=document.getElementById('prevy-fab-img'); if(fab)fab.src=src;
+    const avatar=document.querySelector('.prevy-avatar');
+    if(avatar){avatar.classList.remove('prevy-state-thinking','prevy-state-attention','prevy-state-stop','prevy-state-success');if(state==='thinking')avatar.classList.add('prevy-state-thinking');if(state==='attention')avatar.classList.add('prevy-state-attention');if(state==='stop')avatar.classList.add('prevy-state-stop');if(state==='success'||state==='advice')avatar.classList.add('prevy-state-success');}
+  };
   function add(role,text){const box=document.getElementById('previa-chat');if(!box)return null;const d=document.createElement('div');d.className=role==='user'?'ml-8 bg-restev-blue text-white p-3 rounded-2xl text-xs':'mr-4 bg-slate-50 dark:bg-slate-900 border p-3 rounded-2xl text-xs dark:text-slate-200';d.innerHTML='<b>'+(role==='user'?'Vous':'PREV’IA')+' :</b> '+esc(text).replace(/\n/g,'<br>');box.appendChild(d);box.scrollTop=box.scrollHeight;return d;}
   function context(){return {employee:window.currentEmployeeSession?.name||'',company:window.currentEmployeeSession?.company||'',profile:window.currentEmployeeSession?.profile||'',sector:window.currentEmployeeSession?.sector||'',app:'RESTEV 85 Passeport Prévention'};}
-  window.openPrevia=function(){switchScreen('scr-previa');status('PREV’IA est prêt · Gemini 3.5 Flash-Lite via Supabase');};
+  window.openPrevia=function(){switchScreen('scr-previa');setPrevyState('idle');status('PREV’IA est prêt · Gemini 3.5 Flash-Lite via Supabase');};
   window.previaPrompt=function(type){const input=document.getElementById('previa-input');if(!input)return;input.value={task:'Je commence une tâche : ',unsafe:'Je ne me sens pas en sécurité parce que ',risk:'Je souhaite analyser cette situation : '}[type]||'';input.focus();};
-  window.previaCreateReport=function(){const last=[...document.querySelectorAll('#previa-chat > div')].reverse().find(x=>x.textContent.startsWith('Vous'));if(last){const t=last.textContent.replace(/^Vous\s*:\s*/,'').trim();const r=document.getElementById('risk-description');if(r&&!r.value)r.value='Signalement préparé avec PREV’IA : '+t;}switchScreen('scr-report');};
+  window.previaCreateReport=function(){setPrevyState('report');const last=[...document.querySelectorAll('#previa-chat > div')].reverse().find(x=>x.textContent.startsWith('Vous'));if(last){const t=last.textContent.replace(/^Vous\s*:\s*/,'').trim();const r=document.getElementById('risk-description');if(r&&!r.value)r.value='Signalement préparé avec PREV’IA : '+t;}switchScreen('scr-report');};
   window.previaSend=async function(){const input=document.getElementById('previa-input');const q=(input?.value||'').trim();if(!q)return;input.value='';add('user',q);
     const emergency=/accident grave|inconscient|incendie|départ de feu|explosion|saigne abondamment|danger immédiat|urgence/i.test(q);
-    if(emergency){add('ai','🚨 Situation potentiellement urgente. Appliquez immédiatement les consignes d’urgence de votre entreprise et alertez les personnes ou services prévus. N’attendez pas une réponse de PREV’IA.');status('Mode urgence · priorité aux consignes de l’entreprise');return;}
-    const pending=add('ai','🧠 Prevy analyse votre demande...');status('PREV’IA réfléchit...',true);
+    if(emergency){setPrevyState('stop');add('ai','🚨 Situation potentiellement urgente. Appliquez immédiatement les consignes d’urgence de votre entreprise et alertez les personnes ou services prévus. N’attendez pas une réponse de PREV’IA.');status('Mode urgence · priorité aux consignes de l’entreprise');return;}
+    setPrevyState('thinking');const pending=add('ai','🧠 Prevy analyse votre demande...');status('PREV’IA réfléchit...',true);
     try{
       const res=await fetch(PREVIA_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,context:context()})});
       const data=await res.json().catch(()=>({}));
       if(!res.ok || data.error) throw new Error(data.error||('HTTP '+res.status));
-      pending?.remove();add('ai',data.answer||'Je ne dispose pas de suffisamment d’informations pour répondre de façon fiable. Consultez votre responsable.');status('Réponse reçue · vérifiez toujours les consignes de l’entreprise');
-    }catch(e){pending?.remove();add('ai','PREV’IA est momentanément indisponible. Vous pouvez toujours créer un signalement ou contacter votre responsable.');status('Service IA indisponible · les autres fonctions restent accessibles');console.error('PREVIA',e);}
+      pending?.remove();setPrevyState('advice');add('ai',data.answer||'Je ne dispose pas de suffisamment d’informations pour répondre de façon fiable. Consultez votre responsable.');status('Réponse reçue · vérifiez toujours les consignes de l’entreprise');
+    }catch(e){pending?.remove();setPrevyState('attention');add('ai','PREV’IA est momentanément indisponible. Vous pouvez toujours créer un signalement ou contacter votre responsable.');status('Service IA indisponible · les autres fonctions restent accessibles');console.error('PREVIA',e);}
   };
   document.addEventListener('DOMContentLoaded',()=>{const fab=document.getElementById('previa-fab');if(fab)fab.style.display='flex';});
+})();
+</script>
+
+
+<script id="prevy-welcome-controller-v3">
+(function(){
+  let welcomeTimer=null;
+  window.closePrevyWelcome=function(){const w=document.getElementById('prevy-welcome');if(w)w.classList.remove('show');if(welcomeTimer){clearTimeout(welcomeTimer);welcomeTimer=null;}};
+  window.showPrevyWelcome=function(){
+    const w=document.getElementById('prevy-welcome');if(!w)return;
+    let name='';try{name=(window.currentEmployeeSession&&window.currentEmployeeSession.name)||'';}catch(e){}
+    const title=document.getElementById('prevy-welcome-title');if(title)title.textContent=name?('Bonjour '+name+' ! 👋'):'Bonjour ! 👋';
+    w.classList.add('show');
+    if(welcomeTimer)clearTimeout(welcomeTimer);
+    welcomeTimer=setTimeout(window.closePrevyWelcome,7000);
+  };
+  document.addEventListener('DOMContentLoaded',function(){setTimeout(window.showPrevyWelcome,650);});
+  document.addEventListener('click',function(e){if(e.target&&e.target.id==='prevy-welcome')window.closePrevyWelcome();});
 })();
 </script>
 
