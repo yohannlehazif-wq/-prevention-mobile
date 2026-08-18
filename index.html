@@ -5075,5 +5075,78 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 </script>
 
+
+<style id="restev85-employee-install-v1">
+#restev-install-card{display:none;position:fixed;left:50%;bottom:94px;transform:translateX(-50%);z-index:2147483200;width:min(430px,calc(100vw - 24px));padding:14px;border-radius:24px;color:#fff;background:linear-gradient(145deg,#061631,#0d3470 58%,#6d248e);border:1px solid rgba(37,200,206,.46);box-shadow:0 24px 70px rgba(3,12,38,.44)}
+#restev-install-card.show{display:block;animation:restevInstallUp .32s ease-out}
+.restev-install-content{display:grid;grid-template-columns:74px 1fr;gap:12px;align-items:center}.restev-install-content img{width:74px;height:74px;object-fit:contain;filter:drop-shadow(0 10px 14px rgba(0,0,0,.25))}.restev-install-copy span{display:block;font-size:9px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#7bf7ff}.restev-install-copy strong{display:block;font-size:15px;line-height:1.2;margin:3px 0 4px}.restev-install-copy p{margin:0;font-size:11px;line-height:1.42;color:#e2f7ff}.restev-install-actions{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:12px}.restev-install-actions button{min-height:44px;border:0;border-radius:14px;font-size:11px;font-weight:900}.restev-install-primary{color:#fff;background:linear-gradient(90deg,#25c8ce,#1159df,#e72c91);box-shadow:0 9px 22px rgba(17,89,223,.28)}.restev-install-later{padding:0 15px;color:#d9f7ff;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.16)!important}.restev-install-close{position:absolute;right:10px;top:9px;width:30px;height:30px;border:0;border-radius:10px;background:rgba(255,255,255,.10);color:#fff;font-size:16px}.restev-install-help{display:none;margin-top:10px;padding:10px 12px;border-radius:13px;background:rgba(255,255,255,.09);font-size:10px;line-height:1.45;color:#e8f8ff}.restev-install-help.show{display:block}
+@keyframes restevInstallUp{from{opacity:0;transform:translate(-50%,18px)}to{opacity:1;transform:translate(-50%,0)}}
+@media(max-width:420px){#restev-install-card{bottom:86px}.restev-install-content{grid-template-columns:62px 1fr}.restev-install-content img{width:62px;height:62px}.restev-install-copy strong{font-size:14px}.restev-install-copy p{font-size:10px}}
+@media(prefers-reduced-motion:reduce){#restev-install-card.show{animation:none!important}}
+</style>
+
+<div id="restev-install-card" role="dialog" aria-labelledby="restev-install-title" aria-live="polite">
+  <button class="restev-install-close" type="button" onclick="restevDismissInstall(7)" aria-label="Fermer">×</button>
+  <div class="restev-install-content">
+    <img src="Prevy-Accueil.png" alt="Prevy">
+    <div class="restev-install-copy">
+      <span>Passeport Prévention RESTEV 85</span>
+      <strong id="restev-install-title">Gardez Prevy à portée de main</strong>
+      <p>Installez l’application sur votre téléphone pour retrouver rapidement votre passeport, vos messages, vos ressources et PREV’IA.</p>
+    </div>
+  </div>
+  <div class="restev-install-actions">
+    <button class="restev-install-primary" type="button" onclick="restevInstallApp()"><i class="fa-solid fa-download"></i> Installer l’application</button>
+    <button class="restev-install-later" type="button" onclick="restevDismissInstall(3)">Plus tard</button>
+  </div>
+  <div id="restev-install-help" class="restev-install-help"></div>
+</div>
+
+<script id="restev85-employee-install-v1">
+(function(){
+  'use strict';
+  let deferredInstallPrompt=null;
+  const DISMISS_KEY='restev85_install_dismissed_until';
+
+  function employeeSession(){
+    try{return window.currentEmployeeSession || (typeof currentEmployeeSession!=='undefined' ? currentEmployeeSession : null) || null;}catch(e){return null;}
+  }
+  function isStandalone(){return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;}
+  function isDismissed(){const until=Number(localStorage.getItem(DISMISS_KEY)||0);return until>Date.now();}
+  function card(){return document.getElementById('restev-install-card');}
+  function help(message){const el=document.getElementById('restev-install-help');if(el){el.innerHTML=message;el.classList.add('show');}}
+
+  window.restevShowInstallInvite=function(){
+    if(!employeeSession() || isStandalone() || isDismissed())return;
+    const el=card();if(el)el.classList.add('show');
+  };
+  window.restevDismissInstall=function(days){
+    const duration=Math.max(1,Number(days)||3)*86400000;
+    try{localStorage.setItem(DISMISS_KEY,String(Date.now()+duration));}catch(e){}
+    const el=card();if(el)el.classList.remove('show');
+  };
+  window.restevInstallApp=async function(){
+    if(deferredInstallPrompt){
+      deferredInstallPrompt.prompt();
+      const choice=await deferredInstallPrompt.userChoice.catch(()=>null);
+      deferredInstallPrompt=null;
+      if(choice?.outcome==='accepted')restevDismissInstall(365);
+      return;
+    }
+    const ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+    if(ios){help('<b>Sur iPhone ou iPad :</b> appuyez sur le bouton <b>Partager</b>, puis choisissez <b>Sur l’écran d’accueil</b>.');}
+    else{help('<b>Installation manuelle :</b> ouvrez le menu du navigateur puis choisissez <b>Installer l’application</b> ou <b>Ajouter à l’écran d’accueil</b>.');}
+  };
+
+  window.addEventListener('beforeinstallprompt',function(event){event.preventDefault();deferredInstallPrompt=event;setTimeout(restevShowInstallInvite,400);});
+  window.addEventListener('appinstalled',function(){restevDismissInstall(365);try{if(typeof showToast==='function')showToast('Application installée avec succès.');}catch(e){}});
+
+  function refresh(){if(employeeSession())setTimeout(restevShowInstallInvite,850);else{const el=card();if(el)el.classList.remove('show');}}
+  document.addEventListener('DOMContentLoaded',function(){refresh();setTimeout(refresh,1500);});
+  const observer=new MutationObserver(refresh);document.addEventListener('DOMContentLoaded',function(){observer.observe(document.body,{subtree:true,attributes:true,attributeFilter:['class','style']});});
+  window.restevRefreshInstallInvite=refresh;
+})();
+</script>
+
 </body>
 </html>
