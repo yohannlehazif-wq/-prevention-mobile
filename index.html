@@ -1146,7 +1146,28 @@ async function loadRestevStats(){
         <button onclick="openEmployeeResources()" class="w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-emerald-500 p-4 rounded-xl text-left flex items-center justify-between group shadow-sm"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-emerald-500/10 text-emerald-500 rounded-xl flex items-center justify-center"><i class="fa-solid fa-book-medical"></i></div><div><p class="text-xs font-black dark:text-white">3. Fiches Conseils Sécurité</p><p class="text-[10px] text-slate-400 mt-0.5">Ressources INRS, CARSAT & OPPBTP.</p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i></button>
         <button onclick="switchScreen('scr-training')" class="w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-restev-gold p-4 rounded-xl text-left flex items-center justify-between group shadow-sm"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-restev-gold/10 text-restev-gold rounded-xl flex items-center justify-center"><i class="fa-solid fa-graduation-cap"></i></div><div><p class="text-xs font-black dark:text-white">4. Modules INRS</p><p class="text-[10px] text-slate-400 mt-0.5">Tutoriels prévention adaptés aux métiers.</p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i></button>
         <button onclick="openEmployeeMessages()" class="w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-cyan-500 p-4 rounded-xl text-left flex items-center justify-between group shadow-sm"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-cyan-500/10 text-cyan-500 rounded-xl flex items-center justify-center"><i class="fa-solid fa-comments"></i></div><div><p class="text-xs font-black dark:text-white">5. Messages du responsable</p><p class="text-[10px] text-slate-400 mt-0.5">Suivre les réponses à vos signalements.</p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i></button>
+        <button onclick="openPrevia()" class="w-full bg-gradient-to-r from-indigo-600 via-restev-blue to-cyan-500 text-white p-4 rounded-xl text-left flex items-center justify-between shadow-lg"><div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center"><i class="fa-solid fa-brain"></i></div><div><p class="text-xs font-black">6. PREV’IA</p><p class="text-[10px] text-blue-50 mt-0.5">Votre copilote prévention terrain.</p></div></div><i class="fa-solid fa-chevron-right text-white/70"></i></button>
       </div>
+    </section>
+
+    <!-- PREVIA -->
+    <section id="scr-previa" class="screen max-w-md mx-auto w-full space-y-4 py-4">
+      <button onclick="switchScreen('scr-employee')" class="text-xs bg-white dark:bg-slate-800 border px-4 py-2 rounded-xl font-bold flex items-center gap-1.5 shadow-sm"><i class="fa-solid fa-arrow-left"></i> Retour au portail</button>
+      <div class="bg-gradient-to-br from-indigo-700 via-restev-blue to-cyan-500 text-white p-6 rounded-3xl shadow-xl relative overflow-hidden">
+        <p class="text-[10px] font-black uppercase tracking-widest text-cyan-100">Copilote prévention</p><h2 class="text-2xl font-black mt-1">PREV’IA</h2>
+        <p class="text-xs text-blue-50 mt-2 leading-relaxed">Aide à comprendre une situation, préparer une tâche et créer un signalement. PREV’IA ne remplace pas les consignes de l’entreprise ni le responsable.</p>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <button onclick="previaPrompt('task')" class="bg-white dark:bg-slate-800 border p-4 rounded-2xl text-left shadow-sm"><i class="fa-solid fa-screwdriver-wrench text-restev-blue text-lg"></i><p class="text-xs font-black mt-2 dark:text-white">Je commence une tâche</p></button>
+        <button onclick="previaPrompt('unsafe')" class="bg-white dark:bg-slate-800 border p-4 rounded-2xl text-left shadow-sm"><i class="fa-solid fa-hand text-red-500 text-lg"></i><p class="text-xs font-black mt-2 dark:text-white">Je ne me sens pas en sécurité</p></button>
+        <button onclick="previaPrompt('risk')" class="bg-white dark:bg-slate-800 border p-4 rounded-2xl text-left shadow-sm"><i class="fa-solid fa-magnifying-glass text-amber-500 text-lg"></i><p class="text-xs font-black mt-2 dark:text-white">Analyser une situation</p></button>
+        <button onclick="previaCreateReport()" class="bg-white dark:bg-slate-800 border p-4 rounded-2xl text-left shadow-sm"><i class="fa-solid fa-triangle-exclamation text-restev-magenta text-lg"></i><p class="text-xs font-black mt-2 dark:text-white">Créer un signalement</p></button>
+      </div>
+      <div class="bg-white dark:bg-slate-800 border rounded-3xl shadow-premium overflow-hidden">
+        <div id="previa-chat" class="p-4 space-y-3 max-h-96 overflow-y-auto"><div class="bg-blue-50 dark:bg-slate-900 border border-blue-100 dark:border-slate-700 p-3 rounded-2xl text-xs text-slate-700 dark:text-slate-200"><b>PREV’IA :</b> Bonjour. Décrivez votre tâche, votre question ou une situation observée. Je vous aiderai à identifier les points à vérifier.</div></div>
+        <div class="p-3 border-t flex gap-2"><textarea id="previa-input" rows="2" placeholder="Ex. Je dois nettoyer une machine..." class="flex-1 p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white"></textarea><button onclick="previaSend()" class="w-12 bg-restev-blue text-white rounded-xl"><i class="fa-solid fa-paper-plane"></i></button></div>
+      </div>
+      <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 p-3 rounded-2xl"><p class="text-[10px] text-amber-900 dark:text-amber-100 leading-relaxed"><b>Important :</b> en cas d’urgence ou de danger immédiat, appliquez les consignes d’urgence de l’entreprise et prévenez le responsable. N’attendez pas une réponse de l’assistant.</p></div>
     </section>
 
     <!-- QCM -->
@@ -4538,6 +4559,27 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log(PATCH_NAME + ' installé');
   });
 
+})();
+</script>
+
+
+<script id="restev85-previa-v1">
+(function(){
+  const PREVIA_ENDPOINT = window.PREVIA_ENDPOINT || '';
+  function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function add(role,text){const box=document.getElementById('previa-chat');if(!box)return;const d=document.createElement('div');d.className=role==='user'?'ml-8 bg-restev-blue text-white p-3 rounded-2xl text-xs':'mr-4 bg-slate-50 dark:bg-slate-900 border p-3 rounded-2xl text-xs dark:text-slate-200';d.innerHTML='<b>'+(role==='user'?'Vous':'PREV’IA')+' :</b> '+esc(text).replace(/\n/g,'<br>');box.appendChild(d);box.scrollTop=box.scrollHeight;}
+  function context(){return {employee: window.currentEmployeeSession?.name||'', company:window.currentEmployeeSession?.company||'', profile:window.currentEmployeeSession?.profile||'', sector:window.currentEmployeeSession?.sector||'', app:'RESTEV 85 Passeport Prévention'};}
+  window.openPrevia=function(){switchScreen('scr-previa');};
+  window.previaPrompt=function(type){const input=document.getElementById('previa-input');if(!input)return;const q={task:'Je commence une tâche : ',unsafe:'Je ne me sens pas en sécurité parce que ',risk:'Je souhaite analyser cette situation : '}[type]||'';input.value=q;input.focus();};
+  window.previaCreateReport=function(){const last=[...document.querySelectorAll('#previa-chat > div')].reverse().find(x=>x.textContent.startsWith('Vous'));if(last){const t=last.textContent.replace(/^Vous\s*:\s*/,'').trim();const r=document.getElementById('risk-description');if(r&&!r.value)r.value='Signalement préparé avec PREV’IA : '+t;}switchScreen('scr-report');};
+  window.previaSend=async function(){const input=document.getElementById('previa-input');const q=(input?.value||'').trim();if(!q)return;input.value='';add('user',q);
+    const emergency=/accident grave|inconscient|incendie|feu|explosion|saigne abondamment|danger immédiat|urgence/i.test(q);
+    if(emergency){add('ai',"Situation potentiellement urgente. Appliquez immédiatement les consignes d’urgence de l’entreprise et alertez le responsable ou les secours prévus par votre procédure. N’attendez pas une réponse de PREV’IA.");return;}
+    if(!PREVIA_ENDPOINT){add('ai',"Le module PREV’IA est installé, mais le service IA sécurisé n’est pas encore configuré. Vous pouvez déjà transformer votre demande en signalement. Pour activer les réponses IA, configurez un endpoint serveur dans window.PREVIA_ENDPOINT. Aucune clé privée ne doit être placée dans ce fichier HTML.");return;}
+    add('ai','Analyse en cours...'); const pending=document.querySelector('#previa-chat > div:last-child');
+    try{const res=await fetch(PREVIA_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,context:context()})});if(!res.ok)throw new Error('HTTP '+res.status);const data=await res.json();pending.remove();add('ai',data.answer||"Je n’ai pas suffisamment d’informations validées pour répondre. Contactez votre responsable.");}
+    catch(e){pending.remove();add('ai',"PREV’IA est momentanément indisponible. Si la situation présente un risque, utilisez « Créer un signalement » ou contactez votre responsable.");console.error('PREVIA',e);}
+  };
 })();
 </script>
 
