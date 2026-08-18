@@ -208,7 +208,7 @@ async function savePassportEntry(entry){
   if(document.getElementById('manager-emargements-list')) loadPassportRegistry();
   showToast(cloudOK ? 'Passeport enregistré dans le registre partagé.' : 'Passeport enregistré localement. Vérifiez Supabase pour partage manager.');
 }
-async function finalizeAndClose(){
+async function finalizeAndClose(){setPrevyState('validation',{resetAfter:6000});
   updateCertificateEPI();
   if(!isSignatureDone('emp') || !isSignatureDone('mgr')) return showToast('Les deux signatures réelles sont obligatoires.');
   const name=document.getElementById('cert-employee').value || (currentEmployeeSession?currentEmployeeSession.name:'Salarié');
@@ -882,6 +882,22 @@ main{max-width:760px!important}
     padding-top: 14px !important;
   }
 }
+</style>
+
+
+<style id="restev85-prevy-states-v2">
+  #prevy-main-img{transition:opacity .18s ease,transform .28s ease,filter .28s ease}
+  #prevy-main-img.prevy-changing{opacity:.18;transform:scale(.92)}
+  .prevy-avatar.prevy-thinking{animation:prevyThinkingPulse .85s ease-in-out infinite!important;box-shadow:0 0 0 6px rgba(37,200,206,.16),0 14px 34px rgba(37,200,206,.36)!important}
+  .prevy-avatar.prevy-advice{box-shadow:0 0 0 6px rgba(16,185,129,.14),0 14px 34px rgba(16,185,129,.31)!important}
+  .prevy-avatar.prevy-attention{animation:prevyAttention .42s ease-out 1!important;box-shadow:0 0 0 6px rgba(245,158,11,.16),0 14px 34px rgba(245,158,11,.34)!important}
+  .prevy-avatar.prevy-stop{box-shadow:0 0 0 7px rgba(225,29,72,.16),0 14px 38px rgba(225,29,72,.40)!important}
+  .prevy-avatar.prevy-report{box-shadow:0 0 0 6px rgba(231,44,145,.15),0 14px 35px rgba(109,36,186,.38)!important}
+  .prevy-avatar.prevy-success{animation:prevyCelebrate .65s ease-out 1!important;box-shadow:0 0 0 7px rgba(16,185,129,.16),0 14px 38px rgba(16,185,129,.38)!important}
+  @keyframes prevyThinkingPulse{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-4px) scale(1.035)}}
+  @keyframes prevyAttention{0%,100%{transform:translateX(0)}35%{transform:translateX(-4px)}70%{transform:translateX(4px)}}
+  @keyframes prevyCelebrate{0%{transform:translateY(8px) scale(.92)}65%{transform:translateY(-5px) scale(1.06)}100%{transform:translateY(0) scale(1)}}
+  @media(prefers-reduced-motion:reduce){#prevy-main-img,.prevy-avatar{animation:none!important;transition:none!important}}
 </style>
 
 </head>
@@ -2274,7 +2290,7 @@ function triggerNewReportAlert(report) {
       switchScreen('scr-qcm');
     }
     function renderQCMQuestion(){ const q=qcmActiveQuestions[qcmCurrentIndex]; document.getElementById('qcm-progress').innerText=`Question ${qcmCurrentIndex+1} / ${qcmActiveQuestions.length}`; document.getElementById('qcm-question-text').innerText=q.question; const box=document.getElementById('qcm-options-box'); box.innerHTML=''; q.options.forEach((opt,i)=>{ const div=document.createElement('div'); div.className='flex items-center p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl hover:bg-blue-50/50'; div.innerHTML=`<label class="flex items-center gap-3 w-full cursor-pointer text-xs font-semibold dark:text-slate-300"><input type="radio" name="qcm-opt" value="${i}" class="w-4 h-4 text-restev-blue"><span>${escapeHtml(opt)}</span></label>`; box.appendChild(div); }); }
-    function submitQCMAnswer(){ const checked=document.querySelector('input[name="qcm-opt"]:checked'); if(!checked) return showToast('Veuillez sélectionner une réponse !'); const q=qcmActiveQuestions[qcmCurrentIndex]; if(parseInt(checked.value,10)===q.answer) qcmScore++; qcmCurrentIndex++; if(qcmCurrentIndex<qcmActiveQuestions.length) return renderQCMQuestion(); const total=qcmActiveQuestions.length; document.getElementById('lbl-qcm-score-final').innerText=`${qcmScore} / ${total}`; const now=new Date(); document.getElementById('lbl-cert-date').innerText='- '+now.toLocaleDateString('fr-FR')+' à '+now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); if(currentEmployeeSession){ document.getElementById('cert-company').value=currentEmployeeSession.company; document.getElementById('cert-employee').value=currentEmployeeSession.name; } updateCertificateEPI(); clearSignature('emp'); clearSignature('mgr'); const title=document.getElementById('qcm-result-title'); title.innerText=qcmScore===total?'Attestation de Formation Sécurité':'Attestation de Suivi (Avec Réserves)'; title.className=qcmScore===total?'text-2xl font-black text-emerald-600 print:text-slate-900':'text-2xl font-black text-amber-600 print:text-slate-900'; switchScreen('scr-qcm-success'); }
+    function submitQCMAnswer(){ const checked=document.querySelector('input[name="qcm-opt"]:checked'); if(!checked) return showToast('Veuillez sélectionner une réponse !'); const q=qcmActiveQuestions[qcmCurrentIndex]; if(parseInt(checked.value,10)===q.answer) qcmScore++; qcmCurrentIndex++; if(qcmCurrentIndex<qcmActiveQuestions.length) return renderQCMQuestion(); const total=qcmActiveQuestions.length; document.getElementById('lbl-qcm-score-final').innerText=`${qcmScore} / ${total}`; const now=new Date(); document.getElementById('lbl-cert-date').innerText='- '+now.toLocaleDateString('fr-FR')+' à '+now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); if(currentEmployeeSession){ document.getElementById('cert-company').value=currentEmployeeSession.company; document.getElementById('cert-employee').value=currentEmployeeSession.name; } updateCertificateEPI(); clearSignature('emp'); clearSignature('mgr'); const title=document.getElementById('qcm-result-title'); title.innerText=qcmScore===total?'Attestation de Formation Sécurité':'Attestation de Suivi (Avec Réserves)'; title.className=qcmScore===total?'text-2xl font-black text-emerald-600 print:text-slate-900':'text-2xl font-black text-amber-600 print:text-slate-900'; setPrevyState('validation',{resetAfter:6000}); switchScreen('scr-qcm-success'); }
     function updateSignStatus(type){ const checked=document.getElementById(`chk-sign-${type}`).checked; const box=document.getElementById(`sign-box-${type}`); if(checked){ box.innerHTML=`<div class="text-center p-2"><p class="font-black text-lg ${type==='mgr'?'text-emerald-600':'text-restev-blue'}" style="font-family: 'Brush Script MT', cursive; transform: rotate(-3deg);">Validé</p><p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">Le ${new Date().toLocaleDateString('fr-FR')}</p></div>`; } else { box.innerHTML='<span class="text-xs italic text-slate-400 print:hidden">En attente...</span>'; } }
     function enableManagerNotifications(){
       if(!('Notification' in window)) return showToast('Notifications navigateur non compatibles.');
@@ -2434,13 +2450,13 @@ function triggerNewReportAlert(report) {
     }
 
     function generateTrainingMenu(){ const c=document.getElementById('menu-list'); if(!c) return; c.innerHTML='<p class="text-xs text-slate-500 italic">Sélectionnez votre secteur pour accéder au tutoriel :</p>'; modulesTuto.forEach(m=>{ const btn=document.createElement('button'); btn.className='p-4 bg-white dark:bg-slate-800 border-l-4 border-restev-blue shadow-sm rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-700 transition w-full flex items-center justify-between'; btn.onclick=()=>loadTrainingModule(m.url); btn.innerHTML=`<span class="font-semibold text-slate-700 dark:text-white text-sm">${escapeHtml(m.titre)}</span><i class="fa-solid fa-chevron-right text-slate-300"></i>`; c.appendChild(btn); }); }
-    function loadTrainingModule(url){ currentTutoUrl=url.replace('/story.html','/launcher.html'); const iframe=document.getElementById('tuto-viewer'); const help=document.getElementById('tuto-load-help'); if(help) help.classList.add('hidden'); iframe.src='about:blank'; setTimeout(()=>{iframe.src=currentTutoUrl;},30); document.getElementById('menu-list').classList.add('hidden'); document.getElementById('tuto-container').classList.remove('hidden'); adjustTutoViewer(); let loaded=false; iframe.onload=()=>{loaded=true;if(help)help.classList.add('hidden');}; setTimeout(()=>{if(!loaded&&help)help.classList.remove('hidden');},6500); setTimeout(()=>window.scrollTo({top:0,behavior:'smooth'}),100); }
+    function loadTrainingModule(url){setPrevyState('conseil',{resetAfter:3000}); currentTutoUrl=url.replace('/story.html','/launcher.html'); const iframe=document.getElementById('tuto-viewer'); const help=document.getElementById('tuto-load-help'); if(help) help.classList.add('hidden'); iframe.src='about:blank'; setTimeout(()=>{iframe.src=currentTutoUrl;},30); document.getElementById('menu-list').classList.add('hidden'); document.getElementById('tuto-container').classList.remove('hidden'); adjustTutoViewer(); let loaded=false; iframe.onload=()=>{loaded=true;if(help)help.classList.add('hidden');}; setTimeout(()=>{if(!loaded&&help)help.classList.remove('hidden');},6500); setTimeout(()=>window.scrollTo({top:0,behavior:'smooth'}),100); }
     function backToTrainingMenu(){ const iframe=document.getElementById('tuto-viewer'); iframe.src='about:blank'; iframe.onload=null; currentTutoUrl=''; document.getElementById('tuto-load-help')?.classList.add('hidden'); document.getElementById('menu-list').classList.remove('hidden'); document.getElementById('tuto-container').classList.add('hidden'); }
     function openTutoExternal(){ if(!currentTutoUrl) return showToast('Aucun tutoriel sélectionné.'); const w=window.open(currentTutoUrl,'_blank','noopener,noreferrer'); if(!w) showToast('Autorisez les fenêtres contextuelles pour ouvrir le module INRS.'); } function openTutoFullscreen(){ if(!currentTutoUrl) return showToast('Aucun tutoriel sélectionné.'); const iframe=document.getElementById('tuto-viewer'); if(iframe.requestFullscreen) iframe.requestFullscreen().catch(()=>openTutoExternal()); else openTutoExternal(); }
     function adjustTutoViewer(){ const help=document.getElementById('tuto-orientation-help'); if(!help) return; const isMobile=window.innerWidth<=900; const isLandscape=window.innerWidth>window.innerHeight; help.innerText = isMobile && isLandscape ? 'Mode paysage détecté : affichage optimisé.' : isMobile ? 'Astuce : tournez votre smartphone en paysage ou utilisez Plein écran.' : 'Module chargé. Vous pouvez utiliser Plein écran.'; }
     function backFromTraining(){ if(currentEmployeeSession) switchScreen('scr-employee'); else switchScreen('scr-home'); }
 
-    function openEmployeeResources(){ const c=document.getElementById('resources-list'); c.innerHTML=''; const active=RISKS_DATABASE.filter(r=>r.active); if(!active.length){ c.innerHTML='<p class="text-xs text-slate-500 text-center italic py-4">Aucun risque spécifique paramétré.</p>'; } active.forEach(r=>{ const res=OFFICIAL_RESOURCES[r.id]; if(!res) return; const a=document.createElement('a'); a.href=res.link; a.target='_blank'; a.className='block bg-white dark:bg-slate-800 p-4 rounded-2xl border shadow-sm hover:shadow-md transition group'; a.innerHTML=`<div class="flex items-center justify-between gap-3"><div class="space-y-1.5 flex-1"><span class="inline-block text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${res.color} border">${res.org}</span><h4 class="text-sm font-bold dark:text-white group-hover:text-emerald-500 transition leading-tight">${escapeHtml(res.title)}</h4><p class="text-[10px] font-medium text-slate-400 italic">Lié à : ${escapeHtml(r.name)}</p></div><div class="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center text-slate-400"><i class="fa-solid fa-arrow-up-right-from-square text-sm"></i></div></div>`; c.appendChild(a); }); switchScreen('scr-resources'); }
+    function openEmployeeResources(){setPrevyState('conseil',{resetAfter:3000}); const c=document.getElementById('resources-list'); c.innerHTML=''; const active=RISKS_DATABASE.filter(r=>r.active); if(!active.length){ c.innerHTML='<p class="text-xs text-slate-500 text-center italic py-4">Aucun risque spécifique paramétré.</p>'; } active.forEach(r=>{ const res=OFFICIAL_RESOURCES[r.id]; if(!res) return; const a=document.createElement('a'); a.href=res.link; a.target='_blank'; a.className='block bg-white dark:bg-slate-800 p-4 rounded-2xl border shadow-sm hover:shadow-md transition group'; a.innerHTML=`<div class="flex items-center justify-between gap-3"><div class="space-y-1.5 flex-1"><span class="inline-block text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${res.color} border">${res.org}</span><h4 class="text-sm font-bold dark:text-white group-hover:text-emerald-500 transition leading-tight">${escapeHtml(res.title)}</h4><p class="text-[10px] font-medium text-slate-400 italic">Lié à : ${escapeHtml(r.name)}</p></div><div class="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center text-slate-400"><i class="fa-solid fa-arrow-up-right-from-square text-sm"></i></div></div>`; c.appendChild(a); }); switchScreen('scr-resources'); }
 
     window.initGoogleMapsLoader = function(){
       googleMapsReady = true;
@@ -4781,6 +4797,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
+<script id="restev85-prevy-state-controller-v2">
+(function(){
+  'use strict';
+  const IMAGES={
+    accueil:'Prevy-Accueil.png',
+    reflexion:'Prevy-Reflexion.png',
+    conseil:'Prevy-Conseil.png',
+    attention:'Prevy-Attention.png',
+    stop:'Prevy-Stop.png',
+    signalement:'Prevy-Signalement.png',
+    validation:'Prevy-Validation.png'
+  };
+  const CLASSES=['prevy-thinking','prevy-advice','prevy-attention','prevy-stop','prevy-report','prevy-success'];
+  const CLASS_BY_STATE={reflexion:'prevy-thinking',conseil:'prevy-advice',attention:'prevy-attention',stop:'prevy-stop',signalement:'prevy-report',validation:'prevy-success'};
+  let timer=null;
+
+  function targets(){return [document.getElementById('prevy-main-img'),document.getElementById('prevy-fab-img')].filter(Boolean);}
+  window.setPrevyState=function(state='accueil',options={}){
+    const src=IMAGES[state]||IMAGES.accueil;
+    const avatar=document.querySelector('.prevy-avatar');
+    if(avatar){avatar.classList.remove(...CLASSES);const c=CLASS_BY_STATE[state];if(c)avatar.classList.add(c);avatar.dataset.prevyState=state;}
+    targets().forEach(function(img){
+      img.classList.add('prevy-changing');
+      const swap=function(){img.src=src;img.onload=function(){img.classList.remove('prevy-changing');img.onload=null;};setTimeout(()=>img.classList.remove('prevy-changing'),450);};
+      setTimeout(swap,90);
+    });
+    if(timer){clearTimeout(timer);timer=null;}
+    if(options.resetAfter){timer=setTimeout(()=>setPrevyState('accueil'),options.resetAfter);}
+  };
+  window.prevyStateFromAnswer=function(text){
+    const value=String(text||'').toLowerCase();
+    if(/danger immédiat|urgence|incendie|explosion|ne poursuivez pas|ne pas poursuivre|arrêtez|stop/.test(value))return 'stop';
+    if(/signalement|signaler|remontée terrain|prévenir votre responsable/.test(value))return 'signalement';
+    if(/attention|point de vigilance|à confirmer|incertitude|ne dispose pas de suffisamment/.test(value))return 'attention';
+    return 'conseil';
+  };
+  document.addEventListener('DOMContentLoaded',()=>setPrevyState('accueil'));
+})();
+</script>
+
 <script id="previa-voice-controller-v1">
 (function(){
   const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -4854,7 +4911,7 @@ document.addEventListener('DOMContentLoaded', () => {
     recognition.lang='fr-FR';recognition.continuous=false;recognition.interimResults=true;recognition.maxAlternatives=1;
     const input=document.getElementById('previa-input');
     let finalText='';
-    recognition.onstart=()=>{setMicUI(true);voiceStatus('🎤 Prevy vous écoute... Parlez clairement.');};
+    recognition.onstart=()=>{setMicUI(true);setPrevyState('attention');voiceStatus('🎤 Prevy vous écoute... Parlez clairement.');};
     recognition.onresult=(event)=>{
       let interim='';
       for(let i=event.resultIndex;i<event.results.length;i++){
@@ -4868,7 +4925,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const messages={not_allowed:'Autorisation du microphone refusée',audio_capture:'Aucun microphone détecté',no_speech:'Aucune parole détectée',network:'Service de reconnaissance vocale indisponible'};
       voiceStatus(messages[event.error]||('Erreur microphone : '+event.error));setMicUI(false);
     };
-    recognition.onend=()=>{setMicUI(false);if(input&&input.value.trim())voiceStatus('Question dictée · vérifiez le texte puis appuyez sur Envoyer');};
+    recognition.onend=()=>{setMicUI(false);setPrevyState('accueil');if(input&&input.value.trim())voiceStatus('Question dictée · vérifiez le texte puis appuyez sur Envoyer');};
     try{recognition.start();}catch(e){voiceStatus('Impossible de démarrer le microphone');setMicUI(false);}
   };
 
@@ -4887,19 +4944,19 @@ document.addEventListener('DOMContentLoaded', () => {
   function status(t,thinking=false){const e=document.getElementById('previa-status');if(e){e.textContent=t;e.classList.toggle('previa-thinking',thinking);}}
   function add(role,text){const box=document.getElementById('previa-chat');if(!box)return null;const d=document.createElement('div');d.className=role==='user'?'ml-8 bg-restev-blue text-white p-3 rounded-2xl text-xs':'mr-4 bg-slate-50 dark:bg-slate-900 border p-3 rounded-2xl text-xs dark:text-slate-200';d.innerHTML='<b>'+(role==='user'?'Vous':'PREV’IA')+' :</b> '+esc(text).replace(/\n/g,'<br>');box.appendChild(d);box.scrollTop=box.scrollHeight;return d;}
   function context(){return {employee:window.currentEmployeeSession?.name||'',company:window.currentEmployeeSession?.company||'',profile:window.currentEmployeeSession?.profile||'',sector:window.currentEmployeeSession?.sector||'',app:'RESTEV 85 Passeport Prévention'};}
-  window.openPrevia=function(){switchScreen('scr-previa');status('PREV’IA est prêt · Gemini 3.5 Flash-Lite via Supabase');};
+  window.openPrevia=function(){switchScreen('scr-previa');setPrevyState('accueil');status('PREV’IA est prêt · Gemini 3.5 Flash-Lite via Supabase');};
   window.previaPrompt=function(type){const input=document.getElementById('previa-input');if(!input)return;input.value={task:'Je commence une tâche : ',unsafe:'Je ne me sens pas en sécurité parce que ',risk:'Je souhaite analyser cette situation : '}[type]||'';input.focus();};
-  window.previaCreateReport=function(){const last=[...document.querySelectorAll('#previa-chat > div')].reverse().find(x=>x.textContent.startsWith('Vous'));if(last){const t=last.textContent.replace(/^Vous\s*:\s*/,'').trim();const r=document.getElementById('risk-description');if(r&&!r.value)r.value='Signalement préparé avec PREV’IA : '+t;}switchScreen('scr-report');};
+  window.previaCreateReport=function(){setPrevyState('signalement');const last=[...document.querySelectorAll('#previa-chat > div')].reverse().find(x=>x.textContent.startsWith('Vous'));if(last){const t=last.textContent.replace(/^Vous\s*:\s*/,'').trim();const r=document.getElementById('risk-description');if(r&&!r.value)r.value='Signalement préparé avec PREV’IA : '+t;}switchScreen('scr-report');};
   window.previaSend=async function(){const input=document.getElementById('previa-input');const q=(input?.value||'').trim();if(!q)return;input.value='';add('user',q);
     const emergency=/accident grave|inconscient|incendie|départ de feu|explosion|saigne abondamment|danger immédiat|urgence/i.test(q);
-    if(emergency){const emergencyAnswer='Situation potentiellement urgente. Appliquez immédiatement les consignes d’urgence de votre entreprise et alertez les personnes ou services prévus. N’attendez pas une réponse de PREV’IA.';stopPreviaVoice();add('ai','🚨 '+emergencyAnswer);setPreviaLastAnswer(emergencyAnswer);speakPreviaAnswer(emergencyAnswer,true);status('Mode urgence · priorité aux consignes de l’entreprise');return;}
-    const pending=add('ai','🧠 Prevy analyse votre demande...');status('PREV’IA réfléchit...',true);
+    if(emergency){setPrevyState('stop');const emergencyAnswer='Situation potentiellement urgente. Appliquez immédiatement les consignes d’urgence de votre entreprise et alertez les personnes ou services prévus. N’attendez pas une réponse de PREV’IA.';stopPreviaVoice();add('ai','🚨 '+emergencyAnswer);setPreviaLastAnswer(emergencyAnswer);speakPreviaAnswer(emergencyAnswer,true);status('Mode urgence · priorité aux consignes de l’entreprise');return;}
+    setPrevyState('reflexion');const pending=add('ai','🧠 Prevy analyse votre demande...');status('PREV’IA réfléchit...',true);
     try{
       const res=await fetch(PREVIA_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,context:context()})});
       const data=await res.json().catch(()=>({}));
       if(!res.ok || data.error) throw new Error(data.error||('HTTP '+res.status));
-      pending?.remove();const answer=data.answer||'Je ne dispose pas de suffisamment d’informations pour répondre de façon fiable. Consultez votre responsable.';add('ai',answer);setPreviaLastAnswer(answer);speakPreviaAnswer(answer);status('Réponse reçue · vérifiez toujours les consignes de l’entreprise');
-    }catch(e){pending?.remove();add('ai','PREV’IA est momentanément indisponible. Vous pouvez toujours créer un signalement ou contacter votre responsable.');status('Service IA indisponible · les autres fonctions restent accessibles');console.error('PREVIA',e);}
+      pending?.remove();const answer=data.answer||'Je ne dispose pas de suffisamment d’informations pour répondre de façon fiable. Consultez votre responsable.';add('ai',answer);setPrevyState(prevyStateFromAnswer(answer));setPreviaLastAnswer(answer);speakPreviaAnswer(answer);status('Réponse reçue · vérifiez toujours les consignes de l’entreprise');
+    }catch(e){pending?.remove();setPrevyState('attention');add('ai','PREV’IA est momentanément indisponible. Vous pouvez toujours créer un signalement ou contacter votre responsable.');status('Service IA indisponible · les autres fonctions restent accessibles');console.error('PREVIA',e);}
   };
   document.addEventListener('DOMContentLoaded',()=>{const fab=document.getElementById('previa-fab');if(fab)fab.style.display='flex';});
 })();
@@ -5145,6 +5202,19 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('DOMContentLoaded',function(){refresh();setTimeout(refresh,1500);});
   const observer=new MutationObserver(refresh);document.addEventListener('DOMContentLoaded',function(){observer.observe(document.body,{subtree:true,attributes:true,attributeFilter:['class','style']});});
   window.restevRefreshInstallInvite=refresh;
+})();
+</script>
+
+
+<script id="restev85-prevy-screen-state-hook-v2">
+(function(){
+  document.addEventListener('click',function(event){
+    const el=event.target.closest('[onclick]');if(!el)return;
+    const action=el.getAttribute('onclick')||'';
+    if(/scr-report|previaCreateReport/.test(action))setPrevyState('signalement');
+    else if(/scr-qcm-success|finalizeAndClose/.test(action))setPrevyState('validation',{resetAfter:6000});
+    else if(/scr-training|scr-resources|openEmployeeResources/.test(action))setPrevyState('conseil',{resetAfter:3000});
+  },true);
 })();
 </script>
 
