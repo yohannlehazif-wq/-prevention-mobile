@@ -4911,7 +4911,7 @@ document.addEventListener('DOMContentLoaded', () => {
     recognition.lang='fr-FR';recognition.continuous=false;recognition.interimResults=true;recognition.maxAlternatives=1;
     const input=document.getElementById('previa-input');
     let finalText='';
-    recognition.onstart=()=>{setMicUI(true);if(window.prevySetListening)prevySetListening(true);prevyReact('attention','Je vous écoute. Parlez clairement.');voiceStatus('🎤 Prevy vous écoute... Parlez clairement.');};
+    recognition.onstart=()=>{setMicUI(true);setPrevyState('attention');voiceStatus('🎤 Prevy vous écoute... Parlez clairement.');};
     recognition.onresult=(event)=>{
       let interim='';
       for(let i=event.resultIndex;i<event.results.length;i++){
@@ -4925,7 +4925,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const messages={not_allowed:'Autorisation du microphone refusée',audio_capture:'Aucun microphone détecté',no_speech:'Aucune parole détectée',network:'Service de reconnaissance vocale indisponible'};
       voiceStatus(messages[event.error]||('Erreur microphone : '+event.error));setMicUI(false);
     };
-    recognition.onend=()=>{setMicUI(false);if(window.prevySetListening)prevySetListening(false);prevyReact('accueil','Dictée terminée. Vérifiez le texte avant l’envoi.');if(input&&input.value.trim())voiceStatus('Question dictée · vérifiez le texte puis appuyez sur Envoyer');};
+    recognition.onend=()=>{setMicUI(false);setPrevyState('accueil');if(input&&input.value.trim())voiceStatus('Question dictée · vérifiez le texte puis appuyez sur Envoyer');};
     try{recognition.start();}catch(e){voiceStatus('Impossible de démarrer le microphone');setMicUI(false);}
   };
 
@@ -5219,106 +5219,89 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 
-<style id="restev85-prevy-interactions-v3">
-#prevy-interaction-bubble{display:none;margin-top:10px;padding:10px 12px;border-radius:15px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);color:#fff;font-size:11px;line-height:1.42;font-weight:750;animation:prevyBubbleIn .22s ease-out}
-#prevy-interaction-bubble.show{display:block}.prevy-avatar.prevy-listening{animation:prevyListeningPulse .78s ease-in-out infinite!important;box-shadow:0 0 0 6px rgba(37,200,206,.18),0 15px 36px rgba(37,200,206,.42)!important}
-#prevy-main-img.prevy-speaking{animation:prevySpeaking 1.05s ease-in-out infinite!important}
-@keyframes prevyBubbleIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
-@keyframes prevyListeningPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
-@keyframes prevySpeaking{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.025)}}
-@media(prefers-reduced-motion:reduce){#prevy-main-img.prevy-speaking,.prevy-avatar.prevy-listening{animation:none!important}}
+<style id="restev85-final-ergonomics-security-v4">
+:root{--r85-touch:48px;--r85-readable:14px}
+button,a,input,select,textarea{touch-action:manipulation}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #25c8ce!important;outline-offset:3px!important}
+#scr-employee button,#scr-previa button,#scr-report button,#r85-bottom-nav button{min-height:var(--r85-touch)}
+#scr-employee p:not([class*="text-[9px]"]),#scr-previa p,#scr-report p{line-height:1.5}
+.r85-role-hidden{display:none!important}
+body.restev-role-employee #scr-auth,body.restev-role-employee #scr-manager,body.restev-role-employee #scr-manager-history,body.restev-role-employee #scr-studio,body.restev-role-employee #scr-direction{display:none!important}
+body.restev-role-employee [data-restev-protected-entry="true"]{display:none!important}
+#restev-employee-role-badge{display:none;align-items:center;gap:6px;width:max-content;max-width:100%;padding:6px 10px;border-radius:999px;background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-size:10px;font-weight:900}
+body.restev-role-employee #restev-employee-role-badge{display:flex}
+.r85-employee-help{margin-top:10px;padding:11px 12px;border-radius:15px;background:#eff8ff;border:1px solid #bfdbfe;color:#17335f;font-size:11px;line-height:1.45;font-weight:700}.dark .r85-employee-help{background:#13213c;border-color:#2c4e7d;color:#dbeafe}
+@media(max-width:420px){#scr-employee,#scr-previa,#scr-report{padding-left:2px!important;padding-right:2px!important}.r85-overview-grid button{min-height:96px!important}.previa-voice-btn{min-height:52px!important}}
 </style>
-<script id="restev85-prevy-interactions-v3">
+<script id="restev85-final-role-security-v4">
 (function(){
 'use strict';
-let bubbleTimer=null;
-let lastActivity=Date.now();
-let idleTimer=null;
+const PROTECTED=new Set(['scr-auth','scr-manager','scr-manager-history','scr-studio','scr-direction']);
+const MANAGER_ACTION_RE=/scr-auth|scr-manager|scr-manager-history|scr-studio|scr-direction|handleManagerLogin|forceOpenManagerSpace|loadRestevStats|resetRestevCentreStats/;
+let employeeLocked=false;
+let guardInstallCount=0;
 
-function ensureBubble(){
- const hero=document.querySelector('#scr-previa .bg-gradient-to-br');
- if(!hero)return null;
- let b=document.getElementById('prevy-interaction-bubble');
- if(!b){b=document.createElement('div');b.id='prevy-interaction-bubble';b.setAttribute('aria-live','polite');hero.appendChild(b);}
- return b;
+function session(){try{return window.currentEmployeeSession||(typeof currentEmployeeSession!=='undefined'?currentEmployeeSession:null)||null;}catch(e){return null;}}
+function isEmployee(){return employeeLocked||!!session();}
+function message(text){try{if(typeof showToast==='function')return showToast(text);}catch(e){}console.warn(text);}
+function employeeHome(){
+ const target=document.getElementById('scr-employee');
+ document.querySelectorAll('.screen').forEach(el=>{el.classList.remove('active');el.style.display='none';});
+ if(target){target.classList.add('active');target.style.display='block';window.scrollTo({top:0,behavior:'smooth'});}
+ message('Espace réservé. Retour à votre espace salarié.');
+ return false;
 }
-window.prevySay=function(message,duration=4200){
- const b=ensureBubble();if(!b)return;
- b.textContent=message;b.classList.add('show');
- if(bubbleTimer)clearTimeout(bubbleTimer);
- if(duration>0)bubbleTimer=setTimeout(()=>b.classList.remove('show'),duration);
-};
-window.prevyReact=function(state,message,options={}){
- if(typeof setPrevyState==='function')setPrevyState(state,options);
- if(message)prevySay(message,options.messageDuration||4200);
- lastActivity=Date.now();
-};
-function setListening(active){
- const avatar=document.querySelector('.prevy-avatar');
- if(avatar)avatar.classList.toggle('prevy-listening',active);
+function markProtectedEntries(){
+ document.querySelectorAll('[onclick]').forEach(el=>{
+  const action=el.getAttribute('onclick')||'';
+  if(MANAGER_ACTION_RE.test(action))el.dataset.restevProtectedEntry='true';
+ });
+ const login=document.getElementById('btn-manager-login');if(login)login.dataset.restevProtectedEntry='true';
 }
-function setSpeaking(active){
- const img=document.getElementById('prevy-main-img');
- if(img)img.classList.toggle('prevy-speaking',active);
+function applyRoleUI(){
+ const active=isEmployee();document.body.classList.toggle('restev-role-employee',active);
+ markProtectedEntries();
+ document.querySelectorAll('[data-restev-protected-entry="true"]').forEach(el=>{
+  el.classList.toggle('r85-role-hidden',active);el.setAttribute('aria-hidden',active?'true':'false');if('disabled'in el)el.disabled=active;
+ });
+ if(active){
+  const drawer=document.getElementById('r85-more-drawer');if(drawer){drawer.classList.remove('open');drawer.setAttribute('aria-hidden','true');}
+  for(const id of PROTECTED){const el=document.getElementById(id);if(el&&(el.classList.contains('active')||el.style.display==='block'))return employeeHome();}
+ }
 }
-function reactToScreen(id){
- const reactions={
-  'scr-home':['accueil','Bonjour ! Je suis prêt à vous guider.'],
-  'scr-employee':['accueil','Votre espace prévention est prêt. Que souhaitez-vous faire ?'],
-  'scr-previa':['accueil','Décrivez votre tâche ou posez votre question.'],
-  'scr-report':['signalement','Décrivez précisément la situation observée.'],
-  'scr-training':['conseil','Choisissez votre secteur pour ouvrir le module TutoPrev adapté.'],
-  'scr-resources':['conseil','Voici les ressources prévention associées à votre activité.'],
-  'scr-qcm':['attention','Prenez le temps de lire chaque réponse avant de valider.'],
-  'scr-qcm-success':['validation','Bravo, votre parcours de validation est terminé.'],
-  'scr-employee-messages':['conseil','Retrouvez ici les réponses et informations de votre responsable.']
- };
- if(reactions[id])prevyReact(reactions[id][0],reactions[id][1],{messageDuration:3300});
+function installNavigationGuard(){
+ let fn=null;try{fn=window.switchScreen||switchScreen;}catch(e){fn=window.switchScreen;}
+ if(typeof fn!=='function'||fn.__restevFinalRoleGuard)return;
+ const wrapped=function(id){if(isEmployee()&&PROTECTED.has(id))return employeeHome();const result=fn.apply(this,arguments);setTimeout(applyRoleUI,0);return result;};
+ wrapped.__restevFinalRoleGuard=true;window.switchScreen=wrapped;try{switchScreen=wrapped;}catch(e){}guardInstallCount++;
 }
-function installSwitchHook(){
- let sw=null;try{sw=window.switchScreen||switchScreen;}catch(e){sw=window.switchScreen;}
- if(typeof sw!=='function'||sw.__prevyInteractionV3)return;
- const wrapped=function(id){const result=sw.apply(this,arguments);setTimeout(()=>reactToScreen(id),120);return result;};
- wrapped.__prevyInteractionV3=true;window.switchScreen=wrapped;try{switchScreen=wrapped;}catch(e){}
+function installFunctionGuards(){
+ ['handleManagerLogin','forceOpenManagerSpace','loadRestevStats','resetRestevCentreStats'].forEach(name=>{
+  const fn=window[name];if(typeof fn!=='function'||fn.__restevFinalBlocked)return;
+  const wrapped=function(){if(isEmployee())return employeeHome();return fn.apply(this,arguments);};wrapped.__restevFinalBlocked=true;window[name]=wrapped;
+  try{if(name==='handleManagerLogin')handleManagerLogin=wrapped;}catch(e){}
+ });
 }
-function scheduleIdle(){
- if(idleTimer)clearInterval(idleTimer);
- idleTimer=setInterval(function(){
-  const screen=document.getElementById('scr-previa');
-  if(!screen?.classList.contains('active'))return;
-  if(Date.now()-lastActivity>45000){prevyReact('accueil','Je suis toujours disponible si vous avez une question.',{messageDuration:3600});lastActivity=Date.now();}
- },10000);
-}
-document.addEventListener('click',function(event){
- lastActivity=Date.now();
- const el=event.target.closest('button,[onclick],a');if(!el)return;
- const action=el.getAttribute('onclick')||'';const text=(el.textContent||'').trim().toLowerCase();
- if(/previa-mic-btn|togglePreviaListening/.test(el.id+' '+action))prevyReact('attention','Je vous écoute. Parlez clairement, puis vérifiez la transcription.');
- else if(/previa-send-btn|previaSend/.test(el.id+' '+action))prevyReact('reflexion','J’analyse votre demande...');
- else if(/previa-read-btn|readLastPreviaAnswer/.test(el.id+' '+action)){prevyReact('conseil','Je vous lis la réponse.');setSpeaking(true);}
- else if(/previa-stop-voice-btn|stopPreviaVoice/.test(el.id+' '+action)){setSpeaking(false);setListening(false);prevyReact('accueil','Écoute et lecture arrêtées.');}
- else if(/scr-report|signalement/.test(action+' '+text))prevyReact('signalement','Je vous accompagne pour créer le signalement.');
- else if(/scr-training|tutoprev|module inrs/.test(action+' '+text))prevyReact('conseil','Sélectionnez le module correspondant à votre secteur.');
- else if(/qcm|valider la réponse/.test(action+' '+text))prevyReact('attention','Vérifiez votre choix avant de valider.',{messageDuration:2400});
+function lockWhenEmployeeDetected(){if(session())employeeLocked=true;applyRoleUI();installNavigationGuard();installFunctionGuards();}
+
+document.addEventListener('click',event=>{
+ lockWhenEmployeeDetected();if(!isEmployee())return;
+ const target=event.target.closest('[onclick],#btn-manager-login,[data-restev-protected-entry="true"]');if(!target)return;
+ const action=target.getAttribute('onclick')||'';
+ if(target.dataset.restevProtectedEntry==='true'||target.id==='btn-manager-login'||MANAGER_ACTION_RE.test(action)){event.preventDefault();event.stopImmediatePropagation();employeeHome();}
 },true);
-document.addEventListener('input',function(event){
- lastActivity=Date.now();
- if(event.target?.id==='previa-input'){
-  const n=event.target.value.trim().length;
-  if(n===1)prevyReact('accueil','Je vous écoute. Décrivez la situation avec vos propres mots.',{messageDuration:2800});
+
+document.addEventListener('DOMContentLoaded',()=>{
+ const overview=document.querySelector('.r85-employee-overview');
+ if(overview&&!document.getElementById('restev-employee-role-badge')){
+  const badge=document.createElement('div');badge.id='restev-employee-role-badge';badge.innerHTML='<i class="fa-solid fa-user-shield"></i> Espace salarié sécurisé';overview.prepend(badge);
+  const help=document.createElement('div');help.className='r85-employee-help';help.innerHTML='<b>Accès rapide :</b> utilisez Prevy pour une question, Passeport pour le parcours, Signaler pour une situation terrain et Messages pour le suivi.';overview.appendChild(help);
  }
+ lockWhenEmployeeDetected();[120,500,1200,2500].forEach(ms=>setTimeout(lockWhenEmployeeDetected,ms));
+ const observer=new MutationObserver(()=>{if(session())employeeLocked=true;applyRoleUI();});observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style']});
 });
-const oldSpeak=window.speakPreviaAnswer;
-function hookSpeech(){
- if(typeof window.speakPreviaAnswer==='function'&&!window.speakPreviaAnswer.__prevyV3){
-  const original=window.speakPreviaAnswer;
-  const wrapped=function(){setSpeaking(true);prevyReact('conseil','Je vous réponds à voix haute.',{messageDuration:2600});const r=original.apply(this,arguments);setTimeout(()=>setSpeaking(false),15000);return r;};
-  wrapped.__prevyV3=true;window.speakPreviaAnswer=wrapped;
- }
-}
-document.addEventListener('DOMContentLoaded',function(){installSwitchHook();hookSpeech();scheduleIdle();setTimeout(()=>{installSwitchHook();hookSpeech();ensureBubble();},900);});
-window.addEventListener('beforeunload',()=>{if(idleTimer)clearInterval(idleTimer);});
-window.prevySetListening=setListening;window.prevySetSpeaking=setSpeaking;
+window.restevLockEmployeeRole=function(){employeeLocked=true;lockWhenEmployeeDetected();};
+window.restevRoleStatus=function(){return{employee:isEmployee(),session:session(),navigationGuards:guardInstallCount};};
 })();
 </script>
 
