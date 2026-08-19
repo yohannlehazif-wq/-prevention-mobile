@@ -4953,7 +4953,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let lastAnswer='';
   let selectedVoice=null;
   let autoRead=localStorage.getItem('previa_voice_auto')==='true';
-  let voiceRate=Number(localStorage.getItem('previa_voice_rate')||'0.95');
+  let voiceRate=Number(localStorage.getItem('previa_voice_rate')||'0.92');
 
   function voiceStatus(message,thinking=false){
     const e=document.getElementById('previa-status');
@@ -4979,17 +4979,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function cleanForSpeech(text){
     return String(text||'')
+      // Noms et sigles : prononciation naturelle
+      .replace(/\bR\s*E\s*S\s*T\s*E\s*V\s*[- ]?\s*85\b/gi,'Restev quatre-vingt-cinq')
+      .replace(/\bRESTEV\s*[- ]?\s*85\b/gi,'Restev quatre-vingt-cinq')
+      .replace(/\bRESTEV85\b/gi,'Restev quatre-vingt-cinq')
+      .replace(/\bRESTEV\b/gi,'Restev')
+      .replace(/\bPREV[’']?IA\b/gi,'Prévia')
+      .replace(/\bCARSAT\b/gi,'Carsat')
+      .replace(/\bINRS\b/g,'I N R S')
+      .replace(/\bOPPBTP\b/g,'O P P B T P')
+      .replace(/\bDUERP\b/g,'D U E R P')
+      .replace(/\bEPI\b/g,'équipements de protection individuelle')
+      .replace(/\bTMS\b/g,'troubles musculo-squelettiques')
+      .replace(/\bFDS\b/g,'fiche de données de sécurité')
+      .replace(/\bQCM\b/g,'questionnaire')
+      // Pauses plus naturelles dans les rubriques
+      .replace(/Points de vigilance/gi,'Points de vigilance. ')
+      .replace(/À vérifier/gi,'À vérifier. ')
+      .replace(/Ne poursuivez pas sans vérification/gi,'Attention. Ne poursuivez pas sans vérification. ')
+      .replace(/À confirmer avec votre responsable/gi,'À confirmer avec votre responsable. ')
+      .replace(/Signalement conseillé/gi,'Un signalement est conseillé. ')
+      // Nettoyage Markdown, URL, pictogrammes et listes
       .replace(/```[\s\S]*?```/g,' ')
-      .replace(/[*_#>`~]/g,' ')
       .replace(/https?:\/\/\S+/g,' ')
-      .replace(/[✅⚠️🛑👤📣📚🧠🚨🔎☑️]/g,' ')
+      .replace(/[✅⚠️🛑👤📣📚🧠🚨🔎☑️🔊🎤]/gu,' ')
+      .replace(/[*_#>`~]/g,' ')
+      .replace(/(?:^|\n)\s*[-•]\s+/g,'. ')
+      .replace(/\n+/g,'. ')
       .replace(/\s+/g,' ')
+      .replace(/\.{2,}/g,'.')
+      .replace(/\.\s*\./g,'.')
       .trim();
   }
 
+
   window.setPreviaLastAnswer=function(text){lastAnswer=String(text||'');};
   window.setPreviaAutoRead=function(value){autoRead=!!value;localStorage.setItem('previa_voice_auto',String(autoRead));voiceStatus(autoRead?'Lecture automatique activée':'Lecture automatique désactivée');};
-  window.setPreviaVoiceRate=function(value){voiceRate=Math.min(1.3,Math.max(.7,Number(value)||.95));localStorage.setItem('previa_voice_rate',String(voiceRate));};
+  window.setPreviaVoiceRate=function(value){voiceRate=Math.min(1.3,Math.max(.7,Number(value)||.92));localStorage.setItem('previa_voice_rate',String(voiceRate));};
   window.stopPreviaVoice=function(){
     try{if(recognition&&listening)recognition.stop();}catch(e){}
     if('speechSynthesis' in window)window.speechSynthesis.cancel();
@@ -5003,11 +5029,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if(!clean){voiceStatus('Aucune réponse à lire');return;}
     window.speechSynthesis.cancel();
     const utterance=new SpeechSynthesisUtterance(clean);
-    utterance.lang='fr-FR';utterance.rate=voiceRate;utterance.pitch=1;utterance.volume=1;
+    utterance.lang='fr-FR';utterance.rate=Math.min(.98,Math.max(.82,voiceRate));utterance.pitch=1;utterance.volume=1;
     if(selectedVoice||chooseFrenchVoice())utterance.voice=selectedVoice;
-    utterance.onstart=()=>voiceStatus('🔊 Prevy vous répond...');
-    utterance.onend=()=>voiceStatus('Lecture terminée · vous pouvez poser une autre question');
-    utterance.onerror=()=>voiceStatus('La lecture vocale a été interrompue');
+    utterance.onstart=()=>{voiceStatus('🔊 Prevy vous répond...');if(window.prevySetSpeaking)window.prevySetSpeaking(true);};
+    utterance.onend=()=>{voiceStatus('Lecture terminée · vous pouvez poser une autre question');if(window.prevySetSpeaking)window.prevySetSpeaking(false);};
+    utterance.onerror=()=>{voiceStatus('La lecture vocale a été interrompue');if(window.prevySetSpeaking)window.prevySetSpeaking(false);};
     window.speechSynthesis.speak(utterance);
   };
   window.readLastPreviaAnswer=function(){window.speakPreviaAnswer(lastAnswer,true);};
