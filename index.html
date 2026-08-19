@@ -5412,5 +5412,63 @@ window.restevRoleStatus=function(){return{employee:isEmployee(),session:session(
 })();
 </script>
 
+
+<style id="restev85-photo-analysis-v1">
+#prevy-photo-analysis-box{margin-top:10px;padding:14px;border-radius:20px;background:linear-gradient(145deg,#eefcff,#f7f4ff);border:1px solid #b9eaf0;color:#102044}.dark #prevy-photo-analysis-box{background:linear-gradient(145deg,#13213c,#221b3e);border-color:#285b75;color:#e8f7ff}
+.prevy-photo-analysis-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.prevy-photo-analysis-head div{display:flex;align-items:center;gap:9px}.prevy-photo-analysis-head i{width:36px;height:36px;display:grid;place-items:center;border-radius:13px;color:#fff;background:linear-gradient(135deg,#25c8ce,#1159df,#e72c91)}
+#prevy-photo-analyse-btn{width:100%;min-height:48px;margin-top:11px;border:0;border-radius:15px;color:#fff;background:linear-gradient(90deg,#25c8ce,#1159df,#e72c91);font-size:11px;font-weight:950;box-shadow:0 10px 24px rgba(17,89,223,.24)}#prevy-photo-analyse-btn:disabled{opacity:.55;cursor:not-allowed}
+#prevy-photo-analysis-status{margin-top:9px;font-size:10px;font-weight:800;color:#53627b}.dark #prevy-photo-analysis-status{color:#bed0e5}
+#prevy-photo-analysis-result{display:none;margin-top:11px;padding:13px;border-radius:16px;background:#fff;border-left:5px solid #25c8ce;font-size:11px;line-height:1.48}.dark #prevy-photo-analysis-result{background:#101a30}#prevy-photo-analysis-result.show{display:block}#prevy-photo-analysis-result h4{font-size:12px;font-weight:950;margin:0 0 7px}#prevy-photo-analysis-result ul{list-style:disc;padding-left:18px;margin:5px 0}#prevy-photo-analysis-result .decision{margin-top:9px;padding:9px;border-radius:12px;background:#eef6ff;font-weight:900}.dark #prevy-photo-analysis-result .decision{background:#192943}
+.prevy-photo-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}.prevy-photo-actions button{min-height:42px;border:0;border-radius:12px;color:#fff;font-size:10px;font-weight:900}.prevy-photo-report{background:#e72c91}.prevy-photo-ask{background:#1159df}
+</style>
+<script id="restev85-photo-analysis-v1">
+(function(){
+'use strict';
+const ENDPOINT='https://qahamxdomftqodziluci.supabase.co/functions/v1/previa';
+let lastPhotoAnalysis=null;
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function list(values){return Array.isArray(values)&&values.length?'<ul>'+values.map(v=>'<li>'+esc(v)+'</li>').join('')+'</ul>':'<p>Aucun élément suffisamment visible.</p>';}
+function currentPhoto(){
+ try{if(typeof r85CurrentReportPhoto!=='undefined'&&r85CurrentReportPhoto?.data)return r85CurrentReportPhoto.data;}catch(e){}
+ const img=document.getElementById('risk-photo-preview');return img?.src?.startsWith('data:image/')?img.src:null;
+}
+function context(){
+ let session=null;try{session=window.currentEmployeeSession||(typeof currentEmployeeSession!=='undefined'?currentEmployeeSession:null);}catch(e){}
+ return {sector:session?.sector||'',profile:session?.profile||'',company:session?.company||'',app:'RESTEV 85 Passeport Prévention'};
+}
+function ensureUI(){
+ const photoBox=document.getElementById('risk-photo-box');if(!photoBox||document.getElementById('prevy-photo-analysis-box'))return;
+ const box=document.createElement('div');box.id='prevy-photo-analysis-box';box.innerHTML=`<div class="prevy-photo-analysis-head"><div><i class="fa-solid fa-camera-retro"></i><span><b class="block text-xs">Analyse visuelle avec Prevy</b><small class="text-[9px]">Repère uniquement les éléments visibles à vérifier</small></span></div><span class="text-[9px] font-black text-cyan-700">IA</span></div><button id="prevy-photo-analyse-btn" type="button" disabled><i class="fa-solid fa-wand-magic-sparkles"></i> Analyser la photo</button><div id="prevy-photo-analysis-status">Ajoutez une photo, puis lancez l’analyse.</div><div id="prevy-photo-analysis-result"></div>`;
+ photoBox.appendChild(box);document.getElementById('prevy-photo-analyse-btn').onclick=analysePhoto;
+ const input=document.getElementById('risk-photo-input');if(input)input.addEventListener('change',()=>setTimeout(refreshButton,500));
+ document.getElementById('risk-photo-remove')?.addEventListener('click',()=>{lastPhotoAnalysis=null;refreshButton();clearResult();});refreshButton();
+}
+function refreshButton(){const btn=document.getElementById('prevy-photo-analyse-btn');if(btn)btn.disabled=!currentPhoto();const status=document.getElementById('prevy-photo-analysis-status');if(status)status.textContent=currentPhoto()?'Photo prête. Décrivez aussi la situation pour améliorer l’analyse.':'Ajoutez une photo, puis lancez l’analyse.';}
+function clearResult(){const r=document.getElementById('prevy-photo-analysis-result');if(r){r.classList.remove('show');r.innerHTML='';}}
+function normalize(data){return data?.analysis||data?.photo_analysis||data?.result||null;}
+function render(a){
+ const r=document.getElementById('prevy-photo-analysis-result');if(!r)return;
+ const level=a.niveau||'attention';const colors={conseil:'#10b981',attention:'#f59e0b',stop:'#e11d48',signalement:'#e72c91'};r.style.borderLeftColor=colors[level]||colors.attention;
+ r.innerHTML=`<h4>🔎 Éléments visibles à vérifier</h4><p>${esc(a.resume||a.description_visible||'Analyse de la photo')}</p><h4 class="mt-3">⚠️ Points de vigilance possibles</h4>${list(a.dangers||a.points_vigilance)}<h4 class="mt-3">✅ Vérifications conseillées</h4>${list(a.verifications)}<h4 class="mt-3">👤 Limites de l’image</h4>${list(a.informations_manquantes||a.limites_visuelles)}<div class="decision">${esc(a.decision||'Confirmez les éléments avec votre responsable et les consignes de l’entreprise.')}</div><div class="prevy-photo-actions"><button class="prevy-photo-ask" onclick="prevyUsePhotoAnalysis()">Poser une question</button><button class="prevy-photo-report" onclick="prevyPhotoToReport()">Créer le signalement</button></div>`;r.classList.add('show');
+ if(typeof setPrevyState==='function')setPrevyState(level==='stop'?'stop':level==='signalement'?'signalement':level==='conseil'?'conseil':'attention');
+}
+async function analysePhoto(){
+ const photo=currentPhoto();if(!photo)return;
+ const btn=document.getElementById('prevy-photo-analyse-btn');const status=document.getElementById('prevy-photo-analysis-status');const description=document.getElementById('risk-description')?.value?.trim()||'';
+ btn.disabled=true;if(status)status.textContent='Prevy analyse les éléments visibles...';if(typeof setPrevyState==='function')setPrevyState('reflexion');clearResult();
+ try{
+  const res=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'analyse_photo',question:description||'Analyse cette photo de situation de travail.',image_base64:photo,context:context(),rules:{visible_only:true,no_compliance_judgment:true,no_identity:true}})});
+  const data=await res.json().catch(()=>({}));if(!res.ok||data.error)throw new Error(data.error||('HTTP '+res.status));const analysis=normalize(data);if(!analysis)throw new Error('Réponse d’analyse absente');lastPhotoAnalysis=analysis;render(analysis);if(status)status.textContent='Analyse terminée. Vérifiez les éléments sur le terrain.';
+ }catch(e){console.error('PHOTO_ANALYSIS',e);if(typeof setPrevyState==='function')setPrevyState('attention');if(status)status.textContent='Analyse indisponible. La photo reste jointe au signalement.';const r=document.getElementById('prevy-photo-analysis-result');if(r){r.innerHTML='<h4>Analyse photo indisponible</h4><p>Décrivez la situation par écrit et contactez votre responsable si une information essentielle manque.</p>';r.classList.add('show');}}
+ finally{btn.disabled=!currentPhoto();}
+}
+window.prevyUsePhotoAnalysis=function(){if(!lastPhotoAnalysis)return;const text=[lastPhotoAnalysis.resume,...(lastPhotoAnalysis.dangers||[]),lastPhotoAnalysis.decision].filter(Boolean).join(' ');if(typeof openPrevia==='function')openPrevia();setTimeout(()=>{const input=document.getElementById('previa-input');if(input){input.value='À partir de cette analyse photo : '+text+' Que dois-je vérifier avant de poursuivre ?';input.focus();}},220);};
+window.prevyPhotoToReport=function(){if(!lastPhotoAnalysis)return;const desc=document.getElementById('risk-description');if(desc&&!desc.value.trim())desc.value='Analyse photo Prevy : '+[lastPhotoAnalysis.resume,lastPhotoAnalysis.decision].filter(Boolean).join(' ');if(typeof setPrevyState==='function')setPrevyState('signalement');desc?.focus();};
+window.analysePhotoWithPrevy=analysePhoto;
+document.addEventListener('DOMContentLoaded',()=>{ensureUI();setTimeout(ensureUI,500);setTimeout(ensureUI,1600);});
+const observer=new MutationObserver(ensureUI);document.addEventListener('DOMContentLoaded',()=>observer.observe(document.body,{subtree:true,childList:true}));
+})();
+</script>
+
 </body>
 </html>
