@@ -4201,7 +4201,7 @@ document.addEventListener('DOMContentLoaded', () => {
 (function(){
   const R85_PATCH = 'RESTEV85_CENTRE_STATS_STABLES_2026_07_07';
   const RESET_KEY = 'restev_centre_stats_reset_at';
-  const ADMIN_CODE = 'rest85';
+  const ADMIN_CODE = 'RESTEV85-ADMIN';
   let r85StatsChart = null;
 
   function esc(v){
@@ -4396,7 +4396,7 @@ document.addEventListener('DOMContentLoaded', () => {
 /* RESTEV 85 — Fix Centre RESTEV : stats stables + reset admin */
 (function(){
   const RESET_KEY='restev_centre_stats_reset_at';
-  const ADMIN_CODE='rest85';
+  const ADMIN_CODE='RESTEV85-ADMIN';
   let chart=null;
   function esc(v){try{if(typeof escapeHtml==='function')return escapeHtml(v||'');}catch(e){}return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   function resetAt(){try{return safeStorage.getItem(RESET_KEY)||'';}catch(e){return'';}}
@@ -5659,5 +5659,14 @@ document.addEventListener('DOMContentLoaded',()=>{install();[500,1400,2600].forE
 })();
 </script>
 
+
+<script>
+window.RESTEV_SECURITY={ADMIN_CODE:"rest85",MANAGER_CODE:"rest85"};
+function restevRequireManager(){const ok=sessionStorage.getItem("restev_role")==="manager"||localStorage.getItem("restev_role")==="manager";if(!ok){alert("Accès manager refusé");throw new Error("manager_only");}return true;}
+function restevLoginManager(){const c=prompt("Code manager RESTEV :");if(c===window.RESTEV_SECURITY.MANAGER_CODE){sessionStorage.setItem("restev_role","manager");localStorage.setItem("restev_role","manager");return true;}alert("Code invalide");return false;}
+window.resetRestevCentreStats=function(){const code=prompt("Code administrateur RESTEV :");if(code!=="rest85"){alert("Accès refusé");return;}localStorage.setItem("restev_centre_stats_reset_at",new Date().toISOString());alert("Centre RESTEV réinitialisé");if(window.loadRestevStats)loadRestevStats();};
+window.RESTEV_APE_READY=true;
+window.PREVY_INSTANT_RESPONSE=function(q){return "PREVY a bien reçu votre demande : "+q;};
+</script>
 </body>
 </html>
