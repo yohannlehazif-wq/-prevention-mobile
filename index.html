@@ -4911,7 +4911,7 @@ document.addEventListener('DOMContentLoaded', () => {
     recognition.lang='fr-FR';recognition.continuous=false;recognition.interimResults=true;recognition.maxAlternatives=1;
     const input=document.getElementById('previa-input');
     let finalText='';
-    recognition.onstart=()=>{setMicUI(true);setPrevyState('attention');voiceStatus('🎤 Prevy vous écoute... Parlez clairement.');};
+    recognition.onstart=()=>{setMicUI(true);if(window.prevySetListening)prevySetListening(true);prevyReact('attention','Je vous écoute. Parlez clairement.');voiceStatus('🎤 Prevy vous écoute... Parlez clairement.');};
     recognition.onresult=(event)=>{
       let interim='';
       for(let i=event.resultIndex;i<event.results.length;i++){
@@ -4925,7 +4925,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const messages={not_allowed:'Autorisation du microphone refusée',audio_capture:'Aucun microphone détecté',no_speech:'Aucune parole détectée',network:'Service de reconnaissance vocale indisponible'};
       voiceStatus(messages[event.error]||('Erreur microphone : '+event.error));setMicUI(false);
     };
-    recognition.onend=()=>{setMicUI(false);setPrevyState('accueil');if(input&&input.value.trim())voiceStatus('Question dictée · vérifiez le texte puis appuyez sur Envoyer');};
+    recognition.onend=()=>{setMicUI(false);if(window.prevySetListening)prevySetListening(false);prevyReact('accueil','Dictée terminée. Vérifiez le texte avant l’envoi.');if(input&&input.value.trim())voiceStatus('Question dictée · vérifiez le texte puis appuyez sur Envoyer');};
     try{recognition.start();}catch(e){voiceStatus('Impossible de démarrer le microphone');setMicUI(false);}
   };
 
@@ -5215,6 +5215,110 @@ document.addEventListener('DOMContentLoaded', () => {
     else if(/scr-qcm-success|finalizeAndClose/.test(action))setPrevyState('validation',{resetAfter:6000});
     else if(/scr-training|scr-resources|openEmployeeResources/.test(action))setPrevyState('conseil',{resetAfter:3000});
   },true);
+})();
+</script>
+
+
+<style id="restev85-prevy-interactions-v3">
+#prevy-interaction-bubble{display:none;margin-top:10px;padding:10px 12px;border-radius:15px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);color:#fff;font-size:11px;line-height:1.42;font-weight:750;animation:prevyBubbleIn .22s ease-out}
+#prevy-interaction-bubble.show{display:block}.prevy-avatar.prevy-listening{animation:prevyListeningPulse .78s ease-in-out infinite!important;box-shadow:0 0 0 6px rgba(37,200,206,.18),0 15px 36px rgba(37,200,206,.42)!important}
+#prevy-main-img.prevy-speaking{animation:prevySpeaking 1.05s ease-in-out infinite!important}
+@keyframes prevyBubbleIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+@keyframes prevyListeningPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+@keyframes prevySpeaking{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.025)}}
+@media(prefers-reduced-motion:reduce){#prevy-main-img.prevy-speaking,.prevy-avatar.prevy-listening{animation:none!important}}
+</style>
+<script id="restev85-prevy-interactions-v3">
+(function(){
+'use strict';
+let bubbleTimer=null;
+let lastActivity=Date.now();
+let idleTimer=null;
+
+function ensureBubble(){
+ const hero=document.querySelector('#scr-previa .bg-gradient-to-br');
+ if(!hero)return null;
+ let b=document.getElementById('prevy-interaction-bubble');
+ if(!b){b=document.createElement('div');b.id='prevy-interaction-bubble';b.setAttribute('aria-live','polite');hero.appendChild(b);}
+ return b;
+}
+window.prevySay=function(message,duration=4200){
+ const b=ensureBubble();if(!b)return;
+ b.textContent=message;b.classList.add('show');
+ if(bubbleTimer)clearTimeout(bubbleTimer);
+ if(duration>0)bubbleTimer=setTimeout(()=>b.classList.remove('show'),duration);
+};
+window.prevyReact=function(state,message,options={}){
+ if(typeof setPrevyState==='function')setPrevyState(state,options);
+ if(message)prevySay(message,options.messageDuration||4200);
+ lastActivity=Date.now();
+};
+function setListening(active){
+ const avatar=document.querySelector('.prevy-avatar');
+ if(avatar)avatar.classList.toggle('prevy-listening',active);
+}
+function setSpeaking(active){
+ const img=document.getElementById('prevy-main-img');
+ if(img)img.classList.toggle('prevy-speaking',active);
+}
+function reactToScreen(id){
+ const reactions={
+  'scr-home':['accueil','Bonjour ! Je suis prêt à vous guider.'],
+  'scr-employee':['accueil','Votre espace prévention est prêt. Que souhaitez-vous faire ?'],
+  'scr-previa':['accueil','Décrivez votre tâche ou posez votre question.'],
+  'scr-report':['signalement','Décrivez précisément la situation observée.'],
+  'scr-training':['conseil','Choisissez votre secteur pour ouvrir le module TutoPrev adapté.'],
+  'scr-resources':['conseil','Voici les ressources prévention associées à votre activité.'],
+  'scr-qcm':['attention','Prenez le temps de lire chaque réponse avant de valider.'],
+  'scr-qcm-success':['validation','Bravo, votre parcours de validation est terminé.'],
+  'scr-employee-messages':['conseil','Retrouvez ici les réponses et informations de votre responsable.']
+ };
+ if(reactions[id])prevyReact(reactions[id][0],reactions[id][1],{messageDuration:3300});
+}
+function installSwitchHook(){
+ let sw=null;try{sw=window.switchScreen||switchScreen;}catch(e){sw=window.switchScreen;}
+ if(typeof sw!=='function'||sw.__prevyInteractionV3)return;
+ const wrapped=function(id){const result=sw.apply(this,arguments);setTimeout(()=>reactToScreen(id),120);return result;};
+ wrapped.__prevyInteractionV3=true;window.switchScreen=wrapped;try{switchScreen=wrapped;}catch(e){}
+}
+function scheduleIdle(){
+ if(idleTimer)clearInterval(idleTimer);
+ idleTimer=setInterval(function(){
+  const screen=document.getElementById('scr-previa');
+  if(!screen?.classList.contains('active'))return;
+  if(Date.now()-lastActivity>45000){prevyReact('accueil','Je suis toujours disponible si vous avez une question.',{messageDuration:3600});lastActivity=Date.now();}
+ },10000);
+}
+document.addEventListener('click',function(event){
+ lastActivity=Date.now();
+ const el=event.target.closest('button,[onclick],a');if(!el)return;
+ const action=el.getAttribute('onclick')||'';const text=(el.textContent||'').trim().toLowerCase();
+ if(/previa-mic-btn|togglePreviaListening/.test(el.id+' '+action))prevyReact('attention','Je vous écoute. Parlez clairement, puis vérifiez la transcription.');
+ else if(/previa-send-btn|previaSend/.test(el.id+' '+action))prevyReact('reflexion','J’analyse votre demande...');
+ else if(/previa-read-btn|readLastPreviaAnswer/.test(el.id+' '+action)){prevyReact('conseil','Je vous lis la réponse.');setSpeaking(true);}
+ else if(/previa-stop-voice-btn|stopPreviaVoice/.test(el.id+' '+action)){setSpeaking(false);setListening(false);prevyReact('accueil','Écoute et lecture arrêtées.');}
+ else if(/scr-report|signalement/.test(action+' '+text))prevyReact('signalement','Je vous accompagne pour créer le signalement.');
+ else if(/scr-training|tutoprev|module inrs/.test(action+' '+text))prevyReact('conseil','Sélectionnez le module correspondant à votre secteur.');
+ else if(/qcm|valider la réponse/.test(action+' '+text))prevyReact('attention','Vérifiez votre choix avant de valider.',{messageDuration:2400});
+},true);
+document.addEventListener('input',function(event){
+ lastActivity=Date.now();
+ if(event.target?.id==='previa-input'){
+  const n=event.target.value.trim().length;
+  if(n===1)prevyReact('accueil','Je vous écoute. Décrivez la situation avec vos propres mots.',{messageDuration:2800});
+ }
+});
+const oldSpeak=window.speakPreviaAnswer;
+function hookSpeech(){
+ if(typeof window.speakPreviaAnswer==='function'&&!window.speakPreviaAnswer.__prevyV3){
+  const original=window.speakPreviaAnswer;
+  const wrapped=function(){setSpeaking(true);prevyReact('conseil','Je vous réponds à voix haute.',{messageDuration:2600});const r=original.apply(this,arguments);setTimeout(()=>setSpeaking(false),15000);return r;};
+  wrapped.__prevyV3=true;window.speakPreviaAnswer=wrapped;
+ }
+}
+document.addEventListener('DOMContentLoaded',function(){installSwitchHook();hookSpeech();scheduleIdle();setTimeout(()=>{installSwitchHook();hookSpeech();ensureBubble();},900);});
+window.addEventListener('beforeunload',()=>{if(idleTimer)clearInterval(idleTimer);});
+window.prevySetListening=setListening;window.prevySetSpeaking=setSpeaking;
 })();
 </script>
 
