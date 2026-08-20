@@ -5578,5 +5578,47 @@ window.r85FinalizePassportSecure=async function(){
 window.finalizeAndClose=window.r85FinalizePassportSecure;try{finalizeAndClose=window.r85FinalizePassportSecure;}catch(e){}
 })();
 </script>
+
+<style id="restev85-global-hotfix-style">
+#r85-install-fixed{position:fixed;right:14px;bottom:88px;z-index:2147483000;display:none;min-height:48px;padding:0 16px;border:0;border-radius:16px;color:#fff;background:linear-gradient(90deg,#25c8ce,#1159df,#e72c91);font-size:11px;font-weight:950;box-shadow:0 12px 28px rgba(17,89,223,.28)}
+#r85-install-fixed.show{display:block}
+</style>
+<button id="r85-install-fixed" type="button"><i class="fa-solid fa-download"></i> Installer RESTEV 85</button>
+<script id="restev85-global-hotfix-20260820">
+(function(){
+'use strict';
+const c=()=>{try{return supabaseClient||null}catch(e){return null}};
+// 1) Installation : invitation toujours accessible en session salarié, avec fallback manuel.
+let installEvent=null;
+const ib=()=>document.getElementById('r85-install-fixed');
+function employee(){try{return !!(window.currentEmployeeSession||(typeof currentEmployeeSession!=='undefined'&&currentEmployeeSession));}catch(e){return false}}
+function installed(){return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}
+function showInstall(){if(employee()&&!installed()){ib()?.classList.add('show');try{localStorage.removeItem('restev85_install_dismissed_until')}catch(e){};if(typeof window.restevShowInstallInvite==='function')window.restevShowInstallInvite();}}
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvent=e;showInstall();});
+ib()?.addEventListener('click',async()=>{if(installEvent){installEvent.prompt();await installEvent.userChoice.catch(()=>null);installEvent=null;return;}if(typeof window.restevInstallApp==='function'){window.restevInstallApp();return;}alert(/iphone|ipad|ipod/i.test(navigator.userAgent)?'Sur iPhone/iPad : Partager puis Sur l’écran d’accueil.':'Ouvrez le menu du navigateur puis Installer l’application / Ajouter à l’écran d’accueil.');});
+document.addEventListener('DOMContentLoaded',()=>{setTimeout(showInstall,900);setTimeout(showInstall,2200)});
+const prevSwitch=window.switchScreen||(typeof switchScreen==='function'?switchScreen:null);if(prevSwitch){const f=function(id){const r=prevSwitch(id);setTimeout(showInstall,250);return r};window.switchScreen=f;try{switchScreen=f}catch(e){}}
+
+// 2) QR : ne jamais bloquer la génération si le jeton entreprise n'est pas encore disponible.
+window.generateEmployeeAccess=async function(){
+ const name=document.getElementById('reg-emp-name')?.value.trim(), code=document.getElementById('lbl-manager-comp-name')?.innerText.trim()||document.getElementById('manager-company-code')?.value.trim();
+ if(!name)return showToast('Veuillez saisir un nom et un prénom !');if(!code)return showToast('Code établissement manquant.');
+ const params=new URLSearchParams({emp:name,comp:code,profile:document.getElementById('reg-emp-profile')?.value||'CDI',epis:JSON.stringify(typeof getSelectedEPI==='function'?getSelectedEPI():[]),sector:window.managerSector||document.getElementById('manager-login-sector')?.value||'Autre'});
+ try{if(c()&&typeof window.r85EnsureAuth==='function'){await r85EnsureAuth();const {data,error}=await c().rpc('get_my_company');const co=Array.isArray(data)?data[0]:data;if(!error&&co?.qr_join_token)params.set('join',co.qr_join_token)}}catch(e){console.warn(e)}
+ const canvas=document.getElementById('qr-canvas');if(!canvas||!window.QRCode)return showToast('Module QR indisponible.');QRCode.toCanvas(canvas,location.origin+location.pathname+'?'+params.toString(),{width:180,margin:2,color:{dark:'#245ca6',light:'#fff'}},err=>{if(err)return showToast('Erreur QR Code.');document.getElementById('qr-area')?.classList.remove('hidden');showToast('QR salarié généré.');});
+};try{generateEmployeeAccess=window.generateEmployeeAccess}catch(e){}
+
+// 3) Registre manager : si son profil Auth est réellement manager, charger par company_id; sinon conserver affichage local/code sans prétendre contourner RLS.
+window.r85LoadPassportRegistryManager=async function(){
+ const table=document.getElementById('manager-emargements-list');if(!table)return;const client=c();if(!client)return;
+ try{
+  const {data:{session}}=await client.auth.getSession();if(!session?.user)throw new Error('Manager non authentifié');
+  const {data:p,error:pe}=await client.from('profiles').select('company_id,role,active').eq('id',session.user.id).single();if(pe)throw pe;if(p?.role!=='manager'||!p?.company_id)throw new Error('Profil manager non rattaché');
+  const {data,error}=await client.from('passport_registry').select('*').eq('company_id',p.company_id).order('created_at',{ascending:false}).limit(100);if(error)throw error;
+  if(typeof renderPassportRegistry==='function'){renderPassportRegistry((data||[]).map(r=>({...r,validated_at:new Date(r.created_at).toLocaleString('fr-FR'),score:r.score+'/'+r.total})));}
+ }catch(e){console.warn('Registre manager sécurisé :',e.message);if(typeof loadPassportRegistry==='function'&&loadPassportRegistry!==window.r85LoadPassportRegistryManager){try{return await loadPassportRegistry()}catch(_){}}}
+};
+})();
+</script>
 </body>
 </html>
