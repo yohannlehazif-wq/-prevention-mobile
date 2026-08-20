@@ -1578,9 +1578,9 @@ main{max-width:760px!important}
 </main>
 
   <script>
-   const SUPABASE_URL = "https://qahamxdomftqodziluci.supabase.co";
+   const SUPABASE_URL = "https://kubqstzkdeqlsxgwfbpz.supabase.co";
 
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhaGFteGRvbWZ0cW9kemlsdWNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5MDI2NDEsImV4cCI6MjA5ODQ3ODY0MX0.VUjKmNc9UsOoBSNatZoOnxGExVQji9L05BiU5SlvnOc";
+const SUPABASE_ANON_KEY = "__SUPABASE_PUBLISHABLE_KEY__";
 
 
 const supabaseClient = window.supabase
@@ -2725,7 +2725,7 @@ function triggerNewReportAlert(report) {
       if(r.includes('élect') || r.includes('elect')) return 'Proposer une vérification ciblée : habilitations, consignation, câbles, signalement des anomalies.';
       return 'Proposer un contact prévention pour analyser les causes récurrentes et prioriser des actions simples.';
     }
-    function initChart(){ const ctx=document.getElementById('chart-restev-risks'); if(!ctx || !window.Chart) return; new Chart(ctx,{type:'doughnut',data:{labels:['Chutes','Manutention','RPS'],datasets:[{data:[45,30,25],backgroundColor:['#3a7bd5','#e0248a','#ffb007']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}}); }
+    function initChart(){ const ctx=document.getElementById('chart-restev-risks'); if(!ctx || !window.Chart) return; new Chart(ctx,{type:'doughnut',data:{labels:['Aucune donnée'],datasets:[{data:[1],backgroundColor:['#e2e8f0']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}}); }
     function escapeHtml(str){ return String(str ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 
 /* =========================================================
@@ -5072,7 +5072,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <script id="restev85-previa-v2">
 (function(){
-  const PREVIA_ENDPOINT = 'https://qahamxdomftqodziluci.supabase.co/functions/v1/previa';
+  const PREVIA_ENDPOINT = 'https://kubqstzkdeqlsxgwfbpz.supabase.co/functions/v1/previa';
   function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   function status(t,thinking=false){const e=document.getElementById('previa-status');if(e){e.textContent=t;e.classList.toggle('previa-thinking',thinking);}}
   function add(role,text){const box=document.getElementById('previa-chat');if(!box)return null;const d=document.createElement('div');d.className=role==='user'?'ml-8 bg-restev-blue text-white p-3 rounded-2xl text-xs':'mr-4 bg-slate-50 dark:bg-slate-900 border p-3 rounded-2xl text-xs dark:text-slate-200';d.innerHTML='<b>'+(role==='user'?'Vous':'PREV’IA')+' :</b> '+esc(text).replace(/\n/g,'<br>');box.appendChild(d);box.scrollTop=box.scrollHeight;return d;}
@@ -5450,7 +5450,7 @@ window.restevRoleStatus=function(){return{employee:isEmployee(),session:session(
 <script id="restev85-photo-analysis-v1">
 (function(){
 'use strict';
-const ENDPOINT='https://qahamxdomftqodziluci.supabase.co/functions/v1/previa';
+const ENDPOINT='https://kubqstzkdeqlsxgwfbpz.supabase.co/functions/v1/previa';
 let lastPhotoAnalysis=null;
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function list(values){return Array.isArray(values)&&values.length?'<ul>'+values.map(v=>'<li>'+esc(v)+'</li>').join('')+'</ul>':'<p>Aucun élément suffisamment visible.</p>';}
@@ -5510,43 +5510,5 @@ document.addEventListener('DOMContentLoaded',()=>{panel();setTimeout(load,1200)}
 })();
 </script>
 
-
-<!-- RESTEV85 RESET COHERENCE PATCH 2026-08-20 -->
-<script id="restev85-reset-coherence-20260820">
-(function(){
-'use strict';
-const RESET_KEY='restev_centre_stats_reset_at';
-const ADMIN_CODE='RESTEV85-ADMIN';
-const ZERO_IDS=['stats-total','stats-sector-count','stats-passport-created'];
-function store(){try{return typeof safeStorage!=='undefined'?safeStorage:window.localStorage}catch(e){return null}}
-function zeroUI(){
-  ZERO_IDS.forEach(id=>{const e=document.getElementById(id);if(e)e.textContent='0'});
-  const top=document.getElementById('stats-top-risk');if(top)top.textContent='—';
-  const list=document.getElementById('stats-actions-list');if(list)list.innerHTML='<p class="text-xs text-slate-400 italic">Aucun risque signalé pour le moment.</p>';
-  const info=document.getElementById('stats-passport-reset-info');if(info)info.textContent='Depuis la remise à zéro du pilote';
-}
-async function refreshFromSupabase(){
-  zeroUI();
-  try{
-    if(typeof window.loadRestevStats==='function') await window.loadRestevStats();
-  }catch(e){console.warn('RESTEV reset refresh',e);zeroUI()}
-}
-window.resetRestevCentreStats=async function(){
-  const code=prompt('Code administrateur requis pour remettre à zéro le Centre RESTEV :');
-  if(code!==ADMIN_CODE){try{showToast('Accès refusé : code administrateur incorrect.')}catch(e){}return;}
-  const at=new Date().toISOString();
-  try{store()?.setItem(RESET_KEY,at)}catch(e){}
-  zeroUI();
-  const label=document.getElementById('restev-centre-reset-label');
-  if(label)label.textContent='Dernier reset admin : '+new Date(at).toLocaleString('fr-FR')+' — seules les nouvelles données sont affichées.';
-  try{if(typeof restevStatsChart!=='undefined'&&restevStatsChart){restevStatsChart.destroy();restevStatsChart=null}}catch(e){}
-  await refreshFromSupabase();
-  try{showToast('Centre RESTEV remis à zéro. Les données antérieures ne sont plus comptabilisées.')}catch(e){}
-};
-window.r85ForceCentreZero=function(){zeroUI();return refreshFromSupabase()};
-document.addEventListener('DOMContentLoaded',()=>{setTimeout(()=>{const s=store();if(s?.getItem(RESET_KEY))refreshFromSupabase()},900)});
-})();
-</script>
-
-</body>
+\n<script id="restev85-new-supabase-guard-20260820">\n(function(){\n  document.addEventListener('DOMContentLoaded', function(){\n    const configured = typeof SUPABASE_ANON_KEY === 'string' && !SUPABASE_ANON_KEY.includes('__SUPABASE_PUBLISHABLE_KEY__');\n    const badge=document.getElementById('cloud-sync-badge');\n    if(!configured){\n      if(badge){badge.className='bg-amber-50 text-amber-700 px-3 py-1.5 rounded-full uppercase text-[10px] font-extrabold tracking-wider border shadow-sm flex items-center gap-1.5';badge.innerHTML='<i class="fa-solid fa-triangle-exclamation"></i> Clé Supabase à configurer';}\n      console.warn('RESTEV 85 : renseignez la Publishable Key du nouveau projet Supabase dans SUPABASE_ANON_KEY.');\n    }\n  });\n})();\n</script>\n</body>
 </html>
