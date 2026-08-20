@@ -5519,5 +5519,102 @@ document.addEventListener('DOMContentLoaded',()=>{panel();setTimeout(load,1200)}
 })();
 </script>
 
+<script id="restev85-multi-company-final-20260820">
+(function(){
+'use strict';
+function sb(){return window.supabaseClient || (typeof supabaseClient!=='undefined'?supabaseClient:null);}
+async function authSession(){
+  if(typeof window.r85EnsureAuth==='function') return await window.r85EnsureAuth();
+  const c=sb(); if(!c) throw new Error('Supabase indisponible');
+  const {data:{session}}=await c.auth.getSession();
+  if(session) return session;
+  const {data,error}=await c.auth.signInAnonymously({options:{data:{source:'RESTEV85'}}});
+  if(error) throw error; return data.session;
+}
+async function getProfile(){
+  const c=sb(), session=await authSession();
+  const {data,error}=await c.from('profiles').select('id,company_id,role,first_name,last_name,active').eq('id',session.user.id).single();
+  if(error) throw error; return {session,profile:data};
+}
+window.r85GetMyCompany=async function(){
+  const c=sb(); await authSession();
+  const {data,error}=await c.rpc('get_my_company');
+  if(error) throw error;
+  return Array.isArray(data)?data[0]:data;
+};
+window.r85JoinCompanyFromQr=async function(token,name){
+  const c=sb(); const session=await authSession();
+  const parts=String(name||'').trim().split(/\s+/); const first=parts.shift()||''; const last=parts.join(' ');
+  const {data,error}=await c.rpc('join_company_from_qr',{p_join_token:token,p_first_name:first,p_last_name:last});
+  if(error) throw error;
+  const info=await getProfile();
+  if(window.currentEmployeeSession){window.currentEmployeeSession.user_id=session.user.id;window.currentEmployeeSession.company_id=info.profile.company_id;}
+  try{currentEmployeeSession=window.currentEmployeeSession;}catch(e){}
+  return info.profile.company_id;
+};
+
+const oldCheck=window.checkUrlParameters||(typeof checkUrlParameters==='function'?checkUrlParameters:null);
+window.checkUrlParameters=async function(){
+  const p=new URLSearchParams(location.search), join=p.get('join'), emp=p.get('emp'), comp=p.get('comp');
+  if(oldCheck) oldCheck();
+  if(join && emp && comp){
+    try{
+      const companyId=await window.r85JoinCompanyFromQr(join,emp);
+      if(window.currentEmployeeSession){window.currentEmployeeSession.company_id=companyId;}
+      if(typeof showToast==='function')showToast('Salarié rattaché à l’établissement de façon sécurisée.');
+    }catch(e){console.error('QR multi-entreprise',e);if(typeof showToast==='function')showToast('QR établissement non valide ou déjà rattaché.');}
+  }
+};
+try{checkUrlParameters=window.checkUrlParameters;}catch(e){}
+
+window.r85GenerateEmployeeAccessSecure=async function(){
+  try{
+    const name=document.getElementById('reg-emp-name')?.value.trim();
+    if(!name) return showToast('Veuillez saisir un nom et un prénom !');
+    const company=await window.r85GetMyCompany();
+    if(!company?.qr_join_token) throw new Error('Jeton QR établissement absent');
+    const code=company.company_code;
+    const profile=document.getElementById('reg-emp-profile')?.value||'CDI';
+    const epis=typeof getSelectedEPI==='function'?getSelectedEPI():[];
+    const sector=company.sector||'Autre';
+    const baseUrl=location.origin+location.pathname;
+    const url=baseUrl+'?emp='+encodeURIComponent(name)+'&comp='+encodeURIComponent(code)+'&profile='+encodeURIComponent(profile)+'&epis='+encodeURIComponent(JSON.stringify(epis))+'&sector='+encodeURIComponent(sector)+'&join='+encodeURIComponent(company.qr_join_token);
+    QRCode.toCanvas(document.getElementById('qr-canvas'),url,{width:180,margin:2,color:{dark:'#245ca6',light:'#ffffff'}},err=>{
+      if(err) return showToast('Erreur QR Code.');
+      document.getElementById('qr-area')?.classList.remove('hidden');showToast('QR salarié sécurisé généré.');
+    });
+  }catch(e){console.error(e);showToast('Impossible de générer le QR sécurisé : '+e.message);}
+};
+window.generateEmployeeAccess=window.r85GenerateEmployeeAccessSecure;
+try{generateEmployeeAccess=window.r85GenerateEmployeeAccessSecure;}catch(e){}
+
+const oldReport=window.submitRiskReport||(typeof submitRiskReport==='function'?submitRiskReport:null);
+window.r85SubmitRiskReportSecure=async function(){
+  const c=sb(); if(!c)return showToast('Supabase non chargé.');
+  try{
+    const {session,profile}=await getProfile();
+    if(!profile?.company_id) return showToast('Votre QR salarié doit être activé avant le signalement.');
+    const category=document.getElementById('risk-category-select')?.value||'Non renseigné';
+    const description=document.getElementById('risk-description')?.value.trim(); if(!description)return showToast('Veuillez saisir une description du danger.');
+    const latitude=document.getElementById('risk-latitude')?.value||null, longitude=document.getElementById('risk-longitude')?.value||null;
+    const payload={company_id:profile.company_id,user_id:session.user.id,company_code:window.currentEmployeeSession?.company||'',employee_name:window.currentEmployeeSession?.name||[profile.first_name,profile.last_name].filter(Boolean).join(' ')||'Salarié',employee_profile:window.currentEmployeeSession?.profile||null,category,level:document.getElementById('risk-level')?.value||'Non renseigné',frequency:document.getElementById('risk-frequency')?.value||'Non renseigné',description,latitude,longitude,map_url:document.getElementById('risk-map-url')?.value||(latitude&&longitude?'https://www.google.com/maps?q='+latitude+','+longitude:null),status:'Nouveau'};
+    const {error}=await c.from('prevention_reports').insert(payload); if(error)throw error;
+    document.getElementById('risk-description').value='';showToast('Signalement envoyé au responsable.');switchScreen('scr-employee');
+  }catch(e){console.error(e);showToast('Erreur signalement : '+e.message);}
+};
+window.submitRiskReport=window.r85SubmitRiskReportSecure;
+try{submitRiskReport=window.r85SubmitRiskReportSecure;}catch(e){}
+
+// Analyse photo : appel authentifié à la fonction PREV'IA.
+window.r85InvokePrevia=async function(body){await authSession();const {data,error}=await sb().functions.invoke('previa',{body});if(error)throw error;return data;};
+
+document.addEventListener('DOMContentLoaded',function(){
+  // Si l'URL contient un QR, relance l'association après initialisation complète du client.
+  const p=new URLSearchParams(location.search);if(p.get('join'))setTimeout(()=>window.checkUrlParameters(),350);
+});
+})();
+</script>
+
 </body>
 </html>
+
