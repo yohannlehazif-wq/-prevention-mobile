@@ -5510,5 +5510,43 @@ document.addEventListener('DOMContentLoaded',()=>{panel();setTimeout(load,1200)}
 })();
 </script>
 
+
+<!-- RESTEV85 RESET COHERENCE PATCH 2026-08-20 -->
+<script id="restev85-reset-coherence-20260820">
+(function(){
+'use strict';
+const RESET_KEY='restev_centre_stats_reset_at';
+const ADMIN_CODE='RESTEV85-ADMIN';
+const ZERO_IDS=['stats-total','stats-sector-count','stats-passport-created'];
+function store(){try{return typeof safeStorage!=='undefined'?safeStorage:window.localStorage}catch(e){return null}}
+function zeroUI(){
+  ZERO_IDS.forEach(id=>{const e=document.getElementById(id);if(e)e.textContent='0'});
+  const top=document.getElementById('stats-top-risk');if(top)top.textContent='—';
+  const list=document.getElementById('stats-actions-list');if(list)list.innerHTML='<p class="text-xs text-slate-400 italic">Aucun risque signalé pour le moment.</p>';
+  const info=document.getElementById('stats-passport-reset-info');if(info)info.textContent='Depuis la remise à zéro du pilote';
+}
+async function refreshFromSupabase(){
+  zeroUI();
+  try{
+    if(typeof window.loadRestevStats==='function') await window.loadRestevStats();
+  }catch(e){console.warn('RESTEV reset refresh',e);zeroUI()}
+}
+window.resetRestevCentreStats=async function(){
+  const code=prompt('Code administrateur requis pour remettre à zéro le Centre RESTEV :');
+  if(code!==ADMIN_CODE){try{showToast('Accès refusé : code administrateur incorrect.')}catch(e){}return;}
+  const at=new Date().toISOString();
+  try{store()?.setItem(RESET_KEY,at)}catch(e){}
+  zeroUI();
+  const label=document.getElementById('restev-centre-reset-label');
+  if(label)label.textContent='Dernier reset admin : '+new Date(at).toLocaleString('fr-FR')+' — seules les nouvelles données sont affichées.';
+  try{if(typeof restevStatsChart!=='undefined'&&restevStatsChart){restevStatsChart.destroy();restevStatsChart=null}}catch(e){}
+  await refreshFromSupabase();
+  try{showToast('Centre RESTEV remis à zéro. Les données antérieures ne sont plus comptabilisées.')}catch(e){}
+};
+window.r85ForceCentreZero=function(){zeroUI();return refreshFromSupabase()};
+document.addEventListener('DOMContentLoaded',()=>{setTimeout(()=>{const s=store();if(s?.getItem(RESET_KEY))refreshFromSupabase()},900)});
+})();
+</script>
+
 </body>
 </html>
