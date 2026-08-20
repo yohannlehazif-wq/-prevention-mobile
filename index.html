@@ -1580,12 +1580,21 @@ main{max-width:760px!important}
   <script>
    const SUPABASE_URL = "https://kubqstzkdeqlsxgwfbpz.supabase.co";
 
-const SUPABASE_ANON_KEY = "sb_publishable__N8cdolEKdOMVkdR6ACVJQ_EANmgN9J";
+const SUPABASE_ANON_KEY = "__SUPABASE_PUBLISHABLE_KEY__";
 
 
 const supabaseClient = window.supabase
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
+// Auth anonyme RESTEV 85 : crée/récupère une vraie session JWT Supabase.
+window.r85EnsureAuth = async function(){
+  if(!supabaseClient) throw new Error('Supabase non configure');
+  const {data:{session}}=await supabaseClient.auth.getSession();
+  if(session?.user) return session;
+  const {data,error}=await supabaseClient.auth.signInAnonymously({options:{data:{source:'RESTEV85'}}});
+  if(error) throw error;
+  return data.session;
+};
 
 
     const RISKS_DATABASE = [
@@ -5077,7 +5086,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function status(t,thinking=false){const e=document.getElementById('previa-status');if(e){e.textContent=t;e.classList.toggle('previa-thinking',thinking);}}
   function add(role,text){const box=document.getElementById('previa-chat');if(!box)return null;const d=document.createElement('div');d.className=role==='user'?'ml-8 bg-restev-blue text-white p-3 rounded-2xl text-xs':'mr-4 bg-slate-50 dark:bg-slate-900 border p-3 rounded-2xl text-xs dark:text-slate-200';d.innerHTML='<b>'+(role==='user'?'Vous':'PREV’IA')+' :</b> '+esc(text).replace(/\n/g,'<br>');box.appendChild(d);box.scrollTop=box.scrollHeight;return d;}
   function context(){return {employee:window.currentEmployeeSession?.name||'',company:window.currentEmployeeSession?.company||'',profile:window.currentEmployeeSession?.profile||'',sector:window.currentEmployeeSession?.sector||'',app:'RESTEV 85 Passeport Prévention'};}
-  window.openPrevia=function(){switchScreen('scr-previa');setPrevyState('accueil');status('PREV’IA est prêt · Gemini 3.5 Flash-Lite via Supabase');};
+  window.openPrevia=function(){switchScreen('scr-previa');setPrevyState('accueil');status('PREV’IA est prêt · Groq + Gemini via Supabase sécurisé');};
   window.previaPrompt=function(type){const input=document.getElementById('previa-input');if(!input)return;input.value={task:'Je commence une tâche : ',unsafe:'Je ne me sens pas en sécurité parce que ',risk:'Je souhaite analyser cette situation : '}[type]||'';input.focus();};
   window.previaCreateReport=function(){setPrevyState('signalement');const last=[...document.querySelectorAll('#previa-chat > div')].reverse().find(x=>x.textContent.startsWith('Vous'));if(last){const t=last.textContent.replace(/^Vous\s*:\s*/,'').trim();const r=document.getElementById('risk-description');if(r&&!r.value)r.value='Signalement préparé avec PREV’IA : '+t;}switchScreen('scr-report');};
   window.previaSend=async function(){const input=document.getElementById('previa-input');const q=(input?.value||'').trim();if(!q)return;input.value='';add('user',q);
@@ -5085,9 +5094,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if(emergency){setPrevyState('stop');const emergencyAnswer='Situation potentiellement urgente. Appliquez immédiatement les consignes d’urgence de votre entreprise et alertez les personnes ou services prévus. N’attendez pas une réponse de PREV’IA.';stopPreviaVoice();add('ai','🚨 '+emergencyAnswer);setPreviaLastAnswer(emergencyAnswer);speakPreviaAnswer(emergencyAnswer,true);status('Mode urgence · priorité aux consignes de l’entreprise');return;}
     setPrevyState('reflexion');const pending=add('ai','🧠 Prevy analyse votre demande...');status('PREV’IA réfléchit...',true);
     try{
-      const res=await fetch(PREVIA_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,context:context()})});
-      const data=await res.json().catch(()=>({}));
-      if(!res.ok || data.error) throw new Error(data.error||('HTTP '+res.status));
+      await r85EnsureAuth();
+      const {data,error}=await supabaseClient.functions.invoke('previa',{body:{message:q,question:q,context:context()}});
+      if(error || data?.error) throw new Error(data?.error||error?.message||'Erreur PREVIA');
       pending?.remove();const answer=data.answer||'Je ne dispose pas de suffisamment d’informations pour répondre de façon fiable. Consultez votre responsable.';add('ai',answer);setPrevyState(prevyStateFromAnswer(answer));setPreviaLastAnswer(answer);speakPreviaAnswer(answer);status('Réponse reçue · vérifiez toujours les consignes de l’entreprise');
     }catch(e){pending?.remove();setPrevyState('attention');add('ai','PREV’IA est momentanément indisponible. Vous pouvez toujours créer un signalement ou contacter votre responsable.');status('Service IA indisponible · les autres fonctions restent accessibles');console.error('PREVIA',e);}
   };
@@ -5510,5 +5519,5 @@ document.addEventListener('DOMContentLoaded',()=>{panel();setTimeout(load,1200)}
 })();
 </script>
 
-\n<script id="restev85-new-supabase-guard-20260820">\n(function(){\n  document.addEventListener('DOMContentLoaded', function(){\n    const configured = typeof SUPABASE_ANON_KEY === 'string' && !SUPABASE_ANON_KEY.includes('__SUPABASE_PUBLISHABLE_KEY__');\n    const badge=document.getElementById('cloud-sync-badge');\n    if(!configured){\n      if(badge){badge.className='bg-amber-50 text-amber-700 px-3 py-1.5 rounded-full uppercase text-[10px] font-extrabold tracking-wider border shadow-sm flex items-center gap-1.5';badge.innerHTML='<i class="fa-solid fa-triangle-exclamation"></i> Clé Supabase à configurer';}\n      console.warn('RESTEV 85 : renseignez la Publishable Key du nouveau projet Supabase dans SUPABASE_ANON_KEY.');\n    }\n  });\n})();\n</script>\n</body>
+</body>
 </html>
