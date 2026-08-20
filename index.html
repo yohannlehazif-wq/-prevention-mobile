@@ -5520,46 +5520,62 @@ document.addEventListener('DOMContentLoaded',()=>{panel();setTimeout(load,1200)}
 </script>
 
 
-<script id="restev85-qr-robuste-20260820">
+<script id="restev85-passport-manager-fix-20260820">
 (function(){
 'use strict';
-async function r85GenerateQrRobust(){
-  const name=document.getElementById('reg-emp-name')?.value.trim();
-  const code=document.getElementById('lbl-manager-comp-name')?.innerText.trim() || document.getElementById('manager-company-code')?.value.trim();
-  if(!name) return showToast('Veuillez saisir un nom et un prénom !');
-  if(!code) return showToast('Code établissement manquant.');
-  const profile=document.getElementById('reg-emp-profile')?.value || 'CDI';
-  const epis=typeof getSelectedEPI==='function'?getSelectedEPI():[];
-  const sector=window.managerSector || document.getElementById('manager-login-sector')?.value || 'Autre';
-  const baseUrl=window.location.origin+window.location.pathname;
-  let joinToken='';
-  // Le jeton multi-entreprise est ajouté seulement s'il est réellement disponible.
-  try{
-    const client=(typeof supabaseClient!=='undefined'&&supabaseClient)?supabaseClient:null;
-    if(client && typeof window.r85EnsureAuth==='function'){
-      await window.r85EnsureAuth();
-      const {data,error}=await client.rpc('get_my_company');
-      if(!error){
-        const company=Array.isArray(data)?data[0]:data;
-        joinToken=company?.qr_join_token || '';
-      }
-    }
-  }catch(e){console.warn('Jeton entreprise indisponible, QR compatible généré.',e);}
-  const params=new URLSearchParams();
-  params.set('emp',name);params.set('comp',code);params.set('profile',profile);
-  params.set('epis',JSON.stringify(epis));params.set('sector',sector);
-  if(joinToken) params.set('join',joinToken);
-  const url=baseUrl+'?'+params.toString();
-  const canvas=document.getElementById('qr-canvas');
-  if(!canvas || !window.QRCode) return showToast('Module QR Code indisponible.');
-  QRCode.toCanvas(canvas,url,{width:180,margin:2,color:{dark:'#245ca6',light:'#ffffff'}},function(err){
-    if(err){console.error(err);return showToast('Erreur lors de la génération du QR Code.');}
-    document.getElementById('qr-area')?.classList.remove('hidden');
-    showToast(joinToken?'QR salarié sécurisé généré.':'QR salarié généré. Rattachement sécurisé disponible après liaison du manager à son entreprise.');
-  });
+function client(){try{return supabaseClient||null;}catch(e){return null;}}
+async function authProfile(){
+  const c=client(); if(!c) throw new Error('Supabase non chargé');
+  if(typeof window.r85EnsureAuth==='function') await window.r85EnsureAuth();
+  const {data:{session},error:se}=await c.auth.getSession(); if(se||!session?.user)throw se||new Error('Session absente');
+  const {data:profile,error:pe}=await c.from('profiles').select('id,company_id,first_name,last_name,role').eq('id',session.user.id).single();
+  if(pe)throw pe; if(!profile?.company_id)throw new Error('Salarié non rattaché à un établissement');
+  return {session,profile};
 }
-window.generateEmployeeAccess=r85GenerateQrRobust;
-try{generateEmployeeAccess=r85GenerateQrRobust;}catch(e){}
+async function savePassportSecure(entry){
+  const c=client(), {session,profile}=await authProfile();
+  const score=(typeof qcmScore!=='undefined'?Number(qcmScore):Number(String(entry.score||'0').split('/')[0]))||0;
+  const total=(typeof qcmActiveQuestions!=='undefined'&&qcmActiveQuestions?Number(qcmActiveQuestions.length):Number(String(entry.score||'0/0').split('/')[1]))||0;
+  const payload={
+    company_id:profile.company_id,
+    user_id:session.user.id,
+    company_code:entry.company_code||window.currentEmployeeSession?.company||'',
+    employee_name:entry.employee_name||window.currentEmployeeSession?.name||[profile.first_name,profile.last_name].filter(Boolean).join(' ')||'Salarié',
+    employee_profile:entry.employee_profile||entry.profile||window.currentEmployeeSession?.profile||'Non renseigné',
+    score,total,
+    epis:entry.epis||[],
+    sector:entry.sector||window.currentEmployeeSession?.sector||'Non renseigné',
+    status:entry.status||'Validé et signé',
+    signature_employee:entry.signature_employee||null,
+    signature_manager:entry.signature_manager||null
+  };
+  const {error}=await c.from('passport_registry').insert(payload); if(error)throw error;
+  // Copie locale pour continuité hors-ligne / affichage immédiat salarié.
+  try{const key='restev_passport_registry_'+payload.company_code;let rows=JSON.parse(safeStorage.getItem(key)||'[]');rows.unshift({...entry,...payload,validated_at:entry.validated_at||new Date().toLocaleString('fr-FR')});safeStorage.setItem(key,JSON.stringify(rows.slice(0,100)));}catch(e){}
+  return payload;
+}
+window.r85SavePassportSecure=savePassportSecure;
+// Surcharge finale de savePassportEntry utilisée par les différentes clôtures existantes.
+window.savePassportEntry=async function(entry){
+  try{const result=await savePassportSecure(entry);if(typeof loadPassportRegistry==='function')setTimeout(()=>loadPassportRegistry(),200);return result;}
+  catch(e){console.error('Passeport Supabase',e);if(typeof showToast==='function')showToast('Passeport non transmis : '+e.message);throw e;}
+};
+try{savePassportEntry=window.savePassportEntry;}catch(e){}
+
+// Corrige aussi la clôture actuellement prioritaire afin qu'elle ne passe plus par l'ancien insert sans UUID.
+const previousFinalize=window.finalizeAndClose||(typeof finalizeAndClose==='function'?finalizeAndClose:null);
+window.r85FinalizePassportSecure=async function(){
+  try{
+    try{if(typeof updateCertificateEPI==='function')updateCertificateEPI();}catch(e){}
+    const score=(typeof qcmScore!=='undefined'?qcmScore:0), total=(typeof qcmActiveQuestions!=='undefined'&&qcmActiveQuestions?qcmActiveQuestions.length:0);
+    let emp=true,mgr=true;try{if(typeof isSignatureDone==='function'){emp=isSignatureDone('emp');mgr=isSignatureDone('mgr');}}catch(e){}
+    const entry={company_code:window.currentEmployeeSession?.company||document.getElementById('cert-company')?.value||'',employee_name:document.getElementById('cert-employee')?.value||window.currentEmployeeSession?.name||'Salarié',employee_profile:window.currentEmployeeSession?.profile||document.getElementById('cert-profile')?.value||'Non renseigné',profile:window.currentEmployeeSession?.profile||'Non renseigné',validated_at:new Date().toLocaleString('fr-FR'),score:score+'/'+total,epis:(typeof selectedEPIList!=='undefined'?selectedEPIList:[]),sector:window.currentEmployeeSession?.sector||'Non renseigné',status:(emp&&mgr)?'Validé et signé':'Validé - signature à vérifier',signature_employee:(typeof getSignatureData==='function'?getSignatureData('emp'):null),signature_manager:(typeof getSignatureData==='function'?getSignatureData('mgr'):null)};
+    await savePassportSecure(entry);
+    if(typeof showToast==='function')showToast('Passeport validé et transmis au manager.');
+    if(typeof switchScreen==='function')switchScreen('scr-employee');
+  }catch(e){console.error(e);if(typeof showToast==='function')showToast('Impossible de transmettre le passeport : '+e.message);}
+};
+window.finalizeAndClose=window.r85FinalizePassportSecure;try{finalizeAndClose=window.r85FinalizePassportSecure;}catch(e){}
 })();
 </script>
 </body>
