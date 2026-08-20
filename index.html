@@ -5579,20 +5579,37 @@ window.finalizeAndClose=window.r85FinalizePassportSecure;try{finalizeAndClose=wi
 })();
 </script>
 
-<style id="r85-employee-safe-lock-css">
-body.r85-employee-safe #scr-auth,body.r85-employee-safe #scr-manager,body.r85-employee-safe #scr-manager-history,body.r85-employee-safe #scr-studio,body.r85-employee-safe #scr-direction,body.r85-employee-safe [data-restev-protected-entry="true"]{display:none!important}
+<style id="r85-nav-employee-fix-css">
+body.r85-employee-mode #r85-more-drawer button[onclick*="scr-auth"],
+body.r85-employee-mode #r85-more-drawer button[onclick*="scr-direction"],
+body.r85-employee-mode [onclick*="scr-manager"],
+body.r85-employee-mode [onclick*="scr-manager-history"],
+body.r85-employee-mode [onclick*="scr-studio"]{display:none!important}
 </style>
-<script id="r85-employee-safe-lock-20260820">
+<script id="r85-nav-employee-fix-20260820">
 (function(){
 'use strict';
-const PROTECTED=new Set(['scr-auth','scr-manager','scr-manager-history','scr-studio','scr-direction']);
-function isEmployee(){try{const p=new URLSearchParams(location.search);return !!window.currentEmployeeSession || (!!p.get('emp')&&!!p.get('comp'));}catch(e){return !!window.currentEmployeeSession}}
-function mark(){if(!isEmployee())return;document.body.classList.add('r85-employee-safe');document.querySelectorAll('[onclick]').forEach(el=>{const a=el.getAttribute('onclick')||'';if(/scr-auth|scr-manager|scr-manager-history|scr-studio|scr-direction|handleManagerLogin|forceOpenManagerSpace/.test(a))el.dataset.restevProtectedEntry='true';});}
-function employeeHome(){const el=document.getElementById('scr-employee');if(typeof window.__r85BaseSwitch==='function')return window.__r85BaseSwitch('scr-employee');if(el){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));el.classList.add('active');}return false;}
-function install(){let fn;try{fn=window.switchScreen||switchScreen}catch(e){fn=window.switchScreen}if(typeof fn!=='function')return;if(fn.__r85Safe)return;if(!window.__r85BaseSwitch)window.__r85BaseSwitch=fn;const base=window.__r85BaseSwitch;const w=function(id){if(isEmployee()&&PROTECTED.has(id)){try{showToast('Accès réservé au manager.')}catch(e){};return employeeHome();}return base.apply(this,arguments)};w.__r85Safe=true;window.switchScreen=w;try{switchScreen=w}catch(e){}}
-document.addEventListener('click',e=>{if(!isEmployee())return;const t=e.target.closest('[data-restev-protected-entry="true"]');if(t){e.preventDefault();e.stopImmediatePropagation();try{showToast('Accès réservé au manager.')}catch(_){}}},true);
-function boot(){mark();install()}
-document.addEventListener('DOMContentLoaded',()=>{boot();setTimeout(boot,300);setTimeout(boot,1200);});
+const DENY=new Set(['scr-auth','scr-manager','scr-manager-history','scr-studio','scr-direction']);
+function emp(){try{const p=new URLSearchParams(location.search);return !!window.currentEmployeeSession||(!!p.get('emp')&&!!p.get('comp'));}catch(e){return !!window.currentEmployeeSession}}
+function baseSwitch(id){
+  const screens=document.querySelectorAll('.screen');screens.forEach(x=>x.classList.remove('active'));
+  const target=document.getElementById(id);if(!target)return false;target.classList.add('active');
+  window.scrollTo({top:0,behavior:'auto'});
+  try{if(id==='scr-report'&&typeof setTimeout==='function')setTimeout(()=>{try{if(typeof initRiskMap==='function')initRiskMap()}catch(e){}},120)}catch(e){}
+  return true;
+}
+function go(id){if(emp()&&DENY.has(id)){try{showToast('Accès réservé au manager.')}catch(e){};return baseSwitch('scr-employee')}return baseSwitch(id)}
+window.r85BottomNavigate=function(where){
+ if(where==='home')return go(emp()?'scr-employee':'scr-home');
+ if(where==='prevy'){try{if(typeof openPrevia==='function')return openPrevia()}catch(e){}return go('scr-previa')}
+ if(where==='messages'){try{if(typeof openEmployeeMessages==='function')return openEmployeeMessages()}catch(e){}return go('scr-employee-messages')}
+ if(where==='passport')return go('scr-employee');
+ if(where==='more')return window.r85ToggleMore(true);
+};
+window.r85DrawerGo=function(id){if(typeof window.r85ToggleMore==='function')window.r85ToggleMore(false);return go(id)};
+window.r85ToggleMore=function(open){const d=document.getElementById('r85-more-drawer');if(!d)return;d.classList.toggle('open',!!open);d.setAttribute('aria-hidden',open?'false':'true')};
+function boot(){if(emp())document.body.classList.add('r85-employee-mode');}
+document.addEventListener('DOMContentLoaded',()=>{boot();setTimeout(boot,500)});
 })();
 </script>
 </body>
