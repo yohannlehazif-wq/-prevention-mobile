@@ -5579,32 +5579,20 @@ window.finalizeAndClose=window.r85FinalizePassportSecure;try{finalizeAndClose=wi
 })();
 </script>
 
-<style id="r85-employee-strict-lock-css">
-body.r85-employee-strict #scr-auth,
-body.r85-employee-strict #scr-manager,
-body.r85-employee-strict #scr-manager-history,
-body.r85-employee-strict #scr-studio,
-body.r85-employee-strict #scr-direction,
-body.r85-employee-strict [data-manager-access],
-body.r85-employee-strict [data-restev-protected-entry="true"],
-body.r85-employee-strict .restev-manager-entry-hidden{display:none!important;visibility:hidden!important;pointer-events:none!important}
+<style id="r85-employee-safe-lock-css">
+body.r85-employee-safe #scr-auth,body.r85-employee-safe #scr-manager,body.r85-employee-safe #scr-manager-history,body.r85-employee-safe #scr-studio,body.r85-employee-safe #scr-direction,body.r85-employee-safe [data-restev-protected-entry="true"]{display:none!important}
 </style>
-<script id="r85-employee-strict-lock-20260820">
+<script id="r85-employee-safe-lock-20260820">
 (function(){
 'use strict';
 const PROTECTED=new Set(['scr-auth','scr-manager','scr-manager-history','scr-studio','scr-direction']);
-function qs(){return new URLSearchParams(location.search)}
-function employeeSession(){try{return window.currentEmployeeSession||(typeof currentEmployeeSession!=='undefined'?currentEmployeeSession:null)||null}catch(e){return null}}
-function employeeMode(){const p=qs();return !!employeeSession() || (!!p.get('emp')&&!!p.get('comp')) || sessionStorage.getItem('r85_employee_locked')==='1'}
-function markLocked(){if(!(!!qs().get('emp')&&!!qs().get('comp'))&&!employeeSession())return;try{sessionStorage.setItem('r85_employee_locked','1')}catch(e){};document.body.classList.add('r85-employee-strict','restev-role-employee','restev-employee-session');try{if(typeof window.restevLockEmployeeRole==='function')window.restevLockEmployeeRole()}catch(e){}}
-function allowed(id){return !PROTECTED.has(id)}
-function forceEmployee(){const el=document.getElementById('scr-employee');document.querySelectorAll('.screen').forEach(x=>{x.classList.remove('active');if(x!==el)x.style.display='none'});if(el){el.classList.add('active');el.style.display='block'}try{showToast('Accès réservé au salarié : espace manager bloqué.')}catch(e){};return false}
-function hardHide(){if(!employeeMode())return;document.body.classList.add('r85-employee-strict','restev-role-employee','restev-employee-session');document.querySelectorAll('[onclick]').forEach(el=>{const a=el.getAttribute('onclick')||'';if(/scr-auth|scr-manager|scr-manager-history|scr-studio|scr-direction|handleManagerLogin|forceOpenManagerSpace|loadRestevStats|resetRestevCentreStats/.test(a)){el.dataset.restevProtectedEntry='true';el.style.display='none';el.setAttribute('aria-hidden','true');if('disabled'in el)el.disabled=true}});for(const id of PROTECTED){const x=document.getElementById(id);if(x&&(x.classList.contains('active')||x.style.display==='block'))forceEmployee()}}
-function wrap(){let fn;try{fn=window.switchScreen||switchScreen}catch(e){fn=window.switchScreen}if(typeof fn!=='function'||fn.__r85Strict)return;const w=function(id){if(employeeMode()&&!allowed(id))return forceEmployee();return fn.apply(this,arguments)};w.__r85Strict=true;window.switchScreen=w;try{switchScreen=w}catch(e){}}
-document.addEventListener('click',e=>{if(!employeeMode())return;const t=e.target.closest('[onclick],#btn-manager-login,[data-manager-access],[data-restev-protected-entry="true"]');if(!t)return;const a=t.getAttribute('onclick')||'';if(t.id==='btn-manager-login'||t.hasAttribute('data-manager-access')||t.dataset.restevProtectedEntry==='true'||/scr-auth|scr-manager|scr-manager-history|scr-studio|scr-direction|handleManagerLogin|forceOpenManagerSpace/.test(a)){e.preventDefault();e.stopImmediatePropagation();forceEmployee()}},true);
-function boot(){markLocked();wrap();hardHide()}
-document.addEventListener('DOMContentLoaded',()=>{boot();[100,350,900,1800,3500].forEach(ms=>setTimeout(boot,ms));new MutationObserver(()=>{wrap();hardHide()}).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style']})});
-window.r85ExitEmployeeSession=function(){try{sessionStorage.removeItem('r85_employee_locked')}catch(e){};location.href=location.pathname};
+function isEmployee(){try{const p=new URLSearchParams(location.search);return !!window.currentEmployeeSession || (!!p.get('emp')&&!!p.get('comp'));}catch(e){return !!window.currentEmployeeSession}}
+function mark(){if(!isEmployee())return;document.body.classList.add('r85-employee-safe');document.querySelectorAll('[onclick]').forEach(el=>{const a=el.getAttribute('onclick')||'';if(/scr-auth|scr-manager|scr-manager-history|scr-studio|scr-direction|handleManagerLogin|forceOpenManagerSpace/.test(a))el.dataset.restevProtectedEntry='true';});}
+function employeeHome(){const el=document.getElementById('scr-employee');if(typeof window.__r85BaseSwitch==='function')return window.__r85BaseSwitch('scr-employee');if(el){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));el.classList.add('active');}return false;}
+function install(){let fn;try{fn=window.switchScreen||switchScreen}catch(e){fn=window.switchScreen}if(typeof fn!=='function')return;if(fn.__r85Safe)return;if(!window.__r85BaseSwitch)window.__r85BaseSwitch=fn;const base=window.__r85BaseSwitch;const w=function(id){if(isEmployee()&&PROTECTED.has(id)){try{showToast('Accès réservé au manager.')}catch(e){};return employeeHome();}return base.apply(this,arguments)};w.__r85Safe=true;window.switchScreen=w;try{switchScreen=w}catch(e){}}
+document.addEventListener('click',e=>{if(!isEmployee())return;const t=e.target.closest('[data-restev-protected-entry="true"]');if(t){e.preventDefault();e.stopImmediatePropagation();try{showToast('Accès réservé au manager.')}catch(_){}}},true);
+function boot(){mark();install()}
+document.addEventListener('DOMContentLoaded',()=>{boot();setTimeout(boot,300);setTimeout(boot,1200);});
 })();
 </script>
 </body>
