@@ -1246,9 +1246,9 @@ main{max-width:760px!important}
       <button onclick="switchScreen('scr-home')" class="text-xs bg-white dark:bg-slate-800 border px-4 py-2 rounded-xl font-bold flex items-center gap-1.5"><i class="fa-solid fa-arrow-left"></i> Retour</button>
       <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-premium border-t-4 border-t-restev-blue space-y-4">
         <h2 class="text-xl font-black dark:text-white">Connexion Manager</h2>
-        <p class="text-xs text-slate-500 dark:text-slate-400">Connexion sécurisée Supabase : compte manager + code établissement.</p>
-        <input type="email" id="manager-email" autocomplete="username" placeholder="Email manager" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-sm font-bold dark:text-white" />
-        <input type="password" id="manager-password" autocomplete="current-password" placeholder="Mot de passe" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-sm font-bold dark:text-white" />
+        <p class="text-xs text-slate-500 dark:text-slate-400">Accès terrain rapide : saisissez uniquement votre code établissement.</p>
+        <input type="email" id="manager-email" style="display:none" aria-hidden="true" />
+        <input type="password" id="manager-password" style="display:none" aria-hidden="true" />
         <input type="text" id="manager-company-code" placeholder="Ex: RSTV-DEMO-1234" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-sm font-bold uppercase dark:text-white" />
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <select id="manager-login-sector" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white">
@@ -1637,6 +1637,23 @@ async function r85GetAuthContext(){
 }
 
 
+async function r85EnsureQuickManagerAuth(companyCode){
+  if(!supabaseClient) throw new Error('Supabase non charge');
+  let { data: sessionData } = await supabaseClient.auth.getSession();
+  let session = sessionData?.session || null;
+  if(!session){
+    const { data, error } = await supabaseClient.auth.signInAnonymously();
+    if(error) throw error;
+    session = data.session;
+  }
+  const { data: rows, error } = await supabaseClient.rpc('claim_manager_session', { p_company_code: companyCode });
+  if(error) throw error;
+  const company = Array.isArray(rows) ? rows[0] : rows;
+  if(!company) throw new Error('Code etablissement inconnu');
+  window.r85AuthContext = { user_id: session.user.id, company_id: company.company_id, role:'manager', company };
+  return window.r85AuthContext;
+}
+
 async function r85ManagerSignIn(){
   if(!supabaseClient) throw new Error('Supabase non charge');
   const email = document.getElementById('manager-email')?.value.trim();
@@ -1658,19 +1675,20 @@ async function r85ManagerSignIn(){
 
 async function r85SecureManagerLogin(){
   try{
-    const ctx = await r85ManagerSignIn();
-    const code = ctx.company.company_code;
+    const code = document.getElementById('manager-company-code')?.value.trim().toUpperCase();
+    if(!code) throw new Error('Code établissement obligatoire');
+    const ctx = await r85EnsureQuickManagerAuth(code);
     const lbl = document.getElementById('lbl-manager-comp-name');
-    if(lbl) lbl.innerText = code;
+    if(lbl) lbl.innerText = ctx.company.company_code;
     managerSector = ctx.company.sector || 'Non renseigné';
     managerCompanySize = ctx.company.company_size_range || 'Non renseigné';
     safeStorage.setItem('restev_manager_sector_' + code, managerSector);
     safeStorage.setItem('restev_manager_size_' + code, managerCompanySize);
     window.forceOpenManagerSpace();
-    showToast('Manager authentifié et connecté à son établissement.');
+    showToast('Espace manager connecté.');
   }catch(err){
-    console.error('Connexion manager sécurisée:', err);
-    showToast('Connexion refusée : ' + (err.message || 'identifiants invalides'));
+    console.error('Connexion manager terrain:', err);
+    showToast('Accès refusé : ' + (err.message || 'code invalide'));
   }
 }
 
