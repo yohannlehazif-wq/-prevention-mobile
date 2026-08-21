@@ -1265,7 +1265,7 @@ main{max-width:760px!important}
       <div class="bg-gradient-to-br from-slate-50 to-amber-50/30 dark:from-slate-900 dark:to-slate-800 p-6 rounded-3xl shadow-sm border space-y-4">
         <h3 class="text-sm font-black dark:text-white">Nouvel Établissement ?</h3>
         <input type="text" id="new-company-name" placeholder="Raison sociale" class="w-full p-3 bg-white dark:bg-slate-800 border rounded-xl text-xs font-bold dark:text-white" />
-        <button onclick="showToast('Création établissement réservée au Centre RESTEV dans Supabase.')" class="w-full bg-slate-800 dark:bg-slate-700 text-white py-2.5 rounded-xl text-xs font-bold shadow">Création sécurisée par RESTEV</button>
+        <button id="btn-create-company" onclick="createNewCompany()" class="w-full bg-slate-800 dark:bg-slate-700 text-white py-2.5 rounded-xl text-xs font-bold shadow"><i class="fa-solid fa-building-circle-check mr-1"></i> Créer l’établissement et générer son code</button>
         <div id="generated-code-box" class="hidden mt-3 p-3 bg-amber-50 dark:bg-slate-800 border rounded-xl text-center space-y-2">
           <span class="block text-[10px] font-black text-amber-600 uppercase tracking-wider">Votre Code Unique :</span>
           <span id="lbl-generated-code" class="block text-lg font-black dark:text-white font-mono tracking-widest"></span>
@@ -5734,6 +5734,56 @@ const observer=new MutationObserver(ensureUI);document.addEventListener('DOMCont
     const rows=(res.data||[]).map(r=>({company_code:r.company_code,employee_name:r.employee_name,employee_profile:r.employee_profile||'Non renseigné',profile:r.employee_profile||'Non renseigné',validated_at:r.created_at?new Date(r.created_at).toLocaleString('fr-FR'):'',score:`${r.score??0}/${r.total??0}`,epis:Array.isArray(r.epis)?r.epis:[],sector:r.sector,company_size_range:r.company_size_range,status:r.status||'Validé et signé'}));
     if(typeof renderPassportRegistry==='function') renderPassportRegistry(rows);
     if(!rows.length) table.innerHTML='<tr><td colspan="6" class="p-4 text-center italic text-slate-400">Aucun Passeport Prévention validé pour cet établissement.</td></tr>';
+  };
+})();
+</script>
+
+
+<script>
+/* RESTEV 85 - CREATION ENTREPRISE REELLE */
+(function(){
+  async function ensureAnonymousSession(){
+    if(!supabaseClient) throw new Error('Supabase non chargé');
+    const current=await supabaseClient.auth.getSession();
+    if(current.data?.session) return current.data.session;
+    const signed=await supabaseClient.auth.signInAnonymously();
+    if(signed.error) throw signed.error;
+    return signed.data.session;
+  }
+
+  window.createNewCompany=async function(){
+    const name=document.getElementById('new-company-name')?.value.trim();
+    const sector=document.getElementById('manager-login-sector')?.value||'Non renseigné';
+    const size=document.getElementById('manager-login-size')?.value||'Non renseigné';
+    if(!name) return showToast("Saisissez la raison sociale de l'établissement.");
+    if(sector==='Non renseigné') return showToast("Sélectionnez le secteur d'activité.");
+    if(size==='Non renseigné') return showToast("Sélectionnez la taille de l'établissement.");
+    const btn=document.getElementById('btn-create-company');
+    if(btn){btn.disabled=true;btn.dataset.label=btn.innerHTML;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin mr-1"></i> Création...';}
+    try{
+      const session=await ensureAnonymousSession();
+      const result=await supabaseClient.rpc('create_restev_company',{
+        p_company_name:name,
+        p_sector:sector,
+        p_company_size_range:size
+      });
+      if(result.error) throw result.error;
+      const company=Array.isArray(result.data)?result.data[0]:result.data;
+      if(!company?.company_code) throw new Error('Code établissement non retourné');
+      window.r85AuthContext={user_id:session.user.id,company_id:company.company_id,role:'manager',company};
+      const code=company.company_code.toUpperCase();
+      document.getElementById('manager-company-code').value=code;
+      document.getElementById('lbl-generated-code').innerText=code;
+      document.getElementById('generated-code-box').classList.remove('hidden');
+      safeStorage.setItem('restev_manager_sector_'+code,sector);
+      safeStorage.setItem('restev_manager_size_'+code,size);
+      showToast('Établissement créé. Conservez précieusement le code '+code+'.');
+    }catch(err){
+      console.error('Création établissement:',err);
+      showToast('Création impossible : '+(err.message||err));
+    }finally{
+      if(btn){btn.disabled=false;btn.innerHTML=btn.dataset.label||'Créer l’établissement';}
+    }
   };
 })();
 </script>
