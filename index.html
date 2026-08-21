@@ -5788,5 +5788,86 @@ const observer=new MutationObserver(ensureUI);document.addEventListener('DOMCont
 })();
 </script>
 
+
+<script>
+/* RESTEV 85 - CORRECTION DEFINITIVE RATTACHEMENT SALARIE */
+(function(){
+  window.r85BootstrapEmployeeFromQR = async function(){
+    const params = new URLSearchParams(window.location.search);
+    const employeeName = params.get('emp');
+    const companyCode = params.get('comp');
+    if(!employeeName || !companyCode) return false;
+
+    const sector = params.get('sector') || params.get('secteur') || 'Autre';
+    const profile = params.get('profile') || params.get('profil') || 'Non renseigné';
+    let epis = [];
+    try{
+      const raw = params.get('epis');
+      if(raw) epis = JSON.parse(decodeURIComponent(raw));
+      if(!Array.isArray(epis)) epis = [];
+    }catch(e){ epis = []; }
+
+    try{
+      if(!supabaseClient) throw new Error('Supabase non chargé');
+      let sessionResult = await supabaseClient.auth.getSession();
+      let session = sessionResult.data?.session || null;
+      if(!session){
+        const signed = await supabaseClient.auth.signInAnonymously();
+        if(signed.error) throw signed.error;
+        session = signed.data.session;
+      }
+
+      const names = String(employeeName).trim().split(/\s+/);
+      const firstName = names.shift() || 'Salarié';
+      const lastName = names.join(' ') || null;
+      const claim = await supabaseClient.rpc('claim_employee_session', {
+        p_company_code: companyCode.trim().toUpperCase(),
+        p_first_name: firstName,
+        p_last_name: lastName
+      });
+      if(claim.error) throw claim.error;
+      const company = Array.isArray(claim.data) ? claim.data[0] : claim.data;
+      if(!company?.company_id) throw new Error('Entreprise non trouvée ou inactive');
+
+      window.r85AuthContext = {
+        user_id: session.user.id,
+        company_id: company.company_id,
+        role: 'employee',
+        company: company
+      };
+      window.currentEmployeeSession = {
+        name: employeeName,
+        company: company.company_code || companyCode.trim().toUpperCase(),
+        company_id: company.company_id,
+        user_id: session.user.id,
+        sector: company.sector || sector,
+        profile: profile,
+        epis: epis
+      };
+      try{ currentEmployeeSession = window.currentEmployeeSession; }catch(e){}
+      try{ selectedEPIList = epis; }catch(e){}
+
+      const welcome = document.getElementById('lbl-emp-welcome');
+      const companyLabel = document.getElementById('lbl-emp-company');
+      if(welcome) welcome.innerText = 'Bonjour, ' + employeeName;
+      if(companyLabel) companyLabel.innerText = 'Établissement : ' + window.currentEmployeeSession.company + ' | Secteur : ' + window.currentEmployeeSession.sector;
+      if(typeof setEmployeeProfileDisplay === 'function') setEmployeeProfileDisplay(profile);
+      if(typeof switchScreen === 'function') switchScreen('scr-employee');
+      if(typeof startEmployeeExchangeRealtime === 'function') setTimeout(startEmployeeExchangeRealtime, 300);
+      showToast('Salarié rattaché à ' + (company.company_name || companyCode) + '.');
+      return true;
+    }catch(err){
+      console.error('Rattachement salarié QR:', err);
+      showToast('Rattachement salarié impossible : ' + (err.message || err));
+      return false;
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function(){
+    setTimeout(window.r85BootstrapEmployeeFromQR, 150);
+  });
+})();
+</script>
+
 </body>
 </html>
