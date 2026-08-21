@@ -5639,14 +5639,69 @@ const observer=new MutationObserver(ensureUI);document.addEventListener('DOMCont
 </script>
 
 
-<script id="restev85-pwa-runtime-v1">
-(function(){
-  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
-    window.addEventListener('load', function(){
-      navigator.serviceWorker.register('./sw.js').catch(function(err){ console.warn('Service worker non enregistre:', err); });
-    });
-  }
-})();
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", async () => {
+    try {
+      const registration =
+        await navigator.serviceWorker.register(
+          "/-prevention-mobile/sw.js",
+          {
+            scope: "/-prevention-mobile/",
+            updateViaCache: "none"
+          }
+        );
+
+      await registration.update();
+
+      let reloading = false;
+
+      navigator.serviceWorker.addEventListener(
+        "controllerchange",
+        () => {
+          if (reloading) return;
+
+          reloading = true;
+          window.location.reload();
+        }
+      );
+
+      if (registration.waiting) {
+        registration.waiting.postMessage({
+          type: "SKIP_WAITING"
+        });
+      }
+
+      registration.addEventListener(
+        "updatefound",
+        () => {
+          const worker = registration.installing;
+
+          if (!worker) return;
+
+          worker.addEventListener(
+            "statechange",
+            () => {
+              if (
+                worker.state === "installed" &&
+                navigator.serviceWorker.controller
+              ) {
+                worker.postMessage({
+                  type: "SKIP_WAITING"
+                });
+              }
+            }
+          );
+        }
+      );
+    } catch (error) {
+      console.error(
+        "Erreur service worker RESTEV :",
+        error
+      );
+    }
+  });
+}
 </script>
 
 
