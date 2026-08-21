@@ -5225,9 +5225,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if(emergency){setPrevyState('stop');const emergencyAnswer='Situation potentiellement urgente. Appliquez immédiatement les consignes d’urgence de votre entreprise et alertez les personnes ou services prévus. N’attendez pas une réponse de PREV’IA.';stopPreviaVoice();add('ai','🚨 '+emergencyAnswer);setPreviaLastAnswer(emergencyAnswer);speakPreviaAnswer(emergencyAnswer,true);status('Mode urgence · priorité aux consignes de l’entreprise');return;}
     setPrevyState('reflexion');const pending=add('ai','🧠 Prevy analyse votre demande...');status('PREV’IA réfléchit...',true);
     try{
-      const res=await fetch(PREVIA_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,context:context()})});
-      const data=await res.json().catch(()=>({}));
-      if(!res.ok || data.error) throw new Error(data.error||('HTTP '+res.status));
+      const res=await fetch(PREVIA_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY},body:JSON.stringify({question:q,context:context()})});
+      const raw=await res.text();let data={};try{data=raw?JSON.parse(raw):{};}catch(parseError){throw new Error('Réponse PREV’IA illisible : '+raw.slice(0,160));}
+      if(!res.ok || data.error) throw new Error(data.error||data.message||('HTTP '+res.status));
       pending?.remove();const answer=data.answer||'Je ne dispose pas de suffisamment d’informations pour répondre de façon fiable. Consultez votre responsable.';add('ai',answer);setPrevyState(prevyStateFromAnswer(answer));setPreviaLastAnswer(answer);speakPreviaAnswer(answer);status('Réponse reçue · vérifiez toujours les consignes de l’entreprise');
     }catch(e){pending?.remove();setPrevyState('attention');add('ai','PREV’IA est momentanément indisponible. Vous pouvez toujours créer un signalement ou contacter votre responsable.');status('Service IA indisponible · les autres fonctions restent accessibles');console.error('PREVIA',e);}
   };
@@ -5590,8 +5590,7 @@ window.restevRoleStatus=function(){return{employee:isEmployee(),session:session(
 <script id="restev85-photo-analysis-v1">
 (function(){
 'use strict';
-const ENDPOINT='https://kubqstzkdeqlsxgwfbpz.supabase.co/functions/v1/previa
-';
+const ENDPOINT='https://kubqstzkdeqlsxgwfbpz.supabase.co/functions/v1/previa';
 let lastPhotoAnalysis=null;
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function list(values){return Array.isArray(values)&&values.length?'<ul>'+values.map(v=>'<li>'+esc(v)+'</li>').join('')+'</ul>':'<p>Aucun élément suffisamment visible.</p>';}
@@ -5624,8 +5623,8 @@ async function analysePhoto(){
  const btn=document.getElementById('prevy-photo-analyse-btn');const status=document.getElementById('prevy-photo-analysis-status');const description=document.getElementById('risk-description')?.value?.trim()||'';
  btn.disabled=true;if(status)status.textContent='Prevy analyse les éléments visibles...';if(typeof setPrevyState==='function')setPrevyState('reflexion');clearResult();
  try{
-  const res=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'analyse_photo',question:description||'Analyse cette photo de situation de travail.',image_base64:photo,context:context(),rules:{visible_only:true,no_compliance_judgment:true,no_identity:true}})});
-  const data=await res.json().catch(()=>({}));if(!res.ok||data.error)throw new Error(data.error||('HTTP '+res.status));const analysis=normalize(data);if(!analysis)throw new Error('Réponse d’analyse absente');lastPhotoAnalysis=analysis;render(analysis);if(status)status.textContent='Analyse terminée. Vérifiez les éléments sur le terrain.';
+  const res=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY},body:JSON.stringify({mode:'analyse_photo',question:description||'Analyse cette photo de situation de travail.',image_base64:photo,context:context(),rules:{visible_only:true,no_compliance_judgment:true,no_identity:true}})});
+  const raw=await res.text();let data={};try{data=raw?JSON.parse(raw):{};}catch(parseError){throw new Error('Réponse photo illisible');}if(!res.ok||data.error)throw new Error(data.error||data.message||('HTTP '+res.status));const analysis=normalize(data);if(!analysis)throw new Error('Réponse d’analyse absente');lastPhotoAnalysis=analysis;render(analysis);if(status)status.textContent='Analyse terminée. Vérifiez les éléments sur le terrain.';
  }catch(e){console.error('PHOTO_ANALYSIS',e);if(typeof setPrevyState==='function')setPrevyState('attention');if(status)status.textContent='Analyse indisponible. La photo reste jointe au signalement.';const r=document.getElementById('prevy-photo-analysis-result');if(r){r.innerHTML='<h4>Analyse photo indisponible</h4><p>Décrivez la situation par écrit et contactez votre responsable si une information essentielle manque.</p>';r.classList.add('show');}}
  finally{btn.disabled=!currentPhoto();}
 }
