@@ -1013,6 +1013,16 @@ main{max-width:760px!important}
 }
 </style>
 
+
+<style id="restev85-mobile-overlap-fix">
+@media (max-width: 640px){
+  #restev-build-badge{left:8px!important;right:auto!important;top:auto!important;bottom:76px!important;font-size:8px!important;padding:3px 6px!important;opacity:.72!important;pointer-events:none!important;max-width:138px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  #cloud-sync-badge{padding:.32rem .5rem!important;font-size:8px!important;white-space:nowrap!important;flex-shrink:0!important}
+  #restev-install-card{bottom:84px!important;max-height:calc(100vh - 112px);overflow:auto}
+}
+@media (display-mode: standalone){#restev-install-card{display:none!important}}
+</style>
+
 </head>
 
 <body class="bg-gradient-to-tr from-slate-50 via-blue-50/40 to-pink-50/20 text-slate-800 antialiased min-h-screen flex flex-col dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
@@ -1434,7 +1444,7 @@ main{max-width:760px!important}
     <!-- EMPLOYEE -->
     <section id="scr-employee" class="screen max-w-md mx-auto w-full space-y-4">
       <div class="r85-employee-overview">
-        <div class="r85-employee-prevy"><img src="Prevy-Accueil.png" alt="Prevy"><div><span>Mon espace prévention</span><strong id="r85-employee-status">Prêt à vous accompagner</strong></div></div>
+        <div class="r85-employee-prevy"><img src="Prevy-Accueil.png" alt="Prev’y" onerror="this.style.display='none'"><div><span>Mon espace prévention</span><strong id="r85-employee-status">Prêt à vous accompagner</strong></div></div>
         <div class="r85-overview-grid">
           <button onclick="openPrevia()"><i class="fa-solid fa-brain"></i><b>Prevy</b><small>Question ou tâche</small></button>
           <button onclick="startEmployeeQCM()"><i class="fa-solid fa-id-card"></i><b>Passeport</b><small>QCM et validation</small></button>
@@ -5420,7 +5430,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <div id="restev-install-card" role="dialog" aria-labelledby="restev-install-title" aria-live="polite">
   <button class="restev-install-close" type="button" onclick="restevDismissInstall(7)" aria-label="Fermer">×</button>
   <div class="restev-install-content">
-    <img src="Prevy-Accueil.png" alt="Prevy">
+    <img src="Prevy-Accueil.png" alt="Prev’y" onerror="this.style.display='none'">
     <div class="restev-install-copy">
       <span>Passeport Prévention RESTEV 85</span>
       <strong id="restev-install-title">Gardez Prevy à portée de main</strong>
@@ -5439,6 +5449,9 @@ document.addEventListener('DOMContentLoaded', () => {
   'use strict';
   let deferredInstallPrompt=null;
   const DISMISS_KEY='restev85_install_dismissed_until';
+  const INSTALL_UI_VERSION='2026.08.21.03';
+  const INSTALL_VERSION_KEY='restev85_install_ui_version';
+  try{if(localStorage.getItem(INSTALL_VERSION_KEY)!==INSTALL_UI_VERSION){localStorage.removeItem(DISMISS_KEY);localStorage.setItem(INSTALL_VERSION_KEY,INSTALL_UI_VERSION);}}catch(e){}
 
   function employeeSession(){
     try{return window.currentEmployeeSession || (typeof currentEmployeeSession!=='undefined' ? currentEmployeeSession : null) || null;}catch(e){return null;}
@@ -5449,7 +5462,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function help(message){const el=document.getElementById('restev-install-help');if(el){el.innerHTML=message;el.classList.add('show');}}
 
   window.restevShowInstallInvite=function(){
-    if(!employeeSession() || isStandalone() || isDismissed())return;
+    if(isStandalone() || isDismissed())return;
     const el=card();if(el)el.classList.add('show');
   };
   window.restevDismissInstall=function(days){
@@ -5473,8 +5486,8 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('beforeinstallprompt',function(event){event.preventDefault();deferredInstallPrompt=event;setTimeout(restevShowInstallInvite,400);});
   window.addEventListener('appinstalled',function(){restevDismissInstall(365);try{if(typeof showToast==='function')showToast('Application installée avec succès.');}catch(e){}});
 
-  function refresh(){if(employeeSession())setTimeout(restevShowInstallInvite,850);else{const el=card();if(el)el.classList.remove('show');}}
-  document.addEventListener('DOMContentLoaded',function(){refresh();setTimeout(refresh,1500);});
+  function refresh(){if(isStandalone()){const el=card();if(el)el.classList.remove('show');return;}setTimeout(restevShowInstallInvite,850);}
+  document.addEventListener('DOMContentLoaded',function(){refresh();setTimeout(restevShowInstallInvite,2200);setTimeout(refresh,4500);});
   const observer=new MutationObserver(refresh);document.addEventListener('DOMContentLoaded',function(){observer.observe(document.body,{subtree:true,attributes:true,attributeFilter:['class','style']});});
   window.restevRefreshInstallInvite=refresh;
 })();
@@ -5929,12 +5942,12 @@ if ("serviceWorker" in navigator) {
 
 <script>
 (function(){
-  window.RESTEV_BUILD='RESTEV85-2026.08.21.02';
+  window.RESTEV_BUILD='RESTEV85-2026.08.21.03';
   document.addEventListener('DOMContentLoaded',function(){
     const badge=document.createElement('div');
     badge.id='restev-build-badge';
-    badge.textContent='Version 2026.08.21.02';
-    badge.style.cssText='position:fixed;right:8px;top:8px;z-index:2147483647;background:#0f172a;color:#fff;padding:5px 8px;border-radius:8px;font:700 9px sans-serif;opacity:.9';
+    badge.textContent='Version 2026.08.21.03';
+    badge.style.cssText='position:fixed;left:8px;right:auto;top:auto;bottom:78px;z-index:2147483647;background:#0f172a;color:#fff;padding:5px 8px;border-radius:8px;font:700 9px sans-serif;opacity:.9';
     document.body.appendChild(badge);
   });
 })();
