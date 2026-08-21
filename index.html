@@ -3681,12 +3681,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   async function r85InsertPassport(entry, score, total){
     if(!supabaseClient) return {ok:false, error:'Supabase non chargé'};
+    let authCtx = null;
+    try{ authCtx = typeof r85GetAuthContext === 'function' ? await r85GetAuthContext() : null; }catch(e){}
+    if(!authCtx?.user_id || !authCtx?.company_id) return {ok:false,error:'Session salarié non authentifiée. Rouvrez le QR salarié.'};
     const payload = {
       company_code: entry.company_code,
+      company_id: authCtx.company_id,
+      user_id: authCtx.user_id,
       employee_name: entry.employee_name,
+      employee_profile: entry.employee_profile || entry.profile || currentEmployeeSession?.profile || 'Non renseigné',
       score: score,
       total: total,
       epis: entry.epis || [],
+      sector: entry.sector || r85GetSector(),
+      company_size_range: r85GetSize(),
       status: entry.status || 'Validé et signé',
       signature_employee: entry.signature_employee || null,
       signature_manager: entry.signature_manager || null
@@ -3737,6 +3745,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const entry = {
         company_code: r85GetCompanyCode(),
         employee_name: r85GetEmployeeName(),
+        employee_profile: currentEmployeeSession?.profile || 'Non renseigné',
+        profile: currentEmployeeSession?.profile || 'Non renseigné',
         validated_at: r85NowFr(),
         score: `${score}/${total}`,
         epis: r85GetEpis(),
@@ -5703,6 +5713,28 @@ const observer=new MutationObserver(ensureUI);document.addEventListener('DOMCont
   };
 
   document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{if(window.currentEmployeeSession)window.startEmployeeExchangeRealtime();},1200));
+})();
+</script>
+
+
+<script>
+/* RESTEV 85 - REGISTRE PASSEPORT CLOUD FIX */
+(function(){
+  window.loadPassportRegistry = async function(){
+    const table=document.getElementById('manager-emargements-list');
+    if(!table) return;
+    table.innerHTML='<tr><td colspan="6" class="p-4 text-center text-slate-400">Synchronisation du registre...</td></tr>';
+    if(!supabaseClient) return showToast('Supabase non chargé.');
+    let ctx=null; try{ctx=await r85GetAuthContext();}catch(e){}
+    if(!ctx?.company_id) return showToast('Session entreprise non authentifiée.');
+    const res=await supabaseClient.from('passport_registry')
+      .select('company_code,employee_name,employee_profile,score,total,epis,sector,company_size_range,status,created_at')
+      .eq('company_id',ctx.company_id).order('created_at',{ascending:false}).limit(200);
+    if(res.error){console.error('Registre passeports:',res.error);table.innerHTML='<tr><td colspan="6" class="p-4 text-center text-red-500">Registre indisponible : '+escapeHtml(res.error.message)+'</td></tr>';return;}
+    const rows=(res.data||[]).map(r=>({company_code:r.company_code,employee_name:r.employee_name,employee_profile:r.employee_profile||'Non renseigné',profile:r.employee_profile||'Non renseigné',validated_at:r.created_at?new Date(r.created_at).toLocaleString('fr-FR'):'',score:`${r.score??0}/${r.total??0}`,epis:Array.isArray(r.epis)?r.epis:[],sector:r.sector,company_size_range:r.company_size_range,status:r.status||'Validé et signé'}));
+    if(typeof renderPassportRegistry==='function') renderPassportRegistry(rows);
+    if(!rows.length) table.innerHTML='<tr><td colspan="6" class="p-4 text-center italic text-slate-400">Aucun Passeport Prévention validé pour cet établissement.</td></tr>';
+  };
 })();
 </script>
 
