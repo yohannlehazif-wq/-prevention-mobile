@@ -5637,5 +5637,74 @@ const observer=new MutationObserver(ensureUI);document.addEventListener('DOMCont
 })();
 </script>
 
+
+<script>
+/* RESTEV 85 - ECHANGES BIDIRECTIONNELS DEFINITIFS */
+(function(){
+  async function authCtx(){ return typeof r85GetAuthContext==='function' ? await r85GetAuthContext() : null; }
+
+  window.sendManagerResponse = async function(id){
+    if(!supabaseClient) return showToast('Supabase non chargé.');
+    const ctx=await authCtx();
+    if(!ctx?.company_id || !['manager','restev_admin'].includes(ctx.role)) return showToast('Session manager sécurisée requise.');
+    const response=document.getElementById(`response-${id}`)?.value.trim()||'';
+    const action=document.getElementById(`action-${id}`)?.value.trim()||'';
+    const fetch=await supabaseClient.from('prevention_reports').select('id,company_id,user_id,company_code,employee_name,category').eq('id',id).eq('company_id',ctx.company_id).single();
+    if(fetch.error) return showToast('Signalement inaccessible : '+fetch.error.message);
+    const row=fetch.data;
+    const upd=await supabaseClient.from('prevention_reports').update({manager_response:response,corrective_action:action,status:'En cours de traitement',read_by_manager:true}).eq('id',id).eq('company_id',ctx.company_id);
+    if(upd.error) return showToast('Erreur réponse : '+upd.error.message);
+    if(response||action){
+      const msg=await supabaseClient.from('manager_messages').insert([{
+        company_code:row.company_code, company_id:row.company_id, employee_user_id:row.user_id,
+        employee_name:row.employee_name, title:'Suite à votre signalement : '+(row.category||'prévention'),
+        message:(response||'Votre signalement est pris en compte.')+(action?'\n\nAction corrective : '+action:''),
+        priority:'Important', read_by_employee:false
+      }]);
+      if(msg.error) console.warn('Réponse enregistrée mais notification message non créée:',msg.error.message);
+    }
+    showToast('Réponse transmise au salarié.');
+    if(typeof loadManagerReports==='function') loadManagerReports();
+  };
+
+  async function employeeMessageRows(){
+    const s=window.currentEmployeeSession||null;
+    const ctx=await authCtx();
+    if(!s||!ctx?.user_id||!ctx?.company_id) return [];
+    const fields='id,employee_name,title,message,priority,read_by_employee,created_at';
+    const personal=await supabaseClient.from('manager_messages').select(fields).eq('company_id',ctx.company_id).eq('employee_user_id',ctx.user_id).order('created_at',{ascending:false}).limit(50);
+    const global=await supabaseClient.from('manager_messages').select(fields).eq('company_id',ctx.company_id).eq('employee_name','TOUT_PERSONNEL').order('created_at',{ascending:false}).limit(50);
+    return [...(personal.error?[]:personal.data||[]),...(global.error?[]:global.data||[])].filter((m,i,a)=>a.findIndex(x=>x.id===m.id)===i).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  }
+
+  const oldOpen=window.openEmployeeMessages;
+  window.openEmployeeMessages=async function(){
+    const s=window.currentEmployeeSession||null;
+    const ctx=await authCtx();
+    if(!s||!ctx?.user_id||!ctx?.company_id) return showToast('Session salarié sécurisée requise.');
+    const messages=(await employeeMessageRows()).map(m=>({...m,source:m.employee_name==='TOUT_PERSONNEL'?'Alerte tout personnel':'Message manager'}));
+    const reports=await supabaseClient.from('prevention_reports').select('id,category,description,status,manager_response,corrective_action,created_at').eq('company_id',ctx.company_id).eq('user_id',ctx.user_id).order('created_at',{ascending:false}).limit(50);
+    if(!reports.error) messages.push(...(reports.data||[]).filter(r=>r.manager_response||r.corrective_action).map(r=>({id:'report-'+r.id,title:'Suite à votre signalement : '+(r.category||'prévention'),message:(r.manager_response||'Signalement pris en compte.')+(r.corrective_action?'\n\nAction corrective : '+r.corrective_action:''),priority:r.status||'Suivi',created_at:r.created_at,source:'Suivi signalement',original_description:r.description})));
+    messages.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+    if(typeof renderEmployeeMessages360==='function') renderEmployeeMessages360(messages); else if(oldOpen) return oldOpen();
+    switchScreen('scr-employee-messages');
+  };
+
+  // Realtime salarié pour messages personnels et mises à jour de ses signalements.
+  window.startEmployeeExchangeRealtime=async function(){
+    const ctx=await authCtx(); if(!ctx?.user_id||!ctx?.company_id||!supabaseClient) return;
+    if(window.r85EmployeeExchangeChannel) try{supabaseClient.removeChannel(window.r85EmployeeExchangeChannel);}catch(e){}
+    window.r85EmployeeExchangeChannel=supabaseClient.channel('restev_employee_exchange_'+ctx.user_id)
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'manager_messages',filter:'company_id=eq.'+ctx.company_id},p=>{
+        const m=p.new||{}; if(m.employee_user_id===ctx.user_id||m.employee_name==='TOUT_PERSONNEL'){showToast('Nouveau message du responsable.'); if(typeof playEmployeeMessageSound==='function')playEmployeeMessageSound();}
+      })
+      .on('postgres_changes',{event:'UPDATE',schema:'public',table:'prevention_reports',filter:'user_id=eq.'+ctx.user_id},p=>{showToast('Votre signalement a été mis à jour par le responsable.');})
+      .subscribe();
+  };
+
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{if(window.currentEmployeeSession)window.startEmployeeExchangeRealtime();},1200));
+})();
+</script>
+
 </body>
 </html>
