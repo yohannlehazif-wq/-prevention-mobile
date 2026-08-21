@@ -188,6 +188,8 @@ async function savePassportEntry(entry){
         score: qcmScore,
         total: qcmActiveQuestions.length,
         epis: entry.epis || [],
+        sector: entry.sector || getCurrentSectorLabel(),
+        company_size_range: getCurrentCompanySizeLabel(),
         status: entry.status || 'Validé et signé',
         signature_employee: entry.signature_employee || null,
         signature_manager: entry.signature_manager || null
@@ -1244,7 +1246,9 @@ main{max-width:760px!important}
       <button onclick="switchScreen('scr-home')" class="text-xs bg-white dark:bg-slate-800 border px-4 py-2 rounded-xl font-bold flex items-center gap-1.5"><i class="fa-solid fa-arrow-left"></i> Retour</button>
       <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-premium border-t-4 border-t-restev-blue space-y-4">
         <h2 class="text-xl font-black dark:text-white">Connexion Manager</h2>
-        <p class="text-xs text-slate-500 dark:text-slate-400">Saisissez votre code établissement pour accéder à la console.</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Connexion sécurisée Supabase : compte manager + code établissement.</p>
+        <input type="email" id="manager-email" autocomplete="username" placeholder="Email manager" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-sm font-bold dark:text-white" />
+        <input type="password" id="manager-password" autocomplete="current-password" placeholder="Mot de passe" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-sm font-bold dark:text-white" />
         <input type="text" id="manager-company-code" placeholder="Ex: RSTV-DEMO-1234" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-sm font-bold uppercase dark:text-white" />
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <select id="manager-login-sector" class="w-full p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl text-xs font-bold dark:text-white">
@@ -1261,7 +1265,7 @@ main{max-width:760px!important}
       <div class="bg-gradient-to-br from-slate-50 to-amber-50/30 dark:from-slate-900 dark:to-slate-800 p-6 rounded-3xl shadow-sm border space-y-4">
         <h3 class="text-sm font-black dark:text-white">Nouvel Établissement ?</h3>
         <input type="text" id="new-company-name" placeholder="Raison sociale" class="w-full p-3 bg-white dark:bg-slate-800 border rounded-xl text-xs font-bold dark:text-white" />
-        <button onclick="createNewCompany()" class="w-full bg-slate-800 dark:bg-slate-700 text-white py-2.5 rounded-xl text-xs font-bold shadow">Générer un code d'accès</button>
+        <button onclick="showToast('Création établissement réservée au Centre RESTEV dans Supabase.')" class="w-full bg-slate-800 dark:bg-slate-700 text-white py-2.5 rounded-xl text-xs font-bold shadow">Création sécurisée par RESTEV</button>
         <div id="generated-code-box" class="hidden mt-3 p-3 bg-amber-50 dark:bg-slate-800 border rounded-xl text-center space-y-2">
           <span class="block text-[10px] font-black text-amber-600 uppercase tracking-wider">Votre Code Unique :</span>
           <span id="lbl-generated-code" class="block text-lg font-black dark:text-white font-mono tracking-widest"></span>
@@ -1630,6 +1634,44 @@ async function r85GetAuthContext(){
   if(error || !profile) return null;
   window.r85AuthContext = { user_id:user.id, company_id:profile.company_id, role:profile.role, profile };
   return window.r85AuthContext;
+}
+
+
+async function r85ManagerSignIn(){
+  if(!supabaseClient) throw new Error('Supabase non charge');
+  const email = document.getElementById('manager-email')?.value.trim();
+  const password = document.getElementById('manager-password')?.value || '';
+  const code = document.getElementById('manager-company-code')?.value.trim().toUpperCase();
+  if(!email || !password || !code) throw new Error('Email, mot de passe et code établissement obligatoires');
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if(error) throw error;
+  const uid = data.user?.id;
+  const { data: profile, error: pErr } = await supabaseClient.from('profiles').select('id,company_id,role,first_name,last_name').eq('id',uid).maybeSingle();
+  if(pErr || !profile) throw (pErr || new Error('Profil manager introuvable'));
+  if(profile.role !== 'manager' && profile.role !== 'restev_admin') throw new Error('Ce compte ne possède pas le rôle manager');
+  const { data: company, error:cErr } = await supabaseClient.from('companies').select('id,company_code,company_name,sector,company_size_range,active').eq('id',profile.company_id).maybeSingle();
+  if(cErr || !company) throw (cErr || new Error('Entreprise du manager introuvable'));
+  if(String(company.company_code).toUpperCase() !== code) throw new Error('Le code établissement ne correspond pas au compte manager');
+  window.r85AuthContext = { user_id:uid, company_id:profile.company_id, role:profile.role, profile, company };
+  return window.r85AuthContext;
+}
+
+async function r85SecureManagerLogin(){
+  try{
+    const ctx = await r85ManagerSignIn();
+    const code = ctx.company.company_code;
+    const lbl = document.getElementById('lbl-manager-comp-name');
+    if(lbl) lbl.innerText = code;
+    managerSector = ctx.company.sector || 'Non renseigné';
+    managerCompanySize = ctx.company.company_size_range || 'Non renseigné';
+    safeStorage.setItem('restev_manager_sector_' + code, managerSector);
+    safeStorage.setItem('restev_manager_size_' + code, managerCompanySize);
+    window.forceOpenManagerSpace();
+    showToast('Manager authentifié et connecté à son établissement.');
+  }catch(err){
+    console.error('Connexion manager sécurisée:', err);
+    showToast('Connexion refusée : ' + (err.message || 'identifiants invalides'));
+  }
 }
 
 
@@ -3033,9 +3075,7 @@ window.forceOpenManagerSpace = function(){
   if (typeof showToast === 'function') showToast('Espace Management ouvert.');
 };
 handleManagerLogin = function(){
-  const code = (document.getElementById('manager-company-code')?.value || '').trim();
-  if (!code) return showToast('Veuillez saisir un code établissement');
-  window.forceOpenManagerSpace();
+  r85SecureManagerLogin();
 };
 setTimeout(function(){
   const btn = document.getElementById('btn-manager-login') || Array.from(document.querySelectorAll('button')).find(b => (b.textContent || '').includes("Accéder à l'Espace"));
@@ -3201,13 +3241,22 @@ savePassportEntry = async function(entry){
   safeStorage.setItem(getRegistryKey(), JSON.stringify(entries.slice(0,100)));
   if(supabaseClient){
     try{
+      const authCtx = await r85GetAuthContext();
+      if(!authCtx?.user_id || !authCtx?.company_id){
+        showToast('Session salarié non authentifiée : passeport conservé localement.');
+        return;
+      }
       const payload = {
         company_code: entry.company_code,
+        company_id: authCtx.company_id,
+        user_id: authCtx.user_id,
         employee_name: entry.employee_name,
         employee_profile: entry.employee_profile || entry.profile || 'Non renseigné',
         score: qcmScore,
         total: qcmActiveQuestions.length,
         epis: entry.epis || [],
+        sector: entry.sector || getCurrentSectorLabel(),
+        company_size_range: getCurrentCompanySizeLabel(),
         status: entry.status || 'Validé et signé',
         signature_employee: entry.signature_employee || null,
         signature_manager: entry.signature_manager || null
@@ -3957,7 +4006,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const message = document.getElementById('restev-msg-content')?.value.trim();
     const priority = document.getElementById('restev-msg-priority')?.value || 'Information';
     if(!employee || !title || !message) return showToast(all ? 'Veuillez compléter titre et message.' : 'Veuillez compléter salarié, titre et message.');
-    const { error } = await supabaseClient.from('manager_messages').insert([{company_code:code, employee_name:employee, title, message, priority, read_by_employee:false}]);
+    const authCtx = await r85GetAuthContext();
+    if(!authCtx?.company_id || !['manager','restev_admin'].includes(authCtx.role)) return showToast('Session manager sécurisée requise.');
+    let employeeUserId = null;
+    if(!all){
+      const parts = employee.trim().split(/\s+/);
+      const first = parts.shift() || '';
+      const last = parts.join(' ');
+      let q = supabaseClient.from('profiles').select('id,first_name,last_name').eq('company_id',authCtx.company_id).eq('role','employee').eq('first_name',first);
+      if(last) q = q.eq('last_name',last);
+      const match = await q.limit(2);
+      if(match.error || !match.data || match.data.length !== 1) return showToast('Salarié introuvable ou nom ambigu dans les profils.');
+      employeeUserId = match.data[0].id;
+    }
+    const { error } = await supabaseClient.from('manager_messages').insert([{company_code:code, company_id:authCtx.company_id, employee_user_id:employeeUserId, employee_name:employee, title, message, priority, read_by_employee:false}]);
     if(error){ console.error('Erreur manager_messages:', error); return showToast('Erreur message : ' + error.message); }
     document.getElementById('restev-msg-title').value = '';
     document.getElementById('restev-msg-content').value = '';
