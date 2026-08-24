@@ -5953,5 +5953,120 @@ if ("serviceWorker" in navigator) {
 })();
 </script>
 
+
+<!-- RESTEV85 MULTISUPPORT / MODE KIOSQUE PATCH 2026-08-24 -->
+<style id="r85-multisupport-style">
+  #r85-access-overlay{position:fixed;inset:0;z-index:100000;background:rgba(10,24,52,.72);backdrop-filter:blur(9px);display:none;align-items:center;justify-content:center;padding:18px}
+  #r85-access-overlay.r85-open{display:flex}
+  .r85-access-card{width:min(760px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:26px;padding:24px;box-shadow:0 30px 90px rgba(0,0,0,.34);color:#17213b}
+  .dark .r85-access-card{background:#101a31;color:#f8fafc}
+  .r85-access-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}
+  .r85-access-choice{border:2px solid #dbe6f5;border-radius:18px;padding:18px 12px;background:#f8fbff;text-align:center;font-weight:800;min-height:138px;cursor:pointer}
+  .r85-access-choice:hover,.r85-access-choice:focus{border-color:#176fff;box-shadow:0 0 0 4px rgba(23,111,255,.12);outline:none}
+  .r85-access-choice i{display:block;font-size:30px;color:#176fff;margin-bottom:10px}.r85-access-choice small{display:block;font-weight:600;color:#64748b;margin-top:6px}
+  .r85-channel-pill{position:fixed;right:12px;bottom:78px;z-index:8000;border:0;border-radius:999px;background:#17365d;color:#fff;padding:8px 12px;font-size:11px;font-weight:800;box-shadow:0 8px 20px rgba(0,0,0,.18)}
+  .r85-shared-banner{display:none;position:sticky;top:0;z-index:9000;background:#fff4cf;color:#713f12;border:1px solid #f3cb57;border-radius:12px;padding:9px 12px;margin:6px auto 12px;max-width:740px;font-size:12px;font-weight:800;text-align:center}
+  body.r85-shared-device .r85-shared-banner{display:block}
+  .r85-manager-tools{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+  .r85-tool-btn{border:1px solid #cbd5e1;border-radius:13px;padding:11px;background:#fff;font-size:12px;font-weight:800;color:#17365d}
+  .dark .r85-tool-btn{background:#16213b;color:#fff;border-color:#334155}
+  @media(max-width:640px){.r85-access-grid{grid-template-columns:1fr}.r85-access-card{padding:18px}.r85-access-choice{min-height:auto}.r85-manager-tools{grid-template-columns:1fr}}
+  @media print{#r85-access-overlay,.r85-channel-pill,.r85-shared-banner,.r85-no-print{display:none!important}}
+</style>
+<div id="r85-shared-banner" class="r85-shared-banner" role="status">Appareil partagé : la session se fermera automatiquement et aucune donnée du salarié précédent ne restera affichée.</div>
+<div id="r85-access-overlay" role="dialog" aria-modal="true" aria-labelledby="r85-access-title">
+ <div class="r85-access-card">
+  <div style="display:flex;justify-content:space-between;gap:12px;align-items:start">
+   <div><div style="font-size:12px;font-weight:900;color:#176fff;text-transform:uppercase">RESTEV 85</div><h2 id="r85-access-title" style="font-size:24px;font-weight:900;margin:3px 0">Comment utilisez-vous l’application ?</h2><p style="margin:0;color:#64748b">Aucun téléphone personnel n’est obligatoire. Le parcours s’adapte au matériel disponible.</p></div>
+   <button type="button" onclick="r85CloseAccessChooser()" aria-label="Fermer" style="border:0;background:#eef2f7;border-radius:999px;width:38px;height:38px;font-size:20px">×</button>
+  </div>
+  <div class="r85-access-grid">
+   <button class="r85-access-choice" onclick="r85ChooseAccessMode('personal')"><i class="fa-solid fa-mobile-screen"></i>Sur mon appareil<small>Smartphone, tablette ou ordinateur personnel</small></button>
+   <button class="r85-access-choice" onclick="r85ChooseAccessMode('shared')"><i class="fa-solid fa-tablet-screen-button"></i>Sur un appareil partagé<small>Tablette, borne ou PC de l’entreprise</small></button>
+   <button class="r85-access-choice" onclick="r85ChooseAccessMode('assisted')"><i class="fa-solid fa-people-arrows"></i>Accompagné par mon tuteur<small>Parcours réalisé avec le manager ou le tuteur</small></button>
+  </div>
+  <p style="font-size:12px;color:#64748b;margin:16px 0 0"><i class="fa-solid fa-shield-halved"></i> Sur un appareil partagé, la déconnexion est automatique après le parcours ou après une période d’inactivité.</p>
+ </div>
+</div>
+<button id="r85-channel-pill" class="r85-channel-pill" type="button" onclick="r85OpenAccessChooser()" title="Changer de mode d’accès">Canal : non défini</button>
+<script id="r85-multisupport-script">
+(function(){
+ 'use strict';
+ const KEY_MODE='restev85_access_mode';
+ const KEY_CHANNEL_LOG='restev85_channel_usage';
+ const SHARED_TIMEOUT=2*60*1000;
+ let sharedTimer=null;
+ const labels={personal:'Appareil personnel',shared:'Appareil partagé',assisted:'Avec tuteur',paper:'Papier régularisé'};
+ function store(){return window.safeStorage||window.localStorage;}
+ function getMode(){try{return store().getItem(KEY_MODE)||'';}catch(e){return '';}}
+ function setMode(v){try{store().setItem(KEY_MODE,v);}catch(e){} }
+ function logChannel(action,extra){
+   const row={at:new Date().toISOString(),channel:getMode()||'unknown',action:action||'navigation',screen:(extra&&extra.screen)||'',company:(window.companyCode||''),employee:(window.currentEmployeeSession&&window.currentEmployeeSession.name)||''};
+   try{const a=JSON.parse(store().getItem(KEY_CHANNEL_LOG)||'[]');a.unshift(row);store().setItem(KEY_CHANNEL_LOG,JSON.stringify(a.slice(0,500)));}catch(e){}
+   try{window.dispatchEvent(new CustomEvent('restev:channel-used',{detail:row}));}catch(e){}
+ }
+ function updateUI(){
+   const m=getMode(); const pill=document.getElementById('r85-channel-pill');
+   if(pill)pill.textContent='Canal : '+(labels[m]||'à préciser');
+   document.body.classList.toggle('r85-shared-device',m==='shared');
+   resetSharedTimer();
+ }
+ function clearSensitiveLocalData(){
+   const ids=['employee-name','att-employee','employee-signature','manager-signature','risk-description','risk-comments','risk-photo-input'];
+   ids.forEach(id=>{const e=document.getElementById(id);if(!e)return;if(e.type==='file')e.value='';else if('value' in e)e.value='';});
+   try{sessionStorage.clear();}catch(e){}
+   ['restev_current_employee','restev_employee_session','currentEmployeeSession'].forEach(k=>{try{store().removeItem(k);}catch(e){}});
+   window.currentEmployeeSession=null;
+ }
+ function neutralFinish(){
+   clearSensitiveLocalData();
+   document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
+   const home=document.getElementById('scr-home');if(home)home.classList.add('active');
+   alert('Parcours terminé. La session a été fermée et l’appareil est prêt pour la personne suivante.');
+ }
+ function resetSharedTimer(){
+   if(sharedTimer)clearTimeout(sharedTimer);
+   if(getMode()==='shared')sharedTimer=setTimeout(()=>{logChannel('shared-timeout');neutralFinish();},SHARED_TIMEOUT);
+ }
+ ['click','keydown','touchstart'].forEach(ev=>document.addEventListener(ev,resetSharedTimer,{passive:true}));
+ window.r85OpenAccessChooser=function(){document.getElementById('r85-access-overlay')?.classList.add('r85-open');};
+ window.r85CloseAccessChooser=function(){document.getElementById('r85-access-overlay')?.classList.remove('r85-open');};
+ window.r85ChooseAccessMode=function(mode){setMode(mode);updateUI();logChannel('mode-selected');r85CloseAccessChooser();};
+ window.r85GetAccessMode=getMode;
+ window.r85LogChannel=logChannel;
+ window.r85KioskFinish=neutralFinish;
+ window.r85ExportChannelUsage=function(){
+   let rows=[];try{rows=JSON.parse(store().getItem(KEY_CHANNEL_LOG)||'[]');}catch(e){}
+   const head=['date','canal','action','écran','entreprise','salarié'];
+   const csv=[head,...rows.map(r=>[r.at,r.channel,r.action,r.screen,r.company,r.employee])].map(a=>a.map(v=>'"'+String(v||'').replaceAll('"','""')+'"').join(';')).join('\n');
+   const b=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='usage_canaux_restev85.csv';a.click();URL.revokeObjectURL(u);
+ };
+ window.r85PreRegisterEmployee=function(){
+   const name=prompt('Nom ou identifiant interne du salarié :');if(!name)return;
+   const profile=prompt('Profil : CDI, CDD, Intérimaire, Apprenti, Stagiaire ou Saisonnier :','CDI')||'Non renseigné';
+   const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let code='';for(let i=0;i<8;i++)code+=alphabet[Math.floor(Math.random()*alphabet.length)];
+   const expires=new Date(Date.now()+24*60*60*1000).toISOString();
+   const entry={name,profile,code,company:window.companyCode||'',createdAt:new Date().toISOString(),expiresAt:expires,status:'temporaire'};
+   try{const a=JSON.parse(store().getItem('restev85_temporary_access')||'[]');a.unshift(entry);store().setItem('restev85_temporary_access',JSON.stringify(a.slice(0,100)));}catch(e){}
+   const w=window.open('','_blank','width=650,height=760');if(!w){alert('Code temporaire : '+code+'\nValable 24 heures.');return;}
+   w.document.write('<!doctype html><meta charset="utf-8"><title>Accès temporaire RESTEV 85</title><body style="font-family:Arial;padding:38px;color:#17365d"><h1>RESTEV 85</h1><h2>Accès temporaire au Passeport Prévention</h2><p><b>Identifiant :</b> '+String(name).replace(/[<>&]/g,'')+'</p><p><b>Profil :</b> '+String(profile).replace(/[<>&]/g,'')+'</p><p style="font-size:32px;border:3px dashed #176fff;padding:18px;text-align:center;letter-spacing:5px"><b>'+code+'</b></p><p>Valable jusqu’au '+new Date(expires).toLocaleString('fr-FR')+'.</p><p>Utilisable sur un smartphone, un PC, une tablette ou une borne de l’entreprise. Aucun téléphone personnel n’est obligatoire.</p><button onclick="print()">Imprimer</button></body>');w.document.close();logChannel('temporary-access-created');
+ };
+ window.r85PrintPaperFallback=function(){
+   const w=window.open('','_blank','width=800,height=900');if(!w)return;
+   w.document.write('<!doctype html><meta charset="utf-8"><title>Continuité papier RESTEV 85</title><style>body{font-family:Arial;padding:28px}h1{color:#176fff}.line{border-bottom:1px solid #333;height:28px}.box{border:1px solid #777;min-height:90px;margin:8px 0 18px}label{font-weight:bold}</style><h1>RESTEV 85 - Fiche de continuité</h1><p>À utiliser uniquement si l’application ou le réseau est indisponible. La ressaisie devra indiquer la personne ayant effectué la régularisation.</p><label>Entreprise / établissement</label><div class="line"></div><label>Salarié ou matricule</label><div class="line"></div><label>Date et heure réelles de l’accueil ou du signalement</label><div class="line"></div><label>Type : ☐ Accueil sécurité ☐ Signalement terrain ☐ Autre</label><div class="box"></div><label>Informations, risques ou consignes présentés</label><div class="box"></div><label>Mesures immédiates / actions complémentaires</label><div class="box"></div><label>Nom et signature du salarié</label><div class="line"></div><label>Nom et signature de l’encadrant</label><div class="line"></div><label>Régularisation numérique réalisée par / le / motif</label><div class="box"></div><button onclick="print()">Imprimer</button>');w.document.close();logChannel('paper-fallback-printed');
+ };
+ function injectManagerTools(){
+   const anchor=[...document.querySelectorAll('button')].find(b=>/Générer le QR salarié/i.test(b.textContent||''));if(!anchor||document.getElementById('r85-manager-tools'))return;
+   const d=document.createElement('div');d.id='r85-manager-tools';d.className='r85-manager-tools r85-no-print';d.innerHTML='<button class="r85-tool-btn" type="button" onclick="r85PreRegisterEmployee()"><i class="fa-solid fa-ticket"></i> Préinscrire et imprimer un accès</button><button class="r85-tool-btn" type="button" onclick="r85PrintPaperFallback()"><i class="fa-solid fa-file-pen"></i> Fiche papier de secours</button><button class="r85-tool-btn" type="button" onclick="r85ExportChannelUsage()"><i class="fa-solid fa-chart-column"></i> Exporter les canaux utilisés</button><button class="r85-tool-btn" type="button" onclick="r85OpenAccessChooser()"><i class="fa-solid fa-display"></i> Choisir le mode d’accès</button>';
+   anchor.parentElement.appendChild(d);
+ }
+ function wrapNavigation(){
+   if(typeof window.switchScreen==='function'&&!window.switchScreen.__r85multi){const old=window.switchScreen;const wrapped=function(id){logChannel('screen-open',{screen:id});const r=old.apply(this,arguments);resetSharedTimer();return r;};wrapped.__r85multi=true;window.switchScreen=wrapped;}
+   if(typeof window.appNavigate==='function'&&!window.appNavigate.__r85multi){const old=window.appNavigate;const wrapped=function(id){logChannel('screen-open',{screen:id});return old.apply(this,arguments);};wrapped.__r85multi=true;window.appNavigate=wrapped;}
+ }
+ document.addEventListener('DOMContentLoaded',()=>{injectManagerTools();wrapNavigation();updateUI();if(!getMode())setTimeout(r85OpenAccessChooser,500);});
+ setTimeout(()=>{injectManagerTools();wrapNavigation();},1500);
+})();
+</script>
 </body>
 </html>
