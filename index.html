@@ -5226,7 +5226,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   function status(t,thinking=false){const e=document.getElementById('previa-status');if(e){e.textContent=t;e.classList.toggle('previa-thinking',thinking);}}
   function add(role,text){const box=document.getElementById('previa-chat');if(!box)return null;const d=document.createElement('div');d.className=role==='user'?'ml-8 bg-restev-blue text-white p-3 rounded-2xl text-xs':'mr-4 bg-slate-50 dark:bg-slate-900 border p-3 rounded-2xl text-xs dark:text-slate-200';d.innerHTML='<b>'+(role==='user'?'Vous':'PREV’IA')+' :</b> '+esc(text).replace(/\n/g,'<br>');box.appendChild(d);box.scrollTop=box.scrollHeight;return d;}
-  function context(){return {employee:window.currentEmployeeSession?.name||'',company:window.currentEmployeeSession?.company||'',profile:window.currentEmployeeSession?.profile||'',sector:window.currentEmployeeSession?.sector||'',app:'RESTEV 85 Passeport Prévention'};}
+  function context(){return {employee:window.currentEmployeeSession?.name||'',company:window.currentEmployeeSession?.company||'',company_id:window.currentEmployeeSession?.company_id||'',user_id:window.currentEmployeeSession?.user_id||'',profile:window.currentEmployeeSession?.profile||'',sector:window.currentEmployeeSession?.sector||'',trade:window.currentEmployeeSession?.trade||'',app:'RESTEV 85 Passeport Prévention'};}
   window.openPrevia=function(){switchScreen('scr-previa');setPrevyState('accueil');status('PREV’IA est prêt · Gemini 3.5 Flash-Lite via Supabase');};
   window.previaPrompt=function(type){const input=document.getElementById('previa-input');if(!input)return;input.value={task:'Je commence une tâche : ',unsafe:'Je ne me sens pas en sécurité parce que ',risk:'Je souhaite analyser cette situation : '}[type]||'';input.focus();};
   window.previaCreateReport=function(){setPrevyState('signalement');const last=[...document.querySelectorAll('#previa-chat > div')].reverse().find(x=>x.textContent.startsWith('Vous'));if(last){const t=last.textContent.replace(/^Vous\s*:\s*/,'').trim();const r=document.getElementById('risk-description');if(r&&!r.value)r.value='Signalement préparé avec PREV’IA : '+t;}switchScreen('scr-report');};
@@ -6173,6 +6173,78 @@ function installRagSend(){
  enhanced.__r85rag=true;window.previaSend=enhanced;
 }
 function init(){ensureGuide();wrapState();wrapNav();installRagSend();guideScreen(currentScreen());setTimeout(()=>{wrapState();wrapNav();installRagSend()},1200);console.log(VERSION,'installé');}
+document.addEventListener('DOMContentLoaded',init);if(document.readyState!=='loading')setTimeout(init,0);
+})();
+</script>
+
+<!-- RESTEV85 CATALOGUE METIERS + SUPABASE COMPLETE 2026-08-24 -->
+<style id="r85-trade-catalog-style">
+.r85-field-label{display:block;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.05em;color:#64748b;margin:3px 0 5px}.r85-select{width:100%;padding:12px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:12px;font-size:12px;font-weight:800;color:#17213b}.dark .r85-select{background:#0f172a;color:#fff;border-color:#334155}.r85-trade-note{display:flex;gap:8px;align-items:flex-start;padding:10px;border-radius:12px;background:#eff6ff;color:#174ea6;font-size:10px;font-weight:700;line-height:1.4}.r85-trade-note.warn{background:#fff7ed;color:#9a3412}.r85-employee-trade{margin-top:4px;font-size:10px;font-weight:800;color:#0f766e}.r85-catalog-status{display:inline-flex;align-items:center;gap:5px;font-size:9px;font-weight:900;padding:4px 8px;border-radius:999px;background:#ecfdf5;color:#047857}.r85-catalog-status.off{background:#fff7ed;color:#9a3412}
+</style>
+<script id="r85-trade-catalog-controller">
+(function(){
+'use strict';
+const VERSION='RESTEV85_SUPABASE_COMPLETE_2026_08_24';
+let catalog=[];
+function sb(){try{return typeof supabaseClient!=='undefined'?supabaseClient:window.supabaseClient}catch(e){return null}}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function selected(){const o=document.getElementById('reg-emp-trade')?.selectedOptions?.[0];return {trade:o?.value||'',sector:o?.dataset?.sector||document.getElementById('reg-emp-trade-sector')?.value||'',risks:o?.dataset?.risks||'',tutoprev:o?.dataset?.tutoprev||''}}
+function status(text,ok=true){const x=document.getElementById('r85-catalog-status');if(x){x.textContent=text;x.classList.toggle('off',!ok)}}
+function inject(){
+ const profile=document.getElementById('reg-emp-profile');if(!profile||document.getElementById('reg-emp-trade'))return;
+ const box=document.createElement('div');box.id='r85-trade-fields';box.innerHTML='<label class="r85-field-label" for="reg-emp-trade-sector">Secteur métier</label><select id="reg-emp-trade-sector" class="r85-select"><option value="">Chargement des secteurs...</option></select><label class="r85-field-label" for="reg-emp-trade">Métier ou poste</label><select id="reg-emp-trade" class="r85-select" disabled><option value="">Sélectionnez un secteur</option></select><div id="r85-trade-note" class="r85-trade-note"><i class="fa-solid fa-database"></i><span><b id="r85-catalog-status" class="r85-catalog-status off">Connexion au catalogue...</b><br>Le métier sert à filtrer les contenus validés de PREV’IA. Les risques génériques ne remplacent pas l’évaluation du poste.</span></div>';
+ profile.insertAdjacentElement('afterend',box);
+ document.getElementById('reg-emp-trade-sector').addEventListener('change',e=>populateTrades(e.target.value));
+ loadCatalog();
+}
+async function loadCatalog(){
+ const client=sb();if(!client){status('Supabase non chargé',false);return}
+ try{
+  await ensureAuth();
+  const {data,error}=await client.from('trade_catalog').select('id,sector,trade_name,risk_families,priority,tutoprev_sector').eq('active',true).order('sector').order('trade_name').limit(2000);
+  if(error)throw error;catalog=data||[];
+  const sectors=[...new Set(catalog.map(x=>x.sector).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
+  const sel=document.getElementById('reg-emp-trade-sector');sel.innerHTML='<option value="">Sélectionnez un secteur</option>'+sectors.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');
+  const preferred=(window.managerSector||document.getElementById('manager-login-sector')?.value||'').toLowerCase();const match=sectors.find(x=>x.toLowerCase()===preferred)||sectors.find(x=>x.toLowerCase().includes(preferred)||preferred.includes(x.toLowerCase()));if(match){sel.value=match;populateTrades(match)}
+  status(catalog.length+' métiers disponibles',true);
+ }catch(e){console.error(VERSION,'catalogue',e);status('Catalogue indisponible : '+(e.message||e),false);const n=document.getElementById('r85-trade-note');n?.classList.add('warn')}
+}
+async function ensureAuth(){const client=sb();if(!client)return;const {data}=await client.auth.getSession();if(!data?.session){const r=await client.auth.signInAnonymously();if(r.error)console.warn(VERSION,'auth anonyme',r.error)}}
+function populateTrades(sector){const sel=document.getElementById('reg-emp-trade');if(!sel)return;const rows=catalog.filter(x=>x.sector===sector);sel.disabled=!rows.length;sel.innerHTML='<option value="">Sélectionnez un métier</option>'+rows.map(x=>'<option value="'+esc(x.trade_name)+'" data-sector="'+esc(x.sector)+'" data-risks="'+esc(x.risk_families||'')+'" data-tutoprev="'+esc(x.tutoprev_sector||'')+'">'+esc(x.trade_name)+'</option>').join('');}
+window.r85LoadTradeCatalog=loadCatalog;window.r85SelectedTrade=selected;
+function installQR(){
+ if(typeof window.generateEmployeeAccess!=='function'||window.generateEmployeeAccess.__r85trade)return;
+ const old=window.generateEmployeeAccess;
+ const fn=function(){const t=selected();if(!t.sector)return showToast('Sélectionnez le secteur métier.');if(!t.trade)return showToast('Sélectionnez le métier ou le poste.');
+  const name=document.getElementById('reg-emp-name')?.value.trim(),code=document.getElementById('lbl-manager-comp-name')?.innerText.trim();if(!name||!code)return old.apply(this,arguments);
+  selectedEPIList=typeof getSelectedEPI==='function'?getSelectedEPI():[];const profile=typeof getSelectedEmployeeProfile==='function'?getSelectedEmployeeProfile():(document.getElementById('reg-emp-profile')?.value||'Non renseigné');const u=new URL(window.location.origin+window.location.pathname);u.searchParams.set('emp',name);u.searchParams.set('comp',code);u.searchParams.set('epis',JSON.stringify(selectedEPIList));u.searchParams.set('sector',t.sector);u.searchParams.set('trade',t.trade);u.searchParams.set('profile',profile);u.searchParams.set('risk_context',t.risks);if(t.tutoprev)u.searchParams.set('tutoprev',t.tutoprev);
+  QRCode.toCanvas(document.getElementById('qr-canvas'),u.toString(),{width:180,margin:2,color:{dark:'#245ca6',light:'#ffffff'}},err=>{if(err){console.error(err);showToast('Erreur QR Code.')}else{document.getElementById('qr-area')?.classList.remove('hidden');showToast('QR généré : '+t.trade)}});
+ };
+ fn.__r85trade=true;window.generateEmployeeAccess=fn;try{generateEmployeeAccess=fn}catch(e){}
+}
+function applyQRTrade(){const p=new URLSearchParams(location.search),trade=p.get('trade')||'',riskContext=p.get('risk_context')||'',tutoprev=p.get('tutoprev')||'';if(!trade)return;setTimeout(()=>{let s=window.currentEmployeeSession;try{s=s||(typeof currentEmployeeSession!=='undefined'?currentEmployeeSession:null)}catch(e){}if(!s)return;s.trade=trade;s.risk_context=riskContext;s.tutoprev=tutoprev;window.currentEmployeeSession=s;try{currentEmployeeSession=s}catch(e){};let el=document.getElementById('r85-employee-trade-label');if(!el){el=document.createElement('p');el.id='r85-employee-trade-label';el.className='r85-employee-trade';document.getElementById('lbl-emp-company')?.insertAdjacentElement('afterend',el)}if(el)el.textContent='Métier : '+trade;try{safeStorage.setItem('restev85_current_trade',trade)}catch(e){}},700)}
+async function semanticSearch(question){
+ const client=sb(),s=window.currentEmployeeSession||{};if(!client)return {items:[],mode:'offline'};
+ const body={query:question,question,sector:s.sector||'',trade:s.trade||'',company_code:s.company||'',match_threshold:.58,match_count:6};
+ try{const {data,error}=await client.functions.invoke('search-prevention-knowledge',{body});if(error)throw error;const items=data?.results||data?.items||[];if(items.length)return {items,mode:'semantic_pgvector'};}catch(e){console.warn(VERSION,'recherche sémantique indisponible',e)}
+ try{const {data,error}=await client.rpc('search_prevention_knowledge',{p_query:question,p_sector:s.sector||null,p_trade:s.trade||null,p_company_code:s.company||null,p_limit:6});if(error)throw error;return {items:data||[],mode:'text_fallback'}}catch(e){console.warn(VERSION,'recherche textuelle indisponible',e);return {items:[],mode:'none',error:e}}
+}
+window.r85SemanticKnowledgeSearch=semanticSearch;
+function installPrevia(){
+ if(typeof window.previaSend!=='function'||window.previaSend.__r85complete)return;
+ const original=window.previaSend;
+ const fn=async function(){const input=document.getElementById('previa-input'),q=(input?.value||'').trim();if(!q)return;const urgent=/accident grave|inconscient|incendie|départ de feu|explosion|saigne abondamment|danger immédiat|urgence/i.test(q);if(urgent)return original.apply(this,arguments);
+  if(typeof setPrevyState==='function')setPrevyState('reflexion');if(typeof r85PrevyGuide==='function')r85PrevyGuide('reflexion','Je recherche les informations validées pour le métier '+(window.currentEmployeeSession?.trade||'renseigné')+'.');
+  const found=await semanticSearch(q);window.__r85LastKnowledge=found;const baseFetch=window.fetch;
+  if(found.items.length)window.fetch=async function(url,opts){if(String(url).includes('/functions/v1/previa')&&opts?.body){try{const b=JSON.parse(opts.body);b.knowledge=found.items.map(x=>({title:x.title,content:x.content,summary:x.summary,source_url:x.source_url,source_organization:x.source_organization,sector:x.sector,trade:x.trade,task:x.task,risk:x.risk,similarity:x.similarity,validated_at:x.validated_at}));b.context={...(b.context||{}),trade:window.currentEmployeeSession?.trade||'',knowledge_mode:found.mode};opts={...opts,body:JSON.stringify(b)}}catch(e){}}return baseFetch.call(this,url,opts)};
+  try{await original.apply(this,arguments)}finally{window.fetch=baseFetch}
+  if(found.items.length&&typeof window.r85PrevyGuide==='function')r85PrevyGuide('conseil',found.items.length+' source(s) métier validée(s) utilisée(s).');
+ };
+ fn.__r85complete=true;window.previaSend=fn;
+}
+function health(){const client=sb();return {supabase:!!client,catalog:catalog.length,trade:selected().trade,session_trade:window.currentEmployeeSession?.trade||'',semantic_function:'search-prevention-knowledge',version:VERSION}}
+window.r85SupabaseHealth=health;
+function init(){inject();installQR();installPrevia();applyQRTrade();setTimeout(()=>{inject();installQR();installPrevia();applyQRTrade()},1600)}
 document.addEventListener('DOMContentLoaded',init);if(document.readyState!=='loading')setTimeout(init,0);
 })();
 </script>
