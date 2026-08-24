@@ -6068,5 +6068,113 @@ if ("serviceWorker" in navigator) {
  setTimeout(()=>{injectManagerTools();wrapNavigation();},1500);
 })();
 </script>
+
+<!-- RESTEV85 PREVY FIL CONDUCTEUR + BASE METIER 2026-08-24 -->
+<style id="restev85-prevy-guide-v3">
+/* Réactive l'animation désactivée par le patch statique précédent. */
+.r85-prevy-home-img{animation:r85PrevyAlive 4.2s ease-in-out infinite!important;transform-origin:50% 88%!important;will-change:transform,filter}
+.r85-prevy-home-img:hover{animation:r85PrevyHello .8s ease-in-out 1!important}
+@keyframes r85PrevyAlive{0%,100%{transform:translateY(0) rotate(-.4deg) scale(1);filter:drop-shadow(0 20px 24px rgba(0,0,0,.30))}48%{transform:translateY(-10px) rotate(.5deg) scale(1.015);filter:drop-shadow(0 28px 30px rgba(25,111,255,.30))}55%{transform:translateY(-9px) rotate(.2deg) scale(1.012)}}
+@keyframes r85PrevyHello{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-8px) rotate(-3deg)}55%{transform:translateY(-10px) rotate(3deg)}80%{transform:translateY(-5px) rotate(-1deg)}}
+#r85-prevy-guide{position:sticky;top:8px;z-index:8500;max-width:720px;margin:0 auto 12px;display:flex;align-items:center;gap:11px;padding:10px 13px;border:1px solid rgba(23,111,255,.20);border-radius:17px;background:rgba(255,255,255,.94);box-shadow:0 10px 28px rgba(20,56,110,.12);backdrop-filter:blur(10px)}
+.dark #r85-prevy-guide{background:rgba(15,23,42,.94);border-color:#334155;color:#fff}
+#r85-prevy-guide img{width:48px;height:48px;object-fit:contain;animation:r85GuideBreath 2.8s ease-in-out infinite}
+#r85-prevy-guide.r85-thinking img{animation:prevyThinkingPulse .85s ease-in-out infinite}#r85-prevy-guide.r85-stop{border-color:#e11d48;background:#fff1f2}#r85-prevy-guide.r85-success{border-color:#10b981;background:#ecfdf5}
+@keyframes r85GuideBreath{0%,100%{transform:scale(1)}50%{transform:scale(1.045) translateY(-2px)}}
+.r85-guide-copy{min-width:0;flex:1}.r85-guide-copy b{display:block;font-size:11px;color:#176fff;text-transform:uppercase;letter-spacing:.05em}.r85-guide-copy span{display:block;font-size:12px;font-weight:750;line-height:1.35}.r85-guide-actions{display:flex;gap:6px}.r85-guide-actions button{border:0;border-radius:10px;padding:8px 10px;background:#176fff;color:#fff;font-size:11px;font-weight:900;min-height:38px}
+#r85-kb-badge{display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:4px 8px;border-radius:999px;background:#eef6ff;color:#174ea6;font-size:9px;font-weight:900}#r85-kb-badge.offline{background:#fff7ed;color:#9a3412}
+.r85-source-list{margin-top:8px;padding-top:8px;border-top:1px solid #dbe3ee;font-size:10px;color:#64748b}.r85-source-list a{color:#176fff;text-decoration:underline}
+@media(max-width:520px){#r85-prevy-guide{top:4px;margin:0 2px 9px;padding:8px 9px}#r85-prevy-guide img{width:40px;height:40px}.r85-guide-copy span{font-size:11px}.r85-guide-actions button{padding:7px 8px}}
+@media(prefers-reduced-motion:reduce){.r85-prevy-home-img,#r85-prevy-guide img{animation:none!important}}
+</style>
+<script id="restev85-prevy-guide-v3-script">
+(function(){
+'use strict';
+const VERSION='RESTEV85_PREVY_GUIDE_KB_2026_08_24';
+const STATE_IMG={accueil:'Prevy-Accueil.png',reflexion:'Prevy-Reflexion.png',conseil:'Prevy-Conseil.png',attention:'Prevy-Attention.png',stop:'Prevy-Stop.png',signalement:'Prevy-Signalement.png',validation:'Prevy-Validation.png'};
+const SCREEN_GUIDE={
+ 'scr-home':['accueil','Bonjour, je suis Prevy. Je vous guide vers la bonne action prévention.'],
+ 'scr-employee':['accueil','Votre parcours prévention est réuni ici. Commencez par l’étape recommandée.'],
+ 'scr-previa':['conseil','Décrivez votre métier, votre tâche et ce que vous observez. Je rechercherai d’abord les informations validées.'],
+ 'scr-qcm':['conseil','Prenez le temps de répondre. Le but est de comprendre les risques, pas seulement d’obtenir un score.'],
+ 'scr-qcm-success':['validation','Votre parcours est terminé. Vérifiez les informations avec votre encadrant avant la clôture.'],
+ 'scr-report':['signalement','Décrivez les faits observés. Ajoutez une photo uniquement si cela peut être fait sans vous exposer.'],
+ 'scr-resources':['conseil','Voici les ressources adaptées aux risques sélectionnés.'],
+ 'scr-training':['conseil','Consultez le module adapté à votre activité, puis revenez au parcours.'],
+ 'scr-employee-messages':['attention','Consultez les informations et réponses transmises par votre responsable.'],
+ 'scr-manager':['attention','Priorisez les nouveaux arrivants, les passeports en attente et les signalements actifs.'],
+ 'scr-direction':['conseil','Analysez les tendances anonymisées pour orienter les actions de prévention.'],
+ 'scr-studio':['conseil','Paramétrez uniquement les risques réellement présents dans l’établissement.']
+};
+let currentState='accueil';
+function guide(){return document.getElementById('r85-prevy-guide')}
+function ensureGuide(){
+ if(guide())return;
+ const main=document.querySelector('main');if(!main)return;
+ const el=document.createElement('div');el.id='r85-prevy-guide';el.setAttribute('role','status');el.setAttribute('aria-live','polite');
+ el.innerHTML='<img id="r85-guide-img" src="Prevy-Accueil.png" alt="Prevy, guide prévention"><div class="r85-guide-copy"><b>Prevy vous accompagne</b><span id="r85-guide-text">Bienvenue dans votre application prévention.</span><em id="r85-kb-badge" class="offline"><i class="fa-solid fa-database"></i> Base métier à connecter</em></div><div class="r85-guide-actions"><button type="button" onclick="openPrevia()" aria-label="Demander à Prevy"><i class="fa-solid fa-comments"></i></button></div>';
+ main.insertBefore(el,main.firstChild);
+}
+function syncVisual(state,text){
+ currentState=state||'accueil';ensureGuide();const g=guide(),img=document.getElementById('r85-guide-img'),msg=document.getElementById('r85-guide-text');
+ if(img)img.src=STATE_IMG[currentState]||STATE_IMG.accueil;if(msg&&text)msg.textContent=text;
+ if(g){g.className='';if(currentState==='reflexion')g.classList.add('r85-thinking');if(currentState==='stop')g.classList.add('r85-stop');if(currentState==='validation')g.classList.add('r85-success');}
+ const home=document.querySelector('.r85-prevy-home-img');if(home)home.src=STATE_IMG[currentState]||STATE_IMG.accueil;
+ document.querySelectorAll('.r85-employee-prevy img,.r85-nav-prevy-face img').forEach(x=>x.src=STATE_IMG[currentState]||STATE_IMG.accueil);
+}
+window.r85PrevyGuide=function(state,text){syncVisual(state,text)};
+function currentScreen(){return document.querySelector('.screen.active')?.id||'scr-home'}
+function guideScreen(id){const v=SCREEN_GUIDE[id]||['accueil','Je reste disponible si vous avez une question prévention.'];syncVisual(v[0],v[1]);}
+function wrapState(){
+ const old=window.setPrevyState;if(typeof old!=='function'||old.__r85guide)return;
+ const fn=function(state,options){const r=old.apply(this,arguments);const defaults={reflexion:'J’analyse votre demande et je recherche les contenus métier disponibles.',conseil:'Voici un conseil fondé sur les informations disponibles.',attention:'Un point doit être vérifié avec votre responsable.',stop:'Arrêtez-vous et appliquez les consignes d’urgence ou contactez votre responsable.',signalement:'Je vous accompagne pour formaliser le signalement.',validation:'Étape validée. Vérifiez la clôture avec votre encadrant.',accueil:'Je suis prêt à vous accompagner.'};syncVisual(state,defaults[state]);return r};fn.__r85guide=true;window.setPrevyState=fn;try{setPrevyState=fn}catch(e){}
+}
+function wrapNav(){
+ const old=window.switchScreen;if(typeof old!=='function'||old.__r85guide)return;
+ const fn=function(id){const r=old.apply(this,arguments);guideScreen(id);return r};fn.__r85guide=true;window.switchScreen=fn;try{switchScreen=fn}catch(e){}
+}
+async function searchKnowledge(question){
+ const ctx={sector:window.currentEmployeeSession?.sector||window.managerSector||'',trade:window.currentEmployeeSession?.trade||'',profile:window.currentEmployeeSession?.profile||'',company_code:window.currentEmployeeSession?.company||window.companyCode||''};
+ const sb=(typeof supabaseClient!=='undefined'?supabaseClient:window.supabaseClient);
+ if(!sb)return {items:[],reason:'Supabase indisponible',context:ctx};
+ try{
+  const {data,error}=await sb.rpc('search_prevention_knowledge',{p_query:question,p_sector:ctx.sector||null,p_trade:ctx.trade||null,p_company_code:ctx.company_code||null,p_limit:6});
+  if(error)throw error;
+  const items=(data||[]).filter(x=>x&&x.content).slice(0,6);
+  return {items,reason:items.length?'':'Aucun contenu validé trouvé',context:ctx};
+ }catch(e){console.warn(VERSION,'knowledge search fallback',e);return {items:[],reason:e.message||'Base métier non configurée',context:ctx};}
+}
+function setKbBadge(ok,count){const b=document.getElementById('r85-kb-badge');if(!b)return;b.classList.toggle('offline',!ok);b.innerHTML='<i class="fa-solid fa-database"></i> '+(ok?(count+' source'+(count>1?'s':'')+' métier trouvée'+(count>1?'s':'')):'Base métier non renseignée');}
+function addSources(items){
+ if(!items?.length)return;const chat=document.getElementById('previa-chat');if(!chat)return;const d=document.createElement('div');d.className='mr-4 bg-blue-50 dark:bg-slate-900 border border-blue-100 p-3 rounded-2xl text-xs';
+ const links=items.map((x,i)=>{const title=String(x.title||('Source '+(i+1))).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const url=String(x.source_url||'');return url?'<li><a target="_blank" rel="noopener" href="'+url.replace(/"/g,'%22')+'">'+title+'</a></li>':'<li>'+title+'</li>'}).join('');
+ d.innerHTML='<b>Sources métier consultées</b><div class="r85-source-list"><ul>'+links+'</ul></div>';chat.appendChild(d);chat.scrollTop=chat.scrollHeight;
+}
+function installRagSend(){
+ if(typeof window.previaSend!=='function'||window.previaSend.__r85rag)return;
+ const original=window.previaSend;
+ const enhanced=async function(){
+  const input=document.getElementById('previa-input');const q=(input?.value||'').trim();if(!q)return;
+  const emergency=/accident grave|inconscient|incendie|départ de feu|explosion|saigne abondamment|danger immédiat|urgence/i.test(q);if(emergency)return original.apply(this,arguments);
+  setPrevyState('reflexion');r85PrevyGuide('reflexion','Je recherche les contenus validés correspondant à votre métier et à votre tâche.');
+  const found=await searchKnowledge(q);window.__r85LastKnowledge=found;setKbBadge(found.items.length>0,found.items.length);
+  if(found.items.length){
+    const baseFetch=window.fetch;
+    window.fetch=async function(url,opts){
+      if(String(url).includes('/functions/v1/previa')&&opts?.body){try{const body=JSON.parse(opts.body);body.knowledge=found.items.map(x=>({title:x.title,content:x.content,source_url:x.source_url,sector:x.sector,trade:x.trade,risk:x.risk,validated_at:x.validated_at}));body.context={...(body.context||{}),...found.context,knowledge_mode:'validated_supabase'};opts={...opts,body:JSON.stringify(body)};}catch(e){console.warn(VERSION,e)}}
+      return baseFetch.call(this,url,opts);
+    };
+    try{await original.apply(this,arguments);addSources(found.items);}finally{window.fetch=baseFetch;}
+  }else{
+    await original.apply(this,arguments);
+    r85PrevyGuide('attention','Aucun contenu métier validé n’a été retrouvé. La réponse reste générale et doit être vérifiée avec votre responsable.');
+  }
+ };
+ enhanced.__r85rag=true;window.previaSend=enhanced;
+}
+function init(){ensureGuide();wrapState();wrapNav();installRagSend();guideScreen(currentScreen());setTimeout(()=>{wrapState();wrapNav();installRagSend()},1200);console.log(VERSION,'installé');}
+document.addEventListener('DOMContentLoaded',init);if(document.readyState!=='loading')setTimeout(init,0);
+})();
+</script>
 </body>
 </html>
