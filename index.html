@@ -5274,7 +5274,7 @@ document.addEventListener('DOMContentLoaded', () => {
   body.restev-employee-session [data-manager-access],
   body.restev-employee-session .restev-manager-entry-hidden { display:none !important; }
 </style>
-<script id="restev85-role-security-v1">
+<script id="restev85-role-security-v1-duplicate-2">
 (function(){
   'use strict';
   const PROTECTED_MANAGER_SCREENS = new Set([
@@ -5444,7 +5444,7 @@ document.addEventListener('DOMContentLoaded', () => {
   <div id="restev-install-help" class="restev-install-help"></div>
 </div>
 
-<script id="restev85-employee-install-v1">
+<script id="restev85-employee-install-v1-duplicate-2">
 (function(){
   'use strict';
   let deferredInstallPrompt=null;
@@ -5602,7 +5602,7 @@ window.restevRoleStatus=function(){return{employee:isEmployee(),session:session(
 #prevy-photo-analysis-result{display:none;margin-top:11px;padding:13px;border-radius:16px;background:#fff;border-left:5px solid #25c8ce;font-size:11px;line-height:1.48}.dark #prevy-photo-analysis-result{background:#101a30}#prevy-photo-analysis-result.show{display:block}#prevy-photo-analysis-result h4{font-size:12px;font-weight:950;margin:0 0 7px}#prevy-photo-analysis-result ul{list-style:disc;padding-left:18px;margin:5px 0}#prevy-photo-analysis-result .decision{margin-top:9px;padding:9px;border-radius:12px;background:#eef6ff;font-weight:900}.dark #prevy-photo-analysis-result .decision{background:#192943}
 .prevy-photo-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}.prevy-photo-actions button{min-height:42px;border:0;border-radius:12px;color:#fff;font-size:10px;font-weight:900}.prevy-photo-report{background:#e72c91}.prevy-photo-ask{background:#1159df}
 </style>
-<script id="restev85-photo-analysis-v1">
+<script id="restev85-photo-analysis-v1-duplicate-2">
 (function(){
 'use strict';
 const ENDPOINT='https://kubqstzkdeqlsxgwfbpz.supabase.co/functions/v1/previa';
@@ -6108,7 +6108,7 @@ const SCREEN_GUIDE={
 };
 let currentState='accueil';
 function guide(){return document.getElementById('r85-prevy-guide')}
-function ensureGuide(){
+function ensureGuide(){ return; /* bandeau supérieur Prevy supprimé */
  if(guide())return;
  const main=document.querySelector('main');if(!main)return;
  const el=document.createElement('div');el.id='r85-prevy-guide';el.setAttribute('role','status');el.setAttribute('aria-live','polite');
@@ -6476,6 +6476,97 @@ function init(){
 }
 document.addEventListener('DOMContentLoaded',init);
 if(document.readyState!=='loading')setTimeout(init,0);
+})();
+</script>
+
+<!-- RESTEV85 FINAL USABILITY AND NAVIGATION FIX 2026-08-25 -->
+<style id="r85-final-usability-fix">
+/* Suppression définitive du bandeau supérieur Prevy. */
+#r85-prevy-guide{display:none!important;visibility:hidden!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden!important}
+/* Affichage d'écran robuste après clic. */
+.screen{display:none!important;max-width:100%!important;overflow:visible!important}
+.screen.active{display:block!important;visibility:visible!important;opacity:1!important;transform:none!important;min-height:1px}
+body.r85-navigation-busy{pointer-events:none}body.r85-navigation-busy #toast,body.r85-navigation-busy .screen.active{pointer-events:auto}
+/* Zones tactiles et textes. */
+button,a,[role="button"]{touch-action:manipulation}button{min-height:44px}input,select,textarea{font-size:max(16px,1em)}
+/* Formation INRS : interface lisible. */
+#scr-training{width:100%!important;max-width:1180px!important;margin-inline:auto!important;color:#10243f!important;background:#f7faff!important;border-radius:24px!important;padding:16px!important}
+.dark #scr-training{color:#fff!important;background:#0f172a!important}
+#scr-training h2{font-size:clamp(20px,4vw,28px)!important;color:#10243f!important}.dark #scr-training h2{color:#fff!important}
+#scr-training #menu-list>p{font-size:14px!important;line-height:1.55!important;color:#334155!important}.dark #scr-training #menu-list>p{color:#e2e8f0!important}
+#scr-training #menu-list>button{min-height:62px!important;padding:16px 18px!important;background:#fff!important;color:#10243f!important;border:2px solid #c8d8ee!important;border-left:7px solid #176fff!important;border-radius:16px!important;box-shadow:0 9px 22px rgba(16,36,63,.08)!important}
+#scr-training #menu-list>button span{font-size:15px!important;line-height:1.35!important;color:#10243f!important;font-weight:900!important}
+.dark #scr-training #menu-list>button{background:#1e293b!important;color:#fff!important;border-color:#64748b!important}.dark #scr-training #menu-list>button span{color:#fff!important}
+#scr-training #tuto-container button{font-size:13px!important;font-weight:900!important;padding:11px 14px!important;min-height:48px!important}
+#scr-training #tuto-orientation-help{font-size:13px!important;line-height:1.55!important;color:#1e293b!important}.dark #scr-training #tuto-orientation-help{color:#fff!important}
+#tuto-frame-wrapper{width:100%!important;height:calc(100dvh - 170px)!important;min-height:620px!important;border:3px solid #176fff!important;border-radius:18px!important;background:#fff!important;box-shadow:0 16px 38px rgba(16,36,63,.18)!important}
+#tuto-viewer{background:#fff!important}
+#r85-inrs-reading-notice{margin:0 0 10px;padding:12px 14px;border-radius:14px;background:#eaf6ff;border:1px solid #8fc5ff;color:#10243f;font-size:12px;font-weight:750;line-height:1.5}
+#r85-inrs-reading-notice b{color:#084b9a}
+/* Invitation et bouton installation. */
+#r85-install-home-button{width:100%;min-height:52px;margin:12px 0 4px;border:0;border-radius:17px;background:linear-gradient(135deg,#102f69,#176fff,#25c8ce);color:#fff;font-weight:950;font-size:13px;box-shadow:0 13px 28px rgba(23,111,255,.26);display:flex;align-items:center;justify-content:center;gap:9px}
+#restev-install-card{z-index:2147483600!important}
+@media(max-width:640px){
+ main{padding-inline:10px!important}.screen.active{width:100%!important}
+ #scr-training{padding:9px!important;border-radius:14px!important}
+ #scr-training>div:first-child{gap:8px;align-items:center;flex-wrap:wrap}
+ #scr-training #tuto-container>div:first-child{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important}
+ #scr-training #tuto-container>div:first-child>button{grid-column:1/-1!important}
+ #scr-training #tuto-container>div:first-child>.flex{display:contents!important}
+ #tuto-frame-wrapper{height:calc(100dvh - 145px)!important;min-height:520px!important;border-radius:12px!important}
+ #restev-install-card{bottom:78px!important;width:calc(100vw - 16px)!important;max-height:calc(100dvh - 96px)!important}
+}
+@media(max-width:380px){#scr-training #tuto-container>div:first-child{grid-template-columns:1fr!important}#scr-training #tuto-container>div:first-child>*{grid-column:1!important}}
+@media(orientation:landscape) and (max-height:540px){#tuto-frame-wrapper{height:calc(100dvh - 92px)!important;min-height:300px!important}#r85-inrs-reading-notice,#tuto-orientation-help{display:none!important}}
+@media(prefers-reduced-motion:reduce){.screen.active{animation:none!important;scroll-behavior:auto!important}}
+</style>
+<script id="r85-final-usability-controller">
+(function(){
+'use strict';
+const VERSION='RESTEV85_FINAL_CHECK_2026_08_25';
+function removePrevyBanner(){document.querySelectorAll('#r85-prevy-guide').forEach(x=>x.remove())}
+function closeTransient(){
+ document.getElementById('r85-more-drawer')?.classList.remove('open');
+ document.querySelectorAll('.modal.open,.drawer.open').forEach(x=>x.classList.remove('open'));
+ document.body.classList.remove('overflow-hidden');
+}
+function normalizeScreen(id){
+ const target=document.getElementById(id);if(!target)return false;
+ document.querySelectorAll('.screen').forEach(x=>{const on=x===target;x.classList.toggle('active',on);x.classList.toggle('hidden',!on);x.style.display=on?'block':'none';x.setAttribute('aria-hidden',on?'false':'true')});
+ target.style.width='100%';target.style.maxWidth='100%';
+ requestAnimationFrame(()=>{window.scrollTo({top:0,left:0,behavior:'auto'});target.focus?.({preventScroll:true})});
+ if(id==='scr-report'){setTimeout(()=>{try{if(typeof fixMapSize==='function')fixMapSize()}catch(e){}},300)}
+ if(id==='scr-qcm-success'){setTimeout(()=>{try{if(typeof initSignaturePads==='function')initSignaturePads()}catch(e){}},250)}
+ return true;
+}
+function hardenNavigation(){
+ const old=window.switchScreen;if(typeof old!=='function'||old.__r85final)return;
+ const fn=function(id){closeTransient();document.body.classList.add('r85-navigation-busy');let result;try{result=old.apply(this,arguments)}catch(e){console.error(VERSION,'switchScreen',id,e)}finally{setTimeout(()=>{normalizeScreen(id);removePrevyBanner();document.body.classList.remove('r85-navigation-busy')},0)}return result};
+ fn.__r85final=true;window.switchScreen=fn;try{switchScreen=fn}catch(e){}
+}
+function buttonGuard(){
+ document.addEventListener('click',event=>{const b=event.target.closest('button,a,[role="button"]');if(!b)return;const onclick=b.getAttribute('onclick')||'';const m=onclick.match(/switchScreen\(['"]([^'"]+)/);if(m&&!document.getElementById(m[1])){event.preventDefault();console.error(VERSION,'Écran absent',m[1]);if(typeof showToast==='function')showToast('Cet écran est momentanément indisponible.')}} ,true);
+}
+function improveINRS(){
+ const container=document.getElementById('tuto-container');if(!container||document.getElementById('r85-inrs-reading-notice'))return;
+ const n=document.createElement('div');n.id='r85-inrs-reading-notice';n.innerHTML='<b>Lecture conseillée :</b> utilisez « Ouvrir INRS » sur téléphone pour profiter de toute la largeur. Le plein écran reste disponible dans l’application.';container.prepend(n);
+ const ext=[...container.querySelectorAll('button')].find(x=>/Ouvrir INRS/i.test(x.textContent||''));if(ext){ext.style.order='-1';ext.title='Ouvrir le module dans un nouvel onglet pour une meilleure lisibilité'}
+}
+function installButton(){
+ if(document.getElementById('r85-install-home-button'))return;const home=document.getElementById('scr-home');if(!home)return;const b=document.createElement('button');b.id='r85-install-home-button';b.type='button';b.innerHTML='<i class="fa-solid fa-download"></i><span>Installer l’application RESTEV 85</span>';b.onclick=()=>{if(typeof window.restevShowInstallInvite==='function')window.restevShowInstallInvite();const card=document.getElementById('restev-install-card');card?.classList.add('show');if(typeof window.restevInstallApp==='function'&&!card)window.restevInstallApp()};const actions=home.querySelector('.r85-home-actions');(actions||home).insertAdjacentElement('afterend',b)
+}
+function forceInstallInvite(){
+ if(matchMedia('(display-mode: standalone)').matches||navigator.standalone===true)return;
+ setTimeout(()=>{try{window.restevShowInstallInvite?.()}catch(e){}},1800)
+}
+function globalErrorFeedback(){
+ window.addEventListener('unhandledrejection',e=>{console.error(VERSION,'Promise',e.reason);try{showToast('Une fonction a rencontré un problème. Réessayez ou actualisez la page.')}catch(x){}});
+}
+function audit(){
+ const screens=[...document.querySelectorAll('.screen')].map(x=>x.id).filter(Boolean);const targets=[];document.querySelectorAll('[onclick]').forEach(x=>{const m=(x.getAttribute('onclick')||'').match(/switchScreen\(['"]([^'"]+)/);if(m)targets.push(m[1])});const missing=[...new Set(targets)].filter(id=>!document.getElementById(id));const duplicateIds=[...document.querySelectorAll('[id]')].map(x=>x.id).filter((x,i,a)=>a.indexOf(x)!==i);return {version:VERSION,screens:screens.length,buttons:document.querySelectorAll('button').length,missingScreens:missing,duplicateIds:[...new Set(duplicateIds)],prevyBanner:!!document.getElementById('r85-prevy-guide'),installUI:!!document.getElementById('restev-install-card'),inrs:!!document.getElementById('tuto-viewer')};}
+window.r85FullAppCheck=audit;
+function init(){removePrevyBanner();hardenNavigation();buttonGuard();improveINRS();installButton();forceInstallInvite();globalErrorFeedback();normalizeScreen(document.querySelector('.screen.active')?.id||'scr-home');setTimeout(()=>{removePrevyBanner();hardenNavigation();improveINRS();installButton()},1400);console.log(VERSION,audit())}
+document.addEventListener('DOMContentLoaded',init);if(document.readyState!=='loading')setTimeout(init,0);
 })();
 </script>
 </body>
