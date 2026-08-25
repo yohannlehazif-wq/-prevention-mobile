@@ -5226,7 +5226,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   function status(t,thinking=false){const e=document.getElementById('previa-status');if(e){e.textContent=t;e.classList.toggle('previa-thinking',thinking);}}
   function add(role,text){const box=document.getElementById('previa-chat');if(!box)return null;const d=document.createElement('div');d.className=role==='user'?'ml-8 bg-restev-blue text-white p-3 rounded-2xl text-xs':'mr-4 bg-slate-50 dark:bg-slate-900 border p-3 rounded-2xl text-xs dark:text-slate-200';d.innerHTML='<b>'+(role==='user'?'Vous':'PREV’IA')+' :</b> '+esc(text).replace(/\n/g,'<br>');box.appendChild(d);box.scrollTop=box.scrollHeight;return d;}
-  function context(){return {employee:window.currentEmployeeSession?.name||'',company:window.currentEmployeeSession?.company||'',company_id:window.currentEmployeeSession?.company_id||'',user_id:window.currentEmployeeSession?.user_id||'',profile:window.currentEmployeeSession?.profile||'',sector:window.currentEmployeeSession?.sector||'',trade:window.currentEmployeeSession?.trade||'',app:'RESTEV 85 Passeport Prévention'};}
+  function context(){return {employee:window.currentEmployeeSession?.name||'',company:window.currentEmployeeSession?.company||'',profile:window.currentEmployeeSession?.profile||'',sector:window.currentEmployeeSession?.sector||'',app:'RESTEV 85 Passeport Prévention'};}
   window.openPrevia=function(){switchScreen('scr-previa');setPrevyState('accueil');status('PREV’IA est prêt · Gemini 3.5 Flash-Lite via Supabase');};
   window.previaPrompt=function(type){const input=document.getElementById('previa-input');if(!input)return;input.value={task:'Je commence une tâche : ',unsafe:'Je ne me sens pas en sécurité parce que ',risk:'Je souhaite analyser cette situation : '}[type]||'';input.focus();};
   window.previaCreateReport=function(){setPrevyState('signalement');const last=[...document.querySelectorAll('#previa-chat > div')].reverse().find(x=>x.textContent.startsWith('Vous'));if(last){const t=last.textContent.replace(/^Vous\s*:\s*/,'').trim();const r=document.getElementById('risk-description');if(r&&!r.value)r.value='Signalement préparé avec PREV’IA : '+t;}switchScreen('scr-report');};
@@ -6177,74 +6177,71 @@ document.addEventListener('DOMContentLoaded',init);if(document.readyState!=='loa
 })();
 </script>
 
-<!-- RESTEV85 CATALOGUE METIERS + SUPABASE COMPLETE 2026-08-24 -->
-<style id="r85-trade-catalog-style">
-.r85-field-label{display:block;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.05em;color:#64748b;margin:3px 0 5px}.r85-select{width:100%;padding:12px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:12px;font-size:12px;font-weight:800;color:#17213b}.dark .r85-select{background:#0f172a;color:#fff;border-color:#334155}.r85-trade-note{display:flex;gap:8px;align-items:flex-start;padding:10px;border-radius:12px;background:#eff6ff;color:#174ea6;font-size:10px;font-weight:700;line-height:1.4}.r85-trade-note.warn{background:#fff7ed;color:#9a3412}.r85-employee-trade{margin-top:4px;font-size:10px;font-weight:800;color:#0f766e}.r85-catalog-status{display:inline-flex;align-items:center;gap:5px;font-size:9px;font-weight:900;padding:4px 8px;border-radius:999px;background:#ecfdf5;color:#047857}.r85-catalog-status.off{background:#fff7ed;color:#9a3412}
+<!-- RESTEV85 MULTILINGUE PREVY 2026-08-25 -->
+<style id="r85-i18n-style">
+#r85-language-button{position:fixed;top:10px;right:10px;z-index:9800;border:1px solid rgba(23,54,93,.18);background:rgba(255,255,255,.94);color:#17365d;border-radius:999px;padding:8px 11px;font-size:11px;font-weight:900;box-shadow:0 8px 24px rgba(23,54,93,.16);backdrop-filter:blur(8px)}.dark #r85-language-button{background:rgba(15,23,42,.94);color:#fff;border-color:#334155}
+#r85-language-modal{position:fixed;inset:0;z-index:120000;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(8,20,43,.72);backdrop-filter:blur(8px)}#r85-language-modal.open{display:flex}.r85-lang-card{width:min(580px,100%);max-height:88vh;overflow:auto;background:#fff;border-radius:24px;padding:20px;box-shadow:0 30px 80px rgba(0,0,0,.35)}.dark .r85-lang-card{background:#111b33;color:#fff}.r85-lang-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:14px}.r85-lang-choice{border:1px solid #d9e3f0;background:#f8fbff;border-radius:15px;padding:13px;text-align:left;font-weight:850;color:#17365d;min-height:55px}.r85-lang-choice.active{border:2px solid #176fff;background:#eef6ff}.dark .r85-lang-choice{background:#17213b;color:#fff;border-color:#334155}.r85-lang-choice small{display:block;color:#64748b;font-size:10px;margin-top:3px}.r85-lang-manager{margin-top:2px}.r85-lang-note{font-size:10px;line-height:1.5;color:#64748b;margin-top:11px;padding:9px;background:#f8fafc;border-radius:10px}.dark .r85-lang-note{background:#0f172a;color:#cbd5e1}
+@media(max-width:480px){.r85-lang-grid{grid-template-columns:1fr}#r85-language-button{top:7px;right:7px}}
+@media print{#r85-language-button,#r85-language-modal{display:none!important}}
 </style>
-<script id="r85-trade-catalog-controller">
+<button id="r85-language-button" type="button" onclick="r85OpenLanguageChooser()" aria-label="Choisir la langue">FR · Français</button>
+<div id="r85-language-modal" role="dialog" aria-modal="true" aria-labelledby="r85-lang-title">
+ <div class="r85-lang-card">
+  <div style="display:flex;align-items:start;justify-content:space-between;gap:12px"><div><div style="color:#176fff;font-size:10px;font-weight:900;text-transform:uppercase">RESTEV 85</div><h2 id="r85-lang-title" style="font-size:21px;font-weight:950;margin:3px 0">Choisissez votre langue</h2><p id="r85-lang-subtitle" style="font-size:12px;color:#64748b;margin:0">L’interface et Prevy s’adaptent à votre choix.</p></div><button type="button" onclick="r85CloseLanguageChooser()" aria-label="Fermer" style="border:0;border-radius:999px;width:38px;height:38px;font-size:20px">×</button></div>
+  <div id="r85-language-grid" class="r85-lang-grid"></div>
+  <div id="r85-lang-note" class="r85-lang-note">La version française reste la référence de l’établissement. Les consignes critiques et les traductions doivent être vérifiées avec le tuteur ou le responsable.</div>
+ </div>
+</div>
+<script id="r85-i18n-controller">
 (function(){
 'use strict';
-const VERSION='RESTEV85_SUPABASE_COMPLETE_2026_08_24';
-let catalog=[];
-function sb(){try{return typeof supabaseClient!=='undefined'?supabaseClient:window.supabaseClient}catch(e){return null}}
-function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function selected(){const o=document.getElementById('reg-emp-trade')?.selectedOptions?.[0];return {trade:o?.value||'',sector:o?.dataset?.sector||document.getElementById('reg-emp-trade-sector')?.value||'',risks:o?.dataset?.risks||'',tutoprev:o?.dataset?.tutoprev||''}}
-function status(text,ok=true){const x=document.getElementById('r85-catalog-status');if(x){x.textContent=text;x.classList.toggle('off',!ok)}}
-function inject(){
- const profile=document.getElementById('reg-emp-profile');if(!profile||document.getElementById('reg-emp-trade'))return;
- const box=document.createElement('div');box.id='r85-trade-fields';box.innerHTML='<label class="r85-field-label" for="reg-emp-trade-sector">Secteur métier</label><select id="reg-emp-trade-sector" class="r85-select"><option value="">Chargement des secteurs...</option></select><label class="r85-field-label" for="reg-emp-trade">Métier ou poste</label><select id="reg-emp-trade" class="r85-select" disabled><option value="">Sélectionnez un secteur</option></select><div id="r85-trade-note" class="r85-trade-note"><i class="fa-solid fa-database"></i><span><b id="r85-catalog-status" class="r85-catalog-status off">Connexion au catalogue...</b><br>Le métier sert à filtrer les contenus validés de PREV’IA. Les risques génériques ne remplacent pas l’évaluation du poste.</span></div>';
- profile.insertAdjacentElement('afterend',box);
- document.getElementById('reg-emp-trade-sector').addEventListener('change',e=>populateTrades(e.target.value));
- loadCatalog();
+const VERSION='RESTEV85_I18N_2026_08_25';
+const LANGS={
+ fr:{label:'Français',native:'Français',locale:'fr-FR',dir:'ltr'},
+ en:{label:'Anglais',native:'English',locale:'en-GB',dir:'ltr'},
+ es:{label:'Espagnol',native:'Español',locale:'es-ES',dir:'ltr'},
+ pt:{label:'Portugais',native:'Português',locale:'pt-PT',dir:'ltr'},
+ ar:{label:'Arabe',native:'العربية',locale:'ar-SA',dir:'rtl'},
+ ro:{label:'Roumain',native:'Română',locale:'ro-RO',dir:'ltr'},
+ pl:{label:'Polonais',native:'Polski',locale:'pl-PL',dir:'ltr'},
+ uk:{label:'Ukrainien',native:'Українська',locale:'uk-UA',dir:'ltr'}
+};
+const T={
+ fr:{choose:'Choisissez votre langue',sub:'L’interface et Prevy s’adaptent à votre choix.',close:'Fermer',managerLang:'Langue préférée du salarié',selectLang:'Sélectionnez une langue',name:'Nom & Prénom du travailleur',profile:'Profil du salarié',sector:'Secteur métier',trade:'Métier ou poste',generate:'Générer le QR salarié',homeHello:'Bonjour 👋',homeAsk:'Que souhaitez-vous faire aujourd’hui ? Prevy vous guide vers la bonne fonction.',talk:'Parler à Prevy',write:'Écrire à Prevy',task:'Je commence une tâche',report:'Signaler un risque',unsafe:'Je ne me sens pas en sécurité',resources:'Conseils prévention',messages:'Messages',passport:'Passeport',send:'Envoyer',question:'Posez votre question à Prevy...',langNote:'La version française reste la référence de l’établissement. Les consignes critiques et les traductions doivent être vérifiées avec le tuteur ou le responsable.',selected:'Langue sélectionnée'},
+ en:{choose:'Choose your language',sub:'The interface and Prevy adapt to your choice.',close:'Close',managerLang:'Employee preferred language',selectLang:'Select a language',name:'Worker full name',profile:'Employee profile',sector:'Job sector',trade:'Job or position',generate:'Generate employee QR code',homeHello:'Hello 👋',homeAsk:'What would you like to do today? Prevy will guide you.',talk:'Talk to Prevy',write:'Write to Prevy',task:'I am starting a task',report:'Report a risk',unsafe:'I do not feel safe',resources:'Safety guidance',messages:'Messages',passport:'Passport',send:'Send',question:'Ask Prevy a question...',langNote:'The French version remains the establishment reference. Critical instructions and translations must be checked with the tutor or manager.',selected:'Language selected'},
+ es:{choose:'Elija su idioma',sub:'La interfaz y Prevy se adaptan a su elección.',close:'Cerrar',managerLang:'Idioma preferido del trabajador',selectLang:'Seleccione un idioma',name:'Nombre y apellidos del trabajador',profile:'Perfil del trabajador',sector:'Sector del puesto',trade:'Profesión o puesto',generate:'Generar código QR del trabajador',homeHello:'Hola 👋',homeAsk:'¿Qué desea hacer hoy? Prevy le guiará.',talk:'Hablar con Prevy',write:'Escribir a Prevy',task:'Voy a empezar una tarea',report:'Señalar un riesgo',unsafe:'No me siento seguro',resources:'Consejos de prevención',messages:'Mensajes',passport:'Pasaporte',send:'Enviar',question:'Haga una pregunta a Prevy...',langNote:'La versión francesa sigue siendo la referencia del establecimiento. Las instrucciones críticas y las traducciones deben comprobarse con el tutor o responsable.',selected:'Idioma seleccionado'},
+ pt:{choose:'Escolha o seu idioma',sub:'A interface e o Prevy adaptam-se à sua escolha.',close:'Fechar',managerLang:'Idioma preferido do trabalhador',selectLang:'Selecione um idioma',name:'Nome completo do trabalhador',profile:'Perfil do trabalhador',sector:'Setor do posto',trade:'Profissão ou posto',generate:'Gerar código QR do trabalhador',homeHello:'Olá 👋',homeAsk:'O que pretende fazer hoje? O Prevy irá orientá-lo.',talk:'Falar com o Prevy',write:'Escrever ao Prevy',task:'Vou iniciar uma tarefa',report:'Comunicar um risco',unsafe:'Não me sinto em segurança',resources:'Conselhos de prevenção',messages:'Mensagens',passport:'Passaporte',send:'Enviar',question:'Faça uma pergunta ao Prevy...',langNote:'A versão francesa continua a ser a referência do estabelecimento. As instruções críticas e traduções devem ser verificadas com o tutor ou responsável.',selected:'Idioma selecionado'},
+ ar:{choose:'اختر لغتك',sub:'تتكيف الواجهة وPrevy مع اختيارك.',close:'إغلاق',managerLang:'اللغة المفضلة للعامل',selectLang:'اختر لغة',name:'الاسم الكامل للعامل',profile:'ملف العامل',sector:'قطاع العمل',trade:'المهنة أو الوظيفة',generate:'إنشاء رمز QR للعامل',homeHello:'مرحباً 👋',homeAsk:'ماذا تريد أن تفعل اليوم؟ سيرشدك Prevy.',talk:'تحدث مع Prevy',write:'اكتب إلى Prevy',task:'سأبدأ مهمة',report:'الإبلاغ عن خطر',unsafe:'لا أشعر بالأمان',resources:'إرشادات الوقاية',messages:'الرسائل',passport:'جواز الوقاية',send:'إرسال',question:'اطرح سؤالاً على Prevy...',langNote:'تبقى النسخة الفرنسية مرجع المؤسسة. يجب التحقق من التعليمات الحرجة والترجمات مع المشرف أو المسؤول.',selected:'تم اختيار اللغة'},
+ ro:{choose:'Alegeți limba',sub:'Interfața și Prevy se adaptează alegerii.',close:'Închide',managerLang:'Limba preferată a lucrătorului',selectLang:'Selectați o limbă',name:'Numele complet al lucrătorului',profile:'Profilul lucrătorului',sector:'Sectorul postului',trade:'Meserie sau post',generate:'Generează codul QR al lucrătorului',homeHello:'Bună 👋',homeAsk:'Ce doriți să faceți astăzi? Prevy vă va ghida.',talk:'Vorbește cu Prevy',write:'Scrie-i lui Prevy',task:'Încep o sarcină',report:'Semnalează un risc',unsafe:'Nu mă simt în siguranță',resources:'Recomandări de prevenire',messages:'Mesaje',passport:'Pașaport',send:'Trimite',question:'Adresați o întrebare lui Prevy...',langNote:'Versiunea franceză rămâne referința unității. Instrucțiunile critice și traducerile trebuie verificate cu tutorele sau managerul.',selected:'Limba selectată'},
+ pl:{choose:'Wybierz język',sub:'Interfejs i Prevy dostosują się do wyboru.',close:'Zamknij',managerLang:'Preferowany język pracownika',selectLang:'Wybierz język',name:'Imię i nazwisko pracownika',profile:'Profil pracownika',sector:'Sektor stanowiska',trade:'Zawód lub stanowisko',generate:'Wygeneruj kod QR pracownika',homeHello:'Dzień dobry 👋',homeAsk:'Co chcesz dziś zrobić? Prevy Cię poprowadzi.',talk:'Porozmawiaj z Prevy',write:'Napisz do Prevy',task:'Rozpoczynam zadanie',report:'Zgłoś zagrożenie',unsafe:'Nie czuję się bezpiecznie',resources:'Wskazówki BHP',messages:'Wiadomości',passport:'Paszport',send:'Wyślij',question:'Zadaj pytanie Prevy...',langNote:'Wersja francuska pozostaje wersją referencyjną zakładu. Krytyczne instrukcje i tłumaczenia należy sprawdzić z opiekunem lub kierownikiem.',selected:'Wybrano język'},
+ uk:{choose:'Оберіть мову',sub:'Інтерфейс і Prevy адаптуються до вашого вибору.',close:'Закрити',managerLang:'Бажана мова працівника',selectLang:'Оберіть мову',name:'Повне ім’я працівника',profile:'Профіль працівника',sector:'Сектор посади',trade:'Професія або посада',generate:'Створити QR-код працівника',homeHello:'Вітаю 👋',homeAsk:'Що ви хочете зробити сьогодні? Prevy допоможе.',talk:'Поговорити з Prevy',write:'Написати Prevy',task:'Я починаю завдання',report:'Повідомити про ризик',unsafe:'Я не почуваюся в безпеці',resources:'Поради з профілактики',messages:'Повідомлення',passport:'Паспорт',send:'Надіслати',question:'Поставте запитання Prevy...',langNote:'Французька версія залишається еталонною для закладу. Критичні інструкції та переклади слід перевірити з наставником або керівником.',selected:'Мову вибрано'}
+};
+function store(){try{return window.safeStorage||localStorage}catch(e){return localStorage}}
+function get(){const q=new URLSearchParams(location.search).get('lang');if(q&&LANGS[q])return q;const x=store().getItem('restev85_language')||'fr';return LANGS[x]?x:'fr'}
+function txt(k){return (T[get()]||T.fr)[k]||T.fr[k]||k}
+function setText(el,value){if(el&&value)el.textContent=value}
+function replaceButton(pattern,value){[...document.querySelectorAll('button')].filter(x=>pattern.test((x.textContent||'').trim())).forEach(x=>{const b=x.querySelector('b'),span=x.querySelector('span');if(b)b.textContent=value;else if(span&&span.children.length===0)span.textContent=value;else{const icon=x.querySelector('i');x.textContent='';if(icon)x.append(icon,' ');x.append(value)}})}
+function apply(code){if(!LANGS[code])code='fr';store().setItem('restev85_language',code);document.documentElement.lang=code;document.documentElement.dir=LANGS[code].dir;document.body?.classList.toggle('r85-rtl',LANGS[code].dir==='rtl');
+ const btn=document.getElementById('r85-language-button');if(btn)btn.textContent=code.toUpperCase()+' · '+LANGS[code].native;
+ setText(document.getElementById('r85-lang-title'),txt('choose'));setText(document.getElementById('r85-lang-subtitle'),txt('sub'));setText(document.getElementById('r85-lang-note'),txt('langNote'));
+ const input=document.getElementById('reg-emp-name');if(input)input.placeholder=txt('name');
+ const home=document.getElementById('r85-home-greeting');if(home&&!window.currentEmployeeSession?.name)home.textContent=txt('homeHello');
+ const hp=document.querySelector('.r85-prevy-home-copy > p');if(hp)hp.textContent=txt('homeAsk');
+ const pi=document.getElementById('previa-input');if(pi)pi.placeholder=txt('question');
+ replaceButton(/Parler à Prevy|Talk to Prevy|Hablar con Prevy|Falar com o Prevy|تحدث مع Prevy|Vorbește cu Prevy|Porozmawiaj z Prevy|Поговорити з Prevy/i,txt('talk'));
+ replaceButton(/Écrire à Prevy|Write to Prevy|Escribir a Prevy|Escrever ao Prevy|اكتب إلى Prevy|Scrie-i lui Prevy|Napisz do Prevy|Написати Prevy/i,txt('write'));
+ const send=document.getElementById('previa-send-btn')?.querySelector('span');if(send)send.textContent=txt('send');
+ const manager=document.getElementById('reg-emp-language');if(manager)manager.value=code;
+ const grid=document.getElementById('r85-language-grid');if(grid)[...grid.children].forEach(x=>x.classList.toggle('active',x.dataset.lang===code));
+ try{if(window.currentEmployeeSession)window.currentEmployeeSession.language=code}catch(e){}
+ window.dispatchEvent(new CustomEvent('restev:language-change',{detail:{code,locale:LANGS[code].locale}}));
 }
-async function loadCatalog(){
- const client=sb();if(!client){status('Supabase non chargé',false);return}
- try{
-  await ensureAuth();
-  const {data,error}=await client.from('trade_catalog').select('id,sector,trade_name,risk_families,priority,tutoprev_sector').eq('active',true).order('sector').order('trade_name').limit(2000);
-  if(error)throw error;catalog=data||[];
-  const sectors=[...new Set(catalog.map(x=>x.sector).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
-  const sel=document.getElementById('reg-emp-trade-sector');sel.innerHTML='<option value="">Sélectionnez un secteur</option>'+sectors.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');
-  const preferred=(window.managerSector||document.getElementById('manager-login-sector')?.value||'').toLowerCase();const match=sectors.find(x=>x.toLowerCase()===preferred)||sectors.find(x=>x.toLowerCase().includes(preferred)||preferred.includes(x.toLowerCase()));if(match){sel.value=match;populateTrades(match)}
-  status(catalog.length+' métiers disponibles',true);
- }catch(e){console.error(VERSION,'catalogue',e);status('Catalogue indisponible : '+(e.message||e),false);const n=document.getElementById('r85-trade-note');n?.classList.add('warn')}
-}
-async function ensureAuth(){const client=sb();if(!client)return;const {data}=await client.auth.getSession();if(!data?.session){const r=await client.auth.signInAnonymously();if(r.error)console.warn(VERSION,'auth anonyme',r.error)}}
-function populateTrades(sector){const sel=document.getElementById('reg-emp-trade');if(!sel)return;const rows=catalog.filter(x=>x.sector===sector);sel.disabled=!rows.length;sel.innerHTML='<option value="">Sélectionnez un métier</option>'+rows.map(x=>'<option value="'+esc(x.trade_name)+'" data-sector="'+esc(x.sector)+'" data-risks="'+esc(x.risk_families||'')+'" data-tutoprev="'+esc(x.tutoprev_sector||'')+'">'+esc(x.trade_name)+'</option>').join('');}
-window.r85LoadTradeCatalog=loadCatalog;window.r85SelectedTrade=selected;
-function installQR(){
- if(typeof window.generateEmployeeAccess!=='function'||window.generateEmployeeAccess.__r85trade)return;
- const old=window.generateEmployeeAccess;
- const fn=function(){const t=selected();if(!t.sector)return showToast('Sélectionnez le secteur métier.');if(!t.trade)return showToast('Sélectionnez le métier ou le poste.');
-  const name=document.getElementById('reg-emp-name')?.value.trim(),code=document.getElementById('lbl-manager-comp-name')?.innerText.trim();if(!name||!code)return old.apply(this,arguments);
-  selectedEPIList=typeof getSelectedEPI==='function'?getSelectedEPI():[];const profile=typeof getSelectedEmployeeProfile==='function'?getSelectedEmployeeProfile():(document.getElementById('reg-emp-profile')?.value||'Non renseigné');const u=new URL(window.location.origin+window.location.pathname);u.searchParams.set('emp',name);u.searchParams.set('comp',code);u.searchParams.set('epis',JSON.stringify(selectedEPIList));u.searchParams.set('sector',t.sector);u.searchParams.set('trade',t.trade);u.searchParams.set('profile',profile);u.searchParams.set('risk_context',t.risks);if(t.tutoprev)u.searchParams.set('tutoprev',t.tutoprev);
-  QRCode.toCanvas(document.getElementById('qr-canvas'),u.toString(),{width:180,margin:2,color:{dark:'#245ca6',light:'#ffffff'}},err=>{if(err){console.error(err);showToast('Erreur QR Code.')}else{document.getElementById('qr-area')?.classList.remove('hidden');showToast('QR généré : '+t.trade)}});
- };
- fn.__r85trade=true;window.generateEmployeeAccess=fn;try{generateEmployeeAccess=fn}catch(e){}
-}
-function applyQRTrade(){const p=new URLSearchParams(location.search),trade=p.get('trade')||'',riskContext=p.get('risk_context')||'',tutoprev=p.get('tutoprev')||'';if(!trade)return;setTimeout(()=>{let s=window.currentEmployeeSession;try{s=s||(typeof currentEmployeeSession!=='undefined'?currentEmployeeSession:null)}catch(e){}if(!s)return;s.trade=trade;s.risk_context=riskContext;s.tutoprev=tutoprev;window.currentEmployeeSession=s;try{currentEmployeeSession=s}catch(e){};let el=document.getElementById('r85-employee-trade-label');if(!el){el=document.createElement('p');el.id='r85-employee-trade-label';el.className='r85-employee-trade';document.getElementById('lbl-emp-company')?.insertAdjacentElement('afterend',el)}if(el)el.textContent='Métier : '+trade;try{safeStorage.setItem('restev85_current_trade',trade)}catch(e){}},700)}
-async function semanticSearch(question){
- const client=sb(),s=window.currentEmployeeSession||{};if(!client)return {items:[],mode:'offline'};
- const body={query:question,question,sector:s.sector||'',trade:s.trade||'',company_code:s.company||'',match_threshold:.58,match_count:6};
- try{const {data,error}=await client.functions.invoke('search-prevention-knowledge',{body});if(error)throw error;const items=data?.results||data?.items||[];if(items.length)return {items,mode:'semantic_pgvector'};}catch(e){console.warn(VERSION,'recherche sémantique indisponible',e)}
- try{const {data,error}=await client.rpc('search_prevention_knowledge',{p_query:question,p_sector:s.sector||null,p_trade:s.trade||null,p_company_code:s.company||null,p_limit:6});if(error)throw error;return {items:data||[],mode:'text_fallback'}}catch(e){console.warn(VERSION,'recherche textuelle indisponible',e);return {items:[],mode:'none',error:e}}
-}
-window.r85SemanticKnowledgeSearch=semanticSearch;
-function installPrevia(){
- if(typeof window.previaSend!=='function'||window.previaSend.__r85complete)return;
- const original=window.previaSend;
- const fn=async function(){const input=document.getElementById('previa-input'),q=(input?.value||'').trim();if(!q)return;const urgent=/accident grave|inconscient|incendie|départ de feu|explosion|saigne abondamment|danger immédiat|urgence/i.test(q);if(urgent)return original.apply(this,arguments);
-  if(typeof setPrevyState==='function')setPrevyState('reflexion');if(typeof r85PrevyGuide==='function')r85PrevyGuide('reflexion','Je recherche les informations validées pour le métier '+(window.currentEmployeeSession?.trade||'renseigné')+'.');
-  const found=await semanticSearch(q);window.__r85LastKnowledge=found;const baseFetch=window.fetch;
-  if(found.items.length)window.fetch=async function(url,opts){if(String(url).includes('/functions/v1/previa')&&opts?.body){try{const b=JSON.parse(opts.body);b.knowledge=found.items.map(x=>({title:x.title,content:x.content,summary:x.summary,source_url:x.source_url,source_organization:x.source_organization,sector:x.sector,trade:x.trade,task:x.task,risk:x.risk,similarity:x.similarity,validated_at:x.validated_at}));b.context={...(b.context||{}),trade:window.currentEmployeeSession?.trade||'',knowledge_mode:found.mode};opts={...opts,body:JSON.stringify(b)}}catch(e){}}return baseFetch.call(this,url,opts)};
-  try{await original.apply(this,arguments)}finally{window.fetch=baseFetch}
-  if(found.items.length&&typeof window.r85PrevyGuide==='function')r85PrevyGuide('conseil',found.items.length+' source(s) métier validée(s) utilisée(s).');
- };
- fn.__r85complete=true;window.previaSend=fn;
-}
-function health(){const client=sb();return {supabase:!!client,catalog:catalog.length,trade:selected().trade,session_trade:window.currentEmployeeSession?.trade||'',semantic_function:'search-prevention-knowledge',version:VERSION}}
-window.r85SupabaseHealth=health;
-function init(){inject();installQR();installPrevia();applyQRTrade();setTimeout(()=>{inject();installQR();installPrevia();applyQRTrade()},1600)}
+function build(){const grid=document.getElementById('r85-language-grid');if(!grid)return;grid.innerHTML=Object.entries(LANGS).map(([code,l])=>'<button type="button" class="r85-lang-choice" data-lang="'+code+'" onclick="r85SetLanguage(\''+code+'\')"><b>'+l.native+'</b><small>'+l.label+'</small></button>').join('')}
+function injectManager(){const profile=document.getElementById('reg-emp-profile');if(!profile||document.getElementById('reg-emp-language'))return;const wrap=document.createElement('div');wrap.className='r85-lang-manager';wrap.innerHTML='<label class="r85-field-label" for="reg-emp-language">'+txt('managerLang')+'</label><select id="reg-emp-language" class="r85-select">'+Object.entries(LANGS).map(([c,l])=>'<option value="'+c+'">'+l.native+' · '+l.label+'</option>').join('')+'</select>';profile.insertAdjacentElement('afterend',wrap);document.getElementById('reg-emp-language').value=get()}
+window.r85OpenLanguageChooser=function(){document.getElementById('r85-language-modal')?.classList.add('open')};window.r85CloseLanguageChooser=function(){document.getElementById('r85-language-modal')?.classList.remove('open')};window.r85SetLanguage=function(c){apply(c);r85CloseLanguageChooser();if(typeof showToast==='function')showToast(txt('selected')+' : '+LANGS[c].native)};window.r85Language=get;window.r85LanguageLocale=()=>LANGS[get()].locale;window.r85Translate=txt;
+function patchQR(){if(typeof window.generateEmployeeAccess!=='function'||window.generateEmployeeAccess.__r85lang)return;const old=window.generateEmployeeAccess;const fn=function(){const lang=document.getElementById('reg-emp-language')?.value||get();const originalCanvas=window.QRCode?.toCanvas;if(!originalCanvas)return old.apply(this,arguments);window.QRCode.toCanvas=function(canvas,url,opts,cb){try{const u=new URL(url);u.searchParams.set('lang',lang);url=u.toString()}catch(e){}return originalCanvas.call(this,canvas,url,opts,cb)};try{return old.apply(this,arguments)}finally{window.QRCode.toCanvas=originalCanvas}};fn.__r85lang=true;window.generateEmployeeAccess=fn;try{generateEmployeeAccess=fn}catch(e){}}
+function patchVoice(){window.addEventListener('restev:language-change',()=>{try{if(window.speechSynthesis)window.speechSynthesis.cancel()}catch(e){}});const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(SR){const Old=SR;/* Existing controller creates its own instance; language is reinforced on microphone click where accessible. */}document.addEventListener('click',e=>{if(e.target.closest('#previa-mic-btn,.previa-voice-btn')){try{if(window.recognition)window.recognition.lang=window.r85LanguageLocale()}catch(err){}}},true)}
+function init(){build();injectManager();apply(get());patchQR();patchVoice();setTimeout(()=>{injectManager();apply(get());patchQR()},1500);if(!store().getItem('restev85_language')&&!new URLSearchParams(location.search).get('lang'))setTimeout(r85OpenLanguageChooser,450)}
 document.addEventListener('DOMContentLoaded',init);if(document.readyState!=='loading')setTimeout(init,0);
 })();
 </script>
