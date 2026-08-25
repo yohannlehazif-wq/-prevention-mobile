@@ -5062,9 +5062,9 @@ document.addEventListener('DOMContentLoaded', () => {
     accueil:'Prevy-Accueil.png',
     reflexion:'Prevy-Reflexion.png',
     conseil:'Prevy-Conseil.png',
-    attention:'Prevy-Attention.png',
+    attention:'Prevy-Conseil.png',
     stop:'Prevy-Stop.png',
-    signalement:'Prevy-Signalement.png',
+    signalement:'Prevy-Conseil.png',
     validation:'Prevy-Validation.png'
   };
   const CLASSES=['prevy-thinking','prevy-advice','prevy-attention','prevy-stop','prevy-report','prevy-success'];
@@ -6091,7 +6091,7 @@ if ("serviceWorker" in navigator) {
 (function(){
 'use strict';
 const VERSION='RESTEV85_PREVY_GUIDE_KB_2026_08_24';
-const STATE_IMG={accueil:'Prevy-Accueil.png',reflexion:'Prevy-Reflexion.png',conseil:'Prevy-Conseil.png',attention:'Prevy-Attention.png',stop:'Prevy-Stop.png',signalement:'Prevy-Signalement.png',validation:'Prevy-Validation.png'};
+const STATE_IMG={accueil:'Prevy-Accueil.png',reflexion:'Prevy-Reflexion.png',conseil:'Prevy-Conseil.png',attention:'Prevy-Conseil.png',stop:'Prevy-Stop.png',signalement:'Prevy-Conseil.png',validation:'Prevy-Validation.png'};
 const SCREEN_GUIDE={
  'scr-home':['accueil','Bonjour, je suis Prevy. Je vous guide vers la bonne action prévention.'],
  'scr-employee':['accueil','Votre parcours prévention est réuni ici. Commencez par l’étape recommandée.'],
@@ -6273,6 +6273,48 @@ window.addEventListener('restev:language-change',()=>{setTimeout(fullApply,0);se
 const mo=new MutationObserver(()=>{clearTimeout(window.__r85i18nTimer);window.__r85i18nTimer=setTimeout(fullApply,80)});
 function init(){fullApply();mo.observe(document.body,{childList:true,subtree:true});const old=window.r85SetLanguage;if(old&&!old.__full){const fn=function(c){old(c);setTimeout(fullApply,10);setTimeout(fullApply,300)};fn.__full=true;window.r85SetLanguage=fn}}
 document.addEventListener('DOMContentLoaded',init);if(document.readyState!=='loading')setTimeout(init,0);
+})();
+</script>
+
+<!-- RESTEV85 DESIGN PREVY 5 ETATS 2026-08-25 -->
+<style id="r85-prevy-five-states-design">
+:root{--r85-blue:#245ca6;--r85-violet:#6d36ba;--r85-green:#0f8a61;--r85-orange:#d97706;--r85-red:#c81e3a;--r85-bg:#f7f9fc;--r85-text:#17213b;--r85-muted:#52627a;--r85-card:#fff;--r85-radius:20px;--r85-shadow:0 8px 24px rgba(23,54,93,.10)}
+body{background:var(--r85-bg);color:var(--r85-text)}
+/* Lisibilité terrain */
+main p,main label,main input,main select,main textarea{font-size:max(14px,1em)}
+main button{min-height:48px;font-size:14px}
+main h1{font-size:clamp(26px,7vw,42px)}main h2{font-size:clamp(22px,5vw,30px)}main h3{font-size:18px}
+.text-\[9px\],.text-\[10px\],.text-\[11px\],.text-xs{font-size:14px!important}
+.text-slate-400{color:#52627a!important}.text-slate-500{color:#46566f!important}
+/* Cartes uniformes */
+main .rounded-3xl,main .rounded-2xl{border-radius:var(--r85-radius)!important}
+main .shadow-lg,main .shadow-premium,main .shadow-xl{box-shadow:var(--r85-shadow)!important}
+/* Prevy est le seul élément animé en continu. */
+.r85-prevy-home-img,#r85-guide-img,#prevy-main-img{transform-origin:50% 88%}
+.r85-prevy-home-img{animation:r85PrevyCalm 4.4s ease-in-out infinite!important}
+@keyframes r85PrevyCalm{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-8px) scale(1.012)}}
+/* Cinq états visuels cohérents */
+[data-prevy-state="accueil"],#r85-prevy-guide[data-state="accueil"]{--prevy-state:#245ca6}
+[data-prevy-state="reflexion"],#r85-prevy-guide[data-state="reflexion"]{--prevy-state:#6d36ba}
+[data-prevy-state="conseil"],#r85-prevy-guide[data-state="conseil"],[data-prevy-state="attention"],#r85-prevy-guide[data-state="attention"],[data-prevy-state="signalement"],#r85-prevy-guide[data-state="signalement"]{--prevy-state:#d97706}
+[data-prevy-state="stop"],#r85-prevy-guide[data-state="stop"]{--prevy-state:#c81e3a}
+[data-prevy-state="validation"],#r85-prevy-guide[data-state="validation"]{--prevy-state:#0f8a61}
+#r85-prevy-guide{border-left:6px solid var(--prevy-state,#245ca6)!important;background:#fff!important;color:#17213b!important;box-shadow:var(--r85-shadow)!important}
+#r85-prevy-guide .r85-guide-copy b{color:var(--prevy-state,#245ca6)!important}
+/* Actions critiques distinctes, sans rouge décoratif. */
+button[onclick*="scr-report"],button[onclick*="unsafe"]{border:2px solid #d97706!important}
+/* Mode mobile : respiration visuelle */
+@media(max-width:520px){main{padding:12px!important}.r85-home-actions{gap:10px!important}.r85-home-actions button{min-height:92px!important;padding:15px!important}#r85-prevy-guide{position:relative!important;top:0!important;margin-bottom:12px!important}}
+@media(prefers-reduced-motion:reduce){.r85-prevy-home-img,#r85-guide-img,#prevy-main-img{animation:none!important;transition:none!important}}
+</style>
+<script id="r85-prevy-five-states-controller">
+(function(){
+'use strict';
+const FIVE={accueil:'Prevy-Accueil.png',reflexion:'Prevy-Reflexion.png',conseil:'Prevy-Conseil.png',attention:'Prevy-Conseil.png',signalement:'Prevy-Conseil.png',stop:'Prevy-Stop.png',validation:'Prevy-Validation.png'};
+const LABEL={accueil:'Prevy vous accueille',reflexion:'Prevy analyse la situation',conseil:'Conseil de prévention',attention:'Point de vigilance',signalement:'Prevy vous aide à signaler',stop:'Danger ou urgence',validation:'Étape validée'};
+function sync(state){state=FIVE[state]?state:'accueil';const src=FIVE[state];document.querySelectorAll('#prevy-main-img,#prevy-fab-img,#r85-guide-img,.r85-prevy-home-img,.r85-employee-prevy img,.r85-nav-prevy-face img').forEach(img=>{if(img.getAttribute('src')!==src)img.src=src});const avatar=document.querySelector('.prevy-avatar');if(avatar)avatar.dataset.prevyState=state;const guide=document.getElementById('r85-prevy-guide');if(guide){guide.dataset.state=state;const title=guide.querySelector('.r85-guide-copy b');if(title)title.textContent=LABEL[state]}}
+function install(){const old=window.setPrevyState;if(typeof old==='function'&&!old.__r85five){const fn=function(state,options){const normalized=state==='attention'||state==='signalement'?state:state;const r=old.call(this,normalized,options||{});sync(normalized);return r};fn.__r85five=true;window.setPrevyState=fn;try{setPrevyState=fn}catch(e){}}sync('accueil')}
+document.addEventListener('DOMContentLoaded',()=>{install();setTimeout(install,1300)});if(document.readyState!=='loading')setTimeout(install,0);
 })();
 </script>
 </body>
