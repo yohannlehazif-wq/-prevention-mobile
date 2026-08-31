@@ -708,7 +708,7 @@ async function loadRestevStats(){
 
 
   <!-- RESTEV 85 — Icône smartphone / widget application -->
-  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="manifest" href="./manifest.webmanifest">
   <meta name="theme-color" content="#061631" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -5652,66 +5652,24 @@ const observer=new MutationObserver(ensureUI);document.addEventListener('DOMCont
 </script>
 
 
-<script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", async () => {
+<script id="restev-pwa-registration-fix">
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', async () => {
     try {
-      const registration =
-        await navigator.serviceWorker.register(
-          "/-prevention-mobile/sw.js",
-          {
-            scope: "/-prevention-mobile/",
-            updateViaCache: "none"
-          }
-        );
-
-      await registration.update();
-
+      const registration = await navigator.serviceWorker.register('./sw.js', {
+        scope: './',
+        updateViaCache: 'none'
+      });
+      registration.update().catch(() => {});
       let reloading = false;
-
-      navigator.serviceWorker.addEventListener(
-        "controllerchange",
-        () => {
-          if (reloading) return;
-
-          reloading = true;
-          window.location.reload();
-        }
-      );
-
-      if (registration.waiting) {
-        registration.waiting.postMessage({
-          type: "SKIP_WAITING"
-        });
-      }
-
-      registration.addEventListener(
-        "updatefound",
-        () => {
-          const worker = registration.installing;
-
-          if (!worker) return;
-
-          worker.addEventListener(
-            "statechange",
-            () => {
-              if (
-                worker.state === "installed" &&
-                navigator.serviceWorker.controller
-              ) {
-                worker.postMessage({
-                  type: "SKIP_WAITING"
-                });
-              }
-            }
-          );
-        }
-      );
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (reloading) return;
+        reloading = true;
+        window.location.reload();
+      });
+      if (registration.waiting) registration.waiting.postMessage({type:'SKIP_WAITING'});
     } catch (error) {
-      console.error(
-        "Erreur service worker RESTEV :",
-        error
-      );
+      console.warn('Installation hors ligne non disponible :', error);
     }
   });
 }
@@ -6635,52 +6593,6 @@ document.addEventListener('DOMContentLoaded',init);if(document.readyState!=='loa
   const btn=document.getElementById('btn-manager-login');if(btn)btn.onclick=e=>{e?.preventDefault();handleManagerLogin();return false};
  }
  document.addEventListener('DOMContentLoaded',()=>{addLinks();secureManager();pstRenderKpis();setTimeout(addLinks,1200)});
-})();
-</script>
-
-
-<!-- PREVY CLIMAT V1 -->
-<style id="prevy-climat-style">
-#scr-climat{max-width:960px;margin:auto}.cl-card{background:rgba(255,255,255,.95);border:1px solid #dbeafe;border-radius:24px;padding:18px;box-shadow:0 14px 38px rgba(15,23,42,.09)}.dark .cl-card{background:#17213b;border-color:#334155}.cl-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.cl-levels{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.cl-level{border:0;border-radius:15px;padding:13px 8px;color:#fff;font-size:11px;font-weight:900}.cl-green{background:#16a34a}.cl-yellow{background:#ca8a04}.cl-orange{background:#ea580c}.cl-red{background:#dc2626}.cl-risk{border:1px solid #e2e8f0;border-radius:18px;padding:14px;background:#fff}.dark .cl-risk{background:#111827;border-color:#334155}.cl-actions{display:flex;flex-wrap:wrap;gap:8px}.cl-btn{border:0;border-radius:13px;padding:11px 14px;font-size:11px;font-weight:900}.cl-primary{background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff}.cl-soft{background:#eff6ff;color:#1d4ed8}.cl-danger{background:#fff1f2;color:#be123c}.cl-field label{display:block;font-size:10px;font-weight:900;text-transform:uppercase;color:#64748b;margin-bottom:5px}.cl-field input,.cl-field select,.cl-field textarea{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:12px;font-size:12px}.cl-alert{padding:14px;border-radius:18px;font-size:12px;font-weight:800}.cl-check{display:flex;gap:9px;align-items:flex-start;padding:9px;border-radius:12px;background:#f8fafc;font-size:12px}.dark .cl-check{background:#0f172a}.cl-pill{display:inline-flex;padding:4px 9px;border-radius:999px;font-size:10px;font-weight:900;background:#e0f2fe;color:#0369a1}@media(max-width:640px){.cl-grid{grid-template-columns:1fr}.cl-levels{grid-template-columns:repeat(2,1fr)}}
-</style>
-<section id="scr-climat" class="screen space-y-5 py-5">
- <div class="flex justify-between gap-3"><button onclick="climatBack()" class="cl-btn cl-soft"><i class="fa-solid fa-arrow-left mr-1"></i> Retour</button><button onclick="window.print()" class="cl-btn cl-soft"><i class="fa-solid fa-print mr-1"></i> Imprimer le plan</button></div>
- <div class="bg-gradient-to-br from-sky-700 via-blue-700 to-emerald-500 p-6 rounded-3xl text-white shadow-xl"><span class="text-[10px] font-black uppercase tracking-widest text-sky-100">Adaptation au changement climatique</span><h2 class="text-2xl font-black mt-1">Prévention climatique</h2><p class="text-xs text-blue-50 mt-2">Anticiper la chaleur, le froid, les UV, les tempêtes, les inondations et la pollution de l'air.</p></div>
- <div id="climat-status-card" class="cl-card"><div class="flex justify-between items-start gap-3"><div><span class="cl-pill">Niveau décidé par l'employeur</span><h3 id="climat-current-title" class="text-xl font-black dark:text-white mt-2">Vigilance verte</h3><p id="climat-current-message" class="text-xs text-slate-500 mt-1">Situation habituelle. Préparer les moyens avant les épisodes climatiques.</p></div><i class="fa-solid fa-cloud-sun text-4xl text-sky-500"></i></div></div>
- <div id="climat-manager-panel" class="cl-card">
-  <h3 class="font-black dark:text-white mb-2">Déclencher le niveau de prévention</h3><p class="text-xs text-slate-500 mb-3">À choisir après consultation de la vigilance officielle et des conditions réelles de travail.</p>
-  <div class="cl-levels"><button class="cl-level cl-green" onclick="climatSetLevel('vert')">Vert<br><small>Préparation</small></button><button class="cl-level cl-yellow" onclick="climatSetLevel('jaune')">Jaune<br><small>Renforcer</small></button><button class="cl-level cl-orange" onclick="climatSetLevel('orange')">Orange<br><small>Adapter</small></button><button class="cl-level cl-red" onclick="climatSetLevel('rouge')">Rouge<br><small>Réévaluer</small></button></div>
-  <div class="cl-grid mt-4"><div class="cl-field"><label>Phénomène principal</label><select id="climat-event"><option>Forte chaleur / canicule</option><option>Grand froid / verglas</option><option>Orage / tempête / vent violent</option><option>Pluie intense / inondation</option><option>UV / exposition solaire</option><option>Pollution de l'air</option><option>Feu de végétation / fumées</option></select></div><div class="cl-field"><label>Site ou activité concernés</label><input id="climat-scope" placeholder="Ex. chantier extérieur, atelier, déplacements"></div><div class="cl-field" style="grid-column:1/-1"><label>Message aux salariés</label><textarea id="climat-message" rows="2" placeholder="Horaires adaptés, pauses, zone interdite, consigne particulière..."></textarea></div></div>
-  <div class="cl-actions mt-3"><button class="cl-btn cl-primary" onclick="climatPublish()"><i class="fa-solid fa-bullhorn mr-1"></i> Publier la consigne</button><button class="cl-btn cl-soft" onclick="climatAddToDuerp()">Ajouter au DUERP</button></div>
- </div>
- <div class="cl-card"><div class="flex justify-between items-center"><h3 class="font-black dark:text-white">Mesures à vérifier aujourd'hui</h3><select id="climat-profile" onchange="climatRenderChecks()" class="text-xs border rounded-xl p-2"><option value="exterieur">Travail extérieur</option><option value="interieur">Travail intérieur</option><option value="route">Déplacements routiers</option></select></div><div id="climat-checks" class="space-y-2 mt-3"></div></div>
- <div class="cl-grid">
-  <div class="cl-card"><h3 class="font-black dark:text-white"><i class="fa-solid fa-temperature-high text-red-500 mr-1"></i> Chaleur et UV</h3><ul class="mt-3 text-xs text-slate-600 dark:text-slate-300 space-y-2"><li>• Prévoir de l'eau fraîche et des pauses.</li><li>• Décaler les travaux physiques et limiter l'exposition.</li><li>• Créer des zones d'ombre ou de repos rafraîchies.</li><li>• Éviter le travail isolé et organiser la surveillance.</li><li>• Informer sur les signes d'alerte et la conduite d'urgence.</li></ul></div>
-  <div class="cl-card"><h3 class="font-black dark:text-white"><i class="fa-solid fa-snowflake text-sky-500 mr-1"></i> Froid, pluie et verglas</h3><ul class="mt-3 text-xs text-slate-600 dark:text-slate-300 space-y-2"><li>• Prévoir vêtements adaptés et zone de réchauffement.</li><li>• Sécuriser les sols, accès et déplacements.</li><li>• Adapter les pauses et la durée d'exposition.</li><li>• Reporter une tâche si les conditions deviennent dangereuses.</li></ul></div>
-  <div class="cl-card"><h3 class="font-black dark:text-white"><i class="fa-solid fa-wind text-indigo-500 mr-1"></i> Vent, orage et tempête</h3><ul class="mt-3 text-xs text-slate-600 dark:text-slate-300 space-y-2"><li>• Arrêter le travail en hauteur si nécessaire.</li><li>• Mettre à l'abri les objets et équipements mobiles.</li><li>• Suspendre les opérations de levage exposées.</li><li>• Définir un lieu de repli et un moyen d'alerte.</li></ul></div>
-  <div class="cl-card"><h3 class="font-black dark:text-white"><i class="fa-solid fa-water text-blue-500 mr-1"></i> Inondation, fumées et pollution</h3><ul class="mt-3 text-xs text-slate-600 dark:text-slate-300 space-y-2"><li>• Ne pas entrer dans une zone inondée ou enfumée.</li><li>• Adapter les activités physiques et extérieures.</li><li>• Fermer ou ventiler les locaux selon la consigne officielle.</li><li>• Prévoir l'arrêt, l'évacuation ou le travail à distance.</li></ul></div>
- </div>
- <div class="cl-card"><h3 class="font-black dark:text-white">Signes d'alerte chaleur</h3><div class="cl-alert bg-red-50 text-red-800 mt-3">Fatigue brutale, maux de tête, vertiges, nausées, confusion, perte de connaissance ou peau anormalement chaude : arrêter l'activité, placer la personne au frais, la refroidir et appeler immédiatement les secours selon la procédure de l'entreprise.</div></div>
- <div class="cl-card"><h3 class="font-black dark:text-white">Ressources officielles</h3><div class="cl-actions mt-3"><a class="cl-btn cl-soft" target="_blank" rel="noopener" href="https://vigilance.meteofrance.fr/fr">Vigilance Météo-France</a><a class="cl-btn cl-soft" target="_blank" rel="noopener" href="https://www.inrs.fr/publications/essentiels/travail-forte-chaleur.html">INRS forte chaleur</a><a class="cl-btn cl-soft" target="_blank" rel="noopener" href="https://travail-emploi.gouv.fr/chaleur-et-canicule-au-travail">Ministère du Travail</a></div></div>
-</section>
-<script id="prevy-climat-script">
-(function(){
- const levels={vert:{title:'Vigilance verte',msg:'Situation habituelle. Préparer les moyens avant les épisodes climatiques.',color:'#16a34a'},jaune:{title:'Vigilance jaune',msg:'Renforcer l’information, vérifier les moyens et surveiller les salariés exposés.',color:'#ca8a04'},orange:{title:'Vigilance orange',msg:'Adapter immédiatement l’organisation, les horaires, les tâches et les pauses.',color:'#ea580c'},rouge:{title:'Vigilance rouge',msg:'Réévaluer chaque situation. Suspendre ou reporter toute activité dont la sécurité ne peut pas être garantie.',color:'#dc2626'}};
- const checks={exterieur:['Vigilance météo vérifiée','Eau, ombre ou zone de repli disponibles','Horaires et charge physique adaptés','Travail isolé évité','Moyen d’alerte opérationnel','Salariés informés des signes d’alerte'],interieur:['Température et ventilation vérifiées','Eau fraîche accessible','Stores, ouvrants ou rafraîchissement disponibles','Machines dégageant de la chaleur prises en compte','Pauses adaptées','Procédure de malaise connue'],route:['Vigilance météo et état des routes vérifiés','Mission maintenue, adaptée ou reportée','Véhicule contrôlé et équipé','Temps de pause prévu','Téléphone réglé avant le départ','Consigne en cas d’arrêt ou d’impossibilité de poursuivre']};
- function code(){return (document.getElementById('lbl-manager-comp-name')?.innerText||currentEmployeeSession?.company||'DEMO').trim()||'DEMO'}
- function key(){return 'prevy_climat_'+code()}
- function get(){try{return JSON.parse(safeStorage.getItem(key())||'{}')}catch(e){return {}}}
- function put(x){safeStorage.setItem(key(),JSON.stringify(x))}
- window.openClimat=function(origin){safeStorage.setItem('prevy_climat_origin',origin||'home');switchScreen('scr-climat');let d=get();climatApply(d.level||'vert');let mgr=origin==='manager'||document.getElementById('scr-manager')?.classList.contains('active');document.getElementById('climat-manager-panel').style.display=mgr?'block':'none';climatRenderChecks()}
- window.climatBack=function(){let o=safeStorage.getItem('prevy_climat_origin');switchScreen(o==='manager'?'scr-manager':(currentEmployeeSession?'scr-employee':'scr-home'))}
- window.climatApply=function(l){let x=levels[l]||levels.vert;document.getElementById('climat-current-title').innerText=x.title;document.getElementById('climat-current-title').style.color=x.color;document.getElementById('climat-current-message').innerText=x.msg}
- window.climatSetLevel=function(l){let d=get();d.level=l;d.updated=new Date().toISOString();put(d);climatApply(l);showToast('Niveau climatique enregistré : '+levels[l].title)}
- window.climatPublish=function(){let d=get();d.event=document.getElementById('climat-event').value;d.scope=document.getElementById('climat-scope').value.trim();d.message=document.getElementById('climat-message').value.trim();d.published=new Date().toISOString();put(d);showToast('Consigne climatique publiée dans PREVY.')}
- window.climatRenderChecks=function(){let p=document.getElementById('climat-profile')?.value||'exterieur',box=document.getElementById('climat-checks');if(!box)return;let d=get(),done=d.done||{};box.innerHTML=checks[p].map((t,i)=>`<label class="cl-check"><input type="checkbox" ${done[p+'-'+i]?'checked':''} onchange="climatToggleCheck('${p}-${i}',this.checked)"><span>${escapeHtml(t)}</span></label>`).join('')}
- window.climatToggleCheck=function(id,v){let d=get();d.done=d.done||{};d.done[id]=v;put(d)}
- window.climatAddToDuerp=function(){if(typeof openDuerp!=='function')return showToast('Module DUERP non disponible.');let event=document.getElementById('climat-event').value,scope=document.getElementById('climat-scope').value.trim()||'Activités exposées';openDuerp();setTimeout(()=>{let u=document.getElementById('duerp-unit'),r=document.getElementById('duerp-risk'),s=document.getElementById('duerp-situation'),a=document.getElementById('duerp-action');if(u)u.value=scope;if(r){let opts=[...r.options];let match=opts.find(o=>/Chaleur|froid/i.test(o.text));if(match)r.value=match.value}if(s)s.value='Exposition climatique : '+event;if(a)a.value='Préparer un plan d’adaptation, informer les salariés et adapter l’organisation selon la vigilance météo.';showToast('Risque climatique préparé dans le DUERP. Vérifiez puis enregistrez.')},180)}
- function install(){let manager=document.getElementById('scr-manager');if(manager&&!document.getElementById('btn-climat-manager')){let c=document.createElement('div');c.className='cl-card no-print';c.innerHTML='<div class="flex justify-between items-center gap-3"><div><p class="text-[10px] font-black uppercase text-sky-600">Climat et travail</p><h3 class="font-black dark:text-white">Prévention climatique</h3><p class="text-xs text-slate-500 mt-1">Vigilance, plan d’action et information des salariés.</p></div><button id="btn-climat-manager" class="cl-btn cl-primary" onclick="openClimat(\'manager\')">Ouvrir</button></div>';let grid=manager.querySelector('.grid.grid-cols-1.md\\:grid-cols-2');manager.insertBefore(c,grid||manager.firstChild)}let emp=document.getElementById('scr-employee');if(emp&&!document.getElementById('btn-climat-employee')){let c=document.createElement('button');c.id='btn-climat-employee';c.className='w-full bg-slate-50 dark:bg-slate-900 border-l-4 border-l-sky-500 p-4 rounded-xl text-left flex items-center justify-between shadow-sm';c.onclick=()=>openClimat('employee');c.innerHTML='<div class="flex items-center space-x-3.5"><div class="w-10 h-10 bg-sky-500/10 text-sky-500 rounded-xl flex items-center justify-center"><i class="fa-solid fa-cloud-sun"></i></div><div><p class="text-xs font-black dark:text-white">Prévention climatique</p><p class="text-[10px] text-slate-400 mt-0.5">Chaleur, froid, tempête et vigilance.</p></div></div><i class="fa-solid fa-chevron-right text-slate-300"></i>';let box=emp.querySelector('.bg-white.dark\\:bg-slate-800');if(box)box.appendChild(c);else emp.appendChild(c)}}
- document.addEventListener('DOMContentLoaded',install);setTimeout(install,1000);
 })();
 </script>
 
