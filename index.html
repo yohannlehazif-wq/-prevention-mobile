@@ -6695,5 +6695,23 @@ document.addEventListener('DOMContentLoaded',init);if(document.readyState!=='loa
 })();
 </script>
 
+
+<!-- CORRECTION PREVENTION 360 UNIQUE -->
+<style id="prevy-360-unique-fix">
+#pst-home-btn,#pst-drawer-btn,#btn-pilotage,#m360-manager{display:none!important}
+</style>
+<script id="prevy-360-unique-fix-script">
+(function(){
+ function clean(){
+  document.querySelectorAll('#pst-home-btn,#pst-drawer-btn,#btn-pilotage').forEach(function(el){el.remove()});
+  const oldManager=document.getElementById('m360-manager');if(oldManager)oldManager.remove();
+  const home=document.querySelector('.r85-home-actions');
+  const buttons=home?[...home.querySelectorAll('button')].filter(b=>(b.textContent||'').includes('Prévention 360')):[];
+  buttons.forEach((b,i)=>{if(i>0)b.remove()});
+ }
+ document.addEventListener('DOMContentLoaded',clean);setTimeout(clean,300);setTimeout(clean,1000);
+ new MutationObserver(clean).observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
 </body>
 </html>
