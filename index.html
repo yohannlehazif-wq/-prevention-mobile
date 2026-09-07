@@ -6139,58 +6139,17 @@ document.addEventListener('DOMContentLoaded',()=>setTimeout(install,350));window
 </script>
 
 
-<!-- RESTEV 85 - FIX CREATION ENTREPRISE SUPABASE 2026-09-07 -->
-<script id="restev85-company-create-fix-20260907">
+<style id="r85-kiosk-ux-v4">
+#r85-kiosk-home{display:none}.r85-kiosk #scr-employee>.r85-employee-overview{display:none!important}.r85-kiosk #r85-kiosk-home{display:block}.r85-kiosk-home{max-width:760px;margin:auto;padding:16px 12px 100px}.r85-kiosk-welcome{border-radius:28px;padding:20px;background:linear-gradient(135deg,#073b9c,#0b80c5 58%,#16c7d9);color:#fff;box-shadow:0 18px 42px #073b9c26}.r85-kiosk-welcome h2{font-size:22px;font-weight:950}.r85-kiosk-welcome p{font-size:11px;opacity:.9;margin-top:5px}.r85-kiosk-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:13px}.r85-kiosk-action{min-height:118px;border:1px solid #dce8f7;border-radius:22px;padding:15px;background:#fff;text-align:left;box-shadow:0 8px 22px #1020440d}.dark .r85-kiosk-action{background:#17233d;border-color:#304064;color:#fff}.r85-kiosk-action i{font-size:24px;color:#0b66d9}.r85-kiosk-action b{display:block;font-size:12px;margin-top:8px}.r85-kiosk-action small{display:block;font-size:9px;color:#64748b;margin-top:3px;line-height:1.4}.r85-shift{margin-top:12px;padding:14px;border-radius:20px;background:#f4f8fd;border:1px solid #dce8f7}.dark .r85-shift{background:#111b31;border-color:#304064}.r85-shift h3{font-size:11px;font-weight:950}.r85-shift-grid{display:flex;gap:8px;margin-top:9px;overflow:auto}.r85-chip{border:0;border-radius:12px;padding:9px 11px;white-space:nowrap;font-size:9px;font-weight:900;background:#fff;color:#16416f}.dark .r85-chip{background:#17233d;color:#fff}.r85-shared-banner{margin:12px 0;padding:11px 13px;border-radius:15px;background:#fff7df;color:#714b00;font-size:9px;line-height:1.4}.r85-kiosk-exit{position:fixed;right:14px;top:14px;z-index:9000;border:0;border-radius:13px;background:#0b1742;color:#fff;padding:9px 11px;font-size:9px;font-weight:900}.r85-kiosk #r85-bottom-nav{display:none!important}@media(min-width:700px){.r85-kiosk-actions{grid-template-columns:repeat(4,1fr)}}
+</style>
+<script id="r85-kiosk-ux-v4">
 (function(){
-'use strict';
-async function ensureAuth(){
-  if(!supabaseClient) throw new Error('Supabase non chargé');
-  let r=await supabaseClient.auth.getSession();
-  if(r.data?.session) return r.data.session;
-  const a=await supabaseClient.auth.signInAnonymously();
-  if(a.error) throw a.error;
-  return a.data.session;
-}
-window.createNewCompany=async function(){
-  const name=document.getElementById('new-company-name')?.value.trim();
-  const sector=document.getElementById('manager-login-sector')?.value || 'Non renseigné';
-  const size=document.getElementById('manager-login-size')?.value || 'Non renseigné';
-  const btn=document.getElementById('btn-create-company');
-  if(!name) return showToast("Veuillez saisir un nom d'établissement");
-  if(btn){btn.disabled=true;btn.dataset.old=btn.innerHTML;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin mr-1"></i> Enregistrement Supabase...';}
-  try{
-    await ensureAuth();
-    const res=await supabaseClient.rpc('create_restev_company',{p_company_name:name,p_sector:sector,p_company_size_range:size});
-    if(res.error) throw res.error;
-    const company=Array.isArray(res.data)?res.data[0]:res.data;
-    if(!company?.company_code || !company?.company_id) throw new Error("Supabase n'a pas retourné l'établissement créé");
-    // Contrôle serveur : le code affiché est exactement celui enregistré.
-    const claim=await supabaseClient.rpc('claim_manager_session',{p_company_code:company.company_code});
-    if(claim.error) throw new Error('Création enregistrée mais contrôle impossible : '+claim.error.message);
-    const checked=Array.isArray(claim.data)?claim.data[0]:claim.data;
-    if(!checked?.company_id || checked.company_id!==company.company_id) throw new Error("Contrôle d'enregistrement incohérent");
-    window.r85AuthContext={user_id:(await supabaseClient.auth.getUser()).data.user?.id,company_id:company.company_id,role:'manager',company};
-    const box=document.getElementById('generated-code-box');
-    const label=document.getElementById('lbl-generated-code');
-    const input=document.getElementById('manager-company-code');
-    if(label) label.innerText=company.company_code;
-    if(input) input.value=company.company_code;
-    if(box) box.classList.remove('hidden');
-    managerSector=company.sector||sector; managerCompanySize=company.company_size_range||size;
-    safeStorage.setItem('restev_manager_sector_'+company.company_code,managerSector);
-    safeStorage.setItem('restev_manager_size_'+company.company_code,managerCompanySize);
-    showToast('Établissement créé et enregistré dans Supabase : '+company.company_code);
-  }catch(e){
-    console.error('Création établissement Supabase :',e);
-    showToast('Création refusée : '+(e.message||e));
-  }finally{if(btn){btn.disabled=false;btn.innerHTML=btn.dataset.old||'Créer l’établissement et générer son code';}}
-};
-// Le login passe obligatoirement par Supabase et ne se contente plus d'ouvrir l'écran localement.
-window.handleManagerLogin=function(){unlockAlertSound();return r85SecureManagerLogin();};
-document.addEventListener('DOMContentLoaded',function(){
- const btn=document.getElementById('btn-create-company');if(btn)btn.onclick=function(e){e.preventDefault();window.createNewCompany();return false;};
- const login=document.getElementById('btn-manager-login');if(login)login.onclick=function(e){e.preventDefault();window.handleManagerLogin();return false;};
-});
+ function employee(){return document.getElementById('scr-employee')}
+ function install(){const page=employee();if(!page||document.getElementById('r85-kiosk-home'))return;const x=document.createElement('section');x.id='r85-kiosk-home';x.className='r85-kiosk-home';x.innerHTML=`<div class="r85-kiosk-welcome"><h2>Ma journée en sécurité</h2><p>L'essentiel au bon moment. Pas besoin d'utiliser un smartphone pendant le travail.</p></div><div class="r85-shared-banner"><b>Mode poste partagé</b> · salarié identifié pour la session puis déconnexion rapide. Idéal sur tablette, borne d'accueil ou PC d'atelier.</div><div class="r85-kiosk-actions"><button class="r85-kiosk-action" onclick="switchScreen('scr-training')"><i class="fa-solid fa-person-circle-check"></i><b>Mon accueil</b><small>Parcours sécurité, consignes et validation.</small></button><button class="r85-kiosk-action" onclick="switchScreen('scr-report')"><i class="fa-solid fa-triangle-exclamation"></i><b>Je signale</b><small>Danger, presque-accident ou idée prévention.</small></button><button class="r85-kiosk-action" onclick="pst5Open('employee')"><i class="fa-solid fa-chart-column"></i><b>Prévention aujourd'hui</b><small>PST5, météo, alertes et priorités.</small></button><button class="r85-kiosk-action" onclick="switchScreen('scr-resources')"><i class="fa-solid fa-shield-halved"></i><b>Mes essentiels</b><small>Risques métier, EPI et consignes utiles.</small></button></div><div class="r85-shift"><h3>Avant de commencer</h3><div class="r85-shift-grid"><button class="r85-chip" onclick="openMeteoPrevention()">☀️ Météo & alertes</button><button class="r85-chip" onclick="openPriorityActionPage('atgm')">⚠️ Risques graves</button><button class="r85-chip" onclick="openPriorityActionPage('newcomers')">👷 Nouveaux arrivants</button><button class="r85-chip" onclick="openPrevia()">💬 Demander à PREVY</button></div></div>`;page.prepend(x)}
+ window.r85EnterSharedMode=function(){install();document.documentElement.classList.add('r85-kiosk');let b=document.getElementById('r85-kiosk-exit');if(!b){b=document.createElement('button');b.id='r85-kiosk-exit';b.className='r85-kiosk-exit';b.textContent='Terminer ma session';b.onclick=window.r85ExitSharedMode;document.body.appendChild(b)}switchScreen('scr-employee')}
+ window.r85ExitSharedMode=async function(){document.documentElement.classList.remove('r85-kiosk');document.getElementById('r85-kiosk-exit')?.remove();try{if(window.supabaseClient)await supabaseClient.auth.signOut()}catch(e){};try{sessionStorage.clear()}catch(e){};switchScreen('scr-auth')}
+ window.r85EnableSimpleEmployeeUX=function(){install();document.documentElement.classList.add('r85-kiosk')}
+ document.addEventListener('DOMContentLoaded',()=>setTimeout(install,250));
 })();
 </script>
 
