@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>RESTEV 85 - Passeport Prévention Connecté</title>
+  <!-- Build unifié 2026-09-07 : doublons historiques neutralisés, stockage sécurisé harmonisé -->
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -77,7 +78,7 @@ function getCleanLabel(value, fallback='Non renseigné'){
   const v=String(value || '').trim();
   return (!v || v === 'Non renseigné' || v === 'undefined' || v === 'null') ? fallback : v;
 }
-function getCurrentSectorLabel(){
+function legacy_getCurrentSectorLabel_1(){
   const companyCode=(currentEmployeeSession?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
   const fromSession=getCleanLabel(currentEmployeeSession?.sector, '');
   const fromManager=getCleanLabel(managerSector, '');
@@ -85,7 +86,7 @@ function getCurrentSectorLabel(){
   const fromStore=getCleanLabel(safeStorage.getItem('restev_manager_sector_' + companyCode), '');
   return fromSession || fromManager || fromSelect || fromStore || 'Non renseigné';
 }
-function getCurrentCompanySizeLabel(){
+function legacy_getCurrentCompanySizeLabel_1(){
   const companyCode=(currentEmployeeSession?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
   const fromManager=getCleanLabel(managerCompanySize, '');
   const fromSelect=getCleanLabel(document.getElementById('manager-login-size')?.value, '');
@@ -108,7 +109,7 @@ function normalizeRegistryRow(r){
     status:r.status || 'Validé et signé'
   };
 }
-function renderPassportRegistry(entries){
+function legacy_renderPassportRegistry_1(entries){
   const table=document.getElementById('manager-emargements-list');
   if(!table) return;
   table.innerHTML='';
@@ -124,7 +125,7 @@ function renderPassportRegistry(entries){
     table.appendChild(row);
   });
 }
-async function loadPassportRegistry(){
+async function legacy_loadPassportRegistry_1(){
   const companyCode=document.getElementById('lbl-manager-comp-name')?.innerText?.trim();
   if(!companyCode) return;
   let localEntries=[];
@@ -172,7 +173,7 @@ async function submitAnonymizedPreventionStat(evt){
     return true;
   }catch(e){ console.warn('Stat anonymisée ignorée :', e); return false; }
 }
-async function savePassportEntry(entry){
+async function legacy_savePassportEntry_1(entry){
   // 1) sauvegarde locale immédiate
   let entries=[];
   try{ entries=JSON.parse(safeStorage.getItem(getRegistryKey()) || '[]'); }catch(e){ entries=[]; }
@@ -211,7 +212,7 @@ async function savePassportEntry(entry){
   if(document.getElementById('manager-emargements-list')) loadPassportRegistry();
   showToast(cloudOK ? 'Passeport enregistré dans le registre partagé.' : 'Passeport enregistré localement. Vérifiez Supabase pour partage manager.');
 }
-async function finalizeAndClose(){setPrevyState('validation',{resetAfter:6000});
+async function legacy_finalizeAndClose_1(){setPrevyState('validation',{resetAfter:6000});
   updateCertificateEPI();
   if(!isSignatureDone('emp') || !isSignatureDone('mgr')) return showToast('Les deux signatures réelles sont obligatoires.');
   const name=document.getElementById('cert-employee').value || (currentEmployeeSession?currentEmployeeSession.name:'Salarié');
@@ -231,7 +232,7 @@ async function finalizeAndClose(){setPrevyState('validation',{resetAfter:6000});
   await savePassportEntry(entry);
   switchScreen('scr-employee');
 }
-async function submitRiskReport(){
+async function legacy_submitRiskReport_1(){
   if(!supabaseClient) return showToast('Supabase non chargé. Vérifiez internet.');
   const category=document.getElementById('risk-category-select').value;
   const desc=document.getElementById('risk-description').value.trim();
@@ -250,7 +251,7 @@ async function submitRiskReport(){
   showToast('Signalement envoyé + statistique agrégée enregistrée.');
   switchScreen('scr-employee');
 }
-async function loadRestevStats(){
+async function legacy_loadRestevStats_1(){
   const totalEl=document.getElementById('stats-total');
   if(!totalEl) return;
   if(!supabaseClient){ showToast('Supabase non chargé : statistiques indisponibles.'); return; }
@@ -709,7 +710,6 @@ async function loadRestevStats(){
 
   <!-- RESTEV 85 — Icône smartphone / widget application -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <meta name="theme-color" content="#061631" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
@@ -2183,7 +2183,7 @@ function vibrateAlert() {
     console.warn('Vibration non disponible :', e);
   }
 }
-function triggerNewReportAlert(report) {
+function legacy_triggerNewReportAlert_1(report) {
   const now = Date.now();
   // Anti-spam : évite 10 sons si plusieurs événements arrivent ensemble.
   if (now - lastReportAlertAt < 1500) return;
@@ -2504,7 +2504,7 @@ function triggerNewReportAlert(report) {
     function renderQCMQuestion(){ const q=qcmActiveQuestions[qcmCurrentIndex]; document.getElementById('qcm-progress').innerText=`Question ${qcmCurrentIndex+1} / ${qcmActiveQuestions.length}`; document.getElementById('qcm-question-text').innerText=q.question; const box=document.getElementById('qcm-options-box'); box.innerHTML=''; q.options.forEach((opt,i)=>{ const div=document.createElement('div'); div.className='flex items-center p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl hover:bg-blue-50/50'; div.innerHTML=`<label class="flex items-center gap-3 w-full cursor-pointer text-xs font-semibold dark:text-slate-300"><input type="radio" name="qcm-opt" value="${i}" class="w-4 h-4 text-restev-blue"><span>${escapeHtml(opt)}</span></label>`; box.appendChild(div); }); }
     function submitQCMAnswer(){ const checked=document.querySelector('input[name="qcm-opt"]:checked'); if(!checked) return showToast('Veuillez sélectionner une réponse !'); const q=qcmActiveQuestions[qcmCurrentIndex]; if(parseInt(checked.value,10)===q.answer) qcmScore++; qcmCurrentIndex++; if(qcmCurrentIndex<qcmActiveQuestions.length) return renderQCMQuestion(); const total=qcmActiveQuestions.length; document.getElementById('lbl-qcm-score-final').innerText=`${qcmScore} / ${total}`; const now=new Date(); document.getElementById('lbl-cert-date').innerText='- '+now.toLocaleDateString('fr-FR')+' à '+now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); if(currentEmployeeSession){ document.getElementById('cert-company').value=currentEmployeeSession.company; document.getElementById('cert-employee').value=currentEmployeeSession.name; } updateCertificateEPI(); clearSignature('emp'); clearSignature('mgr'); const title=document.getElementById('qcm-result-title'); title.innerText=qcmScore===total?'Attestation de Formation Sécurité':'Attestation de Suivi (Avec Réserves)'; title.className=qcmScore===total?'text-2xl font-black text-emerald-600 print:text-slate-900':'text-2xl font-black text-amber-600 print:text-slate-900'; setPrevyState('validation',{resetAfter:6000}); switchScreen('scr-qcm-success'); }
     function updateSignStatus(type){ const checked=document.getElementById(`chk-sign-${type}`).checked; const box=document.getElementById(`sign-box-${type}`); if(checked){ box.innerHTML=`<div class="text-center p-2"><p class="font-black text-lg ${type==='mgr'?'text-emerald-600':'text-restev-blue'}" style="font-family: 'Brush Script MT', cursive; transform: rotate(-3deg);">Validé</p><p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">Le ${new Date().toLocaleDateString('fr-FR')}</p></div>`; } else { box.innerHTML='<span class="text-xs italic text-slate-400 print:hidden">En attente...</span>'; } }
-    function enableManagerNotifications(){
+    function legacy_enableManagerNotifications_1(){
       if(!('Notification' in window)) return showToast('Notifications navigateur non compatibles.');
       Notification.requestPermission().then(permission=>{
         managerNotificationsEnabled = permission === 'granted';
@@ -2513,7 +2513,7 @@ function triggerNewReportAlert(report) {
         showToast(managerNotificationsEnabled ? 'Notifications navigateur activées.' : 'Notifications refusées par le navigateur.');
       });
     }
-    function showBrowserNotification(report){
+    function legacy_showBrowserNotification_1(report){
       if(!('Notification' in window) || Notification.permission !== 'granted') return;
       try{
         const title='Nouveau signalement prévention';
@@ -2740,7 +2740,7 @@ function triggerNewReportAlert(report) {
       if(status) status.innerText=message || '📍 Coordonnées GPS enregistrées';
     }
 
-    function fixMapSize(){
+    function legacy_fixMapSize_1(){
       if(googleMapInstance){
         google.maps.event.trigger(googleMapInstance, 'resize');
         if(currentRiskLocation) googleMapInstance.setCenter(currentRiskLocation);
@@ -5092,8 +5092,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let listening=false;
   let lastAnswer='';
   let selectedVoice=null;
-  let autoRead=localStorage.getItem('previa_voice_auto')==='true';
-  let voiceRate=Number(localStorage.getItem('previa_voice_rate')||'0.92');
+  let autoRead=safeStorage.getItem('previa_voice_auto')==='true';
+  let voiceRate=Number(safeStorage.getItem('previa_voice_rate')||'0.92');
 
   function voiceStatus(message,thinking=false){
     const e=document.getElementById('previa-status');
@@ -5154,8 +5154,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   window.setPreviaLastAnswer=function(text){lastAnswer=String(text||'');};
-  window.setPreviaAutoRead=function(value){autoRead=!!value;localStorage.setItem('previa_voice_auto',String(autoRead));voiceStatus(autoRead?'Lecture automatique activée':'Lecture automatique désactivée');};
-  window.setPreviaVoiceRate=function(value){voiceRate=Math.min(1.3,Math.max(.7,Number(value)||.92));localStorage.setItem('previa_voice_rate',String(voiceRate));};
+  window.setPreviaAutoRead=function(value){autoRead=!!value;safeStorage.setItem('previa_voice_auto',String(autoRead));voiceStatus(autoRead?'Lecture automatique activée':'Lecture automatique désactivée');};
+  window.setPreviaVoiceRate=function(value){voiceRate=Math.min(1.3,Math.max(.7,Number(value)||.92));safeStorage.setItem('previa_voice_rate',String(voiceRate));};
   window.stopPreviaVoice=function(){
     try{if(recognition&&listening)recognition.stop();}catch(e){}
     if('speechSynthesis' in window)window.speechSynthesis.cancel();
