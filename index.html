@@ -6216,5 +6216,37 @@ document.addEventListener('DOMContentLoaded',()=>setTimeout(install,350));window
 })();
 </script>
 
+
+<style id="pst5-risk-dashboard-v3">
+#prevy-context-fab{display:none!important}
+#pst5-risk-dashboard{margin:14px 0;padding:16px;border-radius:24px;background:#fff;border:1px solid #dce8f7;box-shadow:0 12px 30px rgba(11,23,66,.08)}.dark #pst5-risk-dashboard{background:#17233d;border-color:#304064}
+.p5d-head{display:flex;justify-content:space-between;align-items:start;gap:10px}.p5d-head h3{font-size:14px;font-weight:950;color:#0b1742}.dark .p5d-head h3{color:#fff}.p5d-head p{font-size:9px;color:#64748b;margin-top:3px}.p5d-score{font-size:20px;font-weight:950;color:#0b59d9}
+.p5d-chart{display:grid;grid-template-columns:repeat(6,minmax(46px,1fr));gap:8px;align-items:end;height:190px;padding:16px 4px 4px;margin-top:8px;border-bottom:1px solid #d8e2ee}.p5d-col{display:flex;flex-direction:column;align-items:center;justify-content:end;height:100%;gap:5px}.p5d-value{font-size:9px;font-weight:950}.p5d-bar{width:min(48px,74%);min-height:8px;border-radius:11px 11px 4px 4px;transition:.3s}.p5d-label{font-size:7px;line-height:1.15;text-align:center;color:#64748b;min-height:25px;display:flex;align-items:start}.p5d-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}.p5d-risk{border:1px solid #e3ebf5;border-radius:16px;padding:11px;background:#fbfdff;cursor:pointer;text-align:left}.dark .p5d-risk{background:#111b31;border-color:#2c3c58}.p5d-risk b{font-size:9px;display:block;color:#17345d}.dark .p5d-risk b{color:#edf4ff}.p5d-risk small{display:block;font-size:8px;color:#718096;margin-top:3px;line-height:1.35}.p5d-risk span{font-size:8px;font-weight:900;float:right}.p5d-tools{display:flex;gap:7px;margin-top:12px}.p5d-tools button{flex:1;border:0;border-radius:12px;padding:9px;font-size:8px;font-weight:900;background:#edf5ff;color:#1354b5}.dark .p5d-tools button{background:#0d1931;color:#8bdcf6}
+@media(max-width:520px){.p5d-chart{gap:4px;height:165px}.p5d-label{font-size:6px}.p5d-grid{grid-template-columns:1fr}}
+</style>
+<script id="pst5-risk-dashboard-v3">
+(function(){
+ const RISKS=[
+  {id:'atgm',short:'Graves',title:'Accidents graves et mortels',desc:'Chutes, route, machines, équipements et malaises',color:'#e5484d'},
+  {id:'newcomers',short:'Arrivants',title:'Nouveaux arrivants',desc:'Préparation, accueil, pratique, accompagnement et suivi',color:'#f59e0b'},
+  {id:'mental',short:'RPS',title:'Santé mentale et RPS',desc:'Repérage, dialogue, soutien et orientation',color:'#8b5cf6'},
+  {id:'climate',short:'Climat',title:'Climat et fortes chaleurs',desc:'Anticiper, adapter l’organisation et alerter',color:'#f97316'},
+  {id:'tms',short:'TMS',title:'TMS et sédentarité',desc:'Agir sur le travail, les postes et l’activité physique',color:'#0891b2'},
+  {id:'emerging',short:'Émergents',title:'Risques émergents',desc:'Veille, signaux faibles et événements inhabituels',color:'#2563eb'}
+ ];
+ const KEY='restev85_pst5_risk_levels_v1';
+ function read(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return {}}}
+ function level(id){return Math.max(1,Math.min(4,Number(read()[id]||2)))}
+ function save(id,v){const d=read();d[id]=v;localStorage.setItem(KEY,JSON.stringify(d));render()}
+ function label(v){return ['','Faible','Modéré','Élevé','Prioritaire'][v]}
+ function openRisk(id){if(id==='climate'&&typeof openMeteoPrevention==='function')return openMeteoPrevention();if(typeof openPriorityActionPage==='function')return openPriorityActionPage(id)}
+ function render(){const host=document.getElementById('pst5-risk-dashboard');if(!host)return;let sum=0;RISKS.forEach(r=>sum+=level(r.id));const avg=Math.round(sum/RISKS.length*25);host.innerHTML=`<div class="p5d-head"><div><h3>Tableau graphique des risques prioritaires</h3><p>Vue synthétique PST5. Cliquez sur un risque pour ouvrir sa prévention.</p></div><div class="p5d-score">${avg}%</div></div><div class="p5d-chart">${RISKS.map(r=>{const v=level(r.id);return `<div class="p5d-col"><div class="p5d-value" style="color:${r.color}">${label(v)}</div><div class="p5d-bar" style="height:${v*27}px;background:${r.color}"></div><div class="p5d-label">${r.short}</div></div>`}).join('')}</div><div class="p5d-grid">${RISKS.map(r=>{const v=level(r.id);return `<button class="p5d-risk" data-open="${r.id}"><span style="color:${r.color}">${label(v)}</span><b>${r.title}</b><small>${r.desc}</small></button>`}).join('')}</div><div class="p5d-tools"><button id="p5d-evaluate">Ajuster les niveaux</button><button id="p5d-prevy">Analyser avec PREVY</button></div>`;host.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openRisk(b.dataset.open));host.querySelector('#p5d-evaluate').onclick=evaluate;host.querySelector('#p5d-prevy').onclick=prevy}
+ function evaluate(){RISKS.forEach(r=>{const v=prompt(r.title+'\n1 = Faible · 2 = Modéré · 3 = Élevé · 4 = Prioritaire',String(level(r.id)));if(v!==null&&/^[1-4]$/.test(v))save(r.id,Number(v))});render()}
+ function prevy(){const summary=RISKS.map(r=>r.title+' : '+label(level(r.id))).join('; ');if(typeof openPrevia==='function'){openPrevia();setTimeout(()=>{const i=document.getElementById('previa-input');if(i){i.value='Analyse ce tableau de risques prioritaires PST5 et propose les 3 actions de prévention les plus utiles : '+summary;i.focus()}},180)}}
+ function install(){document.getElementById('prevy-context-fab')?.remove();const page=document.getElementById('scr-pst5');if(page&&!document.getElementById('pst5-risk-dashboard')){const title=[...page.querySelectorAll('h3')].find(x=>/Priorités à intégrer/i.test(x.textContent));const card=title?.closest('.r85-pst5-card');const d=document.createElement('div');d.id='pst5-risk-dashboard';if(card)card.insertAdjacentElement('afterend',d);else page.appendChild(d);render()}const emp=document.querySelector('#scr-employee .r85-employee-overview');if(emp&&!document.getElementById('pst5-risk-dashboard-home')){const wrap=document.createElement('div');wrap.id='pst5-risk-dashboard-home';wrap.innerHTML='<button type="button" style="width:100%;margin-top:10px;border:0;border-radius:16px;padding:12px;background:linear-gradient(135deg,#0b59d9,#0ba7b4);color:white;font-size:10px;font-weight:900" onclick="pst5Open(\'employee\')">📊 Voir le tableau des risques prioritaires</button>';emp.appendChild(wrap)}}
+ document.addEventListener('DOMContentLoaded',()=>{setTimeout(install,300);setTimeout(install,1100)});window.renderPst5RiskDashboard=render;
+})();
+</script>
+
 </body>
 </html>
