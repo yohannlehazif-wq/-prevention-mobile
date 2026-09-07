@@ -1087,7 +1087,7 @@ main{max-width:760px!important}
           <span class="text-[11px] font-black text-restev-blue dark:text-blue-400 uppercase tracking-widest flex items-center gap-2 mb-4"><i class="fa-solid fa-industry"></i> Parcours Entreprises</span>
           <button onclick="switchScreen('scr-auth')" class="w-full bg-white dark:bg-slate-800 border-l-4 border-l-restev-blue p-4 rounded-2xl text-left flex items-center space-x-4 shadow-sm hover:shadow-md">
             <div class="p-3 bg-blue-50 dark:bg-slate-700 text-restev-blue rounded-xl text-xl"><i class="fa-solid fa-user-tie"></i></div>
-            <div><h3 class="font-black dark:text-white text-sm">Espace Management</h3><p class="text-xs text-slate-500 mt-0.5 font-medium">Accueil salarié, prévention et signalements.</p></div>
+            <div><h3 class="font-black dark:text-white text-sm">Espace Management</h3><p class="text-xs text-slate-500 mt-0.5 font-medium">Gestion des sessions, DUERP, signalements.</p></div>
           </button>
         </div>
 
@@ -1334,7 +1334,7 @@ main{max-width:760px!important}
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="space-y-6">
           <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-premium border-t-4 border-t-restev-gold">
-            <h3 class="text-xs font-black uppercase tracking-wider dark:text-white mb-4"><i class="fa-solid fa-sliders text-restev-gold mr-1"></i> 1. Risques du parcours</h3>
+            <h3 class="text-xs font-black uppercase tracking-wider dark:text-white mb-4"><i class="fa-solid fa-sliders text-restev-gold mr-1"></i> 1. Matrice des Risques</h3>
             <button onclick="openStudio()" class="w-full bg-slate-900 dark:bg-slate-700 text-white py-2.5 rounded-xl text-xs font-bold"><i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> Ajuster les risques</button>
           </div>
 
@@ -2309,7 +2309,7 @@ function triggerNewReportAlert(report) {
     function renderStudioRisks(){ const c=document.getElementById('studio-rules-list'); if(!c) return; c.innerHTML=''; RISKS_DATABASE.forEach((risk,index)=>{ const row=document.createElement('div'); row.className='flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border hover:border-blue-300'; row.innerHTML=`<label class="flex items-center gap-3 cursor-pointer flex-1"><input type="checkbox" ${risk.active?'checked':''} onchange="toggleRiskItem(${index})" class="w-4 h-4 rounded text-restev-blue"><span class="text-xs font-bold text-slate-700 dark:text-slate-300">${escapeHtml(risk.name)}</span></label><span class="text-[10px] font-black ${risk.active?'text-emerald-500':'text-slate-400'} uppercase">${risk.active?'Concerné':'Non concerné'}</span>`; c.appendChild(row); }); }
     function toggleRiskItem(index){ RISKS_DATABASE[index].active=!RISKS_DATABASE[index].active; renderStudioRisks(); populateRiskSelectors(); }
     function openStudio(){ renderStudioRisks(); switchScreen('scr-studio'); }
-    function saveCustomQCM(){ showToast('Risques du parcours mis à jour.'); switchScreen('scr-manager'); }
+    function saveCustomQCM(){ showToast('Matrice DUERP mise à jour.'); switchScreen('scr-manager'); }
     function populateRiskSelectors(){ const select=document.getElementById('risk-category-select'); if(!select) return; select.innerHTML=''; RISKS_DATABASE.filter(r=>r.active).forEach(r=>{ const opt=document.createElement('option'); opt.value=r.name; opt.innerText=r.name; select.appendChild(opt); }); }
 
     function renderEPIGrid(){ const grid=document.getElementById('epi-grid'); if(!grid) return; grid.innerHTML=''; EPI_LIST.forEach(([id,value,label])=>{ const lab=document.createElement('label'); lab.className='flex items-center gap-2 bg-slate-50 dark:bg-slate-900 p-2 rounded-lg text-[10px] font-bold dark:text-white'; lab.innerHTML=`<input type="checkbox" id="${id}" value="${escapeHtml(value)}" class="text-emerald-500"> ${escapeHtml(label)}`; grid.appendChild(lab); }); }
@@ -5996,7 +5996,7 @@ if ("serviceWorker" in navigator) {
  window.pst5Open=function(mode){renderPrinciples();renderChecks();switchScreen(mode==='manager'?'scr-pst5-manager':'scr-pst5');};
  window.pst5Guide=function(type){const q=GUIDE[type]||'';if(typeof openPrevia==='function'){openPrevia();setTimeout(()=>{const i=document.getElementById('previa-input');if(i){i.value='PST 2026-2030 - '+q+' Décris-moi une méthode de prévention fondée sur les 9 principes généraux, adaptée à ma situation, sans remplacer le DUERP ni le responsable.';i.focus();}},220);}else showToast(q);};
  window.pst5ExportSummary=function(){const s=read(),done=CHECKS.filter(([id])=>s[id]).length;const lines=['RESTEV 85 - Synthèse alignement PST 2026-2030','Entreprise : '+company(),'Date : '+new Date().toLocaleString('fr-FR'),'Progression : '+done+'/'+CHECKS.length,''];CHECKS.forEach(([id,l])=>lines.push((s[id]?'[OK] ':'[A FAIRE] ')+l));lines.push('','Auto-évaluation interne : ne constitue pas une attestation de conformité.');const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='synthese_PST5_'+company().replace(/[^a-z0-9_-]+/gi,'_')+'.txt';a.click();URL.revokeObjectURL(a.href);};
- function install(){renderPrinciples();renderChecks();const emp=document.querySelector('#scr-employee .r85-overview-grid');/* PST5 accessible depuis l'accueil Prevention, pas de sous-menu supplementaire ici */const manager=document.querySelector('#scr-manager > div:first-child .flex.items-center.gap-2');if(manager&&!document.getElementById('btn-pst5-manager')){const b=document.createElement('button');b.id='btn-pst5-manager';b.className='text-xs bg-indigo-50 text-indigo-700 dark:bg-slate-700 dark:text-indigo-200 px-3 py-2 rounded-xl font-bold';b.onclick=()=>pst5Open('manager');b.innerHTML='<i class="fa-solid fa-list-check mr-1"></i> PST5';manager.prepend(b);}const drawer=document.querySelector('#r85-more-drawer .r85-drawer-grid');if(drawer&&!document.getElementById('btn-pst5-drawer')){const b=document.createElement('button');b.id='btn-pst5-drawer';b.onclick=()=>{r85ToggleMore(false);pst5Open('employee')};b.innerHTML='<i class="fa-solid fa-shield-heart"></i><span>Plan prévention PST5</span>';drawer.appendChild(b);}}
+ function install(){renderPrinciples();renderChecks();const emp=document.querySelector('#scr-employee .r85-overview-grid');if(emp&&!document.getElementById('btn-pst5-employee')){const b=document.createElement('button');b.id='btn-pst5-employee';b.onclick=()=>pst5Open('employee');b.innerHTML='<i class="fa-solid fa-shield-heart"></i><b>Plan prévention</b><small>Priorités PST 2026-2030</small>';emp.appendChild(b);}const manager=document.querySelector('#scr-manager > div:first-child .flex.items-center.gap-2');if(manager&&!document.getElementById('btn-pst5-manager')){const b=document.createElement('button');b.id='btn-pst5-manager';b.className='text-xs bg-indigo-50 text-indigo-700 dark:bg-slate-700 dark:text-indigo-200 px-3 py-2 rounded-xl font-bold';b.onclick=()=>pst5Open('manager');b.innerHTML='<i class="fa-solid fa-list-check mr-1"></i> PST5';manager.prepend(b);}const drawer=document.querySelector('#r85-more-drawer .r85-drawer-grid');if(drawer&&!document.getElementById('btn-pst5-drawer')){const b=document.createElement('button');b.id='btn-pst5-drawer';b.onclick=()=>{r85ToggleMore(false);pst5Open('employee')};b.innerHTML='<i class="fa-solid fa-shield-heart"></i><span>Plan prévention PST5</span>';drawer.appendChild(b);}}
  document.addEventListener('DOMContentLoaded',()=>setTimeout(install,250));
  window.RESTEV_BUILD='RESTEV85-PST5-2026.09.04.01';
 })();
@@ -6133,118 +6133,64 @@ q('du-risks-list').innerHTML=D.risks.length?`<div class="du-table"><table><thead
 const cols=['À étudier','Planifiée','En cours','Clôturée'],map=s=>['Réalisée','Efficacité à vérifier','Clôturée'].includes(s)?'Clôturée':s==='Bloquée'?'En cours':s;q('du-action-board').innerHTML=cols.map(c=>`<div class="du-col"><b class="text-[9px] uppercase">${c}</b>${D.actions.filter(v=>map(v.status)===c).map(v=>`<div class="du-task"><b>${x(v.title)}</b><div class="text-slate-500 mt-1">${x(v.owner||'Sans responsable')} · ${v.due?new Date(v.due+'T12:00').toLocaleDateString('fr-FR'):'Sans échéance'}</div><div class="du-actions mt-2"><button class="du-mini" onclick="duOpenAction('${v.id}')">Modifier</button><button class="du-mini" onclick="duDelete('actions','${v.id}')">×</button></div></div>`).join('')||'<div class="text-[9px] text-slate-400 mt-2">Aucune action</div>'}</div>`).join('');
 const priorities=D.risks.filter(v=>rate(v.g,v.e,v.c).level==='red').slice(0,5);q('du-priority-list').innerHTML=priorities.length?priorities.map(v=>`<div class="py-2 border-b text-[10px]"><span class="du-badge du-red">Prioritaire</span> <b>${x(uname(v.unitId))}</b><div class="text-slate-500 mt-1">${x(v.situation)}</div></div>`).join(''):'<div class="du-empty">Aucun risque prioritaire identifié.</div>';const next=[...D.actions].filter(v=>!['Réalisée','Clôturée'].includes(v.status)).sort((a,b)=>(a.due||'9999').localeCompare(b.due||'9999')).slice(0,5);q('du-next-actions').innerHTML=next.length?next.map(v=>`<div class="py-2 border-b text-[10px]"><b>${x(v.title)}</b><div class="text-slate-500">${x(v.owner||'Responsable à définir')} · ${v.due?new Date(v.due+'T12:00').toLocaleDateString('fr-FR'):'À planifier'}</div></div>`).join(''):'<div class="du-empty">Aucune action planifiée.</div>';q('du-history-list').innerHTML=D.history.length?D.history.map(v=>`<div class="py-2 border-b text-[9px]"><b>${new Date(v.at).toLocaleString('fr-FR')}</b><div class="text-slate-500">${x(v.text)}</div></div>`).join(''):'<div class="du-empty">Aucun historique.</div>'}
 window.duExport=function(){const blob=new Blob([JSON.stringify({company:company(),exportedAt:new Date().toISOString(),data:D},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='duerp_'+company().replace(/[^a-z0-9_-]+/gi,'_')+'_'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(a.href)};window.duPrint=()=>window.print();window.duReset=function(){if(!confirm('Supprimer toutes les données DUERP locales de cet établissement ?'))return;safeStorage.removeItem(storageKey());load();showToast('DUERP réinitialisé.')};
-function install(){const manager=document.querySelector('#scr-manager > div:first-child .flex.items-center.gap-2');/* DUERP volontairement masque de la navigation principale */const studio=q('scr-studio')?.querySelector('h2');if(studio)studio.textContent='Matrice des risques QCM';}
+function install(){const manager=document.querySelector('#scr-manager > div:first-child .flex.items-center.gap-2');if(manager&&!q('btn-duerp-manager')){const b=document.createElement('button');b.id='btn-duerp-manager';b.className='text-xs bg-blue-50 text-blue-700 dark:bg-slate-700 dark:text-blue-200 px-3 py-2 rounded-xl font-bold';b.onclick=openDuerpDashboard;b.innerHTML='<i class="fa-solid fa-clipboard-list mr-1"></i> DUERP';manager.prepend(b)}const studio=q('scr-studio')?.querySelector('h2');if(studio)studio.textContent='Matrice des risques QCM';}
 document.addEventListener('DOMContentLoaded',()=>setTimeout(install,350));window.RESTEV_BUILD='RESTEV85-DUERP-INTEGRE-2026.09.04.05';
 })();
 </script>
 
 
-<style id="restev85-simplification-zero-accident-v1">
-  #r85-legacy-home{display:none!important} #r85-legacy-toggle{display:none!important}
-  #scr-employee > .bg-gradient-to-br, #scr-employee > .bg-white{display:none!important}
-  .r85-simple-title{font-size:1.25rem;font-weight:950;color:#0b1742}.dark .r85-simple-title{color:#fff}
-  .r85-simple-sub{font-size:.74rem;color:#64748b;line-height:1.5;margin-top:4px}.dark .r85-simple-sub{color:#b8c2d8}
-  .r85-prevy-context{display:flex;gap:11px;align-items:center;padding:13px 14px;border-radius:20px;background:linear-gradient(135deg,#effcff,#f5f2ff);border:1px solid #ccecf3;margin:12px 0}
-  .dark .r85-prevy-context{background:#14213b;border-color:#294567}.r85-prevy-context img{width:54px;height:54px;object-fit:cover;border-radius:17px;background:#fff}
-  .r85-prevy-context p{font-size:10px;line-height:1.45;color:#45536c}.dark .r85-prevy-context p{color:#d7e1f0}.r85-prevy-context b{display:block;font-size:11px;color:#1159df;margin-bottom:2px}
-  .r85-prevy-context button{border:0;background:#1159df;color:#fff;border-radius:11px;padding:8px 10px;font-size:9px;font-weight:900;white-space:nowrap}
-  #r85-bottom-nav{grid-template-columns:repeat(5,1fr)}
-  #r85-more-drawer .r85-drawer-grid button:nth-child(n+5){display:none}
-  #btn-duerp-manager{display:none!important}
-</style>
-<script id="restev85-simplification-zero-accident-v1">
+<!-- RESTEV 85 - FIX CREATION ENTREPRISE SUPABASE 2026-09-07 -->
+<script id="restev85-company-create-fix-20260907">
 (function(){
- 'use strict';
- function addContext(screenId,text,prompt){
-   const s=document.getElementById(screenId); if(!s||s.querySelector('.r85-prevy-context'))return;
-   const box=document.createElement('div');box.className='r85-prevy-context';
-   box.innerHTML='<img src="Prevy-Accueil.png" alt="Prevy"><p><b>Prevy est avec vous</b>'+escapeHtml(text)+'</p><button type="button">Me guider</button>';
-   box.querySelector('button').onclick=function(){openPrevia();setTimeout(function(){const i=document.getElementById('previa-input');if(i){i.value=prompt;i.focus();}},180)};
-   const first=s.firstElementChild; if(first)first.insertAdjacentElement('afterend',box); else s.prepend(box);
- }
- function simplify(){
-   const status=document.getElementById('r85-employee-status'); if(status)status.textContent='Votre prévention, simplement';
-   const ov=document.querySelector('#scr-employee .r85-employee-overview');
-   if(ov && !ov.querySelector('.r85-simple-head')){const h=document.createElement('div');h.className='r85-simple-head mb-3';h.innerHTML='<div class="r85-simple-title">Que voulez-vous faire ?</div><div class="r85-simple-sub">Accueil sécurité, prévention quotidienne, signalement et accompagnement Prevy.</div>';ov.prepend(h)}
-   addContext('scr-report','Je peux vous aider à décrire la situation clairement, analyser la photo et préparer votre remontée.','Aide-moi à décrire factuellement la situation dangereuse que je souhaite signaler.');
-   addContext('scr-resources','Je peux résumer une fiche et faire ressortir les points utiles pour votre tâche.','Résume-moi les règles essentielles adaptées à mon travail.');
-   addContext('scr-training','Je peux vous orienter vers le module le plus pertinent pour votre activité.','Quel module de prévention est le plus adapté à mon activité ?');
-   addContext('scr-employee-messages','Je peux vous aider à comprendre la réponse du responsable et la suite à donner.','Aide-moi à comprendre les messages de prévention et les actions attendues.');
-   addContext('scr-qcm','Une question vous semble peu claire ? Je peux expliquer le principe sans répondre à votre place.','Explique-moi simplement le principe de prévention lié à la question que je consulte, sans me donner la réponse.');
-   document.getElementById('btn-duerp-manager')?.remove();
- }
- document.addEventListener('DOMContentLoaded',function(){setTimeout(simplify,300);setTimeout(simplify,1200)});
- const old=window.switchScreen||(typeof switchScreen==='function'?switchScreen:null);
- if(old&&!window.__r85SimpleSwitch){window.__r85SimpleSwitch=true;const w=function(id){const r=old.apply(this,arguments);setTimeout(simplify,20);return r};window.switchScreen=w;try{switchScreen=w}catch(e){}}
-})();
-</script>
-
-
-<style id="prevy-every-page-pst5-v2">
-#prevy-context-fab{position:fixed;right:18px;bottom:86px;z-index:8800;width:60px;height:60px;border-radius:22px;border:2px solid rgba(255,255,255,.9);background:linear-gradient(135deg,#fff,#eafcff);box-shadow:0 12px 34px rgba(8,56,130,.28);padding:3px;transition:.2s;cursor:pointer}#prevy-context-fab:hover{transform:translateY(-3px) scale(1.03)}#prevy-context-fab img{width:100%;height:100%;object-fit:cover;border-radius:18px}#prevy-context-fab:after{content:'PREVY';position:absolute;right:52px;top:17px;background:#0b1742;color:#fff;font-size:8px;font-weight:950;padding:6px 8px;border-radius:9px;box-shadow:0 6px 16px #0002}
-#pst5-quick-card{margin:11px 0;border:1px solid #d9e8f7;background:linear-gradient(135deg,#f7fbff,#f1fcfb);border-radius:20px;padding:13px}.dark #pst5-quick-card{background:#14213b;border-color:#2d4160}#pst5-quick-card .pq-head{display:flex;align-items:center;justify-content:space-between;gap:10px}#pst5-quick-card h3{font-size:11px;font-weight:950;color:#0b3fb4}.dark #pst5-quick-card h3{color:#6fdcf4}#pst5-quick-card p{font-size:9px;color:#64748b;margin-top:2px}#pst5-quick-card .pq-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:10px}#pst5-quick-card button{border:0;border-radius:13px;padding:10px 8px;font-size:9px;font-weight:900;text-align:left;background:#fff;color:#153052;box-shadow:0 3px 10px #16345b10}.dark #pst5-quick-card button{background:#0d1931;color:#e8f2ff}#pst5-quick-card button i{color:#0e66df;margin-right:5px}
-</style>
-<script id="prevy-every-page-pst5-v2">
-(function(){
- const contexts={
- 'scr-employee':['Je vous accompagne dans votre accueil et votre prévention quotidienne.','Que dois-je faire maintenant pour poursuivre mon parcours prévention ?'],
- 'scr-report':['Décrivez ce que vous observez. Je vous aide à faire un signalement clair.','Aide-moi à décrire factuellement ce signalement.'],
- 'scr-resources':['Je peux résumer les informations utiles sans vous faire chercher.','Résume les points de prévention essentiels de cette page.'],
- 'scr-training':['Je peux expliquer les notions et vous orienter dans votre parcours.','Aide-moi à comprendre la prévention présentée sur cette page.'],
- 'scr-qcm':['Je peux expliquer le principe de prévention sans répondre à votre place.','Explique le principe lié à la question affichée sans donner la réponse.'],
- 'scr-employee-messages':['Je peux vous aider à comprendre un message et l’action attendue.','Explique simplement les messages de prévention affichés.'],
- 'scr-pst5':['Je relie ces priorités PST5 à des actions concrètes pour votre activité.','Explique-moi les priorités PST5 utiles dans ma situation.'],
- 'scr-weather-prevention':['Je peux transformer la météo et les alertes en mesures de prévention concrètes.','À partir des informations météo affichées, quelles précautions dois-je prendre au travail ?'],
- 'scr-priority-action':['Je peux vous guider pas à pas sur cette priorité de prévention.','Guide-moi sur la priorité de prévention affichée.'],
- 'scr-manager':['Je peux résumer les alertes et aider à prioriser les actions.','Aide-moi à prioriser les actions de prévention de cette page.'],
- 'scr-manager-history':['Je peux vous aider à retrouver les points importants dans cet historique.','Résume les éléments prioritaires de cet historique.'],
- 'scr-direction':['Je peux rendre les indicateurs plus lisibles et orientés action.','Explique les indicateurs de cette page et les actions prioritaires.'],
- 'scr-studio':['Je peux vous aider à préparer un contenu prévention simple et utile.','Aide-moi à construire un contenu prévention court et terrain.'],
- 'scr-about':['Je peux expliquer simplement le fonctionnement de l’application.','Explique-moi cette page et ce que je peux faire ici.'],
- 'scr-auth':['Je peux vous guider dans l’accès à votre espace.','Guide-moi pour accéder à mon espace.'],
- 'scr-home':['Je peux vous orienter vers l’action la plus utile.','Que puis-je faire dans l’application ?']
- };
- function activeScreen(){return [...document.querySelectorAll('.screen')].find(x=>{const cs=getComputedStyle(x);return cs.display!=='none'&&!x.classList.contains('hidden')})||document.querySelector('.screen.active')}
- function openContextPrevy(){const sc=activeScreen(),c=contexts[sc?.id]||['Je suis disponible sur cette page.','Aide-moi sur la page que je consulte.'];if(typeof openPrevia==='function'){openPrevia();setTimeout(()=>{const i=document.getElementById('previa-input');if(i){i.value=c[1];i.focus()}},180)}}
- function installFab(){if(document.getElementById('prevy-context-fab'))return;let b=document.createElement('button');b.id='prevy-context-fab';b.type='button';b.title='Demander à PREVY';b.setAttribute('aria-label','Demander à PREVY');b.innerHTML='<img src="Prevy-Accueil.png" alt="">';b.onclick=openContextPrevy;document.body.appendChild(b)}
- function refreshPrevy(){const sc=activeScreen();document.querySelectorAll('.r85-prevy-context').forEach(x=>{if(sc&&!sc.contains(x))return;const c=contexts[sc.id];if(c){const p=x.querySelector('p');if(p)p.innerHTML='<b>PREVY est avec vous</b>'+c[0];const bt=x.querySelector('button');if(bt)bt.onclick=openContextPrevy}})}
- function pst5Card(){const host=document.querySelector('#scr-employee .r85-employee-overview');if(!host||document.getElementById('pst5-quick-card'))return;const c=document.createElement('div');c.id='pst5-quick-card';c.innerHTML='<div class="pq-head"><div><h3><i class="fa-solid fa-shield-heart"></i> Prévention du jour · PST5</h3><p>Météo, alertes et priorités sans sous-menus inutiles.</p></div><button type="button" onclick="pst5Open(\'employee\')">Tout voir</button></div><div class="pq-grid"><button type="button" onclick="openMeteoPrevention()"><i class="fa-solid fa-cloud-sun"></i>Météo & alertes</button><button type="button" onclick="openPriorityActionPage(\'atgm\')"><i class="fa-solid fa-triangle-exclamation"></i>Risques graves</button><button type="button" onclick="openPriorityActionPage(\'newcomers\')"><i class="fa-solid fa-person-circle-plus"></i>Nouveaux arrivants</button><button type="button" onclick="pst5Open(\'employee\')"><i class="fa-solid fa-list-check"></i>Priorités PST5</button></div>';host.appendChild(c)}
- function run(){installFab();pst5Card();refreshPrevy()}
- document.addEventListener('DOMContentLoaded',()=>{setTimeout(run,250);setTimeout(run,1000)});
- document.addEventListener('click',()=>setTimeout(refreshPrevy,60),true);
- window.r85RefreshInteractivePrevy=run;
-})();
-</script>
-
-
-<style id="pst5-risk-dashboard-v3">
-#prevy-context-fab{display:none!important}
-#pst5-risk-dashboard{margin:14px 0;padding:16px;border-radius:24px;background:#fff;border:1px solid #dce8f7;box-shadow:0 12px 30px rgba(11,23,66,.08)}.dark #pst5-risk-dashboard{background:#17233d;border-color:#304064}
-.p5d-head{display:flex;justify-content:space-between;align-items:start;gap:10px}.p5d-head h3{font-size:14px;font-weight:950;color:#0b1742}.dark .p5d-head h3{color:#fff}.p5d-head p{font-size:9px;color:#64748b;margin-top:3px}.p5d-score{font-size:20px;font-weight:950;color:#0b59d9}
-.p5d-chart{display:grid;grid-template-columns:repeat(6,minmax(46px,1fr));gap:8px;align-items:end;height:190px;padding:16px 4px 4px;margin-top:8px;border-bottom:1px solid #d8e2ee}.p5d-col{display:flex;flex-direction:column;align-items:center;justify-content:end;height:100%;gap:5px}.p5d-value{font-size:9px;font-weight:950}.p5d-bar{width:min(48px,74%);min-height:8px;border-radius:11px 11px 4px 4px;transition:.3s}.p5d-label{font-size:7px;line-height:1.15;text-align:center;color:#64748b;min-height:25px;display:flex;align-items:start}.p5d-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}.p5d-risk{border:1px solid #e3ebf5;border-radius:16px;padding:11px;background:#fbfdff;cursor:pointer;text-align:left}.dark .p5d-risk{background:#111b31;border-color:#2c3c58}.p5d-risk b{font-size:9px;display:block;color:#17345d}.dark .p5d-risk b{color:#edf4ff}.p5d-risk small{display:block;font-size:8px;color:#718096;margin-top:3px;line-height:1.35}.p5d-risk span{font-size:8px;font-weight:900;float:right}.p5d-tools{display:flex;gap:7px;margin-top:12px}.p5d-tools button{flex:1;border:0;border-radius:12px;padding:9px;font-size:8px;font-weight:900;background:#edf5ff;color:#1354b5}.dark .p5d-tools button{background:#0d1931;color:#8bdcf6}
-@media(max-width:520px){.p5d-chart{gap:4px;height:165px}.p5d-label{font-size:6px}.p5d-grid{grid-template-columns:1fr}}
-</style>
-<script id="pst5-risk-dashboard-v3">
-(function(){
- const RISKS=[
-  {id:'atgm',short:'Graves',title:'Accidents graves et mortels',desc:'Chutes, route, machines, équipements et malaises',color:'#e5484d'},
-  {id:'newcomers',short:'Arrivants',title:'Nouveaux arrivants',desc:'Préparation, accueil, pratique, accompagnement et suivi',color:'#f59e0b'},
-  {id:'mental',short:'RPS',title:'Santé mentale et RPS',desc:'Repérage, dialogue, soutien et orientation',color:'#8b5cf6'},
-  {id:'climate',short:'Climat',title:'Climat et fortes chaleurs',desc:'Anticiper, adapter l’organisation et alerter',color:'#f97316'},
-  {id:'tms',short:'TMS',title:'TMS et sédentarité',desc:'Agir sur le travail, les postes et l’activité physique',color:'#0891b2'},
-  {id:'emerging',short:'Émergents',title:'Risques émergents',desc:'Veille, signaux faibles et événements inhabituels',color:'#2563eb'}
- ];
- const KEY='restev85_pst5_risk_levels_v1';
- function read(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return {}}}
- function level(id){return Math.max(1,Math.min(4,Number(read()[id]||2)))}
- function save(id,v){const d=read();d[id]=v;localStorage.setItem(KEY,JSON.stringify(d));render()}
- function label(v){return ['','Faible','Modéré','Élevé','Prioritaire'][v]}
- function openRisk(id){if(id==='climate'&&typeof openMeteoPrevention==='function')return openMeteoPrevention();if(typeof openPriorityActionPage==='function')return openPriorityActionPage(id)}
- function render(){const host=document.getElementById('pst5-risk-dashboard');if(!host)return;let sum=0;RISKS.forEach(r=>sum+=level(r.id));const avg=Math.round(sum/RISKS.length*25);host.innerHTML=`<div class="p5d-head"><div><h3>Tableau graphique des risques prioritaires</h3><p>Vue synthétique PST5. Cliquez sur un risque pour ouvrir sa prévention.</p></div><div class="p5d-score">${avg}%</div></div><div class="p5d-chart">${RISKS.map(r=>{const v=level(r.id);return `<div class="p5d-col"><div class="p5d-value" style="color:${r.color}">${label(v)}</div><div class="p5d-bar" style="height:${v*27}px;background:${r.color}"></div><div class="p5d-label">${r.short}</div></div>`}).join('')}</div><div class="p5d-grid">${RISKS.map(r=>{const v=level(r.id);return `<button class="p5d-risk" data-open="${r.id}"><span style="color:${r.color}">${label(v)}</span><b>${r.title}</b><small>${r.desc}</small></button>`}).join('')}</div><div class="p5d-tools"><button id="p5d-evaluate">Ajuster les niveaux</button><button id="p5d-prevy">Analyser avec PREVY</button></div>`;host.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openRisk(b.dataset.open));host.querySelector('#p5d-evaluate').onclick=evaluate;host.querySelector('#p5d-prevy').onclick=prevy}
- function evaluate(){RISKS.forEach(r=>{const v=prompt(r.title+'\n1 = Faible · 2 = Modéré · 3 = Élevé · 4 = Prioritaire',String(level(r.id)));if(v!==null&&/^[1-4]$/.test(v))save(r.id,Number(v))});render()}
- function prevy(){const summary=RISKS.map(r=>r.title+' : '+label(level(r.id))).join('; ');if(typeof openPrevia==='function'){openPrevia();setTimeout(()=>{const i=document.getElementById('previa-input');if(i){i.value='Analyse ce tableau de risques prioritaires PST5 et propose les 3 actions de prévention les plus utiles : '+summary;i.focus()}},180)}}
- function install(){document.getElementById('prevy-context-fab')?.remove();const page=document.getElementById('scr-pst5');if(page&&!document.getElementById('pst5-risk-dashboard')){const title=[...page.querySelectorAll('h3')].find(x=>/Priorités à intégrer/i.test(x.textContent));const card=title?.closest('.r85-pst5-card');const d=document.createElement('div');d.id='pst5-risk-dashboard';if(card)card.insertAdjacentElement('afterend',d);else page.appendChild(d);render()}const emp=document.querySelector('#scr-employee .r85-employee-overview');if(emp&&!document.getElementById('pst5-risk-dashboard-home')){const wrap=document.createElement('div');wrap.id='pst5-risk-dashboard-home';wrap.innerHTML='<button type="button" style="width:100%;margin-top:10px;border:0;border-radius:16px;padding:12px;background:linear-gradient(135deg,#0b59d9,#0ba7b4);color:white;font-size:10px;font-weight:900" onclick="pst5Open(\'employee\')">📊 Voir le tableau des risques prioritaires</button>';emp.appendChild(wrap)}}
- document.addEventListener('DOMContentLoaded',()=>{setTimeout(install,300);setTimeout(install,1100)});window.renderPst5RiskDashboard=render;
+'use strict';
+async function ensureAuth(){
+  if(!supabaseClient) throw new Error('Supabase non chargé');
+  let r=await supabaseClient.auth.getSession();
+  if(r.data?.session) return r.data.session;
+  const a=await supabaseClient.auth.signInAnonymously();
+  if(a.error) throw a.error;
+  return a.data.session;
+}
+window.createNewCompany=async function(){
+  const name=document.getElementById('new-company-name')?.value.trim();
+  const sector=document.getElementById('manager-login-sector')?.value || 'Non renseigné';
+  const size=document.getElementById('manager-login-size')?.value || 'Non renseigné';
+  const btn=document.getElementById('btn-create-company');
+  if(!name) return showToast("Veuillez saisir un nom d'établissement");
+  if(btn){btn.disabled=true;btn.dataset.old=btn.innerHTML;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin mr-1"></i> Enregistrement Supabase...';}
+  try{
+    await ensureAuth();
+    const res=await supabaseClient.rpc('create_restev_company',{p_company_name:name,p_sector:sector,p_company_size_range:size});
+    if(res.error) throw res.error;
+    const company=Array.isArray(res.data)?res.data[0]:res.data;
+    if(!company?.company_code || !company?.company_id) throw new Error("Supabase n'a pas retourné l'établissement créé");
+    // Contrôle serveur : le code affiché est exactement celui enregistré.
+    const claim=await supabaseClient.rpc('claim_manager_session',{p_company_code:company.company_code});
+    if(claim.error) throw new Error('Création enregistrée mais contrôle impossible : '+claim.error.message);
+    const checked=Array.isArray(claim.data)?claim.data[0]:claim.data;
+    if(!checked?.company_id || checked.company_id!==company.company_id) throw new Error("Contrôle d'enregistrement incohérent");
+    window.r85AuthContext={user_id:(await supabaseClient.auth.getUser()).data.user?.id,company_id:company.company_id,role:'manager',company};
+    const box=document.getElementById('generated-code-box');
+    const label=document.getElementById('lbl-generated-code');
+    const input=document.getElementById('manager-company-code');
+    if(label) label.innerText=company.company_code;
+    if(input) input.value=company.company_code;
+    if(box) box.classList.remove('hidden');
+    managerSector=company.sector||sector; managerCompanySize=company.company_size_range||size;
+    safeStorage.setItem('restev_manager_sector_'+company.company_code,managerSector);
+    safeStorage.setItem('restev_manager_size_'+company.company_code,managerCompanySize);
+    showToast('Établissement créé et enregistré dans Supabase : '+company.company_code);
+  }catch(e){
+    console.error('Création établissement Supabase :',e);
+    showToast('Création refusée : '+(e.message||e));
+  }finally{if(btn){btn.disabled=false;btn.innerHTML=btn.dataset.old||'Créer l’établissement et générer son code';}}
+};
+// Le login passe obligatoirement par Supabase et ne se contente plus d'ouvrir l'écran localement.
+window.handleManagerLogin=function(){unlockAlertSound();return r85SecureManagerLogin();};
+document.addEventListener('DOMContentLoaded',function(){
+ const btn=document.getElementById('btn-create-company');if(btn)btn.onclick=function(e){e.preventDefault();window.createNewCompany();return false;};
+ const login=document.getElementById('btn-manager-login');if(login)login.onclick=function(e){e.preventDefault();window.handleManagerLogin();return false;};
+});
 })();
 </script>
 
