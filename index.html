@@ -5,7 +5,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>RESTEV 85 - Passeport Prévention Connecté</title>
-  <!-- Build unifié 2026-09-07 : doublons historiques neutralisés, stockage sécurisé harmonisé -->
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -78,7 +77,7 @@ function getCleanLabel(value, fallback='Non renseigné'){
   const v=String(value || '').trim();
   return (!v || v === 'Non renseigné' || v === 'undefined' || v === 'null') ? fallback : v;
 }
-function legacy_getCurrentSectorLabel_1(){
+function getCurrentSectorLabel(){
   const companyCode=(currentEmployeeSession?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
   const fromSession=getCleanLabel(currentEmployeeSession?.sector, '');
   const fromManager=getCleanLabel(managerSector, '');
@@ -86,7 +85,7 @@ function legacy_getCurrentSectorLabel_1(){
   const fromStore=getCleanLabel(safeStorage.getItem('restev_manager_sector_' + companyCode), '');
   return fromSession || fromManager || fromSelect || fromStore || 'Non renseigné';
 }
-function legacy_getCurrentCompanySizeLabel_1(){
+function getCurrentCompanySizeLabel(){
   const companyCode=(currentEmployeeSession?.company || document.getElementById('lbl-manager-comp-name')?.innerText || '').trim();
   const fromManager=getCleanLabel(managerCompanySize, '');
   const fromSelect=getCleanLabel(document.getElementById('manager-login-size')?.value, '');
@@ -109,7 +108,7 @@ function normalizeRegistryRow(r){
     status:r.status || 'Validé et signé'
   };
 }
-function legacy_renderPassportRegistry_1(entries){
+function renderPassportRegistry(entries){
   const table=document.getElementById('manager-emargements-list');
   if(!table) return;
   table.innerHTML='';
@@ -125,7 +124,7 @@ function legacy_renderPassportRegistry_1(entries){
     table.appendChild(row);
   });
 }
-async function legacy_loadPassportRegistry_1(){
+async function loadPassportRegistry(){
   const companyCode=document.getElementById('lbl-manager-comp-name')?.innerText?.trim();
   if(!companyCode) return;
   let localEntries=[];
@@ -173,7 +172,7 @@ async function submitAnonymizedPreventionStat(evt){
     return true;
   }catch(e){ console.warn('Stat anonymisée ignorée :', e); return false; }
 }
-async function legacy_savePassportEntry_1(entry){
+async function savePassportEntry(entry){
   // 1) sauvegarde locale immédiate
   let entries=[];
   try{ entries=JSON.parse(safeStorage.getItem(getRegistryKey()) || '[]'); }catch(e){ entries=[]; }
@@ -212,7 +211,7 @@ async function legacy_savePassportEntry_1(entry){
   if(document.getElementById('manager-emargements-list')) loadPassportRegistry();
   showToast(cloudOK ? 'Passeport enregistré dans le registre partagé.' : 'Passeport enregistré localement. Vérifiez Supabase pour partage manager.');
 }
-async function legacy_finalizeAndClose_1(){setPrevyState('validation',{resetAfter:6000});
+async function finalizeAndClose(){setPrevyState('validation',{resetAfter:6000});
   updateCertificateEPI();
   if(!isSignatureDone('emp') || !isSignatureDone('mgr')) return showToast('Les deux signatures réelles sont obligatoires.');
   const name=document.getElementById('cert-employee').value || (currentEmployeeSession?currentEmployeeSession.name:'Salarié');
@@ -232,7 +231,7 @@ async function legacy_finalizeAndClose_1(){setPrevyState('validation',{resetAfte
   await savePassportEntry(entry);
   switchScreen('scr-employee');
 }
-async function legacy_submitRiskReport_1(){
+async function submitRiskReport(){
   if(!supabaseClient) return showToast('Supabase non chargé. Vérifiez internet.');
   const category=document.getElementById('risk-category-select').value;
   const desc=document.getElementById('risk-description').value.trim();
@@ -251,7 +250,7 @@ async function legacy_submitRiskReport_1(){
   showToast('Signalement envoyé + statistique agrégée enregistrée.');
   switchScreen('scr-employee');
 }
-async function legacy_loadRestevStats_1(){
+async function loadRestevStats(){
   const totalEl=document.getElementById('stats-total');
   if(!totalEl) return;
   if(!supabaseClient){ showToast('Supabase non chargé : statistiques indisponibles.'); return; }
@@ -710,6 +709,7 @@ async function legacy_loadRestevStats_1(){
 
   <!-- RESTEV 85 — Icône smartphone / widget application -->
   <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#061631" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
@@ -1087,7 +1087,7 @@ main{max-width:760px!important}
           <span class="text-[11px] font-black text-restev-blue dark:text-blue-400 uppercase tracking-widest flex items-center gap-2 mb-4"><i class="fa-solid fa-industry"></i> Parcours Entreprises</span>
           <button onclick="switchScreen('scr-auth')" class="w-full bg-white dark:bg-slate-800 border-l-4 border-l-restev-blue p-4 rounded-2xl text-left flex items-center space-x-4 shadow-sm hover:shadow-md">
             <div class="p-3 bg-blue-50 dark:bg-slate-700 text-restev-blue rounded-xl text-xl"><i class="fa-solid fa-user-tie"></i></div>
-            <div><h3 class="font-black dark:text-white text-sm">Espace Management</h3><p class="text-xs text-slate-500 mt-0.5 font-medium">Gestion des sessions, DUERP, signalements.</p></div>
+            <div><h3 class="font-black dark:text-white text-sm">Espace Management</h3><p class="text-xs text-slate-500 mt-0.5 font-medium">Accueil salarié, prévention et signalements.</p></div>
           </button>
         </div>
 
@@ -1334,7 +1334,7 @@ main{max-width:760px!important}
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="space-y-6">
           <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-premium border-t-4 border-t-restev-gold">
-            <h3 class="text-xs font-black uppercase tracking-wider dark:text-white mb-4"><i class="fa-solid fa-sliders text-restev-gold mr-1"></i> 1. Matrice des Risques</h3>
+            <h3 class="text-xs font-black uppercase tracking-wider dark:text-white mb-4"><i class="fa-solid fa-sliders text-restev-gold mr-1"></i> 1. Risques du parcours</h3>
             <button onclick="openStudio()" class="w-full bg-slate-900 dark:bg-slate-700 text-white py-2.5 rounded-xl text-xs font-bold"><i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> Ajuster les risques</button>
           </div>
 
@@ -2183,7 +2183,7 @@ function vibrateAlert() {
     console.warn('Vibration non disponible :', e);
   }
 }
-function legacy_triggerNewReportAlert_1(report) {
+function triggerNewReportAlert(report) {
   const now = Date.now();
   // Anti-spam : évite 10 sons si plusieurs événements arrivent ensemble.
   if (now - lastReportAlertAt < 1500) return;
@@ -2309,7 +2309,7 @@ function legacy_triggerNewReportAlert_1(report) {
     function renderStudioRisks(){ const c=document.getElementById('studio-rules-list'); if(!c) return; c.innerHTML=''; RISKS_DATABASE.forEach((risk,index)=>{ const row=document.createElement('div'); row.className='flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border hover:border-blue-300'; row.innerHTML=`<label class="flex items-center gap-3 cursor-pointer flex-1"><input type="checkbox" ${risk.active?'checked':''} onchange="toggleRiskItem(${index})" class="w-4 h-4 rounded text-restev-blue"><span class="text-xs font-bold text-slate-700 dark:text-slate-300">${escapeHtml(risk.name)}</span></label><span class="text-[10px] font-black ${risk.active?'text-emerald-500':'text-slate-400'} uppercase">${risk.active?'Concerné':'Non concerné'}</span>`; c.appendChild(row); }); }
     function toggleRiskItem(index){ RISKS_DATABASE[index].active=!RISKS_DATABASE[index].active; renderStudioRisks(); populateRiskSelectors(); }
     function openStudio(){ renderStudioRisks(); switchScreen('scr-studio'); }
-    function saveCustomQCM(){ showToast('Matrice DUERP mise à jour.'); switchScreen('scr-manager'); }
+    function saveCustomQCM(){ showToast('Risques du parcours mis à jour.'); switchScreen('scr-manager'); }
     function populateRiskSelectors(){ const select=document.getElementById('risk-category-select'); if(!select) return; select.innerHTML=''; RISKS_DATABASE.filter(r=>r.active).forEach(r=>{ const opt=document.createElement('option'); opt.value=r.name; opt.innerText=r.name; select.appendChild(opt); }); }
 
     function renderEPIGrid(){ const grid=document.getElementById('epi-grid'); if(!grid) return; grid.innerHTML=''; EPI_LIST.forEach(([id,value,label])=>{ const lab=document.createElement('label'); lab.className='flex items-center gap-2 bg-slate-50 dark:bg-slate-900 p-2 rounded-lg text-[10px] font-bold dark:text-white'; lab.innerHTML=`<input type="checkbox" id="${id}" value="${escapeHtml(value)}" class="text-emerald-500"> ${escapeHtml(label)}`; grid.appendChild(lab); }); }
@@ -2504,7 +2504,7 @@ function legacy_triggerNewReportAlert_1(report) {
     function renderQCMQuestion(){ const q=qcmActiveQuestions[qcmCurrentIndex]; document.getElementById('qcm-progress').innerText=`Question ${qcmCurrentIndex+1} / ${qcmActiveQuestions.length}`; document.getElementById('qcm-question-text').innerText=q.question; const box=document.getElementById('qcm-options-box'); box.innerHTML=''; q.options.forEach((opt,i)=>{ const div=document.createElement('div'); div.className='flex items-center p-3 bg-slate-50 dark:bg-slate-900 border rounded-xl hover:bg-blue-50/50'; div.innerHTML=`<label class="flex items-center gap-3 w-full cursor-pointer text-xs font-semibold dark:text-slate-300"><input type="radio" name="qcm-opt" value="${i}" class="w-4 h-4 text-restev-blue"><span>${escapeHtml(opt)}</span></label>`; box.appendChild(div); }); }
     function submitQCMAnswer(){ const checked=document.querySelector('input[name="qcm-opt"]:checked'); if(!checked) return showToast('Veuillez sélectionner une réponse !'); const q=qcmActiveQuestions[qcmCurrentIndex]; if(parseInt(checked.value,10)===q.answer) qcmScore++; qcmCurrentIndex++; if(qcmCurrentIndex<qcmActiveQuestions.length) return renderQCMQuestion(); const total=qcmActiveQuestions.length; document.getElementById('lbl-qcm-score-final').innerText=`${qcmScore} / ${total}`; const now=new Date(); document.getElementById('lbl-cert-date').innerText='- '+now.toLocaleDateString('fr-FR')+' à '+now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); if(currentEmployeeSession){ document.getElementById('cert-company').value=currentEmployeeSession.company; document.getElementById('cert-employee').value=currentEmployeeSession.name; } updateCertificateEPI(); clearSignature('emp'); clearSignature('mgr'); const title=document.getElementById('qcm-result-title'); title.innerText=qcmScore===total?'Attestation de Formation Sécurité':'Attestation de Suivi (Avec Réserves)'; title.className=qcmScore===total?'text-2xl font-black text-emerald-600 print:text-slate-900':'text-2xl font-black text-amber-600 print:text-slate-900'; setPrevyState('validation',{resetAfter:6000}); switchScreen('scr-qcm-success'); }
     function updateSignStatus(type){ const checked=document.getElementById(`chk-sign-${type}`).checked; const box=document.getElementById(`sign-box-${type}`); if(checked){ box.innerHTML=`<div class="text-center p-2"><p class="font-black text-lg ${type==='mgr'?'text-emerald-600':'text-restev-blue'}" style="font-family: 'Brush Script MT', cursive; transform: rotate(-3deg);">Validé</p><p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">Le ${new Date().toLocaleDateString('fr-FR')}</p></div>`; } else { box.innerHTML='<span class="text-xs italic text-slate-400 print:hidden">En attente...</span>'; } }
-    function legacy_enableManagerNotifications_1(){
+    function enableManagerNotifications(){
       if(!('Notification' in window)) return showToast('Notifications navigateur non compatibles.');
       Notification.requestPermission().then(permission=>{
         managerNotificationsEnabled = permission === 'granted';
@@ -2513,7 +2513,7 @@ function legacy_triggerNewReportAlert_1(report) {
         showToast(managerNotificationsEnabled ? 'Notifications navigateur activées.' : 'Notifications refusées par le navigateur.');
       });
     }
-    function legacy_showBrowserNotification_1(report){
+    function showBrowserNotification(report){
       if(!('Notification' in window) || Notification.permission !== 'granted') return;
       try{
         const title='Nouveau signalement prévention';
@@ -2740,7 +2740,7 @@ function legacy_triggerNewReportAlert_1(report) {
       if(status) status.innerText=message || '📍 Coordonnées GPS enregistrées';
     }
 
-    function legacy_fixMapSize_1(){
+    function fixMapSize(){
       if(googleMapInstance){
         google.maps.event.trigger(googleMapInstance, 'resize');
         if(currentRiskLocation) googleMapInstance.setCenter(currentRiskLocation);
@@ -5092,8 +5092,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let listening=false;
   let lastAnswer='';
   let selectedVoice=null;
-  let autoRead=safeStorage.getItem('previa_voice_auto')==='true';
-  let voiceRate=Number(safeStorage.getItem('previa_voice_rate')||'0.92');
+  let autoRead=localStorage.getItem('previa_voice_auto')==='true';
+  let voiceRate=Number(localStorage.getItem('previa_voice_rate')||'0.92');
 
   function voiceStatus(message,thinking=false){
     const e=document.getElementById('previa-status');
@@ -5154,8 +5154,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   window.setPreviaLastAnswer=function(text){lastAnswer=String(text||'');};
-  window.setPreviaAutoRead=function(value){autoRead=!!value;safeStorage.setItem('previa_voice_auto',String(autoRead));voiceStatus(autoRead?'Lecture automatique activée':'Lecture automatique désactivée');};
-  window.setPreviaVoiceRate=function(value){voiceRate=Math.min(1.3,Math.max(.7,Number(value)||.92));safeStorage.setItem('previa_voice_rate',String(voiceRate));};
+  window.setPreviaAutoRead=function(value){autoRead=!!value;localStorage.setItem('previa_voice_auto',String(autoRead));voiceStatus(autoRead?'Lecture automatique activée':'Lecture automatique désactivée');};
+  window.setPreviaVoiceRate=function(value){voiceRate=Math.min(1.3,Math.max(.7,Number(value)||.92));localStorage.setItem('previa_voice_rate',String(voiceRate));};
   window.stopPreviaVoice=function(){
     try{if(recognition&&listening)recognition.stop();}catch(e){}
     if('speechSynthesis' in window)window.speechSynthesis.cancel();
@@ -5996,7 +5996,7 @@ if ("serviceWorker" in navigator) {
  window.pst5Open=function(mode){renderPrinciples();renderChecks();switchScreen(mode==='manager'?'scr-pst5-manager':'scr-pst5');};
  window.pst5Guide=function(type){const q=GUIDE[type]||'';if(typeof openPrevia==='function'){openPrevia();setTimeout(()=>{const i=document.getElementById('previa-input');if(i){i.value='PST 2026-2030 - '+q+' Décris-moi une méthode de prévention fondée sur les 9 principes généraux, adaptée à ma situation, sans remplacer le DUERP ni le responsable.';i.focus();}},220);}else showToast(q);};
  window.pst5ExportSummary=function(){const s=read(),done=CHECKS.filter(([id])=>s[id]).length;const lines=['RESTEV 85 - Synthèse alignement PST 2026-2030','Entreprise : '+company(),'Date : '+new Date().toLocaleString('fr-FR'),'Progression : '+done+'/'+CHECKS.length,''];CHECKS.forEach(([id,l])=>lines.push((s[id]?'[OK] ':'[A FAIRE] ')+l));lines.push('','Auto-évaluation interne : ne constitue pas une attestation de conformité.');const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='synthese_PST5_'+company().replace(/[^a-z0-9_-]+/gi,'_')+'.txt';a.click();URL.revokeObjectURL(a.href);};
- function install(){renderPrinciples();renderChecks();const emp=document.querySelector('#scr-employee .r85-overview-grid');if(emp&&!document.getElementById('btn-pst5-employee')){const b=document.createElement('button');b.id='btn-pst5-employee';b.onclick=()=>pst5Open('employee');b.innerHTML='<i class="fa-solid fa-shield-heart"></i><b>Plan prévention</b><small>Priorités PST 2026-2030</small>';emp.appendChild(b);}const manager=document.querySelector('#scr-manager > div:first-child .flex.items-center.gap-2');if(manager&&!document.getElementById('btn-pst5-manager')){const b=document.createElement('button');b.id='btn-pst5-manager';b.className='text-xs bg-indigo-50 text-indigo-700 dark:bg-slate-700 dark:text-indigo-200 px-3 py-2 rounded-xl font-bold';b.onclick=()=>pst5Open('manager');b.innerHTML='<i class="fa-solid fa-list-check mr-1"></i> PST5';manager.prepend(b);}const drawer=document.querySelector('#r85-more-drawer .r85-drawer-grid');if(drawer&&!document.getElementById('btn-pst5-drawer')){const b=document.createElement('button');b.id='btn-pst5-drawer';b.onclick=()=>{r85ToggleMore(false);pst5Open('employee')};b.innerHTML='<i class="fa-solid fa-shield-heart"></i><span>Plan prévention PST5</span>';drawer.appendChild(b);}}
+ function install(){renderPrinciples();renderChecks();const emp=document.querySelector('#scr-employee .r85-overview-grid');/* PST5 accessible depuis l'accueil Prevention, pas de sous-menu supplementaire ici */const manager=document.querySelector('#scr-manager > div:first-child .flex.items-center.gap-2');if(manager&&!document.getElementById('btn-pst5-manager')){const b=document.createElement('button');b.id='btn-pst5-manager';b.className='text-xs bg-indigo-50 text-indigo-700 dark:bg-slate-700 dark:text-indigo-200 px-3 py-2 rounded-xl font-bold';b.onclick=()=>pst5Open('manager');b.innerHTML='<i class="fa-solid fa-list-check mr-1"></i> PST5';manager.prepend(b);}const drawer=document.querySelector('#r85-more-drawer .r85-drawer-grid');if(drawer&&!document.getElementById('btn-pst5-drawer')){const b=document.createElement('button');b.id='btn-pst5-drawer';b.onclick=()=>{r85ToggleMore(false);pst5Open('employee')};b.innerHTML='<i class="fa-solid fa-shield-heart"></i><span>Plan prévention PST5</span>';drawer.appendChild(b);}}
  document.addEventListener('DOMContentLoaded',()=>setTimeout(install,250));
  window.RESTEV_BUILD='RESTEV85-PST5-2026.09.04.01';
 })();
@@ -6133,8 +6133,49 @@ q('du-risks-list').innerHTML=D.risks.length?`<div class="du-table"><table><thead
 const cols=['À étudier','Planifiée','En cours','Clôturée'],map=s=>['Réalisée','Efficacité à vérifier','Clôturée'].includes(s)?'Clôturée':s==='Bloquée'?'En cours':s;q('du-action-board').innerHTML=cols.map(c=>`<div class="du-col"><b class="text-[9px] uppercase">${c}</b>${D.actions.filter(v=>map(v.status)===c).map(v=>`<div class="du-task"><b>${x(v.title)}</b><div class="text-slate-500 mt-1">${x(v.owner||'Sans responsable')} · ${v.due?new Date(v.due+'T12:00').toLocaleDateString('fr-FR'):'Sans échéance'}</div><div class="du-actions mt-2"><button class="du-mini" onclick="duOpenAction('${v.id}')">Modifier</button><button class="du-mini" onclick="duDelete('actions','${v.id}')">×</button></div></div>`).join('')||'<div class="text-[9px] text-slate-400 mt-2">Aucune action</div>'}</div>`).join('');
 const priorities=D.risks.filter(v=>rate(v.g,v.e,v.c).level==='red').slice(0,5);q('du-priority-list').innerHTML=priorities.length?priorities.map(v=>`<div class="py-2 border-b text-[10px]"><span class="du-badge du-red">Prioritaire</span> <b>${x(uname(v.unitId))}</b><div class="text-slate-500 mt-1">${x(v.situation)}</div></div>`).join(''):'<div class="du-empty">Aucun risque prioritaire identifié.</div>';const next=[...D.actions].filter(v=>!['Réalisée','Clôturée'].includes(v.status)).sort((a,b)=>(a.due||'9999').localeCompare(b.due||'9999')).slice(0,5);q('du-next-actions').innerHTML=next.length?next.map(v=>`<div class="py-2 border-b text-[10px]"><b>${x(v.title)}</b><div class="text-slate-500">${x(v.owner||'Responsable à définir')} · ${v.due?new Date(v.due+'T12:00').toLocaleDateString('fr-FR'):'À planifier'}</div></div>`).join(''):'<div class="du-empty">Aucune action planifiée.</div>';q('du-history-list').innerHTML=D.history.length?D.history.map(v=>`<div class="py-2 border-b text-[9px]"><b>${new Date(v.at).toLocaleString('fr-FR')}</b><div class="text-slate-500">${x(v.text)}</div></div>`).join(''):'<div class="du-empty">Aucun historique.</div>'}
 window.duExport=function(){const blob=new Blob([JSON.stringify({company:company(),exportedAt:new Date().toISOString(),data:D},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='duerp_'+company().replace(/[^a-z0-9_-]+/gi,'_')+'_'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(a.href)};window.duPrint=()=>window.print();window.duReset=function(){if(!confirm('Supprimer toutes les données DUERP locales de cet établissement ?'))return;safeStorage.removeItem(storageKey());load();showToast('DUERP réinitialisé.')};
-function install(){const manager=document.querySelector('#scr-manager > div:first-child .flex.items-center.gap-2');if(manager&&!q('btn-duerp-manager')){const b=document.createElement('button');b.id='btn-duerp-manager';b.className='text-xs bg-blue-50 text-blue-700 dark:bg-slate-700 dark:text-blue-200 px-3 py-2 rounded-xl font-bold';b.onclick=openDuerpDashboard;b.innerHTML='<i class="fa-solid fa-clipboard-list mr-1"></i> DUERP';manager.prepend(b)}const studio=q('scr-studio')?.querySelector('h2');if(studio)studio.textContent='Matrice des risques QCM';}
+function install(){const manager=document.querySelector('#scr-manager > div:first-child .flex.items-center.gap-2');/* DUERP volontairement masque de la navigation principale */const studio=q('scr-studio')?.querySelector('h2');if(studio)studio.textContent='Matrice des risques QCM';}
 document.addEventListener('DOMContentLoaded',()=>setTimeout(install,350));window.RESTEV_BUILD='RESTEV85-DUERP-INTEGRE-2026.09.04.05';
+})();
+</script>
+
+
+<style id="restev85-simplification-zero-accident-v1">
+  #r85-legacy-home{display:none!important} #r85-legacy-toggle{display:none!important}
+  #scr-employee > .bg-gradient-to-br, #scr-employee > .bg-white{display:none!important}
+  .r85-simple-title{font-size:1.25rem;font-weight:950;color:#0b1742}.dark .r85-simple-title{color:#fff}
+  .r85-simple-sub{font-size:.74rem;color:#64748b;line-height:1.5;margin-top:4px}.dark .r85-simple-sub{color:#b8c2d8}
+  .r85-prevy-context{display:flex;gap:11px;align-items:center;padding:13px 14px;border-radius:20px;background:linear-gradient(135deg,#effcff,#f5f2ff);border:1px solid #ccecf3;margin:12px 0}
+  .dark .r85-prevy-context{background:#14213b;border-color:#294567}.r85-prevy-context img{width:54px;height:54px;object-fit:cover;border-radius:17px;background:#fff}
+  .r85-prevy-context p{font-size:10px;line-height:1.45;color:#45536c}.dark .r85-prevy-context p{color:#d7e1f0}.r85-prevy-context b{display:block;font-size:11px;color:#1159df;margin-bottom:2px}
+  .r85-prevy-context button{border:0;background:#1159df;color:#fff;border-radius:11px;padding:8px 10px;font-size:9px;font-weight:900;white-space:nowrap}
+  #r85-bottom-nav{grid-template-columns:repeat(5,1fr)}
+  #r85-more-drawer .r85-drawer-grid button:nth-child(n+5){display:none}
+  #btn-duerp-manager{display:none!important}
+</style>
+<script id="restev85-simplification-zero-accident-v1">
+(function(){
+ 'use strict';
+ function addContext(screenId,text,prompt){
+   const s=document.getElementById(screenId); if(!s||s.querySelector('.r85-prevy-context'))return;
+   const box=document.createElement('div');box.className='r85-prevy-context';
+   box.innerHTML='<img src="Prevy-Accueil.png" alt="Prevy"><p><b>Prevy est avec vous</b>'+escapeHtml(text)+'</p><button type="button">Me guider</button>';
+   box.querySelector('button').onclick=function(){openPrevia();setTimeout(function(){const i=document.getElementById('previa-input');if(i){i.value=prompt;i.focus();}},180)};
+   const first=s.firstElementChild; if(first)first.insertAdjacentElement('afterend',box); else s.prepend(box);
+ }
+ function simplify(){
+   const status=document.getElementById('r85-employee-status'); if(status)status.textContent='Votre prévention, simplement';
+   const ov=document.querySelector('#scr-employee .r85-employee-overview');
+   if(ov && !ov.querySelector('.r85-simple-head')){const h=document.createElement('div');h.className='r85-simple-head mb-3';h.innerHTML='<div class="r85-simple-title">Que voulez-vous faire ?</div><div class="r85-simple-sub">Accueil sécurité, prévention quotidienne, signalement et accompagnement Prevy.</div>';ov.prepend(h)}
+   addContext('scr-report','Je peux vous aider à décrire la situation clairement, analyser la photo et préparer votre remontée.','Aide-moi à décrire factuellement la situation dangereuse que je souhaite signaler.');
+   addContext('scr-resources','Je peux résumer une fiche et faire ressortir les points utiles pour votre tâche.','Résume-moi les règles essentielles adaptées à mon travail.');
+   addContext('scr-training','Je peux vous orienter vers le module le plus pertinent pour votre activité.','Quel module de prévention est le plus adapté à mon activité ?');
+   addContext('scr-employee-messages','Je peux vous aider à comprendre la réponse du responsable et la suite à donner.','Aide-moi à comprendre les messages de prévention et les actions attendues.');
+   addContext('scr-qcm','Une question vous semble peu claire ? Je peux expliquer le principe sans répondre à votre place.','Explique-moi simplement le principe de prévention lié à la question que je consulte, sans me donner la réponse.');
+   document.getElementById('btn-duerp-manager')?.remove();
+ }
+ document.addEventListener('DOMContentLoaded',function(){setTimeout(simplify,300);setTimeout(simplify,1200)});
+ const old=window.switchScreen||(typeof switchScreen==='function'?switchScreen:null);
+ if(old&&!window.__r85SimpleSwitch){window.__r85SimpleSwitch=true;const w=function(id){const r=old.apply(this,arguments);setTimeout(simplify,20);return r};window.switchScreen=w;try{switchScreen=w}catch(e){}}
 })();
 </script>
 
