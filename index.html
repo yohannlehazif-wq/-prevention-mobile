@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>RESTEV 85 - Passeport Prévention Connecté</title>
+  <meta name="restev-version" content="2026.09.08.7">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -5092,8 +5093,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let listening=false;
   let lastAnswer='';
   let selectedVoice=null;
-  let autoRead=localStorage.getItem('previa_voice_auto')==='true';
-  let voiceRate=Number(localStorage.getItem('previa_voice_rate')||'0.92');
+  let autoRead=safeStorage.getItem('previa_voice_auto')==='true';
+  let voiceRate=Number(safeStorage.getItem('previa_voice_rate')||'0.92');
 
   function voiceStatus(message,thinking=false){
     const e=document.getElementById('previa-status');
@@ -5154,8 +5155,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   window.setPreviaLastAnswer=function(text){lastAnswer=String(text||'');};
-  window.setPreviaAutoRead=function(value){autoRead=!!value;localStorage.setItem('previa_voice_auto',String(autoRead));voiceStatus(autoRead?'Lecture automatique activée':'Lecture automatique désactivée');};
-  window.setPreviaVoiceRate=function(value){voiceRate=Math.min(1.3,Math.max(.7,Number(value)||.92));localStorage.setItem('previa_voice_rate',String(voiceRate));};
+  window.setPreviaAutoRead=function(value){autoRead=!!value;safeStorage.setItem('previa_voice_auto',String(autoRead));voiceStatus(autoRead?'Lecture automatique activée':'Lecture automatique désactivée');};
+  window.setPreviaVoiceRate=function(value){voiceRate=Math.min(1.3,Math.max(.7,Number(value)||.92));safeStorage.setItem('previa_voice_rate',String(voiceRate));};
   window.stopPreviaVoice=function(){
     try{if(recognition&&listening)recognition.stop();}catch(e){}
     if('speechSynthesis' in window)window.speechSynthesis.cancel();
@@ -5933,7 +5934,7 @@ if ("serviceWorker" in navigator) {
   document.addEventListener('DOMContentLoaded',function(){
     const badge=document.createElement('div');
     badge.id='restev-build-badge';
-    badge.textContent='RESTEV 85 • Version 32 expositions 2026.09.08.4';
+    badge.textContent='RESTEV 85 • Version 32 expositions 2026.09.08.7';
     badge.style.cssText='position:fixed;left:8px;bottom:82px;z-index:2147483647;background:#0f172a;color:#fff;padding:5px 8px;border-radius:8px;font:700 9px sans-serif;opacity:.9';
     document.body.appendChild(badge);
   });
@@ -6183,8 +6184,8 @@ const DATA=[
 const KEY=()=>`restev85_exposures_${window.r85AuthContext?.company_id||'local'}_${window.r85AuthContext?.user_id||'user'}`;
 const API=window.Exposure32={data:DATA,selected:new Set(),filter:'Toutes',query:'',load(){try{this.selected=new Set(JSON.parse(localStorage.getItem(KEY())||'[]'))}catch(e){this.selected=new Set()}this.render()},toggle(id){this.selected.has(id)?this.selected.delete(id):this.selected.add(id);this.render()},setFilter(g){this.filter=g;this.render()},setQuery(v){this.query=v.toLowerCase();this.renderList()},filtered(){return DATA.filter(x=>(this.filter==='Toutes'||x.group===this.filter)&&(!this.query||`${x.label} ${x.situation}`.toLowerCase().includes(this.query)))},render(){const groups=['Toutes',...new Set(DATA.map(x=>x.group))];document.getElementById('ex32-filters').innerHTML=groups.map(g=>`<button class="ex32-filter ${this.filter===g?'on':''}" onclick="Exposure32.setFilter('${g.replace(/'/g,"\\'")}')">${g}</button>`).join('');this.renderList();this.renderSummary()},renderList(){const el=document.getElementById('ex32-list');if(!el)return;el.innerHTML=this.filtered().map(x=>`<article class="ex32-card ${this.selected.has(x.id)?'selected':''}" style="--c:${COLORS[x.tone]}" data-id="${x.id}"><div class="ex32-card-head"><button class="ex32-icon" onclick="Exposure32.open('${x.id}')"><i class="fa-solid ${x.icon}"></i></button><div onclick="Exposure32.open('${x.id}')"><b>${x.number}. ${x.label}</b><small>${x.group} · ${x.pst5.replaceAll('_',' ')}</small></div><button class="ex32-toggle" onclick="Exposure32.toggle('${x.id}')">${this.selected.has(x.id)?'Concerné ✓':'Non concerné'}</button></div><div class="ex32-detail"><h4>Situation possible</h4><p>${x.situation}</p><h4>Prévention à privilégier</h4><p>${x.recommendation}</p></div></article>`).join('')||'<p class="text-xs text-slate-500">Aucun résultat.</p>'},open(id){document.querySelector(`.ex32-card[data-id="${id}"]`)?.classList.toggle('open')},renderSummary(){const s=this.selected.size,ser=[...this.selected].filter(id=>DATA.find(x=>x.id===id)?.pst5==='accidents_graves_mortels').length,pst=new Set([...this.selected].map(id=>DATA.find(x=>x.id===id)?.pst5)).size;document.getElementById('ex32-summary').innerHTML=`<div><strong>32</strong><span>expositions</span></div><div><strong>${s}</strong><span>sélectionnées</span></div><div><strong>${ser}</strong><span>AT graves</span></div><div><strong>${pst}</strong><span>axes PST5</span></div>`},async save(){const rows=[...this.selected].map(id=>({exposure_key:id,confirmed:true}));localStorage.setItem(KEY(),JSON.stringify([...this.selected]));try{if(window.supabaseClient&&window.r85AuthContext?.company_id&&window.r85AuthContext?.user_id){await supabaseClient.from('employee_exposures').delete().eq('company_id',r85AuthContext.company_id).eq('user_id',r85AuthContext.user_id);if(rows.length){const payload=rows.map(r=>({...r,company_id:r85AuthContext.company_id,user_id:r85AuthContext.user_id,source:'employee_confirmation',reviewed_at:new Date().toISOString()}));const q=await supabaseClient.from('employee_exposures').insert(payload);if(q.error)throw q.error}}showToast('Expositions enregistrées. Elles restent à valider avec le travail réel.')}catch(e){console.warn(e);showToast('Enregistré localement. Synchronisation Supabase à vérifier.')}},analyzeWithPrevy(){const labels=[...this.selected].map(id=>DATA.find(x=>x.id===id)?.label).filter(Boolean);if(!labels.length)return showToast('Sélectionnez au moins une exposition.');if(typeof openPrevia==='function'){openPrevia();setTimeout(()=>{const i=document.getElementById('previa-input');if(i){i.value=`À partir des expositions possibles suivantes : ${labels.join(', ')}. Pose-moi 3 questions sur le travail réel, puis propose des pistes de prévention en privilégiant la suppression et la réduction à la source. Rappelle que PREV’IA ne remplace ni le DUERP, ni le plan d’actions, ni une personne compétente.`;i.focus()}},180)}}};
 window.openExposure32=function(){switchScreen('scr-exposures');setTimeout(()=>API.load(),30)};
-function install(){const search=document.getElementById('ex32-search');if(search&&!search.dataset.bound){search.dataset.bound='1';search.addEventListener('input',e=>{API.query=e.target.value.toLowerCase();API.renderList()})}const host=document.querySelector('#scr-employee .r85-employee-overview')||document.getElementById('scr-employee');if(host&&!document.getElementById('btn-exposure32')){const b=document.createElement('button');b.id='btn-exposure32';b.className='w-full p-4 rounded-2xl text-left text-white font-black';b.style='background:linear-gradient(135deg,#0b1742,#1159df,#16a8c7);margin:10px 0';b.innerHTML='<i class="fa-solid fa-layer-group mr-2"></i> Mes 32 expositions <small style="display:block;font-weight:600;opacity:.85;margin-top:4px">Repérer les situations possibles de mon travail réel</small>';b.onclick=openExposure32;host.prepend(b)}const res=document.getElementById('scr-resources');if(res&&!document.getElementById('btn-exposure32-res')){const b=document.createElement('button');b.id='btn-exposure32-res';b.className='w-full p-3 rounded-xl bg-blue-50 text-blue-700 font-black text-left mb-3';b.innerHTML='<i class="fa-solid fa-layer-group mr-2"></i> Ouvrir le repérage des 32 expositions';b.onclick=openExposure32;res.prepend(b)}document.querySelectorAll('[data-app-version],#app-version,.app-version').forEach(e=>e.textContent='RESTEV 85 • Version 32 expositions 2026.09.08.4')}
-document.addEventListener('DOMContentLoaded',()=>setTimeout(install,350));window.RISKS_DATABASE_32=DATA;window.RESTEV_BUILD='RESTEV85-32-EXPOSITIONS-2026.09.08.4';
+function install(){const search=document.getElementById('ex32-search');if(search&&!search.dataset.bound){search.dataset.bound='1';search.addEventListener('input',e=>{API.query=e.target.value.toLowerCase();API.renderList()})}const host=document.querySelector('#scr-employee .r85-employee-overview')||document.getElementById('scr-employee');if(host&&!document.getElementById('btn-exposure32')){const b=document.createElement('button');b.id='btn-exposure32';b.className='w-full p-4 rounded-2xl text-left text-white font-black';b.style='background:linear-gradient(135deg,#0b1742,#1159df,#16a8c7);margin:10px 0';b.innerHTML='<i class="fa-solid fa-layer-group mr-2"></i> Mes 32 expositions <small style="display:block;font-weight:600;opacity:.85;margin-top:4px">Repérer les situations possibles de mon travail réel</small>';b.onclick=openExposure32;host.prepend(b)}const res=document.getElementById('scr-resources');if(res&&!document.getElementById('btn-exposure32-res')){const b=document.createElement('button');b.id='btn-exposure32-res';b.className='w-full p-3 rounded-xl bg-blue-50 text-blue-700 font-black text-left mb-3';b.innerHTML='<i class="fa-solid fa-layer-group mr-2"></i> Ouvrir le repérage des 32 expositions';b.onclick=openExposure32;res.prepend(b)}document.querySelectorAll('[data-app-version],#app-version,.app-version').forEach(e=>e.textContent='RESTEV 85 • Version 32 expositions 2026.09.08.7')}
+document.addEventListener('DOMContentLoaded',()=>setTimeout(install,350));window.RISKS_DATABASE_32=DATA;window.RESTEV_BUILD='RESTEV85-32-EXPOSITIONS-2026.09.08.7';
 })();
 </script>
 
