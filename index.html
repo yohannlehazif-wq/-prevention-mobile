@@ -5933,7 +5933,7 @@ if ("serviceWorker" in navigator) {
   document.addEventListener('DOMContentLoaded',function(){
     const badge=document.createElement('div');
     badge.id='restev-build-badge';
-    badge.textContent='RESTEV 85 • Version Caméra Signature Fluide 2026.09.08.11';
+    badge.textContent='RESTEV 85 • Version Caméra Signature Fluide 2026.09.08.12';
     badge.style.cssText='position:fixed;left:8px;bottom:82px;z-index:2147483647;background:#0f172a;color:#fff;padding:5px 8px;border-radius:8px;font:700 9px sans-serif;opacity:.9';
     document.body.appendChild(badge);
   });
@@ -6144,7 +6144,7 @@ document.addEventListener('DOMContentLoaded',()=>setTimeout(install,350));window
 </style>
 <div id="r85-camera-modal" class="r85-camera-modal" role="dialog" aria-modal="true" aria-label="Appareil photo"><div class="r85-camera-shell"><div class="r85-camera-head"><b><i class="fa-solid fa-camera mr-2"></i>Analyser une situation</b><button onclick="R85Camera.close()" aria-label="Fermer"><i class="fa-solid fa-xmark"></i></button></div><div class="r85-camera-stage"><video id="r85-camera-video" autoplay playsinline muted></video><div class="r85-camera-guide"></div></div><div class="r85-camera-controls"><button onclick="R85Camera.switchLens()"><i class="fa-solid fa-rotate"></i><br>Changer</button><button class="r85-shutter" onclick="R85Camera.capture()" aria-label="Prendre la photo"></button><button onclick="R85Camera.close()">Annuler</button></div><div id="r85-camera-status" class="r85-camera-status">Autorisez l’accès à l’appareil photo.</div><canvas id="r85-camera-canvas" hidden></canvas></div></div>
 <script id="r85-camera-signature-fluid-js">
-(function(){'use strict';const VERSION='RESTEV 85 • Version Caméra Signature Fluide 2026.09.08.11';let stream=null,facing='environment';
+(function(){'use strict';const VERSION='RESTEV 85 • Version Caméra Signature Fluide 2026.09.08.12';let stream=null,facing='environment';
 function toast(t){typeof showToast==='function'?showToast(t):console.info(t)}
 function setPhoto(data){window.currentRiskPhotoBase64=data;try{if(typeof r85CurrentReportPhoto!=='undefined')r85CurrentReportPhoto={data,name:'photo-situation.jpg'}}catch(e){}const img=document.getElementById('risk-photo-preview'),wrap=document.getElementById('risk-photo-preview-wrap'),hidden=document.getElementById('risk-photo-base64');if(img)img.src=data;if(hidden)hidden.value=data;wrap?.classList.remove('hidden');document.getElementById('prevy-photo-analyse-btn')?.removeAttribute('disabled');toast('Photo prête. Vous pouvez lancer l’analyse PREVY.')}
 async function stop(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}}
@@ -6152,7 +6152,59 @@ window.R85Camera={async open(){const modal=document.getElementById('r85-camera-m
 function enhanceCamera(){const box=document.getElementById('risk-photo-box');if(!box||document.getElementById('r85-open-camera'))return;const input=document.getElementById('risk-photo-input');if(input)input.style.display='none';const actions=document.createElement('div');actions.className='r85-camera-actions';actions.innerHTML='<button id="r85-open-camera" type="button" class="r85-camera-btn r85-camera-live"><i class="fa-solid fa-camera mr-1"></i> Ouvrir l’appareil photo</button><button id="r85-open-file" type="button" class="r85-camera-btn r85-camera-file"><i class="fa-solid fa-image mr-1"></i> Choisir ou prendre une photo</button>';const label=box.querySelector('label');label?.insertAdjacentElement('afterend',actions);actions.querySelector('#r85-open-camera').onclick=()=>R85Camera.open();actions.querySelector('#r85-open-file').onclick=()=>input?.click()}
 function smoothPad(type){const old=document.getElementById('sig-canvas-'+type);if(!old||old.dataset.fluid==='1')return;const canvas=old.cloneNode(false);canvas.id=old.id;canvas.className=old.className;canvas.dataset.fluid='1';old.replaceWith(canvas);const dpr=Math.max(1,Math.min(3,devicePixelRatio||1)),rect=canvas.getBoundingClientRect();canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#102044';ctx.lineWidth=2.4;let drawing=false,last=null,lastMid=null,signed=false;try{signaturePads[type]={canvas,signed:false,drawing:false}}catch(e){}function point(e){const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top,p:e.pressure||.5}}function down(e){e.preventDefault();canvas.setPointerCapture?.(e.pointerId);drawing=true;last=point(e);lastMid=last;canvas.classList.add('r85-signing');ctx.beginPath();ctx.moveTo(last.x,last.y)}function move(e){if(!drawing)return;e.preventDefault();const p=point(e),mid={x:(last.x+p.x)/2,y:(last.y+p.y)/2};ctx.lineWidth=1.8+Math.min(2.2,p.p*2);ctx.quadraticCurveTo(last.x,last.y,mid.x,mid.y);ctx.stroke();last=p;lastMid=mid;signed=true;try{signaturePads[type].signed=true}catch(x){}const st=document.getElementById('sig-status-'+type);if(st)st.textContent='Signature enregistrée.'}function up(e){if(!drawing)return;drawing=false;canvas.classList.remove('r85-signing');try{canvas.releasePointerCapture?.(e.pointerId)}catch(x){}}canvas.addEventListener('pointerdown',down,{passive:false});canvas.addEventListener('pointermove',move,{passive:false});canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);canvas.addEventListener('pointerleave',e=>{if(e.buttons===0)up(e)});const help=document.createElement('div');help.className='r85-sign-help';help.innerHTML='<span>Signez lentement dans le cadre</span><button type="button" class="r85-sign-expand">Agrandir</button>';canvas.insertAdjacentElement('afterend',help);help.querySelector('button').onclick=()=>{canvas.classList.toggle('r85-signature-fullscreen');setTimeout(()=>window.scrollTo(0,0),20)};canvas._r85Clear=()=>{ctx.clearRect(0,0,canvas.width/dpr,canvas.height/dpr);signed=false;try{signaturePads[type].signed=false}catch(e){}}}
 function install(){enhanceCamera();smoothPad('emp');smoothPad('mgr');document.querySelectorAll('[data-app-version],#app-version,.app-version').forEach(e=>e.textContent=VERSION)}
-document.addEventListener('DOMContentLoaded',()=>{setTimeout(install,350);setTimeout(install,1300)});const obs=new MutationObserver(()=>setTimeout(install,20));document.addEventListener('DOMContentLoaded',()=>obs.observe(document.body,{childList:true,subtree:true}));window.addEventListener('pagehide',stop);window.RESTEV_BUILD='RESTEV85-CAMERA-SIGNATURE-2026.09.08.11';
+document.addEventListener('DOMContentLoaded',()=>{setTimeout(install,350);setTimeout(install,1300)});const obs=new MutationObserver(()=>setTimeout(install,20));document.addEventListener('DOMContentLoaded',()=>obs.observe(document.body,{childList:true,subtree:true}));window.addEventListener('pagehide',stop);window.RESTEV_BUILD='RESTEV85-CAMERA-SIGNATURE-2026.09.08.12';
+})();
+</script>
+
+
+<!-- RESTEV 85 - SIGNATURE PLEIN ECRAN ORIENTABLE - 2026.09.08.12 -->
+<style id="r85-signature-fullscreen-v12-style">
+body.r85-signature-open{overflow:hidden!important;touch-action:none!important}
+#r85-signature-overlay{position:fixed;inset:0;z-index:2147483000;display:none;background:#071126;color:#fff;overscroll-behavior:none}
+#r85-signature-overlay.show{display:flex;flex-direction:column}
+.r85-fs-sign-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:#0b1742;border-bottom:1px solid rgba(255,255,255,.16)}
+.r85-fs-sign-title{min-width:0}.r85-fs-sign-title b{display:block;font-size:15px}.r85-fs-sign-title span{display:block;font-size:10px;color:#bdd7ff;margin-top:2px}
+.r85-fs-sign-tools{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.r85-fs-sign-btn{border:0;border-radius:12px;padding:10px 12px;color:#fff;background:#233458;font-size:11px;font-weight:900;min-height:42px}.r85-fs-sign-btn.primary{background:linear-gradient(135deg,#1159df,#16a8c7)}.r85-fs-sign-btn.danger{background:#b91c1c}
+.r85-fs-sign-stage{flex:1;min-height:0;padding:12px;display:flex;align-items:stretch;justify-content:stretch}.r85-fs-sign-paper{position:relative;flex:1;min-width:0;min-height:0;background:#fff;border-radius:20px;overflow:hidden;box-shadow:inset 0 0 0 2px #bfdbfe}
+#r85-fs-sign-canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}.r85-fs-sign-line{position:absolute;left:8%;right:8%;bottom:22%;height:1px;background:#94a3b8;pointer-events:none}.r85-fs-sign-hint{position:absolute;left:0;right:0;bottom:8%;text-align:center;color:#94a3b8;font-size:11px;font-weight:800;pointer-events:none}
+.r85-fs-sign-foot{padding:9px 14px 12px;text-align:center;font-size:10px;color:#cbd5e1;background:#071126}
+#r85-signature-overlay.landscape .r85-fs-sign-stage{padding:8px 14px}#r85-signature-overlay.landscape .r85-fs-sign-head{padding:8px 12px}#r85-signature-overlay.landscape .r85-fs-sign-foot{display:none}
+@media(max-height:500px){.r85-fs-sign-foot{display:none}.r85-fs-sign-head{padding:7px 10px}.r85-fs-sign-btn{padding:8px 10px;min-height:38px}.r85-fs-sign-stage{padding:7px}}
+</style>
+<div id="r85-signature-overlay" role="dialog" aria-modal="true" aria-labelledby="r85-fs-sign-heading">
+  <div class="r85-fs-sign-head">
+    <div class="r85-fs-sign-title"><b id="r85-fs-sign-heading">Signature en plein écran</b><span id="r85-fs-sign-subtitle">Signez dans la zone blanche avec le doigt ou un stylet.</span></div>
+    <div class="r85-fs-sign-tools">
+      <button type="button" class="r85-fs-sign-btn" id="r85-fs-sign-rotate"><i class="fa-solid fa-rotate"></i> Tourner</button>
+      <button type="button" class="r85-fs-sign-btn danger" id="r85-fs-sign-clear"><i class="fa-solid fa-eraser"></i> Effacer</button>
+      <button type="button" class="r85-fs-sign-btn" id="r85-fs-sign-cancel">Annuler</button>
+      <button type="button" class="r85-fs-sign-btn primary" id="r85-fs-sign-save"><i class="fa-solid fa-check"></i> Valider</button>
+    </div>
+  </div>
+  <div class="r85-fs-sign-stage"><div class="r85-fs-sign-paper"><canvas id="r85-fs-sign-canvas"></canvas><div class="r85-fs-sign-line"></div><div class="r85-fs-sign-hint">Signature</div></div></div>
+  <div class="r85-fs-sign-foot">Vous pouvez tourner le téléphone ou utiliser le bouton « Tourner ». La signature sera replacée automatiquement dans le formulaire.</div>
+</div>
+<script id="r85-signature-fullscreen-v12-runtime">
+(function(){
+'use strict';
+const overlay=document.getElementById('r85-signature-overlay'),canvas=document.getElementById('r85-fs-sign-canvas'),ctx=canvas.getContext('2d');let target=null,drawing=false,dirty=false,last=null,snapshot=null,landscape=false,resizeTimer=null;
+function fit(preserve=true){const old=preserve&&canvas.width?canvas.toDataURL('image/png'):null,r=canvas.getBoundingClientRect(),d=Math.max(1,Math.min(3,window.devicePixelRatio||1));canvas.width=Math.max(1,Math.round(r.width*d));canvas.height=Math.max(1,Math.round(r.height*d));ctx.setTransform(d,0,0,d,0,0);ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#0f172a';ctx.lineWidth=2.5;if(old){const im=new Image();im.onload=()=>ctx.drawImage(im,0,0,r.width,r.height);im.src=old}}
+function point(e){const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top,p:e.pressure||.5}}
+function down(e){e.preventDefault();drawing=true;dirty=true;last=point(e);canvas.setPointerCapture?.(e.pointerId);ctx.beginPath();ctx.moveTo(last.x,last.y)}
+function move(e){if(!drawing)return;e.preventDefault();const p=point(e),m={x:(last.x+p.x)/2,y:(last.y+p.y)/2};ctx.lineWidth=2+Math.min(2.5,p.p*2.2);ctx.quadraticCurveTo(last.x,last.y,m.x,m.y);ctx.stroke();last=p}
+function up(e){if(!drawing)return;drawing=false;try{canvas.releasePointerCapture?.(e.pointerId)}catch(x){}}
+function copySource(){if(!target)return;const r=canvas.getBoundingClientRect();ctx.clearRect(0,0,r.width,r.height);if(target.width&&target.height)ctx.drawImage(target,0,0,r.width,r.height)}
+function close(restoreOrientation=true){overlay.classList.remove('show','landscape');document.body.classList.remove('r85-signature-open');target=null;dirty=false;landscape=false;if(document.fullscreenElement===overlay)document.exitFullscreen?.().catch(()=>{});if(restoreOrientation)screen.orientation?.unlock?.()}
+window.openSignatureFullscreen=function(typeOrCanvas){target=typeof typeOrCanvas==='string'?document.getElementById('sig-'+typeOrCanvas):typeOrCanvas;if(!target)return window.showToast?.('Zone de signature introuvable.');snapshot=target.toDataURL?.('image/png')||null;dirty=false;landscape=matchMedia('(orientation: landscape)').matches;overlay.classList.toggle('landscape',landscape);overlay.classList.add('show');document.body.classList.add('r85-signature-open');document.getElementById('r85-fs-sign-heading').textContent=target.id==='sig-mgr'?'Signature du responsable en plein écran':'Signature du salarié en plein écran';overlay.requestFullscreen?.().catch(()=>{});requestAnimationFrame(()=>{fit(false);copySource()})};
+window.closeSignatureFullscreen=close;
+document.getElementById('r85-fs-sign-rotate').onclick=async()=>{landscape=!landscape;overlay.classList.toggle('landscape',landscape);try{if(screen.orientation?.lock)await screen.orientation.lock(landscape?'landscape':'portrait')}catch(e){}setTimeout(()=>fit(true),120)};
+document.getElementById('r85-fs-sign-clear').onclick=()=>{const r=canvas.getBoundingClientRect();ctx.clearRect(0,0,r.width,r.height);dirty=true};
+document.getElementById('r85-fs-sign-cancel').onclick=()=>close();
+document.getElementById('r85-fs-sign-save').onclick=()=>{if(!target)return close();const tr=target.getBoundingClientRect(),d=Math.max(1,window.devicePixelRatio||1),image=canvas.toDataURL('image/png'),im=new Image();im.onload=()=>{const tctx=target.getContext('2d');tctx.clearRect(0,0,target.width,target.height);tctx.drawImage(im,0,0,target.width,target.height);try{const type=target.id==='sig-mgr'?'mgr':'emp';if(window.signaturePads?.[type])window.signaturePads[type].signed=dirty||!!snapshot;const st=document.getElementById('sig-status-'+type);if(st)st.textContent='Signature enregistrée.'}catch(e){}close()};im.src=image};
+canvas.addEventListener('pointerdown',down,{passive:false});canvas.addEventListener('pointermove',move,{passive:false});canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);window.addEventListener('resize',()=>{if(!overlay.classList.contains('show'))return;clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>fit(true),140)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&overlay.classList.contains('show'))close()});
+function install(){['emp','mgr'].forEach(type=>{const c=document.getElementById('sig-'+type);if(!c||c.dataset.r85Fullscreen==='1')return;c.dataset.r85Fullscreen='1';const host=c.nextElementSibling&&c.nextElementSibling.classList.contains('r85-sign-help')?c.nextElementSibling:null;let b=host?.querySelector('.r85-sign-expand');if(!b){b=document.createElement('button');b.type='button';b.className='r85-sign-expand';b.textContent='Plein écran';(host||c.parentElement).appendChild(b)}b.textContent='Plein écran';b.onclick=e=>{e.preventDefault();e.stopPropagation();openSignatureFullscreen(c)}})}
+document.addEventListener('DOMContentLoaded',()=>{setTimeout(install,400);setTimeout(install,1500)});new MutationObserver(()=>setTimeout(install,40)).observe(document.documentElement,{childList:true,subtree:true});window.RESTEV_BUILD='RESTEV85-SIGNATURE-FULLSCREEN-2026.09.08.12';
 })();
 </script>
 
