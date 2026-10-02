@@ -13,9 +13,9 @@
 </style>
 </head>
 <body>
-<header class="top"><div class="brand"><div><h1>RESTEV 85 · Accueil Prévention</h1><small>PREV’IA · Parcours métiers · TutoPrév’ · Formation des nouveaux salariés</small><small>Version PREV’IA Gemini intégré 2026.10.02.0</small></div></div></header>
+<header class="top"><div class="brand"><div><h1>RESTEV 85 · Accueil Prévention</h1><small>PREV’IA · Parcours métiers · TutoPrév’ · Formation des nouveaux salariés</small><small>Version PREV’IA métiers et Passeport prévention 2026.10.02.1</small></div></div></header>
 <main class="wrap">
-<section id="home" class="screen on"><div class="card"><h2>Préparer, former, vérifier et tracer</h2><p>Créez un parcours d’accueil prévention adapté au profil, au secteur, au métier et aux risques réels du poste.</p><div class="actions"><button class="pink" onclick="show('wizard')">Créer un accueil avec PREV’IA</button><button onclick="show('reference')">Parcours de référence</button><button class="secondary" onclick="show('resources')">Ressources métiers</button><button class="secondary" onclick="show('settings')">Connexion IA</button></div></div>
+<section id="home" class="screen on"><div class="card"><h2>Préparer, former, vérifier et tracer</h2><p>Créez un parcours d’accueil prévention adapté au profil, au secteur, au métier et aux risques réels du poste.</p><div class="actions"><button class="pink" onclick="show('wizard')">Créer un accueil avec PREV’IA</button><button onclick="show('reference')">Parcours de référence</button><button class="secondary" onclick="show('resources')">Ressources métiers</button><button class="secondary" onclick="show('passport')">Passeport prévention</button><button class="secondary" onclick="show('settings')">Connexion IA</button></div></div>
 <div class="grid3"><div class="card"><h3>1. Identifier</h3><p>Profil, métier, tâches, équipements et risques.</p></div><div class="card"><h3>2. Former au poste</h3><p>Montrer, faire pratiquer, reformuler et corriger.</p></div><div class="card"><h3>3. Suivre</h3><p>Tracer les acquis, limites d’autonomie et actions complémentaires.</p></div></div></section>
 
 <section id="wizard" class="screen"><div class="card"><h2>Assistant de création du parcours</h2><div class="notice"><b>Confidentialité :</b> ne saisissez aucune donnée médicale ni donnée personnelle non nécessaire. PREV’IA propose, l’employeur ou la personne désignée valide.</div>
@@ -37,7 +37,24 @@
 
 <section id="reference" class="screen"><div class="card"><h2>Parcours de référence</h2><div id="steps"></div><div class="actions"><button class="secondary" onclick="show('home')">Retour</button></div></div></section>
 <section id="resources" class="screen"><div class="card"><h2>Ressources métiers et nuisances</h2><p>Ces liens ouvrent des ressources externes. PREV’IA ne copie pas automatiquement leur contenu et ne les présente pas comme une validation de conformité.</p><div class="actions"><a class="btn" href="https://forsapre.fr/fiches_fast" target="_blank" rel="noopener">Fiches FAST par métier</a><a class="btn secondary" href="https://forsapre.fr/fiches_fan" target="_blank" rel="noopener">Fiches FAN par nuisance</a><a class="btn secondary" href="https://www.inrs.fr/carrefour-metiers.html" target="_blank" rel="noopener">INRS métiers et secteurs</a><a class="btn secondary" href="https://www.inrs.fr/demarche/nouveaux-embauches/demarche-TutoPrev.html" target="_blank" rel="noopener">TutoPrév’</a></div><div id="resourceHints"></div><div class="actions"><button class="secondary" onclick="show('home')">Retour</button></div></div></section>
-<section id="settings" class="screen"><div class="card"><h2>Connexion sécurisée à PREV’IA</h2><div class="notice">La clé Gemini reste côté serveur dans les secrets Supabase. Ne placez jamais une clé API dans ce fichier.</div><label>URL de la fonction</label><input id="endpoint"><label>Jeton applicatif, si requis</label><input id="token" type="password" placeholder="Facultatif"><div class="actions"><button onclick="saveSettings()">Enregistrer</button><button class="secondary" onclick="testConnection()">Tester la connexion</button><button class="secondary" onclick="show('home')">Retour</button></div><div id="connectionStatus" class="small"></div></div></section>
+
+<section id="passport" class="screen"><div class="card"><h2>Assistant Passeport de prévention</h2>
+<div class="notice"><b>Objectif :</b> préparer les données et réduire les ressaisies. L’application ne déclare pas automatiquement à votre place et ne conserve aucune donnée médicale.</div>
+<div class="grid">
+<div><label>Nom interne de la formation</label><input id="ppTitle" placeholder="Ex. Formation interne à la conduite en sécurité"></div>
+<div><label>Catégorie</label><select id="ppCategory" onchange="passportEligibility()"><option value="">Choisir</option><option value="interne">Formation SST dispensée en interne</option><option value="organisme">Formation réalisée par un organisme</option><option value="accueil">Accueil sécurité / accueil au poste</option><option value="information">Information ou sensibilisation sans attestation</option></select></div>
+<div><label>Date de réalisation</label><input id="ppDate" type="date"></div>
+<div><label>Durée en heures</label><input id="ppDuration" type="number" min="0" step="0.5"></div>
+<div><label>Attestation, certificat ou diplôme délivré ?</label><select id="ppProof"><option value="oui">Oui</option><option value="non">Non</option></select></div>
+<div><label>Compétences transférables à un poste similaire ?</label><select id="ppTransfer"><option value="oui">Oui</option><option value="non">Non</option><option value="incertain">À vérifier</option></select></div>
+<div><label>Échéance ou recyclage</label><input id="ppExpiry" type="date"></div>
+<div><label>Référence interne</label><input id="ppReference" placeholder="Facultatif"></div>
+</div>
+<label>Participants</label><textarea id="ppPeople" placeholder="Un participant par ligne. Éviter les données inutiles."></textarea>
+<div id="ppResult" class="step">Renseignez les champs puis lancez l’analyse.</div>
+<div class="actions"><button class="success" onclick="analyzePassport()">Analyser l’éligibilité</button><button onclick="exportPassportCsv()">Exporter le CSV de préparation</button><a class="btn pink" href="https://passeport-prevention.travail-emploi.gouv.fr/employeurs" target="_blank" rel="noopener">Ouvrir le portail employeur</a><a class="btn secondary" href="https://passeport-prevention.travail-emploi.gouv.fr/employeurs/simulateur" target="_blank" rel="noopener">Ouvrir le simulateur officiel</a><button class="secondary" onclick="show('home')">Retour</button></div>
+<p class="small">Conservez séparément les justificatifs. Avant toute déclaration, vérifiez l’éligibilité et les délais sur le portail officiel.</p></div></section>
+<section id="settings" class="screen"><div class="card"><h2>Connexion sécurisée à PREV’IA</h2><div class="notice">La clé Gemini reste côté serveur dans les secrets Supabase. Ne placez jamais une clé API dans ce fichier.</div><label>URL de la fonction</label><input id="endpoint"><label>Clé publique Supabase anon / publishable</label><input id="token" type="password" placeholder="Clé publique uniquement"><p class="small">Ne saisissez jamais la clé service_role.</p><div class="actions"><button onclick="saveSettings()">Enregistrer</button><button class="secondary" onclick="testConnection()">Tester la connexion</button><button class="secondary" onclick="show('home')">Retour</button></div><div id="connectionStatus" class="small"></div></div></section>
 </main>
 <script>
 const ENDPOINT_DEFAULT='https://aqhokmlxehljvwyvwpun.supabase.co/functions/v1/previa';
@@ -68,7 +85,51 @@ const CATALOG={
 {name:'Commercial itinérant',tasks:'Prospection, rendez-vous, conduite, ordinateur et téléphone',risks:'Risque routier en mission, charge mentale, isolement, écran, manutention légère'}],
 'Agriculture, espaces verts et déchets':[
 {name:'Ouvrier paysagiste',tasks:'Tonte, taille, débroussaillage, plantation, conduite et entretien courant',risks:'Machines, bruit, vibrations, produits, circulation, manutention, météo'},
-{name:'Agent de collecte des déchets',tasks:'Collecte, manutention, circulation à proximité du véhicule et tri',risks:'Circulation, chute, manutention, biologique, coupures, horaires',fast:'https://forsapre.fr/fiches_fast/eboueur'}]
+{name:'Agent de collecte des déchets',tasks:'Collecte, manutention, circulation à proximité du véhicule et tri',risks:'Circulation, chute, manutention, biologique, coupures, horaires',fast:'https://forsapre.fr/fiches_fast/eboueur'}],
+'Hôtellerie, restauration et tourisme':[
+{name:'Cuisinier',tasks:'Préparation, cuisson, dressage, nettoyage et stockage',risks:'Coupures, brûlures, sols glissants, manutention, chaleur, produits de nettoyage'},
+{name:'Serveur en restauration',tasks:'Mise en place, service, débarrassage et nettoyage',risks:'Chutes, manutention, charge de travail, horaires atypiques, brûlures'},
+{name:'Employé d’étage',tasks:'Nettoyage des chambres, réfection des lits et manutention du linge',risks:'Gestes répétitifs, manutention, produits chimiques, chutes, charge de travail'},
+{name:'Réceptionniste',tasks:'Accueil, réservation, téléphone, écran et gestion des demandes',risks:'Écran, sédentarité, charge mentale, horaires atypiques, agressions'}],
+'Automobile, garages et contrôle technique':[
+{name:'Mécanicien automobile',tasks:'Diagnostic, levage, entretien, réparation et essais',risks:'Levage, machines, huiles, batteries, gaz d’échappement, manutention, incendie'},
+{name:'Carrossier-peintre',tasks:'Dépose, redressage, ponçage, préparation et peinture',risks:'Solvants, poussières, bruit, incendie, manutention, vibrations'},
+{name:'Contrôleur technique automobile',tasks:'Accueil, déplacement des véhicules, contrôles sur fosse et équipements',risks:'Circulation, fosse, gaz d’échappement, chute, bruit, posture'}],
+'Coiffure, esthétique et bien-être':[
+{name:'Coiffeur',tasks:'Accueil, shampoing, coupe, coloration, coiffage et nettoyage',risks:'Produits chimiques, gestes répétitifs, station debout, coupures, glissades'},
+{name:'Esthéticien',tasks:'Accueil, soins, épilation, manucure, désinfection et nettoyage',risks:'Produits chimiques, risque biologique, postures, gestes répétitifs, charge mentale'}],
+'Médico-social, petite enfance et soins':[
+{name:'Aide-soignant',tasks:'Soins d’hygiène, transferts, accompagnement, entretien et transmissions',risks:'Manutention de personnes, biologique, chutes, RPS, horaires atypiques'},
+{name:'Infirmier',tasks:'Soins, préparation, administration, transmissions et déplacements',risks:'Biologique, AES, médicaments, manutention, RPS, horaires atypiques'},
+{name:'Auxiliaire de puériculture',tasks:'Accueil, soins, repas, activités, couchage et entretien',risks:'Manutention, biologique, bruit, postures basses, charge mentale'},
+{name:'Éducateur spécialisé',tasks:'Accompagnement, activités, déplacements et gestion de situations difficiles',risks:'RPS, agressions, routier, travail isolé, manutention occasionnelle'}],
+'Collectivités, administration et enseignement':[
+{name:'Agent administratif',tasks:'Accueil, écran, téléphone, classement et réunions',risks:'Écran, sédentarité, charge mentale, agressions externes'},
+{name:'Agent technique polyvalent',tasks:'Entretien des bâtiments, manutention, petits travaux et déplacements',risks:'Outillage, électricité, hauteur, manutention, produits chimiques'},
+{name:'ATSEM',tasks:'Accueil des enfants, activités, repas, couchage et entretien',risks:'Manutention, biologique, bruit, postures, charge mentale'},
+{name:'Enseignant-formateur',tasks:'Préparation, animation, correction, écran et déplacements',risks:'Charge vocale, RPS, écran, posture, agressions externes'}],
+'Sécurité, surveillance et secours':[
+{name:'Agent de sécurité',tasks:'Contrôle d’accès, rondes, surveillance et intervention',risks:'Agressions, travail isolé, horaires atypiques, station debout, incendie'},
+{name:'Agent de sécurité incendie',tasks:'Rondes, vérifications, levée de doute, alerte et évacuation',risks:'Incendie, fumées, agressions, travail isolé, horaires atypiques'}],
+'Artisanat, fabrication et réparation':[
+{name:'Serrurier-métallier',tasks:'Débit, perçage, soudage, assemblage et pose',risks:'Machines, bruit, fumées, manutention, coupures, hauteur'},
+{name:'Couturier-retoucheur',tasks:'Coupe, couture, repassage et accueil',risks:'Gestes répétitifs, posture assise, coupures, brûlures, charge visuelle'},
+{name:'Fleuriste',tasks:'Réception, préparation, composition, vente et livraison',risks:'Coupures, manutention, froid, humidité, produits, routier'}],
+'Informatique, télécommunications et audiovisuel':[
+{name:'Technicien informatique',tasks:'Installation, dépannage, câblage, écran et déplacements',risks:'Électricité, écran, manutention, posture, routier'},
+{name:'Technicien fibre optique',tasks:'Tirage, raccordement, mesures et intervention extérieure',risks:'Hauteur, routier, manutention, espace confiné, outillage'},
+{name:'Technicien audiovisuel',tasks:'Installation, câblage, réglage, manutention et exploitation',risks:'Électricité, hauteur, manutention, bruit, horaires atypiques'}],
+'Immobilier, nettoyage et maintenance des locaux':[
+{name:'Gardien d’immeuble',tasks:'Accueil, entretien, manutention, surveillance et petites interventions',risks:'Agressions, manutention, produits, travail isolé, biologique'},
+{name:'Agent de maintenance des bâtiments',tasks:'Diagnostic, petite maintenance, outillage et déplacements',risks:'Électricité, hauteur, outillage, amiante potentielle, manutention'}],
+'Industries agroalimentaires':[
+{name:'Opérateur de production alimentaire',tasks:'Approvisionnement, conduite, contrôle, nettoyage et conditionnement',risks:'Machines, froid ou chaleur, bruit, gestes répétitifs, produits de nettoyage'},
+{name:'Agent de conditionnement',tasks:'Tri, emballage, étiquetage, palettisation et nettoyage',risks:'Gestes répétitifs, manutention, machines, cadence, bruit'}],
+'Métiers funéraires':[
+{name:'Porteur funéraire',tasks:'Préparation, portage, conduite et cérémonies',risks:'Manutention, routier, biologique, charge émotionnelle, horaires'},
+{name:'Marbrier funéraire',tasks:'Terrassement, pose, manutention, découpe et entretien',risks:'Manutention, silice, machines, chutes, routier'}],
+'Autre secteur':[
+{name:'Métier ou poste à préciser',tasks:'Décrire les activités réelles, les tâches habituelles et occasionnelles',risks:'Identifier les risques à partir du DUERP, du travail réel et des équipements utilisés'}]
 };
 const STEPS=['Préparer le poste, relire le DUERP et désigner le tuteur','Identifier le profil, l’expérience, les tâches et les besoins de compréhension','Présenter les locaux, la circulation, l’alerte, les secours et l’évacuation','Former au poste réel par démonstration puis pratique accompagnée','Utiliser TutoPrév’ ou une observation guidée de la situation de travail','Vérifier par questions ouvertes, reformulation et mise en situation','Préciser les limites d’autonomie et les actions complémentaires','Tracer l’accueil et les points à reprendre','Réaliser un suivi à J+1, J+7 et J+30'];
 function show(id){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('on'));document.getElementById(id).classList.add('on');scrollTo(0,0)}
@@ -80,13 +141,34 @@ function updateResources(){const j=currentJob();resourceHints.innerHTML=j?`<div 
 function buildQuestion(){return `${goal.value}. Durée prévue : ${duration.value}. Situation : ${situation.value}. Modalités de compréhension : ${communication.value}. Tâches : ${tasks.value||'à confirmer'}. Équipements ou produits : ${equipment.value||'à confirmer'}. Précisions : ${prompt.value||'aucune'}. Distingue l’accueil initial, la formation pratique progressive, la vérification des acquis, les limites d’autonomie et le suivi à froid. Si la durée est insuffisante, propose un fractionnement.`}
 function payload(){return {question:buildQuestion(),context:{company:'Non renseignée',profile:profile.value,sector:sector.value,job:currentJob()?.name||'',app:'RESTEV 85 - Accueil Prévention',situation:situation.value,risks:risks.value.split(/[,;\n]/).map(x=>x.trim()).filter(Boolean)}}}
 function addMsg(text,cls){const d=document.createElement('div');d.className='msg '+cls;d.textContent=text;chat.appendChild(d);return d}
-async function askAI(){if(!sector.value||!currentJob())return alert('Choisissez un secteur et un métier.');const url=localStorage.getItem('restev_ai_endpoint')||ENDPOINT_DEFAULT;const p=payload();addMsg(p.question,'user');const wait=addMsg('PREV’IA prépare le parcours…','bot');try{const headers={'Content-Type':'application/json'};const t=localStorage.getItem('restev_ai_token');if(t)headers.Authorization='Bearer '+t;const r=await fetch(url,{method:'POST',headers,body:JSON.stringify(p)});const raw=await r.text();let d={};try{d=raw?JSON.parse(raw):{}}catch{}if(!r.ok)throw new Error(d.error||`Erreur HTTP ${r.status}`);wait.textContent=d.answer||'Réponse reçue sans contenu.';const a=document.createElement('div');a.className='actions';a.innerHTML='<button class="secondary" onclick="window.print()">Imprimer / Enregistrer en PDF</button><button class="secondary" onclick="copyAnswer(this)">Copier la réponse</button>';chat.appendChild(a)}catch(e){wait.textContent='Connexion PREV’IA impossible : '+e.message+'\nVérifiez la fonction Supabase ou utilisez la trame locale.'}}
+async function askAI(){if(!sector.value||!currentJob())return alert('Choisissez un secteur et un métier.');const url=localStorage.getItem('restev_ai_endpoint')||ENDPOINT_DEFAULT;const p=payload();addMsg(p.question,'user');const wait=addMsg('PREV’IA prépare le parcours…','bot');try{const headers={'Content-Type':'application/json'};const t=localStorage.getItem('restev_ai_token');if(t){headers.Authorization='Bearer '+t;headers.apikey=t;}const r=await fetch(url,{method:'POST',headers,body:JSON.stringify(p)});const raw=await r.text();let d={};try{d=raw?JSON.parse(raw):{}}catch{}if(!r.ok)throw new Error(d.error||`Erreur HTTP ${r.status}`);wait.textContent=d.answer||'Réponse reçue sans contenu.';const a=document.createElement('div');a.className='actions';a.innerHTML='<button class="secondary" onclick="window.print()">Imprimer / Enregistrer en PDF</button><button class="secondary" onclick="copyAnswer(this)">Copier la réponse</button>';chat.appendChild(a)}catch(e){wait.textContent='Connexion PREV’IA impossible : '+e.message+'\nVérifiez la fonction Supabase ou utilisez la trame locale.'}}
 function generateLocal(){const j=currentJob();if(!j)return alert('Choisissez un métier.');addMsg(`TRAME LOCALE – ${profile.value}\nSecteur : ${sector.value}\nPoste : ${j.name}\nRisques à confirmer avec le DUERP : ${risks.value}\n\n1. Préparer le poste et désigner le tuteur.\n2. Présenter les locaux, flux, alerte, secours et évacuation réels.\n3. Présenter les tâches, interdictions et limites d’intervention.\n4. Montrer les protections collectives et vérifier les EPI nécessaires.\n5. Réaliser une démonstration pratique, puis faire pratiquer sous accompagnement.\n6. Faire reformuler les consignes et la conduite à tenir en cas d’anomalie.\n7. Noter : Acquis / En cours / À reprendre / Non évalué.\n8. L’employeur ou la personne désignée décide des limites d’autonomie.\n9. Programmer un suivi à J+1, J+7 et J+30.`,`bot`)}
 function resetWizard(){tasks.value='';equipment.value='';risks.value='';prompt.value='';chat.innerHTML='';sector.value='';populateJobs()}
 function saveSettings(){localStorage.setItem('restev_ai_endpoint',endpoint.value.trim()||ENDPOINT_DEFAULT);localStorage.setItem('restev_ai_token',token.value);connectionStatus.textContent='Configuration enregistrée sur cet appareil.'}
-async function testConnection(){connectionStatus.textContent='Test en cours…';try{const headers={'Content-Type':'application/json'};if(token.value)headers.Authorization='Bearer '+token.value;const r=await fetch(endpoint.value.trim()||ENDPOINT_DEFAULT,{method:'POST',headers,body:JSON.stringify({question:'Réponds uniquement : Connexion PREV’IA opérationnelle.',context:{app:'RESTEV 85',profile:'Test technique',sector:'Test',job:'Test',risks:[]}})});const d=await r.json();connectionStatus.textContent=r.ok?(d.answer||'Connexion opérationnelle.'):`Erreur ${r.status} : ${d.error||'réponse inconnue'}`}catch(e){connectionStatus.textContent='Échec : '+e.message}}
+async function testConnection(){connectionStatus.textContent='Test en cours…';try{const headers={'Content-Type':'application/json'};if(token.value){headers.Authorization='Bearer '+token.value;headers.apikey=token.value;}const r=await fetch(endpoint.value.trim()||ENDPOINT_DEFAULT,{method:'POST',headers,body:JSON.stringify({question:'Réponds uniquement : Connexion PREV’IA opérationnelle.',context:{app:'RESTEV 85',profile:'Test technique',sector:'Test',job:'Test',risks:[]}})});const d=await r.json();connectionStatus.textContent=r.ok?(d.answer||'Connexion opérationnelle.'):`Erreur ${r.status} : ${d.error||'réponse inconnue'}`}catch(e){connectionStatus.textContent='Échec : '+e.message}}
 function copyAnswer(btn){const msg=btn.closest('.actions').previousElementSibling;navigator.clipboard.writeText(msg.textContent).then(()=>btn.textContent='Copié')}
 function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+function passportEligibility(){ppResult.textContent='Complétez les critères puis cliquez sur Analyser l’éligibilité.'}
+function analyzePassport(){
+ const cat=ppCategory.value, proof=ppProof.value, transfer=ppTransfer.value;
+ let status='À vérifier dans le simulateur officiel', detail='La décision finale dépend des critères officiels et de la situation réelle.';
+ if(cat==='accueil'||cat==='information'){status='Traçabilité interne recommandée';detail='Un simple accueil sécurité, une information ou une sensibilisation sans justificatif ne doit pas être préparé comme une déclaration automatique au Passeport.'}
+ else if((cat==='interne'||cat==='organisme')&&proof==='oui'&&transfer==='oui'){status='Potentiellement déclarable';detail='Les critères principaux semblent réunis. Vérifiez l’éligibilité et les délais dans le simulateur officiel avant déclaration.'}
+ else if(proof==='non'){status='Probablement non déclarable';detail='Aucune attestation, aucun certificat ou diplôme n’est délivré.'}
+ else if(transfer==='non'){status='Probablement non déclarable';detail='Les compétences ne semblent pas transférables à un poste similaire.'}
+ ppResult.innerHTML='<b>'+escapeHtml(status)+'</b><br>'+escapeHtml(detail);
+}
+function csvCell(v){return '"'+String(v??'').replace(/"/g,'""')+'"'}
+function exportPassportCsv(){
+ analyzePassport();
+ const people=ppPeople.value.split(/\n/).map(x=>x.trim()).filter(Boolean);if(!people.length)return alert('Ajoutez au moins un participant.');
+ const head=['Participant','Formation','Catégorie','Date','Durée heures','Justificatif','Compétences transférables','Échéance','Référence','Statut de préparation'];
+ const rows=people.map(person=>[person,ppTitle.value,ppCategory.options[ppCategory.selectedIndex]?.text||'',ppDate.value,ppDuration.value,ppProof.value,ppTransfer.value,ppExpiry.value,ppReference.value,ppResult.innerText.replace(/\n/g,' - ')]);
+ const csv='﻿'+[head,...rows].map(r=>r.map(csvCell).join(';')).join('\r\n');
+ const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='preparation_passeport_prevention_'+new Date().toISOString().slice(0,10)+'.csv';a.click();URL.revokeObjectURL(a.href);
+}
+
 init();
 </script>
 </body></html>
