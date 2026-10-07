@@ -1,1151 +1,1268 @@
 <!DOCTYPE html>
-<html lang="fr" class="h-full bg-slate-950">
+<html lang="fr" class="h-full w-full overflow-hidden select-none">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>RESTEV 85 - Chasse aux Risques VR & Mobile</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        restev: {
-                            50: '#f0fdfa',
-                            100: '#ccfbf1',
-                            500: '#0d9488',
-                            600: '#0f766e',
-                            700: '#115e59',
-                            800: '#134e4a',
-                            900: '#042f2e',
-                            blue: '#1e3a8a'
-                        }
-                    }
-                }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>RESTEV 85 - Chasse aux Risques VR & Mobile</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Three.js v0.128.0 UMD CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+
+  <!-- OrbitControls UMD CDN (Matching v0.128.0) -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <!-- Tailwind Configuration for RESTEV 85 Palette -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            restev: {
+              dark: '#0f172a',
+              card: '#1e293b',
+              border: '#334155',
+              teal: '#0d9488',
+              emerald: '#059669',
+              accent: '#38bdf8',
+              warning: '#f59e0b',
+              danger: '#ef4444'
             }
+          }
         }
-    </script>
+      }
+    }
+  </script>
 
-    <!-- FontAwesome & Google Fonts -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #1e293b;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      touch-action: none;
+    }
 
-    <!-- Three.js, Controls and WebXR libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/webxr/VRButton.js"></script>
+    #webgl-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      display: block;
+    }
 
-    <style>
-        /* CRITICAL FOR MOBILE TOUCH NAVIGATION */
-        html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            position: fixed;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: none;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #030712;
-        }
+    /* UI Overlay positioning above 3D Canvas */
+    .ui-layer {
+      position: fixed;
+      z-index: 10;
+      pointer-events: none;
+    }
 
-        /* Essential overlay pointer-event decoupling */
-        .ui-overlay-container {
-            pointer-events: none !important;
-        }
-        .ui-interactive {
-            pointer-events: auto !important;
-        }
+    .ui-layer * {
+      pointer-events: auto;
+    }
 
-        canvas {
-            width: 100% !important;
-            height: 100% !important;
-            display: block;
-            touch-action: none !important;
-            outline: none;
-        }
+    /* Glassmorphism panel styling */
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
 
-        .glass-panel {
-            background: rgba(15, 23, 42, 0.88);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-        }
+    /* Virtual Joystick Touch Base */
+    #joystick-zone {
+      position: fixed;
+      bottom: 24px;
+      left: 24px;
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      background: rgba(15, 23, 42, 0.6);
+      border: 2px solid rgba(13, 148, 136, 0.5);
+      touch-action: none;
+      z-index: 15;
+    }
 
-        .glass-card {
-            background: rgba(30, 41, 59, 0.75);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
+    #joystick-knob {
+      position: absolute;
+      top: 35px;
+      left: 35px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #0d9488;
+      box-shadow: 0 0 12px rgba(13, 148, 136, 0.8);
+      pointer-events: none;
+    }
 
-        /* Pulsing Hotspots */
-        @keyframes pulse-ring {
-            0% { transform: translate(-50%, -50%) scale(0.9); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.8); }
-            70% { transform: translate(-50%, -50%) scale(1.1); box-shadow: 0 0 0 14px rgba(245, 158, 11, 0); }
-            100% { transform: translate(-50%, -50%) scale(0.9); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
-        }
+    /* Keyframe pulsing for 3D warning badges */
+    @keyframes pulse-glow {
+      0% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(1); opacity: 0.9; }
+    }
 
-        .hotspot-btn {
-            animation: pulse-ring 2s infinite;
-        }
+    .animate-pulse-glow {
+      animation: pulse-glow 1.8s infinite ease-in-out;
+    }
 
-        .hotspot-fixed {
-            animation: none;
-            background: #10b981 !important;
-            border-color: #ffffff !important;
-        }
+    /* Custom scrollbar for modals */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
 
-        /* Touch D-Pad styling */
-        .dpad-btn {
-            background: rgba(30, 41, 59, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 12px;
-            font-size: 14px;
-            user-select: none;
-            -webkit-user-select: none;
-            transition: background 0.1s;
-        }
-        .dpad-btn:active, .dpad-btn.active {
-            background: rgba(13, 148, 136, 0.9);
-            border-color: #2dd4bf;
-            transform: scale(0.95);
-        }
-
-        /* Printable certificate formatting */
-        @media print {
-            body * {
-                visibility: hidden;
-            }
-            #certificate-print-area, #certificate-print-area * {
-                visibility: visible;
-            }
-            #certificate-print-area {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                background: white !important;
-                color: black !important;
-            }
-        }
-    </style>
+    @media print {
+      body * { visibility: hidden; }
+      #certificate-modal, #certificate-modal * { visibility: visible; }
+      #certificate-modal { position: absolute; left: 0; top: 0; width: 100%; background: white; color: black; }
+    }
+  </style>
 </head>
-<body class="h-full text-slate-100 flex flex-col justify-between">
+<body class="w-full h-full text-slate-100 select-none">
 
-    <div id="canvas-container" class="w-full h-full absolute inset-0 z-0"></div>
+  <!-- WebGL Canvas Container -->
+  <canvas id="webgl-canvas"></canvas>
 
-    <div id="hotspot-container" class="fixed inset-0 z-10 ui-overlay-container">
-        <!-- Hotspots injected dynamically by JS -->
+  <!-- On-Screen JavaScript Error Logger overlay (Guarantees user is never left with a silent black screen) -->
+  <div id="error-logger" class="hidden fixed top-0 left-0 right-0 z-50 bg-red-900/95 text-red-100 p-4 text-xs font-mono border-b border-red-500 max-h-48 overflow-y-auto pointer-events-auto">
+    <div class="flex items-center justify-between mb-1">
+      <span class="font-bold text-sm text-red-200">⚠️ Rapport de Diagnostic Graphique / JS</span>
+      <button onclick="document.getElementById('error-logger').classList.add('hidden')" class="px-2 py-0.5 bg-red-800 hover:bg-red-700 rounded text-xs text-white">Fermer</button>
+    </div>
+    <div id="error-list" class="space-y-1"></div>
+  </div>
+
+  <!-- Top Navigation Header Overlay -->
+  <header class="ui-layer top-0 left-0 right-0 p-3 flex flex-wrap items-center justify-between gap-3">
+    <!-- Brand Logo & Title -->
+    <div class="glass-panel px-4 py-2.5 rounded-xl flex items-center space-x-3 shadow-lg">
+      <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center font-black text-white text-lg shadow-md">
+        R85
+      </div>
+      <div>
+        <h1 class="text-sm font-bold text-white leading-tight tracking-wide">RESTEV 85</h1>
+        <p class="text-xs text-teal-400 font-medium">Chasse aux Risques 3D / VR</p>
+      </div>
     </div>
 
-    <header class="fixed top-0 left-0 right-0 z-20 p-2 sm:p-4 ui-overlay-container">
-        <div class="max-w-7xl mx-auto flex items-center justify-between gap-2">
-            
-            <!-- RESTEV 85 Logo Badge -->
-            <div class="ui-interactive flex items-center gap-2 glass-panel px-3 py-2 rounded-2xl shadow-xl">
-                <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-restev-600 to-emerald-400 flex items-center justify-center text-slate-950 font-black text-sm shadow-md">
-                    85
-                </div>
-                <div>
-                    <h1 class="text-xs sm:text-sm font-extrabold text-white leading-tight">
-                        RESTEV <span class="text-restev-400 font-bold hidden sm:inline">| Santé au Travail 85</span>
-                    </h1>
-                    <p class="text-[10px] text-slate-400 font-medium">Prévention 3D & VR Atelier</p>
-                </div>
-            </div>
-
-            <!-- Score & Timer HUD -->
-            <div class="ui-interactive flex items-center gap-3 glass-panel px-3.5 py-2 rounded-2xl shadow-xl">
-                <div class="flex items-center gap-1.5 border-r border-slate-700/80 pr-3">
-                    <i class="fa-solid fa-triangle-exclamation text-amber-400 text-xs"></i>
-                    <span id="score-text" class="text-xs sm:text-sm font-black text-white">0 / 5</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                    <i class="fa-regular fa-clock text-restev-400 text-xs"></i>
-                    <span id="timer-text" class="text-xs sm:text-sm font-black font-mono text-restev-400">00:00</span>
-                </div>
-            </div>
-
-            <!-- Utility Quick Actions -->
-            <div class="ui-interactive flex items-center gap-1.5">
-                <button onclick="toggleHistoryDrawer()" class="glass-panel hover:bg-slate-800 text-slate-200 w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center transition active:scale-90 shadow-md" title="Liste des risques">
-                    <i class="fa-solid fa-list-check text-restev-400 text-xs sm:text-sm"></i>
-                </button>
-                <button id="btn-sound" onclick="toggleAudio()" class="glass-panel hover:bg-slate-800 text-slate-200 w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center transition active:scale-90 shadow-md">
-                    <i id="sound-icon" class="fa-solid fa-volume-high text-restev-400 text-xs sm:text-sm"></i>
-                </button>
-            </div>
-
+    <!-- Progress Counter Bar -->
+    <div class="glass-panel px-4 py-2 rounded-xl flex items-center space-x-4 shadow-lg min-w-[220px]">
+      <div class="flex-1">
+        <div class="flex justify-between items-center text-xs mb-1 font-semibold">
+          <span class="text-slate-300">Risques Traités</span>
+          <span id="score-text" class="text-teal-400 font-bold">0 / 5</span>
         </div>
-    </header>
-
-    <!-- Mobile On-Screen D-Pad / Navigation (Bottom Left) -->
-    <div class="fixed bottom-16 left-3 z-20 ui-overlay-container flex flex-col items-center gap-1">
-        <div class="text-[9px] font-black uppercase text-slate-400 bg-slate-950/80 px-2 py-0.5 rounded-full border border-slate-800 ui-interactive">
-            Déplacement
+        <div class="w-full bg-slate-700/80 rounded-full h-2.5 overflow-hidden border border-slate-600">
+          <div id="score-bar" class="bg-gradient-to-r from-teal-500 to-emerald-400 h-2.5 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
         </div>
-        <div class="grid grid-cols-3 gap-1 w-32 h-32 p-1.5 glass-panel rounded-2xl shadow-2xl ui-interactive">
-            <div></div>
-            <button id="dpad-up" class="dpad-btn" title="Avancer"><i class="fa-solid fa-chevron-up"></i></button>
-            <div></div>
-            
-            <button id="dpad-left" class="dpad-btn" title="Pivoter Gauche"><i class="fa-solid fa-rotate-left"></i></button>
-            <button id="dpad-reset" class="dpad-btn bg-slate-800/90 text-amber-400" title="Centrer Vue"><i class="fa-solid fa-crosshairs"></i></button>
-            <button id="dpad-right" class="dpad-btn" title="Pivoter Droite"><i class="fa-solid fa-rotate-right"></i></button>
-            
-            <div></div>
-            <button id="dpad-down" class="dpad-btn" title="Reculer"><i class="fa-solid fa-chevron-down"></i></button>
-            <div></div>
-        </div>
+      </div>
     </div>
 
-    <!-- Quick Zone Teleport Navigation Bar (Bottom Center) -->
-    <nav class="fixed bottom-3 left-0 right-0 z-20 ui-overlay-container px-3">
-        <div class="max-w-md mx-auto ui-interactive glass-panel p-1.5 rounded-2xl flex items-center justify-between gap-1 shadow-2xl text-[10px] sm:text-[11px]">
-            <button onclick="teleportCamera('overview')" class="flex-1 py-2 px-1 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 font-semibold flex flex-col items-center gap-0.5 active:scale-95 transition">
-                <i class="fa-solid fa-eye text-restev-400"></i> Vue Globale
-            </button>
-            <button onclick="teleportCamera('workbench')" class="flex-1 py-2 px-1 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 font-semibold flex flex-col items-center gap-0.5 active:scale-95 transition">
-                <i class="fa-solid fa-vial-virus text-amber-400"></i> Solvant
-            </button>
-            <button onclick="teleportCamera('gas')" class="flex-1 py-2 px-1 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 font-semibold flex flex-col items-center gap-0.5 active:scale-95 transition">
-                <i class="fa-solid fa-fire-flame-simple text-rose-400"></i> Gaz
-            </button>
-            <button onclick="teleportCamera('extinguisher')" class="flex-1 py-2 px-1 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 font-semibold flex flex-col items-center gap-0.5 active:scale-95 transition">
-                <i class="fa-solid fa-fire-extinguisher text-red-400"></i> Extincteur
-            </button>
-            <button onclick="teleportCamera('oil')" class="flex-1 py-2 px-1 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 font-semibold flex flex-col items-center gap-0.5 active:scale-95 transition">
-                <i class="fa-solid fa-droplet text-yellow-400"></i> Sol Glissant
-            </button>
-        </div>
-    </nav>
+    <!-- Quick Action Buttons (VR Mode, Sound & Reset) -->
+    <div class="flex items-center space-x-2">
+      <button id="btn-vr" class="glass-panel px-3 py-2 rounded-xl text-xs font-semibold text-slate-200 hover:text-white hover:bg-teal-600/40 border-teal-500/30 transition flex items-center space-x-1.5 shadow">
+        <svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+        <span>Mode VR</span>
+      </button>
+      
+      <button id="btn-audio" onclick="toggleAudio()" class="glass-panel p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-700/50 transition shadow">
+        <svg id="icon-audio" class="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+      </button>
 
-    <!-- Modal: Welcome / Instructions -->
-    <div id="modal-welcome" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md ui-interactive">
-        <div class="glass-panel max-w-lg w-full p-5 sm:p-7 rounded-3xl shadow-2xl border border-slate-700/80 relative text-center sm:text-left">
-            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-restev-600 to-emerald-400 text-slate-950 flex items-center justify-center text-2xl font-black shadow-lg mx-auto sm:mx-0 mb-3">
-                <i class="fa-solid fa-shield-halved"></i>
-            </div>
-            
-            <span class="text-[10px] font-extrabold uppercase tracking-widest text-restev-400">RESTEV 85 - Santé au Travail</span>
-            <h2 class="text-xl sm:text-2xl font-black text-white mt-0.5 mb-2">Chasse aux Risques 3D & VR</h2>
-            
-            <p class="text-slate-300 text-xs sm:text-sm leading-relaxed mb-4">
-                Explorez l'atelier industriel pour détecter et corriger <strong class="text-restev-400">5 situations de risques professionnels</strong> majeurs.
-            </p>
-
-            <div class="space-y-2 mb-5 text-left text-xs text-slate-300">
-                <div class="glass-card p-2.5 rounded-xl flex items-center gap-3">
-                    <i class="fa-solid fa-hand-pointer text-restev-400 text-base"></i>
-                    <span><strong>1 doigt sur l'écran :</strong> Faites glisser dans le vide pour orienter le regard 360°.</span>
-                </div>
-                <div class="glass-card p-2.5 rounded-xl flex items-center gap-3">
-                    <i class="fa-solid fa-gamepad text-amber-400 text-base"></i>
-                    <span><strong>D-Pad tactile (en bas à gauche) :</strong> Avancez et pivotez facilement dans l'atelier.</span>
-                </div>
-                <div class="glass-card p-2.5 rounded-xl flex items-center gap-3">
-                    <i class="fa-solid fa-bullseye text-emerald-400 text-base"></i>
-                    <span><strong>Anomalies numérotées (1 à 5) :</strong> Cliquez sur une pastille lumineuse pour inspecter.</span>
-                </div>
-            </div>
-
-            <div class="flex flex-col sm:flex-row gap-2">
-                <button onclick="startSimulation()" class="flex-1 py-3.5 px-5 rounded-2xl bg-gradient-to-r from-restev-600 to-emerald-400 hover:from-restev-500 hover:to-emerald-300 text-slate-950 font-black text-sm tracking-wide shadow-xl active:scale-95 transition flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-play"></i> Démarrer la Chasse
-                </button>
-            </div>
-        </div>
+      <button id="btn-reset" onclick="resetSimulation()" class="glass-panel p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-700/50 transition shadow" title="Réinitialiser l'atelier">
+        <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+      </button>
     </div>
+  </header>
 
-    <!-- Modal: Hazard Analysis & Correction -->
-    <div id="modal-hazard" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-md hidden ui-interactive">
-        <div class="glass-panel max-w-xl w-full p-5 rounded-3xl shadow-2xl border border-slate-700/80 max-h-[85vh] flex flex-col justify-between">
-            
-            <div class="overflow-y-auto space-y-3 pr-1">
-                <div class="flex items-center justify-between">
-                    <span id="hazard-category-badge" class="px-3 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                        Anomalie Décelée
-                    </span>
-                    <span id="hazard-step-text" class="text-xs font-bold text-slate-400">1 / 5</span>
-                </div>
-
-                <h3 id="hazard-title" class="text-lg sm:text-xl font-black text-white leading-tight">Titre du Risque</h3>
-                
-                <!-- Description -->
-                <div class="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 text-xs">
-                    <h4 class="font-extrabold text-amber-400 tracking-wider mb-1 flex items-center gap-1.5">
-                        <i class="fa-solid fa-eye"></i> Constat du Technicien Prévention
-                    </h4>
-                    <p id="hazard-description" class="text-slate-200 leading-relaxed">Description...</p>
-                </div>
-
-                <!-- Regulatory Framework -->
-                <div class="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 text-xs">
-                    <h4 class="font-extrabold text-sky-400 tracking-wider mb-1 flex items-center gap-1.5">
-                        <i class="fa-solid fa-scale-balanced"></i> Règlements Code du Travail & INRS
-                    </h4>
-                    <p id="hazard-regulation" class="text-slate-300 leading-relaxed">Référence réglementaire...</p>
-                </div>
-
-                <!-- Solution & Corrective action -->
-                <div class="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 text-xs">
-                    <h4 class="font-extrabold text-emerald-400 tracking-wider mb-1 flex items-center gap-1.5">
-                        <i class="fa-solid fa-shield-check"></i> Action Préventive RESTEV 85
-                    </h4>
-                    <p id="hazard-prevention" class="text-slate-300 leading-relaxed">Correction...</p>
-                </div>
-            </div>
-
-            <!-- Footer Action Button -->
-            <div class="pt-4 mt-3 border-t border-slate-800 flex items-center justify-between gap-3">
-                <button onclick="closeHazardModal()" class="py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition">
-                    Fermer
-                </button>
-                <button id="btn-fix-hazard" onclick="fixHazardAction()" class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-restev-600 to-emerald-400 hover:from-restev-500 hover:to-emerald-300 text-slate-950 font-black text-xs tracking-wide shadow-lg active:scale-95 transition flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-screwdriver-wrench"></i> Mettre en Sécurité
-                </button>
-            </div>
-        </div>
+  <!-- Bottom Camera Teleport Bar -->
+  <div class="ui-layer bottom-4 left-0 right-0 flex justify-center px-4">
+    <div class="glass-panel p-1.5 rounded-2xl flex items-center space-x-1.5 overflow-x-auto max-w-full shadow-2xl">
+      <span class="text-[10px] uppercase font-bold text-slate-400 px-2 tracking-wider hidden sm:inline">Caméras :</span>
+      <button onclick="teleportTo('global')" class="px-3 py-1.5 rounded-xl text-xs font-medium text-slate-200 hover:bg-teal-600/30 hover:text-teal-300 transition whitespace-nowrap bg-slate-800/60">🌐 Vue Globale</button>
+      <button onclick="teleportTo('solvant')" class="px-3 py-1.5 rounded-xl text-xs font-medium text-slate-200 hover:bg-teal-600/30 hover:text-teal-300 transition whitespace-nowrap bg-slate-800/60">🧪 Solvants</button>
+      <button onclick="teleportTo('cable')" class="px-3 py-1.5 rounded-xl text-xs font-medium text-slate-200 hover:bg-teal-600/30 hover:text-teal-300 transition whitespace-nowrap bg-slate-800/60">⚡ Câble Passage</button>
+      <button onclick="teleportTo('gaz')" class="px-3 py-1.5 rounded-xl text-xs font-medium text-slate-200 hover:bg-teal-600/30 hover:text-teal-300 transition whitespace-nowrap bg-slate-800/60">🔥 Bouteilles Gaz</button>
+      <button onclick="teleportTo('extincteur')" class="px-3 py-1.5 rounded-xl text-xs font-medium text-slate-200 hover:bg-teal-600/30 hover:text-teal-300 transition whitespace-nowrap bg-slate-800/60">🧯 Extincteur</button>
+      <button onclick="teleportTo('huile')" class="px-3 py-1.5 rounded-xl text-xs font-medium text-slate-200 hover:bg-teal-600/30 hover:text-teal-300 transition whitespace-nowrap bg-slate-800/60">⚠️ Flaque d'Huile</button>
     </div>
+  </div>
 
-    <!-- Drawer: Hazard History List -->
-    <div id="drawer-history" class="fixed top-0 right-0 bottom-0 w-full sm:w-80 z-40 glass-panel border-l border-slate-700/80 transform translate-x-full transition-transform duration-300 p-5 flex flex-col justify-between ui-interactive">
-        <div>
-            <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
-                <h3 class="text-base font-black text-white flex items-center gap-2">
-                    <i class="fa-solid fa-clipboard-check text-restev-400"></i> Bilan Prévention RESTEV
-                </h3>
-                <button onclick="toggleHistoryDrawer()" class="text-slate-400 hover:text-white p-2">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
+  <!-- Touch Joystick Element for Mobile Navigation -->
+  <div id="joystick-zone" class="sm:hidden">
+    <div id="joystick-knob"></div>
+  </div>
 
-            <div id="history-list" class="space-y-2.5 max-h-[calc(100vh-180px)] overflow-y-auto pr-1">
-                <!-- Dynamically populated -->
-            </div>
+  <!-- Interactive Hazard Resolution Modal -->
+  <div id="risk-modal" class="hidden fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel w-full max-w-lg rounded-2xl p-6 shadow-2xl border border-slate-700 animate-in fade-in zoom-in duration-200">
+      <!-- Modal Header -->
+      <div class="flex items-start justify-between border-b border-slate-700/80 pb-4 mb-4">
+        <div class="flex items-center space-x-3">
+          <div id="modal-badge-icon" class="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-2xl">
+            ⚠️
+          </div>
+          <div>
+            <span id="modal-category" class="text-[11px] font-bold uppercase tracking-wider text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/30">Catégorie Risque</span>
+            <h2 id="modal-title" class="text-lg font-bold text-white mt-1">Titre du Risque</h2>
+          </div>
         </div>
-
-        <button onclick="toggleHistoryDrawer()" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs uppercase tracking-wider">
-            Fermer
+        <button onclick="closeRiskModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="space-y-4 text-sm text-slate-300 max-h-[60vh] overflow-y-auto pr-1">
+        <div>
+          <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Analyse de la situation :</h3>
+          <p id="modal-description" class="bg-slate-900/60 p-3 rounded-xl border border-slate-800 leading-relaxed text-slate-200">
+            Description de l'anomalie détectée dans l'atelier...
+          </p>
+        </div>
+
+        <div>
+          <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Référence Réglementaire & INRS :</h3>
+          <div id="modal-regulation" class="bg-teal-950/30 border border-teal-500/30 p-3 rounded-xl text-teal-200 text-xs leading-relaxed flex items-start space-x-2">
+            <span class="text-base">📜</span>
+            <span id="modal-reg-text">Article du Code du travail et recommandation INRS.</span>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Action Corrective à mener :</h3>
+          <p id="modal-action" class="bg-emerald-950/30 border border-emerald-500/30 p-3 rounded-xl text-emerald-200 text-xs leading-relaxed">
+            Description de l'action corrective.
+          </p>
+        </div>
+      </div>
+
+      <!-- Modal Footer Button -->
+      <div class="mt-6 pt-4 border-t border-slate-700/80 flex items-center justify-end space-x-3">
+        <button onclick="closeRiskModal()" class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 transition">
+          Annuler
+        </button>
+        <button id="btn-secure-risk" onclick="resolveCurrentRisk()" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 shadow-lg shadow-teal-900/40 transition flex items-center space-x-2">
+          <span>🛠️ Sécuriser la situation</span>
+        </button>
+      </div>
     </div>
+  </div>
 
-    <!-- Modal: Victory & Certificate -->
-    <div id="modal-victory" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-lg hidden ui-interactive">
-        <div class="glass-panel max-w-lg w-full p-6 rounded-3xl shadow-2xl border border-emerald-500/40 text-center relative max-h-[90vh] overflow-y-auto">
-            
-            <div class="w-14 h-14 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl mx-auto mb-2 border border-emerald-500/40">
-                <i class="fa-solid fa-award"></i>
-            </div>
-
-            <span class="text-[10px] font-black uppercase tracking-widest text-emerald-400">Atelier 100% Sécurisé</span>
-            <h2 class="text-xl sm:text-2xl font-black text-white mt-0.5 mb-1">Attestation RESTEV Validée</h2>
-            <p class="text-slate-300 text-xs mb-4">Toutes les anomalies professionnelles ont été décelées et corrigées.</p>
-
-            <div class="grid grid-cols-2 gap-2.5 mb-4">
-                <div class="glass-card p-3 rounded-xl">
-                    <span class="text-[10px] text-slate-400 font-bold block uppercase">Maturité Prévention</span>
-                    <span class="text-xl font-black text-emerald-400">100 % (5/5)</span>
-                </div>
-                <div class="glass-card p-3 rounded-xl">
-                    <span class="text-[10px] text-slate-400 font-bold block uppercase">Temps Écoule</span>
-                    <span id="final-time" class="text-xl font-black text-restev-400 font-mono">00:00</span>
-                </div>
-            </div>
-
-            <!-- Name Input for Certificate -->
-            <div class="mb-5 text-left glass-card p-3 rounded-xl">
-                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                    Nom du Salarié / Entreprise Adhérente RESTEV :
-                </label>
-                <input id="participant-name" type="text" placeholder="Ex: Jean Dupont - Technicien Achat" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-xs focus:outline-none focus:border-restev-500">
-            </div>
-
-            <div class="flex flex-col sm:flex-row gap-2">
-                <button onclick="printCertificate()" class="flex-1 py-3 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-xs tracking-wide transition flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-print"></i> Télécharger Attestation
-                </button>
-                <button onclick="resetSimulation()" class="flex-1 py-3 px-3 rounded-xl bg-gradient-to-r from-restev-600 to-emerald-400 hover:from-restev-500 hover:to-emerald-300 text-slate-950 font-extrabold text-xs tracking-wide transition flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-rotate-right"></i> Recommencer
-                </button>
-            </div>
+  <!-- Certificate / Attestation Modal (Shown upon 5/5 resolution) -->
+  <div id="certificate-modal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-lg flex items-center justify-center p-4">
+    <div class="glass-panel w-full max-w-2xl rounded-3xl p-8 shadow-2xl border border-teal-500/30 text-center relative overflow-hidden">
+      <!-- Decorative background accent -->
+      <div class="absolute -top-24 -right-24 w-60 h-60 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      
+      <!-- Attestation Header -->
+      <div class="flex items-center justify-center space-x-3 mb-2">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center font-black text-white text-xl shadow-lg">
+          R85
         </div>
+        <div class="text-left">
+          <h2 class="text-xl font-extrabold text-white tracking-wide">RESTEV 85</h2>
+          <p class="text-xs text-teal-400 font-semibold uppercase tracking-wider">Attestation de Sensibilisation Sécurité</p>
+        </div>
+      </div>
+
+      <div class="my-6 py-4 px-6 bg-slate-900/80 rounded-2xl border border-slate-800">
+        <div class="text-3xl mb-2">🏆</div>
+        <h3 class="text-lg font-bold text-emerald-400">Chasse aux Risques Complétée avec Succès !</h3>
+        <p class="text-xs text-slate-300 mt-1 max-w-md mx-auto">
+          Félicitations. Vous avez identifié et sécurisé l'ensemble des 5 situations d'anomalies majeures au sein de l'atelier RESTEV 85.
+        </p>
+
+        <!-- User Name Input for Certificate -->
+        <div class="mt-4 max-w-xs mx-auto text-left">
+          <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nom & Prénom du Stagiaire / Agent :</label>
+          <input type="text" id="user-fullname" placeholder="Ex: Jean Dupont" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-teal-500">
+        </div>
+
+        <!-- Audit Summary List -->
+        <div class="mt-4 pt-3 border-t border-slate-800 text-left text-xs space-y-1 text-slate-300">
+          <div class="flex justify-between"><span>✓ Solvants chimiques :</span> <span class="text-emerald-400 font-semibold">Bac de rétention installé</span></div>
+          <div class="flex justify-between"><span>✓ Risque trébuchement :</span> <span class="text-emerald-400 font-semibold">Passe-câble posé</span></div>
+          <div class="flex justify-between"><span>✓ Bouteilles de gaz :</span> <span class="text-emerald-400 font-semibold">Chaîne d'arrimage fixée</span></div>
+          <div class="flex justify-between"><span>✓ Protection incendie :</span> <span class="text-emerald-400 font-semibold">Accès extincteur dégagé</span></div>
+          <div class="flex justify-between"><span>✓ Glissade au sol :</span> <span class="text-emerald-400 font-semibold">Huile nettoyée & balisée</span></div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-wrap items-center justify-center gap-3">
+        <button onclick="window.print()" class="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-200 bg-slate-800 hover:bg-slate-700 transition flex items-center space-x-2">
+          <span>🛈 Imprimer l'Attestation</span>
+        </button>
+        <button onclick="resetSimulation()" class="px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 shadow-lg shadow-teal-900/40 transition">
+          🔄 Recommencer l'Atelier
+        </button>
+      </div>
     </div>
+  </div>
 
-    <!-- Printable Certificate Area -->
-    <div id="certificate-print-area" class="hidden p-8 font-sans max-w-2xl mx-auto border-4 border-teal-800 my-8">
-        <div class="text-center border-b-2 border-slate-300 pb-4 mb-4">
-            <h1 class="text-2xl font-black text-teal-800 uppercase">RESTEV 85 - Santé au Travail</h1>
-            <p class="text-xs text-slate-600">Service de Prévention et de Santé au Travail Interentreprises en Vendée</p>
-        </div>
-        <div class="text-center my-6">
-            <h2 class="text-xl font-bold uppercase tracking-wider text-slate-800 mb-1">Attestation de Sensibilisation Prévention</h2>
-            <p class="text-xs text-slate-600">Module Interactif 3D & Réalité Virtuelle - Chasse aux Risques</p>
-        </div>
-        <div class="my-6 space-y-3 text-xs text-slate-800">
-            <p><strong>Salarié / Adhérent :</strong> <span id="cert-name-display">__________________________</span></p>
-            <p><strong>Module de Sensibilisation :</strong> Risques chimiques, électriques, incendie, chute et pression.</p>
-            <p><strong>Résultat :</strong> 5 / 5 Anomalies détectées et corrigées (100%)</p>
-            <p><strong>Temps de réalisation :</strong> <span id="cert-time-display">00:00</span></p>
-        </div>
-        <div class="flex justify-between items-end pt-8 mt-8 border-t border-slate-300">
-            <div>
-                <p class="text-[10px] text-slate-500">Service Prévention des Risques Professionnels RESTEV</p>
-            </div>
-            <div class="text-right">
-                <p class="text-[10px] text-slate-500">Visa Prévention</p>
-                <div class="w-28 h-12 border border-dashed border-slate-400 mt-1 flex items-center justify-center text-[10px] text-slate-400">
-                    RESTEV 85
-                </div>
-            </div>
-        </div>
-    </div>
+  <script>
+    // ==========================================
+    // 1. GLOBAL ERROR HANDLING & DIAGNOSTICS
+    // ==========================================
+    window.onerror = function(msg, url, line, col, error) {
+      var logger = document.getElementById('error-logger');
+      var list = document.getElementById('error-list');
+      if (logger && list) {
+        logger.classList.remove('hidden');
+        var item = document.createElement('div');
+        item.textContent = '❌ Erreur: ' + msg + ' (Ligne ' + line + ')';
+        list.appendChild(item);
+      }
+      return false;
+    };
 
-    <script>
-        // State Management
-        const state = {
-            started: false,
-            audioEnabled: true,
-            startTime: null,
-            timerInterval: null,
-            foundHazards: new Set(),
-            fixedHazards: new Set(),
-            activeHazardId: null,
-            totalHazards: 5,
-            scene: null,
-            camera: null,
-            renderer: null,
-            controls: null,
-            raycaster: new THREE.Raycaster(),
-            mouse: new THREE.Vector2(),
-            hazardGroups: {},
-            interactiveObjects: [],
-            // D-Pad active keys state
-            dpadState: { up: false, down: false, left: false, right: false },
-            // Camera smooth transition target
-            camTransition: null
-        };
+    window.addEventListener('unhandledrejection', function(event) {
+      var logger = document.getElementById('error-logger');
+      var list = document.getElementById('error-list');
+      if (logger && list) {
+        logger.classList.remove('hidden');
+        var item = document.createElement('div');
+        item.textContent = '❌ Promise Rejection: ' + event.reason;
+        list.appendChild(item);
+      }
+    });
 
-        // Data for 5 Workplace Hazards
-        const hazardsData = {
-            1: {
-                id: 1,
-                title: "Bidon de Solvant Toxique Ouvert & Fuyant",
-                category: "Risque Chimique",
-                description: "Un bidon de solvant inflammable est laissé ouvert et fuit sur l'établi sans bac de rétention ni pictogramme CLP.",
-                regulation: "Code du Travail Art. R4412-127 & INRS ED 954 : Tout produit chimique doit être étiqueté et stocké sur un bac de rétention étanche.",
-                prevention: "Refermer le bidon, coller l'étiquette de danger CLP et positionner l'ensemble dans un bac de rétention sécurisé.",
-                cameraPos: { x: 3.5, y: 2.2, z: -0.5 },
-                targetPos: { x: 4.5, y: 1.2, z: -2 }
-            },
-            2: {
-                id: 2,
-                title: "Câble Électrique Dénudé Traînant au Sol",
-                category: "Risque Électrique & Chute",
-                description: "Un câble d'alimentation de meuleuse est fortement endommagé avec fils mis à nu, posé dans le passage.",
-                regulation: "Code du Travail Art. R4226-1 : Les installations et équipements électriques doivent être maintenus en parfait état d'isolement.",
-                prevention: "Mettre hors tension, remplacer la section endommagée et placer le câble sous un passe-câble de sécurité biseauté.",
-                cameraPos: { x: 2.5, y: 2.0, z: -1.0 },
-                targetPos: { x: 3.2, y: 1.2, z: -2.2 }
-            },
-            3: {
-                id: 3,
-                title: "Bouteilles de Gaz Instables Non Arrimées",
-                category: "Risque Explosif & Pression",
-                description: "Deux bouteilles de gaz sous pression (acétylène/oxygène) sont posées verticalement sans chaîne d'ancrage.",
-                regulation: "INRS ED 6098 : Les bouteilles de gaz doivent être obligatoirement arrimées verticalement par un dispositif rigide (chaîne).",
-                prevention: "Ancrer immédiatement les bouteilles contre le mur d'atelier avec la chaîne de maintien métallisée.",
-                cameraPos: { x: -4.5, y: 2.5, z: -4.0 },
-                targetPos: { x: -6.5, y: 1.5, z: -6.0 }
-            },
-            4: {
-                id: 4,
-                title: "Extincteur d'Incendie Obstrué par des Palettes",
-                category: "Sécurité Incendie",
-                categoryClass: "bg-orange-500/20 text-orange-300 border-orange-500/30",
-                description: "L'extincteur d'urgence mural est totalement masqué et inaccessible derrière un empilement de palettes en bois.",
-                regulation: "Code du Travail Art. R4227-33 : Les moyens de premier secours incendie doivent être dégagés et accessibles en permanence.",
-                prevention: "Déplacer les palettes, libérer l'accès à l'extincteur et appliquer le marquage au sol rouge/jaune 'Zone Réserve Extincteur'.",
-                cameraPos: { x: 6.5, y: 2.5, z: -4.0 },
-                targetPos: { x: 8.5, y: 1.8, z: -6.0 }
-            },
-            5: {
-                id: 5,
-                title: "Flaque d'Huile Glissante Non Signalée au Sol",
-                category: "Risque de Glissade / Chute",
-                description: "Une flaque de lubrifiant répandue sur le sol de l'allée centrale présente un risque majeur de glissade.",
-                regulation: "Code du Travail Art. R4224-3 : Les sols doivent être exempts de bosses, trous ou surfaces glissantes et être maintenus propres.",
-                prevention: "Épandre de l'absorbant végétal, nettoyer la zone et installer temporairement un balisage 'Attention Sol Glissant'.",
-                cameraPos: { x: -1.5, y: 2.2, z: 2.5 },
-                targetPos: { x: -1.0, y: 0.1, z: 1.0 }
+    // Web Audio Synthesizer for UI Effects
+    var audioCtx = null;
+    var audioEnabled = true;
+
+    function initAudio() {
+      if (!audioCtx) {
+        var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function toggleAudio() {
+      audioEnabled = !audioEnabled;
+      var icon = document.getElementById('icon-audio');
+      if (audioEnabled) {
+        icon.setAttribute('class', 'w-5 h-5 text-teal-400');
+      } else {
+        icon.setAttribute('class', 'w-5 h-5 text-slate-500');
+      }
+    }
+
+    function playSound(type) {
+      if (!audioEnabled) return;
+      initAudio();
+      if (!audioCtx) return;
+
+      try {
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        var now = audioCtx.currentTime;
+
+        if (type === 'click') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(400, now);
+          osc.frequency.exponentialRampToValueAtTime(800, now + 0.08);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+          osc.start(now);
+          osc.stop(now + 0.08);
+        } else if (type === 'success') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(523.25, now); // C5
+          osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+          osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+          osc.frequency.setValueAtTime(1046.50, now + 0.3); // C6
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+          osc.start(now);
+          osc.stop(now + 0.5);
+        } else if (type === 'teleport') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(300, now);
+          osc.frequency.exponentialRampToValueAtTime(150, now + 0.25);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+          osc.start(now);
+          osc.stop(now + 0.25);
+        }
+      } catch(e) {
+        console.warn("Audio feedback error:", e);
+      }
+    }
+
+    // ==========================================
+    // 2. PROCEDURAL TEXTURE GENERATORS (0% CORs & Missing Asset Risk)
+    // ==========================================
+    function createFloorTexture() {
+      var canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      var ctx = canvas.getContext('2d');
+
+      // Base concrete grey
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(0, 0, 512, 512);
+
+      // Concrete noise pattern
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+      for (var i = 0; i < 2000; i++) {
+        var x = Math.random() * 512;
+        var y = Math.random() * 512;
+        ctx.fillRect(x, y, 2, 2);
+      }
+
+      // Tile floor grid lines
+      ctx.strokeStyle = 'rgba(15, 23, 42, 0.5)';
+      ctx.lineWidth = 4;
+      for (var g = 0; g <= 512; g += 64) {
+        ctx.beginPath();
+        ctx.moveTo(g, 0); ctx.lineTo(g, 512);
+        ctx.moveTo(0, g); ctx.lineTo(512, g);
+        ctx.stroke();
+      }
+
+      // Safety yellow walkway border
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 12;
+      ctx.strokeRect(16, 16, 480, 480);
+
+      var texture = new THREE.CanvasTexture(canvas);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(4, 4);
+      return texture;
+    }
+
+    function createHazardStripeTexture() {
+      var canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      var ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = '#f59e0b'; // Safety yellow
+      ctx.fillRect(0, 0, 256, 256);
+
+      ctx.fillStyle = '#0f172a'; // Black stripes
+      ctx.beginPath();
+      for (var i = -256; i < 512; i += 48) {
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i + 24, 0);
+        ctx.lineTo(i + 24 + 256, 256);
+        ctx.lineTo(i + 256, 256);
+      }
+      ctx.fill();
+
+      var texture = new THREE.CanvasTexture(canvas);
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      return texture;
+    }
+
+    function createOilSlickTexture() {
+      var canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      var ctx = canvas.getContext('2d');
+
+      var grad = ctx.createRadialGradient(128, 128, 10, 128, 128, 120);
+      grad.addColorStop(0, 'rgba(15, 23, 42, 0.95)');
+      grad.addColorStop(0.5, 'rgba(30, 41, 59, 0.8)');
+      grad.addColorStop(0.8, 'rgba(13, 148, 136, 0.4)');
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(128, 128, 120, 0, Math.PI * 2);
+      ctx.fill();
+
+      return new THREE.CanvasTexture(canvas);
+    }
+
+    // ==========================================
+    // 3. THREE.JS SCENE SETUP & LIGHTING
+    // ==========================================
+    var scene, camera, renderer, controls;
+    var hotspots = [];
+    var hazardObjects = {};
+    var currentRiskId = null;
+    var resolvedRisks = new Set();
+
+    // Camera animation target states
+    var cameraTargetPos = new THREE.Vector3(0, 8, 16);
+    var cameraTargetLookAt = new THREE.Vector3(0, 2, 0);
+
+    function init3D() {
+      var canvas = document.getElementById('webgl-canvas');
+      
+      // Scene
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x1e293b); // Bright industrial dark slate-blue
+      scene.fog = new THREE.FogExp2(0x1e293b, 0.025);
+
+      // Camera
+      camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.copy(cameraTargetPos);
+
+      // WebGL Renderer
+      renderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        antialias: true,
+        powerPreference: 'high-performance'
+      });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+      // Enable WebXR support
+      renderer.xr.enabled = true;
+
+      // OrbitControls check
+      var ControlsClass = THREE.OrbitControls || window.OrbitControls;
+      if (ControlsClass) {
+        controls = new ControlsClass(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.02; // Prevent camera from going under floor
+        controls.minDistance = 2;
+        controls.maxDistance = 28;
+        controls.target.copy(cameraTargetLookAt);
+      } else {
+        console.warn("OrbitControls non détecté, navigation tactile/souris restreinte.");
+      }
+
+      // HIGH-INTENSITY LIGHTING SETUP (Prevents black screen/dark model issues)
+      var ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+      scene.add(ambientLight);
+
+      var mainLight = new THREE.DirectionalLight(0xfff7ed, 1.2);
+      mainLight.position.set(12, 20, 10);
+      mainLight.castShadow = true;
+      mainLight.shadow.mapSize.width = 2048;
+      mainLight.shadow.mapSize.height = 2048;
+      mainLight.shadow.camera.near = 0.5;
+      mainLight.shadow.camera.far = 50;
+      mainLight.shadow.camera.left = -15;
+      mainLight.shadow.camera.right = 15;
+      mainLight.shadow.camera.top = 15;
+      mainLight.shadow.camera.bottom = -15;
+      scene.add(mainLight);
+
+      // Cyan Industrial Fill Light
+      var fillLight = new THREE.DirectionalLight(0x38bdf8, 0.5);
+      fillLight.position.set(-12, 10, -10);
+      scene.add(fillLight);
+
+      // Build 3D Workshop & Scenarios
+      buildWorkshopEnvironment();
+      buildHazardScenarios();
+
+      // Window resize handler
+      window.addEventListener('resize', onWindowResize, false);
+
+      // Raycasting setup
+      setupInteraction();
+
+      // Setup VR Button if available
+      setupVRButton();
+    }
+
+    // ==========================================
+    // 4. WORKSHOP 3D ARCHITECTURE & FURNISHINGS
+    // ==========================================
+    function buildWorkshopEnvironment() {
+      // Floor Slab
+      var floorGeo = new THREE.PlaneGeometry(24, 24);
+      var floorMat = new THREE.MeshStandardMaterial({
+        map: createFloorTexture(),
+        roughness: 0.6,
+        metalness: 0.1
+      });
+      var floor = new THREE.Mesh(floorGeo, floorMat);
+      floor.rotation.x = -Math.PI / 2;
+      floor.receiveShadow = true;
+      scene.add(floor);
+
+      // Back Wall
+      var wallMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 });
+      var backWallGeo = new THREE.BoxGeometry(24, 10, 0.4);
+      var backWall = new THREE.Mesh(backWallGeo, wallMat);
+      backWall.position.set(0, 5, -12);
+      backWall.receiveShadow = true;
+      scene.add(backWall);
+
+      // Left Wall
+      var leftWall = new THREE.Mesh(backWallGeo, wallMat);
+      leftWall.rotation.y = Math.PI / 2;
+      leftWall.position.set(-12, 5, 0);
+      scene.add(leftWall);
+
+      // Roof Beams / Factory Trusses
+      var beamMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8, roughness: 0.3 });
+      for (var z = -10; z <= 10; z += 10) {
+        var truss = new THREE.Mesh(new THREE.BoxGeometry(24, 0.5, 0.4), beamMat);
+        truss.position.set(0, 9.5, z);
+        scene.add(truss);
+
+        // Hanging Factory LED Fixtures
+        var lampGeo = new THREE.BoxGeometry(2, 0.2, 0.8);
+        var lampMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+        var lamp = new THREE.Mesh(lampGeo, lampMat);
+        lamp.position.set(-4, 9, z);
+        scene.add(lamp);
+
+        var lampLight = new THREE.PointLight(0xfffbeb, 0.6, 12);
+        lampLight.position.set(-4, 8.5, z);
+        scene.add(lampLight);
+      }
+
+      // Workbench 1 (Solvents Area - Left Side)
+      var benchMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.4, metalness: 0.6 });
+      var woodMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.7 });
+      
+      var benchTop = new THREE.Mesh(new THREE.BoxGeometry(4, 0.2, 1.6), woodMat);
+      benchTop.position.set(-8, 1.8, -6);
+      benchTop.castShadow = true;
+      benchTop.receiveShadow = true;
+      scene.add(benchTop);
+
+      var benchLegs = new THREE.Mesh(new THREE.BoxGeometry(3.8, 1.7, 1.4), benchMat);
+      benchLegs.position.set(-8, 0.85, -6);
+      benchLegs.castShadow = true;
+      scene.add(benchLegs);
+
+      // CNC Industrial Machine (Right Side)
+      var cncMat = new THREE.MeshStandardMaterial({ color: 0x0d9488, metalness: 0.5, roughness: 0.4 });
+      var cncBase = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 2.5), cncMat);
+      cncBase.position.set(8, 1.5, -6);
+      cncBase.castShadow = true;
+      scene.add(cncBase);
+
+      var cncScreenMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+      var cncScreen = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 0.1), cncScreenMat);
+      cncScreen.position.set(7.5, 2.2, -4.7);
+      scene.add(cncScreen);
+
+      // Pallet Rack & Storage Boxes (Right Front)
+      var rackMat = new THREE.MeshStandardMaterial({ color: 0xe11d48, metalness: 0.6, roughness: 0.4 });
+      var rackUpright1 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 5, 1.2), rackMat);
+      rackUpright1.position.set(8, 2.5, 2);
+      scene.add(rackUpright1);
+
+      var rackUpright2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 5, 1.2), rackMat);
+      rackUpright2.position.set(8, 2.5, 6);
+      scene.add(rackUpright2);
+
+      var shelfGeo = new THREE.BoxGeometry(0.1, 0.15, 4.2);
+      var shelf1 = new THREE.Mesh(shelfGeo, rackMat);
+      shelf1.position.set(8, 1.2, 4);
+      scene.add(shelf1);
+
+      var shelf2 = new THREE.Mesh(shelfGeo, rackMat);
+      shelf2.position.set(8, 2.8, 4);
+      scene.add(shelf2);
+    }
+
+    // ==========================================
+    // 5. THE 5 HAZARD SCENARIOS & 3D MODELS
+    // ==========================================
+    function buildHazardScenarios() {
+      // ----------------------------------------
+      // HAZARD 1: SOLVANT CHIMIQUE (Chemical drum)
+      // ----------------------------------------
+      var drumGroup = new THREE.Group();
+      
+      var drumMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.3, metalness: 0.4 });
+      var drumMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 1.1, 24), drumMat);
+      drumMesh.castShadow = true;
+      drumGroup.add(drumMesh);
+
+      // Warning Skull Label on drum
+      var labelMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.3), new THREE.MeshBasicMaterial({ color: 0xfef08a }));
+      labelMesh.position.set(0, 0, 0.41);
+      drumGroup.add(labelMesh);
+
+      // Retention Tray (Bac de rétention) - Initially hidden/separate
+      var stripeMat = new THREE.MeshStandardMaterial({ map: createHazardStripeTexture(), roughness: 0.5 });
+      var retentionTray = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.35, 1.2), stripeMat);
+      retentionTray.position.set(-8, 0.175, -3.5);
+      retentionTray.visible = false; // Appears when risk is secured
+      scene.add(retentionTray);
+
+      drumGroup.position.set(-8, 0.55, -3.5); // Unfixed position (on floor directly)
+      scene.add(drumGroup);
+
+      hazardObjects.solvant = { drumGroup: drumGroup, retentionTray: retentionTray };
+      createHotspot(1, new THREE.Vector3(-8, 1.6, -3.5), "Solvant Chimique Hors Rétention");
+
+      // ----------------------------------------
+      // HAZARD 2: CÂBLE ÉLECTRIQUE TRAÎNANT
+      // ----------------------------------------
+      var cableGroup = new THREE.Group();
+      
+      // Snake-like cable geometry
+      var cableCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-3, 0.04, -1),
+        new THREE.Vector3(-1.5, 0.04, 0.5),
+        new THREE.Vector3(0, 0.04, -0.2),
+        new THREE.Vector3(1.8, 0.04, 0.8),
+        new THREE.Vector3(3, 0.04, 0)
+      ]);
+      var cableGeo = new THREE.TubeGeometry(cableCurve, 32, 0.035, 8, false);
+      var cableMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
+      var cableMesh = new THREE.Mesh(cableGeo, cableMat);
+      cableGroup.add(cableMesh);
+
+      // Cable Cover Bridge (Passe-câble) - Initially hidden
+      var bridgeMat = new THREE.MeshStandardMaterial({ map: createHazardStripeTexture(), roughness: 0.6 });
+      var cableBridge = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.08, 0.6), bridgeMat);
+      cableBridge.position.set(0, 0.04, 0.1);
+      cableBridge.rotation.y = -0.15;
+      cableBridge.visible = false;
+      scene.add(cableBridge);
+
+      scene.add(cableGroup);
+      hazardObjects.cable = { cableGroup: cableGroup, cableBridge: cableBridge };
+      createHotspot(2, new THREE.Vector3(0, 1.2, 0.1), "Câble Dénudé / Traînant");
+
+      // ----------------------------------------
+      // HAZARD 3: BOUTEILLES DE GAZ NON ARRIMÉES
+      // ----------------------------------------
+      var gazGroup = new THREE.Group();
+      
+      var cylMat1 = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3, metalness: 0.5 }); // Oxygen Blue
+      var cylMat2 = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.3, metalness: 0.5 }); // Acetylene Green
+
+      var cyl1 = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 1.8, 20), cylMat1);
+      cyl1.position.set(8.2, 0.9, -10.5);
+      cyl1.rotation.z = 0.12; // Dangerously tilted!
+      cyl1.castShadow = true;
+      gazGroup.add(cyl1);
+
+      var cyl2 = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 1.9, 20), cylMat2);
+      cyl2.position.set(7.5, 0.95, -10.6);
+      cyl2.rotation.z = -0.1; // Dangerously tilted!
+      cyl2.castShadow = true;
+      gazGroup.add(cyl2);
+
+      // Safety Chain mesh (Initially hidden)
+      var chainMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.2 });
+      var safetyChain = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.03, 8, 24), chainMat);
+      safetyChain.rotation.x = Math.PI / 2;
+      safetyChain.position.set(7.85, 1.2, -10.5);
+      safetyChain.scale.set(1.2, 0.4, 1);
+      safetyChain.visible = false;
+      scene.add(safetyChain);
+
+      scene.add(gazGroup);
+      hazardObjects.gaz = { gazGroup: gazGroup, cyl1: cyl1, cyl2: cyl2, safetyChain: safetyChain };
+      createHotspot(3, new THREE.Vector3(7.85, 1.8, -10.2), "Bouteilles Gaz Non Arrimées");
+
+      // ----------------------------------------
+      // HAZARD 4: EXTINCTEUR OBSTRUÉ PAR DES CARTONS
+      // ----------------------------------------
+      var extPillar = new THREE.Mesh(new THREE.BoxGeometry(0.8, 6, 0.8), wallMat);
+      extPillar.position.set(8, 3, 4);
+      scene.add(extPillar);
+
+      // Extincteur Red Cylinder
+      var extMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.2, metalness: 0.5 });
+      var extMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.8, 16), extMat);
+      extMesh.position.set(7.5, 1.8, 4);
+      scene.add(extMesh);
+
+      // Obstructing Boxes Stack
+      var boxGroup = new THREE.Group();
+      var boxMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.8 });
+      
+      var box1 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.9, 1.1), boxMat);
+      box1.position.set(7.4, 0.45, 4);
+      box1.castShadow = true;
+      boxGroup.add(box1);
+
+      var box2 = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.8, 0.9), boxMat);
+      box2.position.set(7.3, 1.3, 4.05);
+      box2.castShadow = true;
+      boxGroup.add(box2);
+
+      scene.add(boxGroup);
+
+      // Dégagement Floor Marking (Appears when secured)
+      var clearanceMarking = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.6), stripeMat);
+      clearanceMarking.rotation.x = -Math.PI / 2;
+      clearanceMarking.position.set(7.2, 0.01, 4);
+      clearanceMarking.visible = false;
+      scene.add(clearanceMarking);
+
+      hazardObjects.extincteur = { boxGroup: boxGroup, clearanceMarking: clearanceMarking };
+      createHotspot(4, new THREE.Vector3(7.3, 2.2, 4), "Extincteur Obstrué");
+
+      // ----------------------------------------
+      // HAZARD 5: FLAQUE D'HUILE GLISSANTE
+      // ----------------------------------------
+      var oilGeo = new THREE.PlaneGeometry(2.4, 2.4);
+      var oilMat = new THREE.MeshBasicMaterial({
+        map: createOilSlickTexture(),
+        transparent: true,
+        opacity: 0.9,
+        depthWrite: false
+      });
+      var oilSlick = new THREE.Mesh(oilGeo, oilMat);
+      oilSlick.rotation.x = -Math.PI / 2;
+      oilSlick.position.set(-2, 0.015, -4.5);
+      scene.add(oilSlick);
+
+      // Yellow Warning Cone (Appears when secured)
+      var coneMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.4 });
+      var warningCone = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.8, 16), coneMat);
+      warningCone.position.set(-2, 0.4, -4.5);
+      warningCone.castShadow = true;
+      warningCone.visible = false;
+      scene.add(warningCone);
+
+      hazardObjects.huile = { oilSlick: oilSlick, warningCone: warningCone };
+      createHotspot(5, new THREE.Vector3(-2, 1.0, -4.5), "Flaque d'Huile Glissante");
+    }
+
+    // ==========================================
+    // 6. HOTSPOT BADGES & INTERACTION DATA
+    // ==========================================
+    var riskData = {
+      1: {
+        id: 1,
+        key: 'solvant',
+        category: 'Risque Chimique & Pollution',
+        title: 'Bidon de Solvant Hors Bac de Rétention',
+        icon: '🧪',
+        description: "Un bidon de solvant chimique agressif est posé directement sur l'établi/sol sans bac de rétention. En cas de fuite ou de renversement, le produit se répand au sol, provoquant des émanations toxiques et un risque de pollution majeure.",
+        regulation: "Code du travail Art. R4412-17 & INRS ED 6093 : Tout stockage de liquides susceptibles de créer une pollution ou un incendie doit être équipé d'un bac de rétention étanche d'un volume au moins égal à la plus grande des capacités.",
+        action: "Placer immédiatement le bidon sur un bac de rétention en acier étanche doté d'une grille d'égouttage."
+      },
+      2: {
+        id: 2,
+        key: 'cable',
+        category: 'Chute de Plain-Pied & Électrique',
+        title: 'Câble Électrique Traînant dans l\'Allée',
+        icon: '⚡',
+        description: "Un câble de rallonge électrique traverse directement l'allée principale de circulation du personnel sans aucune protection, présentant un risque élevé de trébuchement et d'électrocution.",
+        regulation: "Code du travail Art. R4224-3 & INRS ED 950 : Les voies de circulation doivent être maintenues dégagées de tout obstacle. Les câbles amovibles ne doivent pas constituer un piège à la marche.",
+        action: "Recouvrir le câble traversant avec un passe-câble de sol rigide haute résistance jaune et noir."
+      },
+      3: {
+        id: 3,
+        key: 'gaz',
+        category: 'Risque d\'Explosion & Écrasement',
+        title: 'Bouteilles de Gaz Comprimé Non Arrimées',
+        icon: '🔥',
+        description: "Deux bouteilles de gaz comprimé sous pression (acétylène / oxygène) sont simplement posées en équilibre instable contre le mur sans aucune chaîne de sécurité.",
+        regulation: "Code du travail Art. R4224-17 & INRS ND 2232 : Les bouteilles de gaz doivent être stockées debout et solidement attachées à un point fixe par une chaîne ignifuge.",
+        action: "Redresser les bouteilles et les verrouiller fermement à l'aide de la chaîne d'arrimage murale."
+      },
+      4: {
+        id: 4,
+        key: 'extincteur',
+        category: 'Risque Incendie & Secours',
+        title: 'Extincteur d\'Incendie Obstrué',
+        icon: '🧯',
+        description: "L'accès à l'extincteur sur poteau est totalement masqué et bloqué par des cartons d'emballage et palettes empilés au sol, ralentissant une intervention critique en cas de départ de feu.",
+        regulation: "Code du travail Art. R4227-28 & R4227-33 : Les moyens de premier secours doivent être dégagés en permanence, immédiatement accessibles et signalés.",
+        action: "Déplacer les cartons vers les étagères de stockage et matérialiser la zone de dégagement au sol."
+      },
+      5: {
+        id: 5,
+        key: 'huile',
+        category: 'Risque de Glissade Majeure',
+        title: 'Flaque d\'Huile Glissante Non Balisée',
+        icon: '⚠️',
+        description: "Une flaque d'huile de coupe s'est répandue en sortie de machine au milieu de la voie de passage sans aucun absorbant ni balisage d'avertissement.",
+        regulation: "Code du travail Art. R4224-3 & INRS ED 6187 : Les sols des locaux doivent être exempts de substances glissantes et nettoyés immédiatement dès l'apparition d'un fluide.",
+        action: "Nettoyer la flaque d'huile, déposer un absorbant végétal et positionner un cône de signalisation 'Sol Glissant'."
+      }
+    };
+
+    function createHotspot(id, position, labelText) {
+      var group = new THREE.Group();
+      group.position.copy(position);
+
+      // Outer Pulsing Ring
+      var ringGeo = new THREE.RingGeometry(0.2, 0.3, 24);
+      var ringMat = new THREE.MeshBasicMaterial({ color: 0xef4444, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
+      var ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.name = "hotspotRing";
+      group.add(ring);
+
+      // Inner Core Sphere
+      var coreGeo = new THREE.SphereGeometry(0.18, 16, 16);
+      var coreMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
+      var core = new THREE.Mesh(coreGeo, coreMat);
+      group.add(core);
+
+      group.userData = { id: id, label: labelText, isHotspot: true };
+      scene.add(group);
+
+      hotspots.push(group);
+    }
+
+    // ==========================================
+    // 7. RAYCASTING & TOUCH INTERACTION LOGIC
+    // ==========================================
+    var raycaster = new THREE.Raycaster();
+    var mouse = new THREE.Vector2();
+
+    function setupInteraction() {
+      var canvas = document.getElementById('webgl-canvas');
+
+      canvas.addEventListener('pointerdown', function(event) {
+        // Prevent raycasting click if interacting with UI controls
+        if (event.clientY < 80 || event.clientY > window.innerHeight - 80) return;
+
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera);
+        
+        // Raycast against hotspots
+        var intersects = raycaster.intersectObjects(scene.children, true);
+
+        for (var i = 0; i < intersects.length; i++) {
+          var obj = intersects[i].object;
+          var parent = obj.parent;
+
+          if (parent && parent.userData && parent.userData.isHotspot) {
+            openRiskModal(parent.userData.id);
+            playSound('click');
+            break;
+          }
+        }
+      });
+
+      setupMobileJoystick();
+    }
+
+    // Mobile Virtual Joystick Setup
+    function setupMobileJoystick() {
+      var zone = document.getElementById('joystick-zone');
+      var knob = document.getElementById('joystick-knob');
+      var touchId = null;
+      var startX = 0, startY = 0;
+
+      zone.addEventListener('touchstart', function(e) {
+        if (touchId === null && e.changedTouches.length > 0) {
+          var touch = e.changedTouches[0];
+          touchId = touch.identifier;
+          startX = touch.clientX;
+          startY = touch.clientY;
+        }
+      });
+
+      window.addEventListener('touchmove', function(e) {
+        if (touchId === null) return;
+        for (var i = 0; i < e.changedTouches.length; i++) {
+          if (e.changedTouches[i].identifier === touchId) {
+            var touch = e.changedTouches[i];
+            var dx = touch.clientX - startX;
+            var dy = touch.clientY - startY;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            var maxDist = 35;
+
+            if (dist > maxDist) {
+              dx = (dx / dist) * maxDist;
+              dy = (dy / dist) * maxDist;
             }
-        };
 
-        // WebAudio Sound Effects Synthesizer
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            knob.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)';
 
-        function playSound(type) {
-            if (!state.audioEnabled) return;
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            const now = audioCtx.currentTime;
-
-            if (type === 'found') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(523.25, now);
-                osc.frequency.exponentialRampToValueAtTime(880, now + 0.2);
-                gain.gain.setValueAtTime(0.2, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-                osc.start(now);
-                osc.stop(now + 0.3);
-            } else if (type === 'fix') {
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(300, now);
-                osc.frequency.exponentialRampToValueAtTime(600, now + 0.25);
-                gain.gain.setValueAtTime(0.25, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
-                osc.start(now);
-                osc.stop(now + 0.35);
-            } else if (type === 'click') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(400, now);
-                gain.gain.setValueAtTime(0.08, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
-                osc.start(now);
-                osc.stop(now + 0.05);
-            }
+            // Pan Camera based on joystick
+            cameraTargetLookAt.x += dx * 0.005;
+            cameraTargetLookAt.z += dy * 0.005;
+            if (controls) controls.target.copy(cameraTargetLookAt);
+          }
         }
+      });
 
-        function init3DScene() {
-            const container = document.getElementById('canvas-container');
-
-            // Three.js Scene Setup
-            state.scene = new THREE.Scene();
-            state.scene.background = new THREE.Color(0x0a1120);
-            state.scene.fog = new THREE.FogExp2(0x0a1120, 0.035);
-
-            // Camera Setup
-            state.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
-            state.camera.position.set(0, 4.5, 9);
-
-            // Renderer
-            state.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "highPerformance" });
-            state.renderer.setSize(window.innerWidth, window.innerHeight);
-            state.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            state.renderer.shadowMap.enabled = true;
-            state.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            state.renderer.xr.enabled = true;
-            container.appendChild(state.renderer.domElement);
-
-            // Append WebXR VR Button
-            if (window.VRButton) {
-                document.body.appendChild(VRButton.createButton(state.renderer));
-            }
-
-            // Orbit Controls configured specifically for touch stability
-            state.controls = new THREE.OrbitControls(state.camera, state.renderer.domElement);
-            state.controls.enableDamping = true;
-            state.controls.dampingFactor = 0.08;
-            state.controls.maxPolarAngle = Math.PI / 2 - 0.02;
-            state.controls.minDistance = 1.2;
-            state.controls.maxDistance = 15;
-            state.controls.target.set(0, 1.2, 0);
-
-            // Lighting Setup
-            const ambientLight = new THREE.AmbientLight(0x94a3b8, 0.8);
-            state.scene.add(ambientLight);
-
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
-            dirLight.position.set(-5, 12, 6);
-            dirLight.castShadow = true;
-            dirLight.shadow.mapSize.width = 1024;
-            dirLight.shadow.mapSize.height = 1024;
-            state.scene.add(dirLight);
-
-            // Build Workshop 3D Models
-            buildWorkshopEnvironment();
-            buildHazards();
-
-            // Bind Touch & D-Pad Listeners
-            setupTouchAndDPadControls();
-
-            // Resize Handler
-            window.addEventListener('resize', onWindowResize);
-
-            // Render Loop
-            state.renderer.setAnimationLoop(animate);
+      var endTouch = function(e) {
+        if (touchId === null) return;
+        for (var i = 0; i < e.changedTouches.length; i++) {
+          if (e.changedTouches[i].identifier === touchId) {
+            touchId = null;
+            knob.style.transform = 'translate(0px, 0px)';
+          }
         }
+      };
 
-        function buildWorkshopEnvironment() {
-            // Floor
-            const floorGeo = new THREE.PlaneGeometry(22, 20);
-            const floorMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 });
-            const floor = new THREE.Mesh(floorGeo, floorMat);
-            floor.rotation.x = -Math.PI / 2;
-            floor.receiveShadow = true;
-            state.scene.add(floor);
+      window.addEventListener('touchend', endTouch);
+      window.addEventListener('touchcancel', endTouch);
+    }
 
-            // Yellow Safety Aisle Markings
-            const lineMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
-            const l1 = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 18), lineMat);
-            l1.rotation.x = -Math.PI / 2;
-            l1.position.set(-2.2, 0.01, 0);
-            state.scene.add(l1);
+    // ==========================================
+    // 8. CAMERA TELEPORTATION PRESETS
+    // ==========================================
+    function teleportTo(preset) {
+      playSound('teleport');
 
-            const l2 = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 18), lineMat);
-            l2.rotation.x = -Math.PI / 2;
-            l2.position.set(2.2, 0.01, 0);
-            state.scene.add(l2);
+      switch (preset) {
+        case 'global':
+          cameraTargetPos.set(0, 10, 18);
+          cameraTargetLookAt.set(0, 2, 0);
+          break;
+        case 'solvant':
+          cameraTargetPos.set(-5, 3.5, -1);
+          cameraTargetLookAt.set(-8, 1.2, -3.5);
+          break;
+        case 'cable':
+          cameraTargetPos.set(0, 3.5, 4.5);
+          cameraTargetLookAt.set(0, 0.2, 0.1);
+          break;
+        case 'gaz':
+          cameraTargetPos.set(5, 3.5, -8);
+          cameraTargetLookAt.set(7.85, 1.5, -10.5);
+          break;
+        case 'extincteur':
+          cameraTargetPos.set(4.5, 3.2, 6.5);
+          cameraTargetLookAt.set(7.3, 1.8, 4);
+          break;
+        case 'huile':
+          cameraTargetPos.set(-2, 3.2, -1.5);
+          cameraTargetLookAt.set(-2, 0.2, -4.5);
+          break;
+      }
+    }
 
-            // Walls
-            const wallMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
-            const backWall = new THREE.Mesh(new THREE.PlaneGeometry(22, 7), wallMat);
-            backWall.position.set(0, 3.5, -10);
-            state.scene.add(backWall);
+    // ==========================================
+    // 9. RISK RESOLUTION LOGIC & 3D ANIMATION
+    // ==========================================
+    function openRiskModal(id) {
+      currentRiskId = id;
+      var data = riskData[id];
+      if (!data) return;
 
-            // Workbench
-            const benchGroup = new THREE.Group();
-            const top = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.12, 1.4), new THREE.MeshStandardMaterial({ color: 0x475569 }));
-            top.position.y = 1.0;
-            top.castShadow = true;
-            benchGroup.add(top);
+      document.getElementById('modal-badge-icon').textContent = data.icon;
+      document.getElementById('modal-category').textContent = data.category;
+      document.getElementById('modal-title').textContent = data.title;
+      document.getElementById('modal-description').textContent = data.description;
+      document.getElementById('modal-reg-text').textContent = data.regulation;
+      document.getElementById('modal-action').textContent = data.action;
 
-            const legMat = new THREE.MeshStandardMaterial({ color: 0x0f172a });
-            [[-1.6, -0.5], [1.6, -0.5], [-1.6, 0.5], [1.6, 0.5]].forEach(p => {
-                const leg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.0, 0.1), legMat);
-                leg.position.set(p[0], 0.5, p[1]);
-                benchGroup.add(leg);
-            });
-            benchGroup.position.set(4.5, 0, -2);
-            state.scene.add(benchGroup);
+      var btn = document.getElementById('btn-secure-risk');
+      if (resolvedRisks.has(id)) {
+        btn.innerHTML = '<span>✓ Situation Déjà Sécurisée</span>';
+        btn.classList.add('opacity-50', 'pointer-events-none');
+      } else {
+        btn.innerHTML = '<span>🛠️ Sécuriser la situation</span>';
+        btn.classList.remove('opacity-50', 'pointer-events-none');
+      }
+
+      document.getElementById('risk-modal').classList.remove('hidden');
+    }
+
+    function closeRiskModal() {
+      document.getElementById('risk-modal').classList.add('hidden');
+      currentRiskId = null;
+    }
+
+    function resolveCurrentRisk() {
+      if (!currentRiskId || resolvedRisks.has(currentRiskId)) return;
+
+      resolvedRisks.add(currentRiskId);
+      playSound('success');
+
+      // Update 3D Geometry for the fixed hazard
+      update3DModelToSafeState(currentRiskId);
+
+      // Update Hotspot Badge color to Green Checkmark
+      hotspots.forEach(function(hs) {
+        if (hs.userData.id === currentRiskId) {
+          var ring = hs.getObjectByName("hotspotRing");
+          if (ring) ring.material.color.setHex(0x10b981); // Emerald Green
         }
+      });
 
-        function buildHazards() {
-            
-            // --- HAZARD 1: Chemical Jug (On Workbench) ---
-            const h1 = new THREE.Group();
-            h1.position.set(4.2, 1.06, -2);
-            
-            const jugUnfixed = new THREE.Group();
-            jugUnfixed.name = "unfixedMesh";
-            const drum = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.2, 0.2, 0.5, 12),
-                new THREE.MeshStandardMaterial({ color: 0xea580c })
-            );
-            drum.rotation.z = 1.2;
-            drum.position.y = 0.15;
-            jugUnfixed.add(drum);
+      // Update UI Progress Bar
+      var count = resolvedRisks.size;
+      document.getElementById('score-text').textContent = count + ' / 5';
+      document.getElementById('score-bar').style.width = (count / 5 * 100) + '%';
 
-            const spill = new THREE.Mesh(
-                new THREE.CircleGeometry(0.4, 12),
-                new THREE.MeshBasicMaterial({ color: 0x0284c7, opacity: 0.8, transparent: true })
-            );
-            spill.rotation.x = -Math.PI / 2;
-            spill.position.set(0.2, 0.01, 0);
-            jugUnfixed.add(spill);
-            h1.add(jugUnfixed);
+      closeRiskModal();
 
-            const jugFixed = new THREE.Group();
-            jugFixed.name = "fixedMesh";
-            jugFixed.visible = false;
-            
-            const tray = new THREE.Mesh(
-                new THREE.BoxGeometry(0.7, 0.1, 0.6),
-                new THREE.MeshStandardMaterial({ color: 0xfacc15 })
-            );
-            tray.position.y = 0.05;
-            jugFixed.add(tray);
+      // Check if all 5 risks are completed
+      if (count === 5) {
+        setTimeout(function() {
+          document.getElementById('certificate-modal').classList.remove('hidden');
+          playSound('success');
+        }, 800);
+      }
+    }
 
-            const drumFixed = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.18, 0.18, 0.5, 12),
-                new THREE.MeshStandardMaterial({ color: 0x0284c7 })
-            );
-            drumFixed.position.y = 0.32;
-            jugFixed.add(drumFixed);
-            h1.add(jugFixed);
+    function update3DModelToSafeState(id) {
+      switch (id) {
+        case 1: // Solvant : Move drum onto retention tray
+          if (hazardObjects.solvant) {
+            hazardObjects.solvant.drumGroup.position.set(-8, 0.9, -3.5);
+            hazardObjects.solvant.retentionTray.visible = true;
+          }
+          break;
+        case 2: // Câble : Place cable bridge cover
+          if (hazardObjects.cable) {
+            hazardObjects.cable.cableBridge.visible = true;
+          }
+          break;
+        case 3: // Gaz : Straighten cylinders & lock safety chain
+          if (hazardObjects.gaz) {
+            hazardObjects.gaz.cyl1.rotation.z = 0;
+            hazardObjects.gaz.cyl2.rotation.z = 0;
+            hazardObjects.gaz.safetyChain.visible = true;
+          }
+          break;
+        case 4: // Extincteur : Move boxes away & enable floor clearance mark
+          if (hazardObjects.extincteur) {
+            hazardObjects.extincteur.boxGroup.position.set(2, 0, 0); // Relocate boxes
+            hazardObjects.extincteur.clearanceMarking.visible = true;
+          }
+          break;
+        case 5: // Huile : Remove oil slick & place safety cone
+          if (hazardObjects.huile) {
+            hazardObjects.huile.oilSlick.visible = false;
+            hazardObjects.huile.warningCone.visible = true;
+          }
+          break;
+      }
+    }
 
-            state.scene.add(h1);
-            state.hazardGroups[1] = { group: h1, pos: new THREE.Vector3(4.2, 1.8, -2) };
+    function resetSimulation() {
+      resolvedRisks.clear();
+      document.getElementById('score-text').textContent = '0 / 5';
+      document.getElementById('score-bar').style.width = '0%';
+      document.getElementById('certificate-modal').classList.add('hidden');
 
+      // Reset 3D Hazard states
+      if (hazardObjects.solvant) {
+        hazardObjects.solvant.drumGroup.position.set(-8, 0.55, -3.5);
+        hazardObjects.solvant.retentionTray.visible = false;
+      }
+      if (hazardObjects.cable) hazardObjects.cable.cableBridge.visible = false;
+      if (hazardObjects.gaz) {
+        hazardObjects.gaz.cyl1.rotation.z = 0.12;
+        hazardObjects.gaz.cyl2.rotation.z = -0.1;
+        hazardObjects.gaz.safetyChain.visible = false;
+      }
+      if (hazardObjects.extincteur) {
+        hazardObjects.extincteur.boxGroup.position.set(0, 0, 0);
+        hazardObjects.extincteur.clearanceMarking.visible = false;
+      }
+      if (hazardObjects.huile) {
+        hazardObjects.huile.oilSlick.visible = true;
+        hazardObjects.huile.warningCone.visible = false;
+      }
 
-            // --- HAZARD 2: Damaged Cable / Angle Grinder ---
-            const h2 = new THREE.Group();
-            h2.position.set(3.2, 1.06, -2.2);
+      // Reset Hotspot colors to red
+      hotspots.forEach(function(hs) {
+        var ring = hs.getObjectByName("hotspotRing");
+        if (ring) ring.material.color.setHex(0xef4444);
+      });
 
-            const gUnfixed = new THREE.Group();
-            gUnfixed.name = "unfixedMesh";
-            const body = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.08, 0.08, 0.4, 10),
-                new THREE.MeshStandardMaterial({ color: 0xd97706 })
-            );
-            body.rotation.x = Math.PI / 2;
-            gUnfixed.add(body);
+      teleportTo('global');
+    }
 
-            const wire = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.02, 0.02, 0.6, 8),
-                new THREE.MeshBasicMaterial({ color: 0xef4444 })
-            );
-            wire.position.set(-0.3, 0, 0);
-            gUnfixed.add(wire);
-            h2.add(gUnfixed);
-
-            const gFixed = new THREE.Group();
-            gFixed.name = "fixedMesh";
-            gFixed.visible = false;
-            
-            const bodyFixed = body.clone();
-            bodyFixed.material = new THREE.MeshStandardMaterial({ color: 0x0d9488 });
-            gFixed.add(bodyFixed);
-
-            const guard = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.15, 0.15, 0.02, 12),
-                new THREE.MeshStandardMaterial({ color: 0x334155 })
-            );
-            guard.position.set(0, 0, 0.2);
-            gFixed.add(guard);
-            h2.add(gFixed);
-
-            state.scene.add(h2);
-            state.hazardGroups[2] = { group: h2, pos: new THREE.Vector3(3.2, 1.7, -2.2) };
-
-
-            // --- HAZARD 3: Gas Cylinders ---
-            const h3 = new THREE.Group();
-            h3.position.set(-6.5, 0, -6.5);
-
-            const gasUnfixed = new THREE.Group();
-            gasUnfixed.name = "unfixedMesh";
-            const cyl1 = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.25, 0.25, 1.8, 12),
-                new THREE.MeshStandardMaterial({ color: 0xd97706 })
-            );
-            cyl1.position.set(0, 0.9, 0);
-            cyl1.rotation.z = 0.15;
-            gasUnfixed.add(cyl1);
-
-            const cyl2 = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.25, 0.25, 1.8, 12),
-                new THREE.MeshStandardMaterial({ color: 0x0284c7 })
-            );
-            cyl2.position.set(0.6, 0.9, 0.2);
-            cyl2.rotation.x = -0.12;
-            gasUnfixed.add(cyl2);
-            h3.add(gasUnfixed);
-
-            const gasFixed = new THREE.Group();
-            gasFixed.name = "fixedMesh";
-            gasFixed.visible = false;
-            
-            const cyl1F = cyl1.clone(); cyl1F.rotation.set(0,0,0); cyl1F.position.set(0, 0.9, 0);
-            const cyl2F = cyl2.clone(); cyl2F.rotation.set(0,0,0); cyl2F.position.set(0.6, 0.9, 0);
-            gasFixed.add(cyl1F); gasFixed.add(cyl2F);
-
-            const chain = new THREE.Mesh(
-                new THREE.BoxGeometry(1.2, 0.05, 0.05),
-                new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9 })
-            );
-            chain.position.set(0.3, 1.1, 0.25);
-            gasFixed.add(chain);
-            h3.add(gasFixed);
-
-            state.scene.add(h3);
-            state.hazardGroups[3] = { group: h3, pos: new THREE.Vector3(-6.2, 2.2, -6.5) };
-
-
-            // --- HAZARD 4: Obstructed Fire Extinguisher ---
-            const h4 = new THREE.Group();
-            h4.position.set(8.5, 0, -6.5);
-
-            const exting = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.18, 0.18, 0.9, 12),
-                new THREE.MeshStandardMaterial({ color: 0xd97706 })
-            );
-            exting.position.set(0, 1.8, 0);
-            h4.add(exting);
-
-            const extUnfixed = new THREE.Group();
-            extUnfixed.name = "unfixedMesh";
-            for (let i = 0; i < 3; i++) {
-                const pallet = new THREE.Mesh(
-                    new THREE.BoxGeometry(1.2, 0.2, 1.0),
-                    new THREE.MeshStandardMaterial({ color: 0x854d0e })
-                );
-                pallet.position.set(0, 0.1 + i * 0.22, 0.3);
-                extUnfixed.add(pallet);
-            }
-            h4.add(extUnfixed);
-
-            const extFixed = new THREE.Group();
-            extFixed.name = "fixedMesh";
-            extFixed.visible = false;
-            
-            const keepClearZone = new THREE.Mesh(
-                new THREE.PlaneGeometry(1.4, 1.2),
-                new THREE.MeshBasicMaterial({ color: 0xef4444 })
-            );
-            keepClearZone.rotation.x = -Math.PI / 2;
-            keepClearZone.position.set(0, 0.01, 0.3);
-            extFixed.add(keepClearZone);
-            h4.add(extFixed);
-
-            state.scene.add(h4);
-            state.hazardGroups[4] = { group: h4, pos: new THREE.Vector3(8.5, 2.4, -6.5) };
-
-
-            // --- HAZARD 5: Oil Spill on Aisle Floor ---
-            const h5 = new THREE.Group();
-            h5.position.set(-1.0, 0, 1.0);
-
-            const oilUnfixed = new THREE.Group();
-            oilUnfixed.name = "unfixedMesh";
-            const oilPuddle = new THREE.Mesh(
-                new THREE.CircleGeometry(0.8, 16),
-                new THREE.MeshBasicMaterial({ color: 0x854d0e, opacity: 0.85, transparent: true })
-            );
-            oilPuddle.rotation.x = -Math.PI / 2;
-            oilPuddle.position.y = 0.01;
-            oilUnfixed.add(oilPuddle);
-            h5.add(oilUnfixed);
-
-            const oilFixed = new THREE.Group();
-            oilFixed.name = "fixedMesh";
-            oilFixed.visible = false;
-
-            // Safety Warning Sign (A-Frame)
-            const signGroup = new THREE.Group();
-            const plateGeo = new THREE.PlaneGeometry(0.4, 0.6);
-            const plateMat = new THREE.MeshBasicMaterial({ color: 0xfacc15, side: THREE.DoubleSide });
-            const p1 = new THREE.Mesh(plateGeo, plateMat);
-            p1.position.set(0, 0.3, -0.15);
-            p1.rotation.x = 0.3;
-            const p2 = new THREE.Mesh(plateGeo, plateMat);
-            p2.position.set(0, 0.3, 0.15);
-            p2.rotation.x = -0.3;
-            signGroup.add(p1); signGroup.add(p2);
-            oilFixed.add(signGroup);
-            h5.add(oilFixed);
-
-            state.scene.add(h5);
-            state.hazardGroups[5] = { group: h5, pos: new THREE.Vector3(-1.0, 1.0, 1.0) };
-
-            createScreenHotspots();
-        }
-
-        function createScreenHotspots() {
-            const container = document.getElementById('hotspot-container');
-            container.innerHTML = '';
-
-            Object.keys(hazardsData).forEach(id => {
-                const btn = document.createElement('button');
-                btn.id = `hotspot-btn-${id}`;
-                btn.className = "hotspot-btn pointer-events-auto absolute w-10 h-10 rounded-full bg-amber-500 text-slate-950 font-black text-sm flex items-center justify-center border-2 border-white shadow-2xl transition transform active:scale-90 ui-interactive";
-                btn.innerText = id;
-                btn.onclick = (e) => {
-                    e.stopPropagation();
-                    openHazardModal(parseInt(id));
-                };
-                container.appendChild(btn);
-            });
-        }
-
-        function updateHotspotsPosition() {
-            if (!state.camera) return;
-
-            Object.keys(hazardsData).forEach(id => {
-                const data = state.hazardGroups[id];
-                const btn = document.getElementById(`hotspot-btn-${id}`);
-                if (!data || !btn) return;
-
-                const vector = data.pos.clone();
-                vector.project(state.camera);
-
-                if (vector.z > 1) {
-                    btn.style.display = 'none';
-                    return;
-                }
-
-                const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
-                const y = (-(vector.y * 0.5) + 0.5) * window.innerHeight;
-
-                btn.style.display = 'flex';
-                btn.style.left = `${x}px`;
-                btn.style.top = `${y}px`;
-            });
-        }
-
-        function setupTouchAndDPadControls() {
-            const bindDPad = (id, key) => {
-                const el = document.getElementById(id);
-                if (!el) return;
-                
-                const start = (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    state.dpadState[key] = true;
-                    el.classList.add('active');
-                };
-                const end = (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    state.dpadState[key] = false;
-                    el.classList.remove('active');
-                };
-
-                el.addEventListener('pointerdown', start);
-                el.addEventListener('pointerup', end);
-                el.addEventListener('pointerleave', end);
-                el.addEventListener('touchstart', start, { passive: false });
-                el.addEventListener('touchend', end, { passive: false });
+    // ==========================================
+    // 10. WEBXR VR MODE SETUP
+    // ==========================================
+    function setupVRButton() {
+      var btnVR = document.getElementById('btn-vr');
+      if ('xr' in navigator) {
+        navigator.xr.isSessionSupported('immersive-vr').then(function(supported) {
+          if (supported) {
+            btnVR.onclick = function() {
+              navigator.xr.requestSession('immersive-vr', { optionalFeatures: ['local-floor', 'bounded-floor'] })
+                .then(function(session) {
+                  renderer.xr.setSession(session);
+                });
             };
-
-            bindDPad('dpad-up', 'up');
-            bindDPad('dpad-down', 'down');
-            bindDPad('dpad-left', 'left');
-            bindDPad('dpad-right', 'right');
-
-            const btnReset = document.getElementById('dpad-reset');
-            if (btnReset) {
-                btnReset.onclick = () => teleportCamera('overview');
-            }
-        }
-
-        function processDPadMovement() {
-            if (!state.controls || !state.camera) return;
-
-            const speed = 0.08;
-            const rotSpeed = 0.025;
-
-            // Camera Look Vector projected on XZ plane
-            const forward = new THREE.Vector3();
-            state.camera.getWorldDirection(forward);
-            forward.y = 0;
-            forward.normalize();
-
-            if (state.dpadState.up) {
-                state.camera.position.addScaledVector(forward, speed);
-                state.controls.target.addScaledVector(forward, speed);
-            }
-            if (state.dpadState.down) {
-                state.camera.position.addScaledVector(forward, -speed);
-                state.controls.target.addScaledVector(forward, -speed);
-            }
-            if (state.dpadState.left) {
-                // Rotate camera target counter-clockwise
-                const offset = state.camera.position.clone().sub(state.controls.target);
-                offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), rotSpeed);
-                state.camera.position.copy(state.controls.target).add(offset);
-            }
-            if (state.dpadState.right) {
-                // Rotate camera target clockwise
-                const offset = state.camera.position.clone().sub(state.controls.target);
-                offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), -rotSpeed);
-                state.camera.position.copy(state.controls.target).add(offset);
-            }
-        }
-
-        function teleportCamera(preset) {
-            playSound('click');
-            let targetCam = { x: 0, y: 4.5, z: 9 };
-            let targetLook = { x: 0, y: 1.2, z: 0 };
-
-            if (preset === 'workbench') {
-                targetCam = hazardsData[1].cameraPos;
-                targetLook = hazardsData[1].targetPos;
-            } else if (preset === 'gas') {
-                targetCam = hazardsData[3].cameraPos;
-                targetLook = hazardsData[3].targetPos;
-            } else if (preset === 'extinguisher') {
-                targetCam = hazardsData[4].cameraPos;
-                targetLook = hazardsData[4].targetPos;
-            } else if (preset === 'oil') {
-                targetCam = hazardsData[5].cameraPos;
-                targetLook = hazardsData[5].targetPos;
-            }
-
-            state.camTransition = {
-                startCam: state.camera.position.clone(),
-                endCam: new THREE.Vector3(targetCam.x, targetCam.y, targetCam.z),
-                startTarget: state.controls.target.clone(),
-                endTarget: new THREE.Vector3(targetLook.x, targetLook.y, targetLook.z),
-                progress: 0
-            };
-        }
-
-        function updateCameraTransition() {
-            if (!state.camTransition) return;
-
-            state.camTransition.progress += 0.05;
-            const p = Math.min(state.camTransition.progress, 1.0);
-
-            // Smoothstep easing
-            const easeP = p * p * (3 - 2 * p);
-
-            state.camera.position.lerpVectors(state.camTransition.startCam, state.camTransition.endCam, easeP);
-            state.controls.target.lerpVectors(state.camTransition.startTarget, state.camTransition.endTarget, easeP);
-
-            if (p >= 1.0) {
-                state.camTransition = null;
-            }
-        }
-
-        function openHazardModal(id) {
-            playSound('found');
-            state.activeHazardId = id;
-            state.foundHazards.add(id);
-
-            const data = hazardsData[id];
-            document.getElementById('hazard-category-badge').innerText = data.category;
-            document.getElementById('hazard-step-text').innerText = `${state.foundHazards.size} / ${state.totalHazards}`;
-            document.getElementById('hazard-title').innerText = data.title;
-            document.getElementById('hazard-description').innerText = data.description;
-            document.getElementById('hazard-regulation').innerText = data.regulation;
-            document.getElementById('hazard-prevention').innerText = data.prevention;
-
-            const btnFix = document.getElementById('btn-fix-hazard');
-            if (state.fixedHazards.has(id)) {
-                btnFix.innerHTML = '<i class="fa-solid fa-check"></i> Déjà Sécurisé';
-                btnFix.disabled = true;
-                btnFix.className = "flex-1 py-3 px-4 rounded-xl bg-emerald-600 text-white font-black text-xs opacity-80 cursor-default";
-            } else {
-                btnFix.innerHTML = '<i class="fa-solid fa-screwdriver-wrench"></i> Mettre en Sécurité';
-                btnFix.disabled = false;
-                btnFix.className = "flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-restev-600 to-emerald-400 text-slate-950 font-black text-xs tracking-wide shadow-lg active:scale-95 transition flex items-center justify-center gap-2";
-            }
-
-            document.getElementById('modal-hazard').classList.remove('hidden');
-            renderHistoryList();
-        }
-
-        function fixHazardAction() {
-            const id = state.activeHazardId;
-            if (!id || state.fixedHazards.has(id)) return;
-
-            playSound('fix');
-            state.fixedHazards.add(id);
-
-            const hGroup = state.hazardGroups[id].group;
-            hGroup.getObjectByName("unfixedMesh").visible = false;
-            hGroup.getObjectByName("fixedMesh").visible = true;
-
-            const btn = document.getElementById(`hotspot-btn-${id}`);
-            if (btn) {
-                btn.classList.add('hotspot-fixed');
-                btn.innerHTML = '<i class="fa-solid fa-check"></i>';
-            }
-
-            document.getElementById('score-text').innerText = `${state.fixedHazards.size} / ${state.totalHazards}`;
-
-            closeHazardModal();
-
-            if (state.fixedHazards.size === state.totalHazards) {
-                setTimeout(triggerVictory, 400);
-            }
-        }
-
-        function closeHazardModal() {
-            playSound('click');
-            document.getElementById('modal-hazard').classList.add('hidden');
-        }
-
-        function triggerVictory() {
-            clearInterval(state.timerInterval);
-            playSound('fix');
-            document.getElementById('modal-victory').classList.remove('hidden');
-        }
-
-        function startSimulation() {
-            playSound('click');
-            document.getElementById('modal-welcome').classList.add('hidden');
-            state.started = true;
-            state.startTime = Date.now();
-            state.timerInterval = setInterval(updateTimer, 1000);
-            renderHistoryList();
-        }
-
-        function updateTimer() {
-            if (!state.startTime) return;
-            const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
-            const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
-            const s = (elapsed % 60).toString().padStart(2, '0');
-            const timeStr = `${m}:${s}`;
-            document.getElementById('timer-text').innerText = timeStr;
-            document.getElementById('final-time').innerText = timeStr;
-            document.getElementById('cert-time-display').innerText = timeStr;
-        }
-
-        function renderHistoryList() {
-            const container = document.getElementById('history-list');
-            container.innerHTML = '';
-
-            Object.values(hazardsData).forEach(hazard => {
-                const isFixed = state.fixedHazards.has(hazard.id);
-                const isFound = state.foundHazards.has(hazard.id);
-
-                const item = document.createElement('div');
-                item.className = `p-3 rounded-2xl border text-xs transition ${isFixed ? 'bg-slate-900/90 border-emerald-500/40' : (isFound ? 'bg-slate-900/60 border-amber-500/40' : 'bg-slate-900/40 border-slate-800 opacity-60')}`;
-                item.innerHTML = `
-                    <div class="flex items-center justify-between">
-                        <strong class="text-white">${hazard.title}</strong>
-                        <i class="fa-solid ${isFixed ? 'fa-circle-check text-emerald-400' : (isFound ? 'fa-eye text-amber-400' : 'fa-circle-dot text-slate-600')} text-sm"></i>
-                    </div>
-                    <span class="text-[10px] font-bold text-slate-400 block mt-0.5">${hazard.category}</span>
-                `;
-                container.appendChild(item);
-            });
-        }
-
-        function toggleHistoryDrawer() {
-            playSound('click');
-            const drawer = document.getElementById('drawer-history');
-            drawer.classList.toggle('translate-x-full');
-        }
-
-        function toggleAudio() {
-            state.audioEnabled = !state.audioEnabled;
-            document.getElementById('sound-icon').className = state.audioEnabled ? 'fa-solid fa-volume-high text-restev-400' : 'fa-solid fa-volume-xmark text-slate-500';
-        }
-
-        function printCertificate() {
-            playSound('click');
-            const name = document.getElementById('participant-name').value.trim();
-            document.getElementById('cert-name-display').innerText = name || "Salarié Adhérent RESTEV 85";
-            window.print();
-        }
-
-        function resetSimulation() {
-            playSound('click');
-            location.reload();
-        }
-
-        function onWindowResize() {
-            state.camera.aspect = window.innerWidth / window.innerHeight;
-            state.camera.updateProjectionMatrix();
-            state.renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        function animate() {
-            processDPadMovement();
-            updateCameraTransition();
-            state.controls.update();
-            updateHotspotsPosition();
-            state.renderer.render(state.scene, state.camera);
-        }
-
-        window.onload = function() {
-            init3DScene();
+          } else {
+            btnVR.title = "Casque VR non détecté sur ce navigateur";
+          }
+        });
+      } else {
+        btnVR.onclick = function() {
+          alert("Le mode WebXR nécessite un navigateur compatible VR (ex: Meta Quest Browser, Chrome Android avec WebXR activé).");
         };
-    </script>
+      }
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // ==========================================
+    // 11. MAIN ANIMATION RENDER LOOP
+    // ==========================================
+    function animate() {
+      renderer.setAnimationLoop(render);
+    }
+
+    function render() {
+      var time = Date.now() * 0.003;
+
+      // Smooth camera position interpolation (lerp)
+      camera.position.lerp(cameraTargetPos, 0.05);
+      if (controls) {
+        controls.target.lerp(cameraTargetLookAt, 0.05);
+        controls.update();
+      }
+
+      // Animate pulsing hotspot rings in 3D
+      hotspots.forEach(function(hs) {
+        var ring = hs.getObjectByName("hotspotRing");
+        if (ring) {
+          var scale = 1 + Math.sin(time * 3) * 0.15;
+          ring.scale.set(scale, scale, scale);
+          ring.rotation.z += 0.01;
+        }
+        hs.lookAt(camera.position); // Billboard hotspot badges towards user
+      });
+
+      renderer.render(scene, camera);
+    }
+
+    // Start 3D App on window load
+    window.onload = function() {
+      try {
+        init3D();
+        animate();
+      } catch (err) {
+        console.error("Erreur d'initialisation 3D:", err);
+        var logger = document.getElementById('error-logger');
+        if (logger) {
+          logger.classList.remove('hidden');
+          document.getElementById('error-list').innerHTML += '<div>❌ ERREUR SEVERE: ' + err.message + '</div>';
+        }
+      }
+    };
+  </script>
 </body>
 </html>
