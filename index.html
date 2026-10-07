@@ -1,21 +1,1151 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PREV'IA Terrain + TutoPrev</title><style>
-:root{--n:#123552;--m:#20a38f;--b:#f2f6f9;--l:#dbe5ec;--t:#20384d}*{box-sizing:border-box}body{margin:0;background:var(--b);font:16px Segoe UI,Arial;color:var(--t)}header{background:#fff;border-bottom:1px solid var(--l);padding:14px 20px;display:flex;justify-content:space-between;align-items:center}header b{color:var(--n);font-size:1.15rem}header small{display:block;color:#6b7d8d}.wrap{max-width:1050px;margin:auto;padding:25px 15px 70px}.hero{text-align:center;margin:20px 0 28px}.hero h1{font-size:clamp(2rem,5vw,3.6rem);margin:8px;color:var(--n)}.hero p{color:#6b7d8d}.panel{display:none;background:#fff;border:1px solid var(--l);border-radius:24px;padding:clamp(20px,4vw,38px);box-shadow:0 18px 45px #17365012}.panel.on{display:block}h2{color:var(--n);margin-top:0}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}.pick,.tool,.answer{border:1.5px solid var(--l);background:#fff;border-radius:16px;padding:17px;text-align:left;cursor:pointer}.pick:hover,.tool:hover,.answer:hover{border-color:var(--m);background:#f0faf8}.pick.sel{border:2px solid var(--m);background:#effaf8}.pick b,.tool b{display:block;color:var(--n);margin:7px 0}.pick small,.tool small,.muted{color:#6b7d8d}.nav{display:flex;justify-content:space-between;margin-top:25px}.btn{border:0;border-radius:13px;padding:13px 19px;font-weight:800;cursor:pointer}.primary{background:var(--n);color:#fff}.secondary{background:#eaf0f4;color:var(--n)}.btn:disabled{opacity:.35}.bar{height:10px;background:#e6edf2;border-radius:10px;overflow:hidden;margin:14px 0}.bar span{display:block;height:100%;background:linear-gradient(90deg,#397bc5,var(--m));width:0}.phase{border:1px solid var(--l);border-radius:16px;margin:10px 0;overflow:hidden}.phase h3{margin:0;padding:14px;background:#f7f9fb;color:var(--n)}.task{padding:13px 15px;border-top:1px solid #edf1f4;display:flex;gap:11px}.task input{width:22px;height:22px;accent-color:var(--m)}.tools{margin-top:25px;padding-top:20px;border-top:2px solid #edf1f4}.tools .tool:first-child{border:2px solid var(--m)}.modal{position:fixed;inset:0;background:#0b2239b8;display:none;place-items:center;padding:15px;z-index:9}.modal.on{display:grid}.box{background:#fff;border-radius:22px;padding:24px;width:min(720px,100%);max-height:90vh;overflow:auto}.boxhead{display:flex;justify-content:space-between}.close{border:0;background:#edf2f5;border-radius:50%;width:40px;height:40px;font-size:1.3rem}.answers{display:grid;gap:9px}.answer.good{border-color:var(--m);background:#effaf8}.answer.bad{border-color:#c84949;background:#fff1f1}.score{width:90px;height:90px;border-radius:50%;background:#e8f7f4;color:var(--m);display:grid;place-items:center;font-size:1.5rem;font-weight:900;margin:20px auto}.alert{background:#fff6d6;border-left:5px solid #e5a400;padding:14px;border-radius:10px;margin-top:15px}details{margin-top:18px;border:1px solid var(--l);border-radius:13px}summary{padding:14px;cursor:pointer;font-weight:800}.docs{padding:0 14px 14px;display:flex;gap:8px;flex-wrap:wrap}@media(max-width:720px){.grid{grid-template-columns:1fr}.pick{padding:14px}.hero h1{font-size:2.2rem}}@media print{body>*:not(#print){display:none!important}#print{display:block!important;padding:12mm}@page{size:A4;margin:10mm}}
-</style></head><body><header><div><b>RESTEV 85 · PREV'IA Terrain</b><small>Accueil humain + pédagogie TutoPrev · Version 2026.10.07.24</small></div><button class="btn secondary" onclick="reset()">Nouvel accueil</button></header><main class="wrap"><div class="hero"><h1>Accueillir, faire observer, vérifier.</h1><p>Les boutons simplifient la préparation. Le terrain et l'échange restent prioritaires.</p></div>
-<section class="panel on" data-s="0"><h2>1. Qui accueillez-vous ?</h2><div class="grid" id="profiles"><button class="pick" data-v="salarié">👋<b>Nouveau salarié</b><small>CDI, CDD, saisonnier</small></button><button class="pick" data-v="intérimaire">🔄<b>Intérimaire</b><small>Mission temporaire</small></button><button class="pick" data-v="apprenti">🎓<b>Apprenti</b><small>Contrat d'apprentissage</small></button><button class="pick" data-v="stagiaire">📘<b>Stagiaire</b><small>Convention de stage</small></button><button class="pick" data-v="observation">👀<b>En observation</b><small>Découverte du métier</small></button><button class="pick" data-v="changement de poste">🧭<b>Changement de poste</b><small>Nouvelles tâches ou machine</small></button></div><div class="nav"><span></span><button class="btn primary next" disabled>Continuer</button></div></section>
-<section class="panel" data-s="1"><h2>2. Quel âge ?</h2><div class="grid" id="ages"><button class="pick" data-v="18 ans ou plus">✓<b>18 ans ou plus</b><small>Majeur</small></button><button class="pick" data-v="16 à moins de 18 ans">16<b>16 à moins de 18 ans</b><small>Jeune travailleur</small></button><button class="pick" data-v="15 à moins de 16 ans">15<b>15 à moins de 16 ans</b><small>Protection renforcée</small></button><button class="pick" data-v="moins de 15 ans">!<b>Moins de 15 ans</b><small>Vérification préalable</small></button></div><div id="ageAlert"></div><div class="nav"><button class="btn secondary back">Retour</button><button class="btn primary next" disabled>Continuer</button></div></section>
-<section class="panel" data-s="2"><h2>3. Quel accueil réaliser ?</h2><div class="grid" id="goals"><button class="pick" data-v="prise de poste">🚀<b>Prise de poste</b><small>Découverte du travail réel</small></button><button class="pick" data-v="accueil sécurité">🛡️<b>Accueil sécurité</b><small>Urgence, circulation, règles vitales</small></button><button class="pick" data-v="nouvel équipement">⚙️<b>Nouvel équipement</b><small>Démonstration et pratique guidée</small></button><button class="pick" data-v="renfort ponctuel">🤝<b>Renfort ponctuel</b><small>Parcours essentiel</small></button></div><div class="nav"><button class="btn secondary back">Retour</button><button class="btn primary next" disabled>Démarrer sur le terrain</button></div></section>
-<section class="panel" data-s="3"><h2>Accueil terrain</h2><p id="context" class="muted"></p><div class="bar"><span id="bar"></span></div><div id="phases"></div><section class="tools"><h2>Outils pédagogiques TutoPrev</h2><p class="muted">Ces outils complètent l'observation et la démonstration. Ils ne remplacent pas la mise en situation.</p><div class="grid"><button class="tool" onclick="quizStart()">🧠<b>Test express TutoPrev'</b><small>3 questions adaptées au parcours</small></button><button class="tool" onclick="observe()">👁️<b>Repérage des risques</b><small>Méthode interactive d'observation</small></button><button class="tool" onclick="resources()">📚<b>Supports métier</b><small>TutoPrev', INRS et fiches FAST</small></button></div></section><div class="nav"><button class="btn secondary back">Modifier</button><button class="btn primary" onclick="finish()">Terminer l'accueil</button></div><details><summary>Traçabilité et documents, seulement si nécessaires</summary><div class="docs"><button class="btn secondary" onclick="printDoc()">Synthèse PDF</button><button class="btn secondary" onclick="copyDoc()">Copier le compte rendu</button></div></details></section>
-<section class="panel" data-s="4"><div style="text-align:center"><div class="score">✓</div><h2>Accueil réalisé</h2><p>Le parcours terrain est terminé. Un suivi à J+1 est recommandé.</p><button class="btn primary" onclick="reset()">Nouvel accueil</button><details><summary>Créer la trace</summary><div class="docs"><button class="btn secondary" onclick="printDoc()">Synthèse PDF</button><button class="btn secondary" onclick="copyDoc()">Copier</button></div></details></div></section></main>
-<div class="modal" id="modal"><div class="box"><div class="boxhead"><div><small id="kick"></small><h2 id="mtitle"></h2></div><button class="close" onclick="modal.classList.remove('on')">×</button></div><div id="mbody"></div></div></div><section id="print" style="display:none"></section>
-<script>
-const st={s:0,profile:'',age:'',goal:'',score:null};const base=[['Accueillir',['Présenter le tuteur et les personnes ressources','Faire visiter les lieux utiles','Montrer l’alerte, les secours et l’évacuation']],['Faire observer',['Présenter les tâches et les limites d’autonomie','Demander à la personne de repérer les dangers','Montrer les mesures de prévention et le geste attendu']],['Vérifier',['Faire reformuler les consignes essentielles','Réaliser une mise en situation accompagnée','Prévoir un point de suivi à J+1']]];
-function bind(id,key){document.querySelectorAll('#'+id+' .pick').forEach(b=>b.onclick=()=>{document.querySelectorAll('#'+id+' .pick').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');st[key]=b.dataset.v;document.querySelector('.panel.on .next').disabled=false;if(key==='age')ageHelp()})}bind('profiles','profile');bind('ages','age');bind('goals','goal');
-function go(n){st.s=n;document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on',+p.dataset.s===n));if(n===3)build();scrollTo({top:0,behavior:'smooth'})}document.querySelectorAll('.next').forEach(b=>b.onclick=()=>go(st.s+1));document.querySelectorAll('.back').forEach(b=>b.onclick=()=>go(st.s-1));
-function ageHelp(){ageAlert.innerHTML=st.age==='18 ans ou plus'?'':`<div class="alert"><b>${st.age==='moins de 15 ans'?'Vérification préalable obligatoire':'Protection jeune travailleur activée'}</b><br>PREV'IA adapte les limites, la surveillance et les tâches à vérifier.</div>`}
-function build(){context.textContent=st.profile+' · '+st.age+' · '+st.goal;let data=JSON.parse(JSON.stringify(base));if(st.profile==='observation')data[1][1]=['Faire observer sans tenue autonome du poste','Questionner sur les dangers visibles','Rester dans les activités prévues par la convention'];if(st.goal==='nouvel équipement')data[1][1]=['Montrer les protections et arrêts de sécurité','Faire une démonstration complète','Autoriser la pratique uniquement sous accompagnement'];if(st.age!=='18 ans ou plus')data[1][1].push('Confirmer que chaque tâche est autorisée pour cet âge');phases.innerHTML=data.map((p,i)=>`<div class="phase"><h3>${i+1}. ${p[0]}</h3>${p[1].map(t=>`<label class="task"><input type="checkbox" onchange="progress()"><span>${t}</span></label>`).join('')}</div>`).join('');progress()}
-function progress(){const a=[...document.querySelectorAll('#phases input')];bar.style.width=(a.filter(x=>x.checked).length/a.length*100)+'%'}
-const qs={"prise de poste":[['Face à une tâche inconnue ?',['Essayer seul','Demander une démonstration','Attendre'],1],['Si la situation change ?',['Continuer','Arrêter et demander','Improviser'],1],['La reformulation sert à…',['Vérifier la compréhension','Remplacer la démonstration','Signer un document'],0]],"accueil sécurité":[['En cas d’alarme ?',['Finir la tâche','Évacuer selon la consigne','Récupérer ses affaires'],1],['Un passage encombré ?',['Le signaler et le dégager','Le contourner','Ne rien faire'],0],['En cas de doute ?',['Questionner le tuteur','Continuer','Attendre le soir'],0]],"nouvel équipement":[['Avant la première utilisation ?',['Démonstration et protections','Essai autonome','Lecture du nom'],0],['Une protection gêne ?',['La retirer','Arrêter et signaler','La bloquer'],1],['Dysfonctionnement ?',['Redémarrer','Mettre en sécurité et prévenir','Changer de tâche'],1]],"renfort ponctuel":[['La mission change ?',['Demander les consignes','Se débrouiller','Copier'],0],['Le risque principal ?',['Connu avant de commencer','Découvert après','Noté le soir'],0],['Tâche non prévue ?',['Vérifier consigne et autorisation','Accepter','Improviser'],0]]};let qi=0,score=0;
-function openM(t,k,h){mtitle.textContent=t;kick.textContent=k;mbody.innerHTML=h;modal.classList.add('on')}function quizStart(){qi=0;score=0;quiz()}function quiz(){const q=qs[st.goal][qi];if(!q){st.score=score;openM('Test terminé','TUTOPREV’',`<div class="score">${score}/3</div><p style="text-align:center"><b>${score===3?'Acquis vérifiés':score===2?'À consolider':'Reprendre les points essentiels'}</b></p><button class="btn primary" onclick="modal.classList.remove('on')">Revenir à l'accueil</button>`);return}openM(`Question ${qi+1}/3`,'TEST EXPRESS TUTOPREV’',`<h3>${q[0]}</h3><div class="answers">${q[1].map((x,i)=>`<button class="answer" onclick="ans(${i})">${x}</button>`).join('')}</div>`)}function ans(i){const q=qs[st.goal][qi],a=[...document.querySelectorAll('.answer')];a.forEach((b,n)=>{b.disabled=true;b.classList.add(n===q[2]?'good':n===i?'bad':'')});if(i===q[2])score++;setTimeout(()=>{qi++;quiz()},650)}
-function observe(){openM('Repérage guidé des risques','TUTOPREV’ TERRAIN',`<p>Avant d'expliquer, faites observer la situation :</p><label class="task"><input type="checkbox">Qu’est-ce qui peut faire mal ?</label><label class="task"><input type="checkbox">Où est la zone dangereuse ?</label><label class="task"><input type="checkbox">Quelle mesure évite l’exposition ?</label><label class="task"><input type="checkbox">Que faire si la situation change ?</label>`)}function resources(){openM('Supports métier','RESSOURCES',`<p>Ouvrir uniquement le support utile au poste :</p><p><a href="https://www.inrs.fr/demarche/nouveaux-embauches/demarche-TutoPrev.html" target="_blank">TutoPrev’ INRS</a></p><p><a href="https://www.inrs.fr/carrefour-metiers.html" target="_blank">Prévention par métier INRS</a></p><p><a href="https://forsapre.fr/fiches_fast" target="_blank">Fiches FAST</a></p>`)}
-function trace(){const done=[...document.querySelectorAll('#phases input:checked')].map(x=>x.nextElementSibling.textContent);return `Accueil prévention\n${st.profile} · ${st.age} · ${st.goal}\n\nPoints abordés :\n- ${done.join('\n- ')}\n\nTest TutoPrev’ : ${st.score===null?'non réalisé':st.score+'/3'}\nSuivi : J+1.`}function copyDoc(){navigator.clipboard.writeText(trace()).then(()=>alert('Compte rendu copié'))}function printDoc(){print.innerHTML='<h1>Accueil prévention</h1><pre style="white-space:pre-wrap">'+trace()+'</pre>';print.style.display='block';window.print();print.style.display='none'}function finish(){localStorage.setItem('restevAccueil',trace());go(4)}function reset(){location.reload()}
-</script></body></html>
+<!DOCTYPE html>
+<html lang="fr" class="h-full bg-slate-950">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>RESTEV 85 - Chasse aux Risques VR & Mobile</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        restev: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#0d9488',
+                            600: '#0f766e',
+                            700: '#115e59',
+                            800: '#134e4a',
+                            900: '#042f2e',
+                            blue: '#1e3a8a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- FontAwesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Three.js, Controls and WebXR libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/webxr/VRButton.js"></script>
+
+    <style>
+        /* CRITICAL FOR MOBILE TOUCH NAVIGATION */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: fixed;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #030712;
+        }
+
+        /* Essential overlay pointer-event decoupling */
+        .ui-overlay-container {
+            pointer-events: none !important;
+        }
+        .ui-interactive {
+            pointer-events: auto !important;
+        }
+
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+            touch-action: none !important;
+            outline: none;
+        }
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Pulsing Hotspots */
+        @keyframes pulse-ring {
+            0% { transform: translate(-50%, -50%) scale(0.9); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.8); }
+            70% { transform: translate(-50%, -50%) scale(1.1); box-shadow: 0 0 0 14px rgba(245, 158, 11, 0); }
+            100% { transform: translate(-50%, -50%) scale(0.9); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+
+        .hotspot-btn {
+            animation: pulse-ring 2s infinite;
+        }
+
+        .hotspot-fixed {
+            animation: none;
+            background: #10b981 !important;
+            border-color: #ffffff !important;
+        }
+
+        /* Touch D-Pad styling */
+        .dpad-btn {
+            background: rgba(30, 41, 59, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-size: 14px;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: background 0.1s;
+        }
+        .dpad-btn:active, .dpad-btn.active {
+            background: rgba(13, 148, 136, 0.9);
+            border-color: #2dd4bf;
+            transform: scale(0.95);
+        }
+
+        /* Printable certificate formatting */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #certificate-print-area, #certificate-print-area * {
+                visibility: visible;
+            }
+            #certificate-print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white !important;
+                color: black !important;
+            }
+        }
+    </style>
+</head>
+<body class="h-full text-slate-100 flex flex-col justify-between">
+
+    <div id="canvas-container" class="w-full h-full absolute inset-0 z-0"></div>
+
+    <div id="hotspot-container" class="fixed inset-0 z-10 ui-overlay-container">
+        <!-- Hotspots injected dynamically by JS -->
+    </div>
+
+    <header class="fixed top-0 left-0 right-0 z-20 p-2 sm:p-4 ui-overlay-container">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-2">
+            
+            <!-- RESTEV 85 Logo Badge -->
+            <div class="ui-interactive flex items-center gap-2 glass-panel px-3 py-2 rounded-2xl shadow-xl">
+                <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-restev-600 to-emerald-400 flex items-center justify-center text-slate-950 font-black text-sm shadow-md">
+                    85
+                </div>
+                <div>
+                    <h1 class="text-xs sm:text-sm font-extrabold text-white leading-tight">
+                        RESTEV <span class="text-restev-400 font-bold hidden sm:inline">| Santé au Travail 85</span>
+                    </h1>
+                    <p class="text-[10px] text-slate-400 font-medium">Prévention 3D & VR Atelier</p>
+                </div>
+            </div>
+
+            <!-- Score & Timer HUD -->
+            <div class="ui-interactive flex items-center gap-3 glass-panel px-3.5 py-2 rounded-2xl shadow-xl">
+                <div class="flex items-center gap-1.5 border-r border-slate-700/80 pr-3">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-400 text-xs"></i>
+                    <span id="score-text" class="text-xs sm:text-sm font-black text-white">0 / 5</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <i class="fa-regular fa-clock text-restev-400 text-xs"></i>
+                    <span id="timer-text" class="text-xs sm:text-sm font-black font-mono text-restev-400">00:00</span>
+                </div>
+            </div>
+
+            <!-- Utility Quick Actions -->
+            <div class="ui-interactive flex items-center gap-1.5">
+                <button onclick="toggleHistoryDrawer()" class="glass-panel hover:bg-slate-800 text-slate-200 w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center transition active:scale-90 shadow-md" title="Liste des risques">
+                    <i class="fa-solid fa-list-check text-restev-400 text-xs sm:text-sm"></i>
+                </button>
+                <button id="btn-sound" onclick="toggleAudio()" class="glass-panel hover:bg-slate-800 text-slate-200 w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center transition active:scale-90 shadow-md">
+                    <i id="sound-icon" class="fa-solid fa-volume-high text-restev-400 text-xs sm:text-sm"></i>
+                </button>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- Mobile On-Screen D-Pad / Navigation (Bottom Left) -->
+    <div class="fixed bottom-16 left-3 z-20 ui-overlay-container flex flex-col items-center gap-1">
+        <div class="text-[9px] font-black uppercase text-slate-400 bg-slate-950/80 px-2 py-0.5 rounded-full border border-slate-800 ui-interactive">
+            Déplacement
+        </div>
+        <div class="grid grid-cols-3 gap-1 w-32 h-32 p-1.5 glass-panel rounded-2xl shadow-2xl ui-interactive">
+            <div></div>
+            <button id="dpad-up" class="dpad-btn" title="Avancer"><i class="fa-solid fa-chevron-up"></i></button>
+            <div></div>
+            
+            <button id="dpad-left" class="dpad-btn" title="Pivoter Gauche"><i class="fa-solid fa-rotate-left"></i></button>
+            <button id="dpad-reset" class="dpad-btn bg-slate-800/90 text-amber-400" title="Centrer Vue"><i class="fa-solid fa-crosshairs"></i></button>
+            <button id="dpad-right" class="dpad-btn" title="Pivoter Droite"><i class="fa-solid fa-rotate-right"></i></button>
+            
+            <div></div>
+            <button id="dpad-down" class="dpad-btn" title="Reculer"><i class="fa-solid fa-chevron-down"></i></button>
+            <div></div>
+        </div>
+    </div>
+
+    <!-- Quick Zone Teleport Navigation Bar (Bottom Center) -->
+    <nav class="fixed bottom-3 left-0 right-0 z-20 ui-overlay-container px-3">
+        <div class="max-w-md mx-auto ui-interactive glass-panel p-1.5 rounded-2xl flex items-center justify-between gap-1 shadow-2xl text-[10px] sm:text-[11px]">
+            <button onclick="teleportCamera('overview')" class="flex-1 py-2 px-1 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 font-semibold flex flex-col items-center gap-0.5 active:scale-95 transition">
+                <i class="fa-solid fa-eye text-restev-400"></i> Vue Globale
+            </button>
+            <button onclick="teleportCamera('workbench')" class="flex-1 py-2 px-1 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 font-semibold flex flex-col items-center gap-0.5 active:scale-95 transition">
+                <i class="fa-solid fa-vial-virus text-amber-400"></i> Solvant
+            </button>
+            <button onclick="teleportCamera('gas')" class="flex-1 py-2 px-1 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 font-semibold flex flex-col items-center gap-0.5 active:scale-95 transition">
+                <i class="fa-solid fa-fire-flame-simple text-rose-400"></i> Gaz
+            </button>
+            <button onclick="teleportCamera('extinguisher')" class="flex-1 py-2 px-1 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 font-semibold flex flex-col items-center gap-0.5 active:scale-95 transition">
+                <i class="fa-solid fa-fire-extinguisher text-red-400"></i> Extincteur
+            </button>
+            <button onclick="teleportCamera('oil')" class="flex-1 py-2 px-1 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 font-semibold flex flex-col items-center gap-0.5 active:scale-95 transition">
+                <i class="fa-solid fa-droplet text-yellow-400"></i> Sol Glissant
+            </button>
+        </div>
+    </nav>
+
+    <!-- Modal: Welcome / Instructions -->
+    <div id="modal-welcome" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md ui-interactive">
+        <div class="glass-panel max-w-lg w-full p-5 sm:p-7 rounded-3xl shadow-2xl border border-slate-700/80 relative text-center sm:text-left">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-restev-600 to-emerald-400 text-slate-950 flex items-center justify-center text-2xl font-black shadow-lg mx-auto sm:mx-0 mb-3">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            
+            <span class="text-[10px] font-extrabold uppercase tracking-widest text-restev-400">RESTEV 85 - Santé au Travail</span>
+            <h2 class="text-xl sm:text-2xl font-black text-white mt-0.5 mb-2">Chasse aux Risques 3D & VR</h2>
+            
+            <p class="text-slate-300 text-xs sm:text-sm leading-relaxed mb-4">
+                Explorez l'atelier industriel pour détecter et corriger <strong class="text-restev-400">5 situations de risques professionnels</strong> majeurs.
+            </p>
+
+            <div class="space-y-2 mb-5 text-left text-xs text-slate-300">
+                <div class="glass-card p-2.5 rounded-xl flex items-center gap-3">
+                    <i class="fa-solid fa-hand-pointer text-restev-400 text-base"></i>
+                    <span><strong>1 doigt sur l'écran :</strong> Faites glisser dans le vide pour orienter le regard 360°.</span>
+                </div>
+                <div class="glass-card p-2.5 rounded-xl flex items-center gap-3">
+                    <i class="fa-solid fa-gamepad text-amber-400 text-base"></i>
+                    <span><strong>D-Pad tactile (en bas à gauche) :</strong> Avancez et pivotez facilement dans l'atelier.</span>
+                </div>
+                <div class="glass-card p-2.5 rounded-xl flex items-center gap-3">
+                    <i class="fa-solid fa-bullseye text-emerald-400 text-base"></i>
+                    <span><strong>Anomalies numérotées (1 à 5) :</strong> Cliquez sur une pastille lumineuse pour inspecter.</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-2">
+                <button onclick="startSimulation()" class="flex-1 py-3.5 px-5 rounded-2xl bg-gradient-to-r from-restev-600 to-emerald-400 hover:from-restev-500 hover:to-emerald-300 text-slate-950 font-black text-sm tracking-wide shadow-xl active:scale-95 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-play"></i> Démarrer la Chasse
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Hazard Analysis & Correction -->
+    <div id="modal-hazard" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-md hidden ui-interactive">
+        <div class="glass-panel max-w-xl w-full p-5 rounded-3xl shadow-2xl border border-slate-700/80 max-h-[85vh] flex flex-col justify-between">
+            
+            <div class="overflow-y-auto space-y-3 pr-1">
+                <div class="flex items-center justify-between">
+                    <span id="hazard-category-badge" class="px-3 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        Anomalie Décelée
+                    </span>
+                    <span id="hazard-step-text" class="text-xs font-bold text-slate-400">1 / 5</span>
+                </div>
+
+                <h3 id="hazard-title" class="text-lg sm:text-xl font-black text-white leading-tight">Titre du Risque</h3>
+                
+                <!-- Description -->
+                <div class="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 text-xs">
+                    <h4 class="font-extrabold text-amber-400 tracking-wider mb-1 flex items-center gap-1.5">
+                        <i class="fa-solid fa-eye"></i> Constat du Technicien Prévention
+                    </h4>
+                    <p id="hazard-description" class="text-slate-200 leading-relaxed">Description...</p>
+                </div>
+
+                <!-- Regulatory Framework -->
+                <div class="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 text-xs">
+                    <h4 class="font-extrabold text-sky-400 tracking-wider mb-1 flex items-center gap-1.5">
+                        <i class="fa-solid fa-scale-balanced"></i> Règlements Code du Travail & INRS
+                    </h4>
+                    <p id="hazard-regulation" class="text-slate-300 leading-relaxed">Référence réglementaire...</p>
+                </div>
+
+                <!-- Solution & Corrective action -->
+                <div class="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 text-xs">
+                    <h4 class="font-extrabold text-emerald-400 tracking-wider mb-1 flex items-center gap-1.5">
+                        <i class="fa-solid fa-shield-check"></i> Action Préventive RESTEV 85
+                    </h4>
+                    <p id="hazard-prevention" class="text-slate-300 leading-relaxed">Correction...</p>
+                </div>
+            </div>
+
+            <!-- Footer Action Button -->
+            <div class="pt-4 mt-3 border-t border-slate-800 flex items-center justify-between gap-3">
+                <button onclick="closeHazardModal()" class="py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition">
+                    Fermer
+                </button>
+                <button id="btn-fix-hazard" onclick="fixHazardAction()" class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-restev-600 to-emerald-400 hover:from-restev-500 hover:to-emerald-300 text-slate-950 font-black text-xs tracking-wide shadow-lg active:scale-95 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-screwdriver-wrench"></i> Mettre en Sécurité
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Drawer: Hazard History List -->
+    <div id="drawer-history" class="fixed top-0 right-0 bottom-0 w-full sm:w-80 z-40 glass-panel border-l border-slate-700/80 transform translate-x-full transition-transform duration-300 p-5 flex flex-col justify-between ui-interactive">
+        <div>
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
+                <h3 class="text-base font-black text-white flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-check text-restev-400"></i> Bilan Prévention RESTEV
+                </h3>
+                <button onclick="toggleHistoryDrawer()" class="text-slate-400 hover:text-white p-2">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div id="history-list" class="space-y-2.5 max-h-[calc(100vh-180px)] overflow-y-auto pr-1">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+
+        <button onclick="toggleHistoryDrawer()" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs uppercase tracking-wider">
+            Fermer
+        </button>
+    </div>
+
+    <!-- Modal: Victory & Certificate -->
+    <div id="modal-victory" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-lg hidden ui-interactive">
+        <div class="glass-panel max-w-lg w-full p-6 rounded-3xl shadow-2xl border border-emerald-500/40 text-center relative max-h-[90vh] overflow-y-auto">
+            
+            <div class="w-14 h-14 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl mx-auto mb-2 border border-emerald-500/40">
+                <i class="fa-solid fa-award"></i>
+            </div>
+
+            <span class="text-[10px] font-black uppercase tracking-widest text-emerald-400">Atelier 100% Sécurisé</span>
+            <h2 class="text-xl sm:text-2xl font-black text-white mt-0.5 mb-1">Attestation RESTEV Validée</h2>
+            <p class="text-slate-300 text-xs mb-4">Toutes les anomalies professionnelles ont été décelées et corrigées.</p>
+
+            <div class="grid grid-cols-2 gap-2.5 mb-4">
+                <div class="glass-card p-3 rounded-xl">
+                    <span class="text-[10px] text-slate-400 font-bold block uppercase">Maturité Prévention</span>
+                    <span class="text-xl font-black text-emerald-400">100 % (5/5)</span>
+                </div>
+                <div class="glass-card p-3 rounded-xl">
+                    <span class="text-[10px] text-slate-400 font-bold block uppercase">Temps Écoule</span>
+                    <span id="final-time" class="text-xl font-black text-restev-400 font-mono">00:00</span>
+                </div>
+            </div>
+
+            <!-- Name Input for Certificate -->
+            <div class="mb-5 text-left glass-card p-3 rounded-xl">
+                <label class="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                    Nom du Salarié / Entreprise Adhérente RESTEV :
+                </label>
+                <input id="participant-name" type="text" placeholder="Ex: Jean Dupont - Technicien Achat" class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-xs focus:outline-none focus:border-restev-500">
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-2">
+                <button onclick="printCertificate()" class="flex-1 py-3 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-xs tracking-wide transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-print"></i> Télécharger Attestation
+                </button>
+                <button onclick="resetSimulation()" class="flex-1 py-3 px-3 rounded-xl bg-gradient-to-r from-restev-600 to-emerald-400 hover:from-restev-500 hover:to-emerald-300 text-slate-950 font-extrabold text-xs tracking-wide transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rotate-right"></i> Recommencer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Printable Certificate Area -->
+    <div id="certificate-print-area" class="hidden p-8 font-sans max-w-2xl mx-auto border-4 border-teal-800 my-8">
+        <div class="text-center border-b-2 border-slate-300 pb-4 mb-4">
+            <h1 class="text-2xl font-black text-teal-800 uppercase">RESTEV 85 - Santé au Travail</h1>
+            <p class="text-xs text-slate-600">Service de Prévention et de Santé au Travail Interentreprises en Vendée</p>
+        </div>
+        <div class="text-center my-6">
+            <h2 class="text-xl font-bold uppercase tracking-wider text-slate-800 mb-1">Attestation de Sensibilisation Prévention</h2>
+            <p class="text-xs text-slate-600">Module Interactif 3D & Réalité Virtuelle - Chasse aux Risques</p>
+        </div>
+        <div class="my-6 space-y-3 text-xs text-slate-800">
+            <p><strong>Salarié / Adhérent :</strong> <span id="cert-name-display">__________________________</span></p>
+            <p><strong>Module de Sensibilisation :</strong> Risques chimiques, électriques, incendie, chute et pression.</p>
+            <p><strong>Résultat :</strong> 5 / 5 Anomalies détectées et corrigées (100%)</p>
+            <p><strong>Temps de réalisation :</strong> <span id="cert-time-display">00:00</span></p>
+        </div>
+        <div class="flex justify-between items-end pt-8 mt-8 border-t border-slate-300">
+            <div>
+                <p class="text-[10px] text-slate-500">Service Prévention des Risques Professionnels RESTEV</p>
+            </div>
+            <div class="text-right">
+                <p class="text-[10px] text-slate-500">Visa Prévention</p>
+                <div class="w-28 h-12 border border-dashed border-slate-400 mt-1 flex items-center justify-center text-[10px] text-slate-400">
+                    RESTEV 85
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State Management
+        const state = {
+            started: false,
+            audioEnabled: true,
+            startTime: null,
+            timerInterval: null,
+            foundHazards: new Set(),
+            fixedHazards: new Set(),
+            activeHazardId: null,
+            totalHazards: 5,
+            scene: null,
+            camera: null,
+            renderer: null,
+            controls: null,
+            raycaster: new THREE.Raycaster(),
+            mouse: new THREE.Vector2(),
+            hazardGroups: {},
+            interactiveObjects: [],
+            // D-Pad active keys state
+            dpadState: { up: false, down: false, left: false, right: false },
+            // Camera smooth transition target
+            camTransition: null
+        };
+
+        // Data for 5 Workplace Hazards
+        const hazardsData = {
+            1: {
+                id: 1,
+                title: "Bidon de Solvant Toxique Ouvert & Fuyant",
+                category: "Risque Chimique",
+                description: "Un bidon de solvant inflammable est laissé ouvert et fuit sur l'établi sans bac de rétention ni pictogramme CLP.",
+                regulation: "Code du Travail Art. R4412-127 & INRS ED 954 : Tout produit chimique doit être étiqueté et stocké sur un bac de rétention étanche.",
+                prevention: "Refermer le bidon, coller l'étiquette de danger CLP et positionner l'ensemble dans un bac de rétention sécurisé.",
+                cameraPos: { x: 3.5, y: 2.2, z: -0.5 },
+                targetPos: { x: 4.5, y: 1.2, z: -2 }
+            },
+            2: {
+                id: 2,
+                title: "Câble Électrique Dénudé Traînant au Sol",
+                category: "Risque Électrique & Chute",
+                description: "Un câble d'alimentation de meuleuse est fortement endommagé avec fils mis à nu, posé dans le passage.",
+                regulation: "Code du Travail Art. R4226-1 : Les installations et équipements électriques doivent être maintenus en parfait état d'isolement.",
+                prevention: "Mettre hors tension, remplacer la section endommagée et placer le câble sous un passe-câble de sécurité biseauté.",
+                cameraPos: { x: 2.5, y: 2.0, z: -1.0 },
+                targetPos: { x: 3.2, y: 1.2, z: -2.2 }
+            },
+            3: {
+                id: 3,
+                title: "Bouteilles de Gaz Instables Non Arrimées",
+                category: "Risque Explosif & Pression",
+                description: "Deux bouteilles de gaz sous pression (acétylène/oxygène) sont posées verticalement sans chaîne d'ancrage.",
+                regulation: "INRS ED 6098 : Les bouteilles de gaz doivent être obligatoirement arrimées verticalement par un dispositif rigide (chaîne).",
+                prevention: "Ancrer immédiatement les bouteilles contre le mur d'atelier avec la chaîne de maintien métallisée.",
+                cameraPos: { x: -4.5, y: 2.5, z: -4.0 },
+                targetPos: { x: -6.5, y: 1.5, z: -6.0 }
+            },
+            4: {
+                id: 4,
+                title: "Extincteur d'Incendie Obstrué par des Palettes",
+                category: "Sécurité Incendie",
+                categoryClass: "bg-orange-500/20 text-orange-300 border-orange-500/30",
+                description: "L'extincteur d'urgence mural est totalement masqué et inaccessible derrière un empilement de palettes en bois.",
+                regulation: "Code du Travail Art. R4227-33 : Les moyens de premier secours incendie doivent être dégagés et accessibles en permanence.",
+                prevention: "Déplacer les palettes, libérer l'accès à l'extincteur et appliquer le marquage au sol rouge/jaune 'Zone Réserve Extincteur'.",
+                cameraPos: { x: 6.5, y: 2.5, z: -4.0 },
+                targetPos: { x: 8.5, y: 1.8, z: -6.0 }
+            },
+            5: {
+                id: 5,
+                title: "Flaque d'Huile Glissante Non Signalée au Sol",
+                category: "Risque de Glissade / Chute",
+                description: "Une flaque de lubrifiant répandue sur le sol de l'allée centrale présente un risque majeur de glissade.",
+                regulation: "Code du Travail Art. R4224-3 : Les sols doivent être exempts de bosses, trous ou surfaces glissantes et être maintenus propres.",
+                prevention: "Épandre de l'absorbant végétal, nettoyer la zone et installer temporairement un balisage 'Attention Sol Glissant'.",
+                cameraPos: { x: -1.5, y: 2.2, z: 2.5 },
+                targetPos: { x: -1.0, y: 0.1, z: 1.0 }
+            }
+        };
+
+        // WebAudio Sound Effects Synthesizer
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (!state.audioEnabled) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'found') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.2);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'fix') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(600, now + 0.25);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                osc.start(now);
+                osc.stop(now + 0.35);
+            } else if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            }
+        }
+
+        function init3DScene() {
+            const container = document.getElementById('canvas-container');
+
+            // Three.js Scene Setup
+            state.scene = new THREE.Scene();
+            state.scene.background = new THREE.Color(0x0a1120);
+            state.scene.fog = new THREE.FogExp2(0x0a1120, 0.035);
+
+            // Camera Setup
+            state.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+            state.camera.position.set(0, 4.5, 9);
+
+            // Renderer
+            state.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "highPerformance" });
+            state.renderer.setSize(window.innerWidth, window.innerHeight);
+            state.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            state.renderer.shadowMap.enabled = true;
+            state.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            state.renderer.xr.enabled = true;
+            container.appendChild(state.renderer.domElement);
+
+            // Append WebXR VR Button
+            if (window.VRButton) {
+                document.body.appendChild(VRButton.createButton(state.renderer));
+            }
+
+            // Orbit Controls configured specifically for touch stability
+            state.controls = new THREE.OrbitControls(state.camera, state.renderer.domElement);
+            state.controls.enableDamping = true;
+            state.controls.dampingFactor = 0.08;
+            state.controls.maxPolarAngle = Math.PI / 2 - 0.02;
+            state.controls.minDistance = 1.2;
+            state.controls.maxDistance = 15;
+            state.controls.target.set(0, 1.2, 0);
+
+            // Lighting Setup
+            const ambientLight = new THREE.AmbientLight(0x94a3b8, 0.8);
+            state.scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
+            dirLight.position.set(-5, 12, 6);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 1024;
+            dirLight.shadow.mapSize.height = 1024;
+            state.scene.add(dirLight);
+
+            // Build Workshop 3D Models
+            buildWorkshopEnvironment();
+            buildHazards();
+
+            // Bind Touch & D-Pad Listeners
+            setupTouchAndDPadControls();
+
+            // Resize Handler
+            window.addEventListener('resize', onWindowResize);
+
+            // Render Loop
+            state.renderer.setAnimationLoop(animate);
+        }
+
+        function buildWorkshopEnvironment() {
+            // Floor
+            const floorGeo = new THREE.PlaneGeometry(22, 20);
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.receiveShadow = true;
+            state.scene.add(floor);
+
+            // Yellow Safety Aisle Markings
+            const lineMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
+            const l1 = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 18), lineMat);
+            l1.rotation.x = -Math.PI / 2;
+            l1.position.set(-2.2, 0.01, 0);
+            state.scene.add(l1);
+
+            const l2 = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 18), lineMat);
+            l2.rotation.x = -Math.PI / 2;
+            l2.position.set(2.2, 0.01, 0);
+            state.scene.add(l2);
+
+            // Walls
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
+            const backWall = new THREE.Mesh(new THREE.PlaneGeometry(22, 7), wallMat);
+            backWall.position.set(0, 3.5, -10);
+            state.scene.add(backWall);
+
+            // Workbench
+            const benchGroup = new THREE.Group();
+            const top = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.12, 1.4), new THREE.MeshStandardMaterial({ color: 0x475569 }));
+            top.position.y = 1.0;
+            top.castShadow = true;
+            benchGroup.add(top);
+
+            const legMat = new THREE.MeshStandardMaterial({ color: 0x0f172a });
+            [[-1.6, -0.5], [1.6, -0.5], [-1.6, 0.5], [1.6, 0.5]].forEach(p => {
+                const leg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.0, 0.1), legMat);
+                leg.position.set(p[0], 0.5, p[1]);
+                benchGroup.add(leg);
+            });
+            benchGroup.position.set(4.5, 0, -2);
+            state.scene.add(benchGroup);
+        }
+
+        function buildHazards() {
+            
+            // --- HAZARD 1: Chemical Jug (On Workbench) ---
+            const h1 = new THREE.Group();
+            h1.position.set(4.2, 1.06, -2);
+            
+            const jugUnfixed = new THREE.Group();
+            jugUnfixed.name = "unfixedMesh";
+            const drum = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.2, 0.2, 0.5, 12),
+                new THREE.MeshStandardMaterial({ color: 0xea580c })
+            );
+            drum.rotation.z = 1.2;
+            drum.position.y = 0.15;
+            jugUnfixed.add(drum);
+
+            const spill = new THREE.Mesh(
+                new THREE.CircleGeometry(0.4, 12),
+                new THREE.MeshBasicMaterial({ color: 0x0284c7, opacity: 0.8, transparent: true })
+            );
+            spill.rotation.x = -Math.PI / 2;
+            spill.position.set(0.2, 0.01, 0);
+            jugUnfixed.add(spill);
+            h1.add(jugUnfixed);
+
+            const jugFixed = new THREE.Group();
+            jugFixed.name = "fixedMesh";
+            jugFixed.visible = false;
+            
+            const tray = new THREE.Mesh(
+                new THREE.BoxGeometry(0.7, 0.1, 0.6),
+                new THREE.MeshStandardMaterial({ color: 0xfacc15 })
+            );
+            tray.position.y = 0.05;
+            jugFixed.add(tray);
+
+            const drumFixed = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.18, 0.18, 0.5, 12),
+                new THREE.MeshStandardMaterial({ color: 0x0284c7 })
+            );
+            drumFixed.position.y = 0.32;
+            jugFixed.add(drumFixed);
+            h1.add(jugFixed);
+
+            state.scene.add(h1);
+            state.hazardGroups[1] = { group: h1, pos: new THREE.Vector3(4.2, 1.8, -2) };
+
+
+            // --- HAZARD 2: Damaged Cable / Angle Grinder ---
+            const h2 = new THREE.Group();
+            h2.position.set(3.2, 1.06, -2.2);
+
+            const gUnfixed = new THREE.Group();
+            gUnfixed.name = "unfixedMesh";
+            const body = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.08, 0.08, 0.4, 10),
+                new THREE.MeshStandardMaterial({ color: 0xd97706 })
+            );
+            body.rotation.x = Math.PI / 2;
+            gUnfixed.add(body);
+
+            const wire = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.02, 0.02, 0.6, 8),
+                new THREE.MeshBasicMaterial({ color: 0xef4444 })
+            );
+            wire.position.set(-0.3, 0, 0);
+            gUnfixed.add(wire);
+            h2.add(gUnfixed);
+
+            const gFixed = new THREE.Group();
+            gFixed.name = "fixedMesh";
+            gFixed.visible = false;
+            
+            const bodyFixed = body.clone();
+            bodyFixed.material = new THREE.MeshStandardMaterial({ color: 0x0d9488 });
+            gFixed.add(bodyFixed);
+
+            const guard = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.15, 0.15, 0.02, 12),
+                new THREE.MeshStandardMaterial({ color: 0x334155 })
+            );
+            guard.position.set(0, 0, 0.2);
+            gFixed.add(guard);
+            h2.add(gFixed);
+
+            state.scene.add(h2);
+            state.hazardGroups[2] = { group: h2, pos: new THREE.Vector3(3.2, 1.7, -2.2) };
+
+
+            // --- HAZARD 3: Gas Cylinders ---
+            const h3 = new THREE.Group();
+            h3.position.set(-6.5, 0, -6.5);
+
+            const gasUnfixed = new THREE.Group();
+            gasUnfixed.name = "unfixedMesh";
+            const cyl1 = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.25, 0.25, 1.8, 12),
+                new THREE.MeshStandardMaterial({ color: 0xd97706 })
+            );
+            cyl1.position.set(0, 0.9, 0);
+            cyl1.rotation.z = 0.15;
+            gasUnfixed.add(cyl1);
+
+            const cyl2 = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.25, 0.25, 1.8, 12),
+                new THREE.MeshStandardMaterial({ color: 0x0284c7 })
+            );
+            cyl2.position.set(0.6, 0.9, 0.2);
+            cyl2.rotation.x = -0.12;
+            gasUnfixed.add(cyl2);
+            h3.add(gasUnfixed);
+
+            const gasFixed = new THREE.Group();
+            gasFixed.name = "fixedMesh";
+            gasFixed.visible = false;
+            
+            const cyl1F = cyl1.clone(); cyl1F.rotation.set(0,0,0); cyl1F.position.set(0, 0.9, 0);
+            const cyl2F = cyl2.clone(); cyl2F.rotation.set(0,0,0); cyl2F.position.set(0.6, 0.9, 0);
+            gasFixed.add(cyl1F); gasFixed.add(cyl2F);
+
+            const chain = new THREE.Mesh(
+                new THREE.BoxGeometry(1.2, 0.05, 0.05),
+                new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9 })
+            );
+            chain.position.set(0.3, 1.1, 0.25);
+            gasFixed.add(chain);
+            h3.add(gasFixed);
+
+            state.scene.add(h3);
+            state.hazardGroups[3] = { group: h3, pos: new THREE.Vector3(-6.2, 2.2, -6.5) };
+
+
+            // --- HAZARD 4: Obstructed Fire Extinguisher ---
+            const h4 = new THREE.Group();
+            h4.position.set(8.5, 0, -6.5);
+
+            const exting = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.18, 0.18, 0.9, 12),
+                new THREE.MeshStandardMaterial({ color: 0xd97706 })
+            );
+            exting.position.set(0, 1.8, 0);
+            h4.add(exting);
+
+            const extUnfixed = new THREE.Group();
+            extUnfixed.name = "unfixedMesh";
+            for (let i = 0; i < 3; i++) {
+                const pallet = new THREE.Mesh(
+                    new THREE.BoxGeometry(1.2, 0.2, 1.0),
+                    new THREE.MeshStandardMaterial({ color: 0x854d0e })
+                );
+                pallet.position.set(0, 0.1 + i * 0.22, 0.3);
+                extUnfixed.add(pallet);
+            }
+            h4.add(extUnfixed);
+
+            const extFixed = new THREE.Group();
+            extFixed.name = "fixedMesh";
+            extFixed.visible = false;
+            
+            const keepClearZone = new THREE.Mesh(
+                new THREE.PlaneGeometry(1.4, 1.2),
+                new THREE.MeshBasicMaterial({ color: 0xef4444 })
+            );
+            keepClearZone.rotation.x = -Math.PI / 2;
+            keepClearZone.position.set(0, 0.01, 0.3);
+            extFixed.add(keepClearZone);
+            h4.add(extFixed);
+
+            state.scene.add(h4);
+            state.hazardGroups[4] = { group: h4, pos: new THREE.Vector3(8.5, 2.4, -6.5) };
+
+
+            // --- HAZARD 5: Oil Spill on Aisle Floor ---
+            const h5 = new THREE.Group();
+            h5.position.set(-1.0, 0, 1.0);
+
+            const oilUnfixed = new THREE.Group();
+            oilUnfixed.name = "unfixedMesh";
+            const oilPuddle = new THREE.Mesh(
+                new THREE.CircleGeometry(0.8, 16),
+                new THREE.MeshBasicMaterial({ color: 0x854d0e, opacity: 0.85, transparent: true })
+            );
+            oilPuddle.rotation.x = -Math.PI / 2;
+            oilPuddle.position.y = 0.01;
+            oilUnfixed.add(oilPuddle);
+            h5.add(oilUnfixed);
+
+            const oilFixed = new THREE.Group();
+            oilFixed.name = "fixedMesh";
+            oilFixed.visible = false;
+
+            // Safety Warning Sign (A-Frame)
+            const signGroup = new THREE.Group();
+            const plateGeo = new THREE.PlaneGeometry(0.4, 0.6);
+            const plateMat = new THREE.MeshBasicMaterial({ color: 0xfacc15, side: THREE.DoubleSide });
+            const p1 = new THREE.Mesh(plateGeo, plateMat);
+            p1.position.set(0, 0.3, -0.15);
+            p1.rotation.x = 0.3;
+            const p2 = new THREE.Mesh(plateGeo, plateMat);
+            p2.position.set(0, 0.3, 0.15);
+            p2.rotation.x = -0.3;
+            signGroup.add(p1); signGroup.add(p2);
+            oilFixed.add(signGroup);
+            h5.add(oilFixed);
+
+            state.scene.add(h5);
+            state.hazardGroups[5] = { group: h5, pos: new THREE.Vector3(-1.0, 1.0, 1.0) };
+
+            createScreenHotspots();
+        }
+
+        function createScreenHotspots() {
+            const container = document.getElementById('hotspot-container');
+            container.innerHTML = '';
+
+            Object.keys(hazardsData).forEach(id => {
+                const btn = document.createElement('button');
+                btn.id = `hotspot-btn-${id}`;
+                btn.className = "hotspot-btn pointer-events-auto absolute w-10 h-10 rounded-full bg-amber-500 text-slate-950 font-black text-sm flex items-center justify-center border-2 border-white shadow-2xl transition transform active:scale-90 ui-interactive";
+                btn.innerText = id;
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    openHazardModal(parseInt(id));
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function updateHotspotsPosition() {
+            if (!state.camera) return;
+
+            Object.keys(hazardsData).forEach(id => {
+                const data = state.hazardGroups[id];
+                const btn = document.getElementById(`hotspot-btn-${id}`);
+                if (!data || !btn) return;
+
+                const vector = data.pos.clone();
+                vector.project(state.camera);
+
+                if (vector.z > 1) {
+                    btn.style.display = 'none';
+                    return;
+                }
+
+                const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+                const y = (-(vector.y * 0.5) + 0.5) * window.innerHeight;
+
+                btn.style.display = 'flex';
+                btn.style.left = `${x}px`;
+                btn.style.top = `${y}px`;
+            });
+        }
+
+        function setupTouchAndDPadControls() {
+            const bindDPad = (id, key) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                
+                const start = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    state.dpadState[key] = true;
+                    el.classList.add('active');
+                };
+                const end = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    state.dpadState[key] = false;
+                    el.classList.remove('active');
+                };
+
+                el.addEventListener('pointerdown', start);
+                el.addEventListener('pointerup', end);
+                el.addEventListener('pointerleave', end);
+                el.addEventListener('touchstart', start, { passive: false });
+                el.addEventListener('touchend', end, { passive: false });
+            };
+
+            bindDPad('dpad-up', 'up');
+            bindDPad('dpad-down', 'down');
+            bindDPad('dpad-left', 'left');
+            bindDPad('dpad-right', 'right');
+
+            const btnReset = document.getElementById('dpad-reset');
+            if (btnReset) {
+                btnReset.onclick = () => teleportCamera('overview');
+            }
+        }
+
+        function processDPadMovement() {
+            if (!state.controls || !state.camera) return;
+
+            const speed = 0.08;
+            const rotSpeed = 0.025;
+
+            // Camera Look Vector projected on XZ plane
+            const forward = new THREE.Vector3();
+            state.camera.getWorldDirection(forward);
+            forward.y = 0;
+            forward.normalize();
+
+            if (state.dpadState.up) {
+                state.camera.position.addScaledVector(forward, speed);
+                state.controls.target.addScaledVector(forward, speed);
+            }
+            if (state.dpadState.down) {
+                state.camera.position.addScaledVector(forward, -speed);
+                state.controls.target.addScaledVector(forward, -speed);
+            }
+            if (state.dpadState.left) {
+                // Rotate camera target counter-clockwise
+                const offset = state.camera.position.clone().sub(state.controls.target);
+                offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), rotSpeed);
+                state.camera.position.copy(state.controls.target).add(offset);
+            }
+            if (state.dpadState.right) {
+                // Rotate camera target clockwise
+                const offset = state.camera.position.clone().sub(state.controls.target);
+                offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), -rotSpeed);
+                state.camera.position.copy(state.controls.target).add(offset);
+            }
+        }
+
+        function teleportCamera(preset) {
+            playSound('click');
+            let targetCam = { x: 0, y: 4.5, z: 9 };
+            let targetLook = { x: 0, y: 1.2, z: 0 };
+
+            if (preset === 'workbench') {
+                targetCam = hazardsData[1].cameraPos;
+                targetLook = hazardsData[1].targetPos;
+            } else if (preset === 'gas') {
+                targetCam = hazardsData[3].cameraPos;
+                targetLook = hazardsData[3].targetPos;
+            } else if (preset === 'extinguisher') {
+                targetCam = hazardsData[4].cameraPos;
+                targetLook = hazardsData[4].targetPos;
+            } else if (preset === 'oil') {
+                targetCam = hazardsData[5].cameraPos;
+                targetLook = hazardsData[5].targetPos;
+            }
+
+            state.camTransition = {
+                startCam: state.camera.position.clone(),
+                endCam: new THREE.Vector3(targetCam.x, targetCam.y, targetCam.z),
+                startTarget: state.controls.target.clone(),
+                endTarget: new THREE.Vector3(targetLook.x, targetLook.y, targetLook.z),
+                progress: 0
+            };
+        }
+
+        function updateCameraTransition() {
+            if (!state.camTransition) return;
+
+            state.camTransition.progress += 0.05;
+            const p = Math.min(state.camTransition.progress, 1.0);
+
+            // Smoothstep easing
+            const easeP = p * p * (3 - 2 * p);
+
+            state.camera.position.lerpVectors(state.camTransition.startCam, state.camTransition.endCam, easeP);
+            state.controls.target.lerpVectors(state.camTransition.startTarget, state.camTransition.endTarget, easeP);
+
+            if (p >= 1.0) {
+                state.camTransition = null;
+            }
+        }
+
+        function openHazardModal(id) {
+            playSound('found');
+            state.activeHazardId = id;
+            state.foundHazards.add(id);
+
+            const data = hazardsData[id];
+            document.getElementById('hazard-category-badge').innerText = data.category;
+            document.getElementById('hazard-step-text').innerText = `${state.foundHazards.size} / ${state.totalHazards}`;
+            document.getElementById('hazard-title').innerText = data.title;
+            document.getElementById('hazard-description').innerText = data.description;
+            document.getElementById('hazard-regulation').innerText = data.regulation;
+            document.getElementById('hazard-prevention').innerText = data.prevention;
+
+            const btnFix = document.getElementById('btn-fix-hazard');
+            if (state.fixedHazards.has(id)) {
+                btnFix.innerHTML = '<i class="fa-solid fa-check"></i> Déjà Sécurisé';
+                btnFix.disabled = true;
+                btnFix.className = "flex-1 py-3 px-4 rounded-xl bg-emerald-600 text-white font-black text-xs opacity-80 cursor-default";
+            } else {
+                btnFix.innerHTML = '<i class="fa-solid fa-screwdriver-wrench"></i> Mettre en Sécurité';
+                btnFix.disabled = false;
+                btnFix.className = "flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-restev-600 to-emerald-400 text-slate-950 font-black text-xs tracking-wide shadow-lg active:scale-95 transition flex items-center justify-center gap-2";
+            }
+
+            document.getElementById('modal-hazard').classList.remove('hidden');
+            renderHistoryList();
+        }
+
+        function fixHazardAction() {
+            const id = state.activeHazardId;
+            if (!id || state.fixedHazards.has(id)) return;
+
+            playSound('fix');
+            state.fixedHazards.add(id);
+
+            const hGroup = state.hazardGroups[id].group;
+            hGroup.getObjectByName("unfixedMesh").visible = false;
+            hGroup.getObjectByName("fixedMesh").visible = true;
+
+            const btn = document.getElementById(`hotspot-btn-${id}`);
+            if (btn) {
+                btn.classList.add('hotspot-fixed');
+                btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+            }
+
+            document.getElementById('score-text').innerText = `${state.fixedHazards.size} / ${state.totalHazards}`;
+
+            closeHazardModal();
+
+            if (state.fixedHazards.size === state.totalHazards) {
+                setTimeout(triggerVictory, 400);
+            }
+        }
+
+        function closeHazardModal() {
+            playSound('click');
+            document.getElementById('modal-hazard').classList.add('hidden');
+        }
+
+        function triggerVictory() {
+            clearInterval(state.timerInterval);
+            playSound('fix');
+            document.getElementById('modal-victory').classList.remove('hidden');
+        }
+
+        function startSimulation() {
+            playSound('click');
+            document.getElementById('modal-welcome').classList.add('hidden');
+            state.started = true;
+            state.startTime = Date.now();
+            state.timerInterval = setInterval(updateTimer, 1000);
+            renderHistoryList();
+        }
+
+        function updateTimer() {
+            if (!state.startTime) return;
+            const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+            const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const s = (elapsed % 60).toString().padStart(2, '0');
+            const timeStr = `${m}:${s}`;
+            document.getElementById('timer-text').innerText = timeStr;
+            document.getElementById('final-time').innerText = timeStr;
+            document.getElementById('cert-time-display').innerText = timeStr;
+        }
+
+        function renderHistoryList() {
+            const container = document.getElementById('history-list');
+            container.innerHTML = '';
+
+            Object.values(hazardsData).forEach(hazard => {
+                const isFixed = state.fixedHazards.has(hazard.id);
+                const isFound = state.foundHazards.has(hazard.id);
+
+                const item = document.createElement('div');
+                item.className = `p-3 rounded-2xl border text-xs transition ${isFixed ? 'bg-slate-900/90 border-emerald-500/40' : (isFound ? 'bg-slate-900/60 border-amber-500/40' : 'bg-slate-900/40 border-slate-800 opacity-60')}`;
+                item.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <strong class="text-white">${hazard.title}</strong>
+                        <i class="fa-solid ${isFixed ? 'fa-circle-check text-emerald-400' : (isFound ? 'fa-eye text-amber-400' : 'fa-circle-dot text-slate-600')} text-sm"></i>
+                    </div>
+                    <span class="text-[10px] font-bold text-slate-400 block mt-0.5">${hazard.category}</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function toggleHistoryDrawer() {
+            playSound('click');
+            const drawer = document.getElementById('drawer-history');
+            drawer.classList.toggle('translate-x-full');
+        }
+
+        function toggleAudio() {
+            state.audioEnabled = !state.audioEnabled;
+            document.getElementById('sound-icon').className = state.audioEnabled ? 'fa-solid fa-volume-high text-restev-400' : 'fa-solid fa-volume-xmark text-slate-500';
+        }
+
+        function printCertificate() {
+            playSound('click');
+            const name = document.getElementById('participant-name').value.trim();
+            document.getElementById('cert-name-display').innerText = name || "Salarié Adhérent RESTEV 85";
+            window.print();
+        }
+
+        function resetSimulation() {
+            playSound('click');
+            location.reload();
+        }
+
+        function onWindowResize() {
+            state.camera.aspect = window.innerWidth / window.innerHeight;
+            state.camera.updateProjectionMatrix();
+            state.renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            processDPadMovement();
+            updateCameraTransition();
+            state.controls.update();
+            updateHotspotsPosition();
+            state.renderer.render(state.scene, state.camera);
+        }
+
+        window.onload = function() {
+            init3DScene();
+        };
+    </script>
+</body>
+</html>
