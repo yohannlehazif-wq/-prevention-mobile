@@ -122,7 +122,7 @@
                 </div>
                 <div>
                     <h1 class="text-sm md:text-base font-bold text-white tracking-wide">RESTEV 85 — Chasse aux Risques</h1>
-                    <p class="text-xs text-teal-400 font-medium">3 environnements intégrés · Version 2026.10.08.6</p>
+                    <p class="text-xs text-teal-400 font-medium">3 environnements intégrés · Version 2026.10.08.7</p>
                 </div>
             </div>
 
@@ -556,7 +556,59 @@
         function garageEnv(){const g=new THREE.Group();pb(g,[3.5,.55,1.7],[0,.72,-.4],0x1d4ed8,.45);pb(g,[1.9,.58,1.45],[-.2,1.22,-.4],0x2563eb,.4);[[-1.15,.38,-1.15],[1.15,.38,-1.15],[-1.15,.38,.32],[1.15,.38,.32]].forEach(p=>{const w=pc(g,.34,.22,p,0x111827);w.rotation.x=Math.PI/2});pb(g,[.28,3.4,.28],[-2.35,1.7,-.4],0x0f766e,.55);pb(g,[.28,3.4,.28],[2.35,1.7,-.4],0x0f766e,.55);for(let y=.2;y<1.3;y+=.32){const t=pc(g,.42,.22,[-5,y,-4.8],0x171717);t.rotation.x=Math.PI/2}return g}
         function warehouseEnv(){const g=new THREE.Group();[-4,0,4].forEach(x=>[-3,0,3].forEach(z=>{pb(g,[2.3,.12,1.1],[x,.18,z],0x8b5a2b);for(let y=.55;y<2.6;y+=.62)pb(g,[2.05,.5,.95],[x,y,z],y>1.8?0x3b82f6:0xb45309)}));pb(g,[5,.45,1.6],[0,.22,-5.8],0x475569);pb(g,[.12,.02,11],[-2.3,.025,0],0xfacc15);return g}
         function workshopEnv(){const g=new THREE.Group();[[-4,-3],[0,-3],[4,-3]].forEach((p,i)=>{pb(g,[2.3,1.15,1.5],[p[0],.58,p[1]],i===1?0x0369a1:0x475569,.6);pb(g,[1.1,.45,.9],[p[0],1.37,p[1]],0x1e293b,.55)});const d=pc(g,.28,11,[0,4.2,-5.8],0x94a3b8);d.rotation.z=Math.PI/2;pb(g,[8,.025,.11],[0,.025,2.2],0x22c55e);return g}
-        const environments={garage:garageEnv(),warehouse:warehouseEnv(),workshop:workshopEnv()};Object.values(environments).forEach(e=>environmentGroup.add(e));
+
+        function labelTexture(text,bg='#ffffff',fg='#111827',accent='#ef4444'){
+            const c=document.createElement('canvas');c.width=512;c.height=192;const x=c.getContext('2d');
+            x.fillStyle=bg;x.fillRect(0,0,c.width,c.height);x.fillStyle=accent;x.fillRect(0,0,22,c.height);
+            x.fillStyle=fg;x.font='700 38px Arial';x.textAlign='center';x.textBaseline='middle';x.fillText(text,270,96);
+            const t=new THREE.CanvasTexture(c);t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());return t;
+        }
+        function sign(g,text,p,scale=[1.4,.52],bg='#ffffff',fg='#111827',accent='#ef4444'){
+            const o=new THREE.Mesh(new THREE.PlaneGeometry(...scale),new THREE.MeshBasicMaterial({map:labelTexture(text,bg,fg,accent),side:THREE.DoubleSide}));
+            o.position.set(...p);g.add(o);return o;
+        }
+        function ring(g,r,p,color=0x111827){const o=new THREE.Mesh(new THREE.TorusGeometry(r,.095,12,30),pm(color,.35));o.position.set(...p);o.rotation.y=Math.PI/2;o.castShadow=true;g.add(o);return o}
+        function tube(g,a,b,r,color){const d=new THREE.Vector3().subVectors(b,a),mid=new THREE.Vector3().addVectors(a,b).multiplyScalar(.5);const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r,d.length(),14),pm(color,.5));o.position.copy(mid);o.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.clone().normalize());o.castShadow=true;g.add(o);return o}
+        function detailGarage(g){
+            // Vehicle glazing, lights, bumpers, mirrors and wheel rims
+            pb(g,[1.65,.38,1.47],[-.18,1.28,-.4],0x0b1f33,.05).material.transparent=true;g.children[g.children.length-1].material.opacity=.72;
+            [[-1.78,.72,-.98],[-1.78,.72,.18]].forEach(p=>pb(g,[.08,.18,.35],p,0xf8fafc,.1));
+            [[1.78,.72,-.98],[1.78,.72,.18]].forEach(p=>pb(g,[.08,.18,.35],p,0xdc2626,.1));
+            pb(g,[3.62,.16,.16],[0,.47,-1.25],0x111827,.55);pb(g,[3.62,.16,.16],[0,.47,.45],0x111827,.55);
+            [[-1.15,.38,-1.27],[1.15,.38,-1.27],[-1.15,.38,.45],[1.15,.38,.45]].forEach(p=>{ring(g,.18,p,0x94a3b8)});
+            // Lift crossbar, hydraulic unit and arms
+            pb(g,[4.9,.2,.28],[0,3.25,-.4],0x115e59,.65);pb(g,[.42,1.05,.42],[-2.35,.62,-.95],0x334155,.7);
+            tube(g,new THREE.Vector3(-2.3,.45,-.4),new THREE.Vector3(-.65,.38,-.4),.065,0xf59e0b);tube(g,new THREE.Vector3(2.3,.45,-.4),new THREE.Vector3(.65,.38,-.4),.065,0xf59e0b);
+            // Workbench drawers, pegboard and tools
+            pb(g,[3.1,.12,.82],[4.75,1.05,-5.6],0x78350f,.1);pb(g,[3.05,1.3,.1],[4.75,1.75,-6.0],0x1e293b,.65);
+            for(let i=0;i<5;i++)pb(g,[.5,.15,.6],[3.55+i*.6,.25,-5.58],i%2?0x475569:0x334155,.45);
+            for(let i=0;i<7;i++){const tool=pb(g,[.045,.5,.045],[3.2+i*.48,1.65+(i%2)*.15,-5.9],i%3===0?0xef4444:0xf59e0b,.55);tool.rotation.z=(i%2?-.25:.25)}
+            // Oil drum, trolley, cones and ceiling lamps
+            pc(g,.34,.9,[-5.6,.45,-2.5],0x1d4ed8);pb(g,[1.15,.15,.7],[4.7,.32,-2],0xdc2626,.45);for(let i=0;i<3;i++)ring(g,.12,[4.25+i*.45,.14,-2.34],0x111827);
+            [-4.8,4.8].forEach(x=>{const cone=pc(g,.18,.55,[x,.28,3.8],0xf97316);cone.geometry.dispose();cone.geometry=new THREE.ConeGeometry(.28,.6,18)});
+            [-4,0,4].forEach(x=>{pb(g,[2.2,.08,.38],[x,4.65,-1],0xe2e8f0,.1);const l=new THREE.PointLight(0xdbeafe,.5,7);l.position.set(x,4.5,-1);g.add(l)});
+            sign(g,'ZONE ATELIER',[0,3.9,-6.82],[2.7,.72],'#0f172a','#f8fafc','#14b8a6');
+        }
+        function detailWarehouse(g){
+            // Rack uprights and shelves
+            [-4,0,4].forEach(x=>[-3,0,3].forEach(z=>{[-1.18,1.18].forEach(dx=>{pb(g,[.11,3.2,.11],[x+dx,1.6,z-.55],0x1d4ed8,.7);pb(g,[.11,3.2,.11],[x+dx,1.6,z+.55],0x1d4ed8,.7)});for(let y=.32;y<3;y+=.62)pb(g,[2.5,.08,1.2],[x,y,z],0xf59e0b,.65)}));
+            // Forklift
+            pb(g,[1.25,.65,1.05],[2.75,.43,4.25],0xf59e0b,.45);pb(g,[.75,1.15,.85],[3.05,1.2,4.25],0xf59e0b,.4);pb(g,[.12,2.2,.12],[2.05,1.1,3.9],0x334155,.7);pb(g,[.12,2.2,.12],[2.05,1.1,4.6],0x334155,.7);pb(g,[1.8,.08,.12],[1.3,.12,3.95],0x334155,.7);pb(g,[1.8,.08,.12],[1.3,.12,4.55],0x334155,.7);ring(g,.28,[2.45,.28,3.68]);ring(g,.28,[3.25,.28,3.68]);
+            // Safety rails, bollards and dock door
+            for(let x=-5.5;x<=5.5;x+=1.1)pc(g,.07,.9,[x,.45,-5],0xfacc15);tube(g,new THREE.Vector3(-5.5,.85,-5),new THREE.Vector3(5.5,.85,-5),.055,0xfacc15);
+            pb(g,[4.5,3.1,.15],[0,1.58,-6.78],0x334155,.65);for(let y=.4;y<3;y+=.48)pb(g,[4.35,.045,.08],[0,y,-6.68],0x94a3b8,.5);
+            sign(g,'QUAI 01',[0,3.65,-6.65],[2,.65],'#f8fafc','#111827','#2563eb');sign(g,'PIÉTONS',[-2.9,.08,4.8],[1.4,.45],'#16a34a','#ffffff','#ffffff').rotation.x=-Math.PI/2;
+        }
+        function detailWorkshop(g){
+            // Machine control panels, emergency stops and guarding
+            [[-4,-3],[0,-3],[4,-3]].forEach((p,i)=>{pb(g,[.55,.65,.09],[p[0]+.55,1.15,p[1]+.76],0x0f172a,.45);for(let b=0;b<3;b++)pc(g,.04,.04,[p[0]+.4+b*.15,1.2,p[1]+.82],b===0?0xef4444:b===1?0x22c55e:0xfacc15).rotation.x=Math.PI/2;const stop=pc(g,.09,.07,[p[0]+.72,1.36,p[1]+.82],0xdc2626);stop.rotation.x=Math.PI/2;pb(g,[2.55,.06,1.8],[p[0],.03,p[1]],i===1?0x0369a1:0xf59e0b,.1)});
+            // Duct branches and extraction hoods
+            [-4,0,4].forEach(x=>{tube(g,new THREE.Vector3(x,3.8,-5.8),new THREE.Vector3(x,2.4,-3),.18,0x94a3b8);const hood=new THREE.Mesh(new THREE.ConeGeometry(.55,.6,18,1,true),pm(0x64748b,.6));hood.position.set(x,2.15,-3);hood.rotation.x=Math.PI;g.add(hood)});
+            // Safety fencing
+            [-5.5,5.5].forEach(x=>{for(let z=2.8;z<=5.2;z+=.8)pc(g,.045,1.25,[x,.62,z],0xf59e0b);tube(g,new THREE.Vector3(x,1.12,2.8),new THREE.Vector3(x,1.12,5.2),.04,0xf59e0b)});
+            sign(g,'ZONE MACHINES',[0,3.65,-6.65],[2.5,.65],'#0f172a','#f8fafc','#f59e0b');
+        }
+        const environments={garage:garageEnv(),warehouse:warehouseEnv(),workshop:workshopEnv()};detailGarage(environments.garage);detailWarehouse(environments.warehouse);detailWorkshop(environments.workshop);Object.values(environments).forEach(e=>environmentGroup.add(e));
         function chooseEnvironment(name){Object.entries(environments).forEach(([k,v])=>v.visible=k===name);document.querySelectorAll('.env-btn').forEach(b=>{b.classList.toggle('bg-teal-600',b.dataset.env===name);b.classList.toggle('bg-slate-700',b.dataset.env!==name)});document.querySelector('#instruction-toast span:last-child').textContent={garage:'Garage automobile : trouvez les 5 risques.',warehouse:'Entrepôt logistique : trouvez les 5 risques.',workshop:'Atelier industriel : trouvez les 5 risques.'}[name]}
         document.querySelectorAll('.env-btn').forEach(b=>b.addEventListener('click',()=>chooseEnvironment(b.dataset.env)));chooseEnvironment('garage');
         const hazardMeshGroups = {};
