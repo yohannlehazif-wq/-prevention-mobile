@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>RESTEV 85 - Chasse aux Risques en Atelier 3D</title>
+    <title>RESTEV 85 - Chasse aux Risques VR Ultra-Réaliste</title>
     <style>
         :root {
             --primary: #005a9c;
@@ -12,7 +12,7 @@
             --danger: #e74c3c;
             --success: #2ecc71;
             --warning: #f39c12;
-            --bg-glass: rgba(15, 23, 42, 0.85);
+            --bg-dark: #0f172a;
         }
 
         * {
@@ -29,7 +29,7 @@
             height: 100%;
             overflow: hidden;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #0f172a;
+            background-color: #000;
             color: #fff;
         }
 
@@ -42,7 +42,7 @@
             z-index: 1;
         }
 
-        /* UI Overlay Glassmorphism */
+        /* Interface utilisateur (UI) */
         .ui-overlay {
             position: absolute;
             top: 0;
@@ -62,82 +62,100 @@
         }
 
         header {
-            background: var(--bg-glass);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            padding: 12px 18px;
-            border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 10px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 4px 25px rgba(0,0,0,0.5);
         }
 
         .logo-title h1 {
-            font-size: 1.15rem;
+            font-size: 1.1rem;
             font-weight: 800;
-            letter-spacing: -0.02em;
-            color: #ffffff;
+            color: #fff;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
+            letter-spacing: 0.5px;
         }
 
         .logo-title span {
             color: var(--secondary);
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             display: block;
             font-weight: 500;
         }
 
         .score-badge {
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            padding: 8px 16px;
+            padding: 6px 14px;
             border-radius: 20px;
-            font-weight: 700;
-            font-size: 0.95rem;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 2px 10px rgba(0, 90, 156, 0.4);
+            font-weight: bold;
+            font-size: 0.85rem;
+            border: 1px solid rgba(255,255,255,0.2);
+            white-space: nowrap;
+            box-shadow: 0 2px 10px rgba(0,90,156,0.4);
+        }
+
+        .start-hint {
+            position: absolute;
+            top: 75px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.75);
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #e2e8f0;
+            pointer-events: none;
+            border: 1px solid rgba(255,255,255,0.1);
+            animation: pulse 2s infinite;
             white-space: nowrap;
         }
 
-        /* Direct Teleport Buttons */
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; transform: translateX(-50%) scale(1); }
+            50% { opacity: 1; transform: translateX(-50%) scale(1.03); }
+        }
+
+        /* Navigation rapide */
         .nav-shortcuts {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             overflow-x: auto;
-            padding: 8px 0;
-            scrollbar-width: none;
+            padding: 6px 0;
+            -webkit-overflow-scrolling: touch;
         }
-        .nav-shortcuts::-webkit-scrollbar { display: none; }
 
         .nav-btn {
-            background: var(--bg-glass);
+            background: rgba(30, 41, 59, 0.85);
             border: 1px solid rgba(255, 255, 255, 0.15);
-            color: #e2e8f0;
-            padding: 8px 14px;
-            border-radius: 10px;
-            font-size: 0.8rem;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
             font-weight: 600;
             cursor: pointer;
             white-space: nowrap;
             transition: all 0.2s ease;
-            backdrop-filter: blur(8px);
+            backdrop-filter: blur(4px);
         }
 
         .nav-btn:active {
             transform: scale(0.95);
             background: var(--primary);
-            color: #fff;
         }
 
-        /* Controls Bottom Bar */
+        /* Contrôles bas de page */
         .controls-bottom {
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
 
         .dpad {
@@ -146,23 +164,23 @@
             grid-template-rows: repeat(3, 44px);
             gap: 4px;
             background: rgba(15, 23, 42, 0.7);
-            padding: 8px;
-            border-radius: 16px;
-            backdrop-filter: blur(8px);
+            padding: 6px;
+            border-radius: 14px;
+            backdrop-filter: blur(6px);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .dpad-btn {
             background: rgba(255, 255, 255, 0.12);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
+            border-radius: 8px;
             color: white;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: background 0.1s;
+            transition: background 0.15s;
         }
 
         .dpad-btn:active {
@@ -171,13 +189,13 @@
 
         .btn-vr {
             background: linear-gradient(135deg, var(--secondary), var(--primary));
-            border: none;
+            border: 1px solid rgba(255,255,255,0.3);
             color: white;
             padding: 12px 22px;
-            border-radius: 30px;
-            font-weight: 700;
+            border-radius: 25px;
+            font-weight: bold;
             font-size: 0.9rem;
-            box-shadow: 0 4px 20px rgba(0, 168, 143, 0.4);
+            box-shadow: 0 4px 20px rgba(0, 168, 143, 0.5);
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -189,7 +207,7 @@
             transform: scale(0.95);
         }
 
-        /* Educational Modal */
+        /* Modal Pédagogique */
         .modal {
             position: absolute;
             top: 0;
@@ -216,14 +234,14 @@
         .modal-content {
             background: #1e293b;
             border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 20px;
-            max-width: 500px;
+            border-radius: 16px;
+            max-width: 480px;
             width: 100%;
-            padding: 24px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            padding: 22px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
             transform: translateY(20px);
             transition: transform 0.3s ease;
-            max-height: 85vh;
+            max-height: 90vh;
             overflow-y: auto;
         }
 
@@ -234,97 +252,75 @@
         .modal-header {
             display: flex;
             align-items: center;
-            gap: 14px;
-            margin-bottom: 16px;
+            gap: 12px;
+            margin-bottom: 14px;
         }
 
         .modal-icon {
-            font-size: 2.2rem;
+            font-size: 2rem;
             background: rgba(231, 76, 60, 0.2);
-            width: 56px;
-            height: 56px;
-            border-radius: 14px;
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 1px solid rgba(231, 76, 60, 0.4);
+            color: var(--danger);
+            border: 1px solid rgba(231, 76, 60, 0.3);
         }
 
         .modal-title {
-            font-size: 1.25rem;
-            font-weight: 700;
+            font-size: 1.2rem;
+            font-weight: bold;
             color: #fff;
         }
 
         .modal-body {
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             line-height: 1.6;
             color: #cbd5e1;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
 
         .ref-box {
             background: rgba(0, 90, 156, 0.25);
             border-left: 4px solid var(--primary);
-            padding: 12px;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            margin-top: 14px;
+            padding: 10px 14px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-top: 12px;
             color: #93c5fd;
         }
 
         .modal-actions {
             display: flex;
-            gap: 12px;
+            gap: 10px;
         }
 
         .btn-action {
             flex: 1;
-            padding: 14px;
-            border-radius: 12px;
+            padding: 12px;
+            border-radius: 10px;
             border: none;
-            font-weight: 700;
+            font-weight: bold;
             cursor: pointer;
             text-align: center;
-            font-size: 0.95rem;
-            transition: transform 0.1s;
+            font-size: 0.9rem;
+            transition: all 0.2s;
         }
 
-        .btn-action:active { transform: scale(0.97); }
-
         .btn-fix {
-            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            background: var(--success);
             color: #fff;
-            box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+            box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
         }
 
         .btn-close {
             background: rgba(255, 255, 255, 0.1);
-            color: #e2e8f0;
-        }
-
-        .hint-badge {
-            position: absolute;
-            top: 75px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.75);
-            padding: 8px 18px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            color: #e2e8f0;
-            border: 1px solid rgba(255,255,255,0.15);
-            pointer-events: none;
-            animation: pulse 2.5s infinite;
-            white-space: nowrap;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 0.7; transform: translateX(-50%) scale(1); }
-            50% { opacity: 1; transform: translateX(-50%) scale(1.03); }
+            color: #fff;
         }
     </style>
-    <!-- Three.js Library non-module -->
+    <!-- Three.js r128 universel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
@@ -332,42 +328,47 @@
     <div id="canvas-container"></div>
 
     <div class="ui-overlay">
+        <!-- En-tête -->
         <header class="interactive">
             <div class="logo-title">
-                <h1>RESTEV 85 <span>Prévention des Risques</span></h1>
+                <h1>RESTEV 85 <span>Santé & Prévention au Travail</span></h1>
             </div>
-            <div class="score-badge" id="score">0 / 5 Corriger</div>
+            <div class="score-badge" id="score">0 / 5 Risques Identifiés</div>
         </header>
 
-        <div class="hint-badge">📍 Glissez pour pivoter • Touchez un voyant 🎯 pour inspecter</div>
+        <div class="start-hint">🔎 Observez l atelier & cliquez sur les zones à risques</div>
 
+        <!-- Navigation rapide -->
         <div class="nav-shortcuts interactive">
-            <button class="nav-btn" onclick="teleportTo('global')">🌐 Vue Globale</button>
-            <button class="nav-btn" onclick="teleportTo('chimique')">🛢️ Chimique</button>
-            <button class="nav-btn" onclick="teleportTo('electrique')">⚡ Électrique</button>
-            <button class="nav-btn" onclick="teleportTo('gaz')">🍾 Gaz</button>
+            <button class="nav-btn" onclick="teleportTo('global')">🌐 Vue Ensemble</button>
+            <button class="nav-btn" onclick="teleportTo('chimique')">🛢️ Risque Chimique</button>
+            <button class="nav-btn" onclick="teleportTo('electrique')">⚡ Câble Éléc.</button>
+            <button class="nav-btn" onclick="teleportTo('gaz')">🍾 Bouteilles Gaz</button>
             <button class="nav-btn" onclick="teleportTo('extincteur')">🧯 Extincteur</button>
             <button class="nav-btn" onclick="teleportTo('meuleuse')">⚙️ Meuleuse</button>
         </div>
 
+        <!-- Contrôles bas de page -->
         <div class="controls-bottom">
+            <!-- D-Pad pour déplacement mobile -->
             <div class="dpad interactive">
                 <div></div>
-                <button class="dpad-btn" onmousedown="startMove('forward')" onmouseup="stopMove()" ontouchstart="startMove('forward')" ontouchend="stopMove()">⬆️</button>
+                <button class="dpad-btn" onmousedown="moveCam('forward')" ontouchstart="moveCam('forward')">⬆️</button>
                 <div></div>
-                <button class="dpad-btn" onmousedown="startMove('left')" onmouseup="stopMove()" ontouchstart="startMove('left')" ontouchend="stopMove()">⬅️</button>
+                <button class="dpad-btn" onmousedown="moveCam('left')" ontouchstart="moveCam('left')">⬅️</button>
                 <button class="dpad-btn" onclick="teleportTo('global')">🎯</button>
-                <button class="dpad-btn" onmousedown="startMove('right')" onmouseup="stopMove()" ontouchstart="startMove('right')" ontouchend="stopMove()">➡️</button>
+                <button class="dpad-btn" onmousedown="moveCam('right')" ontouchstart="moveCam('right')">➡️</button>
                 <div></div>
-                <button class="dpad-btn" onmousedown="startMove('backward')" onmouseup="stopMove()" ontouchstart="startMove('backward')" ontouchend="stopMove()">⬇️</button>
+                <button class="dpad-btn" onmousedown="moveCam('backward')" ontouchstart="moveCam('backward')">⬇️</button>
                 <div></div>
             </div>
 
+            <!-- Bouton WebXR -->
             <button class="btn-vr interactive" id="vr-btn" onclick="startVR()">🥽 Mode VR</button>
         </div>
     </div>
 
-    <!-- Modal Risque -->
+    <!-- Fenêtre Modale Pédagogique -->
     <div class="modal" id="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -375,63 +376,126 @@
                 <div class="modal-title" id="m-title">Titre du Risque</div>
             </div>
             <div class="modal-body">
-                <p id="m-desc">Description explicative...</p>
+                <p id="m-desc">Description de la situation de travail dangereuse...</p>
                 <div class="ref-box" id="m-ref">
                     <strong>Réglementation :</strong> Code du Travail / INRS
                 </div>
             </div>
             <div class="modal-actions">
                 <button class="btn-action btn-close" onclick="closeModal()">Fermer</button>
-                <button class="btn-action btn-fix" id="m-fix-btn" onclick="fixCurrentRisk()">Mettre en conformité</button>
+                <button class="btn-action btn-fix" id="m-fix-btn" onclick="fixCurrentRisk()">Corriger le risque</button>
             </div>
         </div>
     </div>
 
     <script>
+        // --- SYNTHÉTISEUR AUDIO WEB AUDIO API (Effets sonores réalistes sans fichiers) ---
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+            }
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+            playClick() {
+                this.init();
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(400, this.ctx.currentTime + 0.05);
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.05);
+            }
+            playSpark() {
+                this.init();
+                if (!this.ctx) return;
+                const bufferSize = this.ctx.sampleRate * 0.08;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+                noise.connect(gain);
+                gain.connect(this.ctx.destination);
+                noise.start();
+            }
+            playSuccess() {
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                    gain.gain.setValueAtTime(0.2, now + idx * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.3);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.08);
+                    osc.stop(now + idx * 0.08 + 0.3);
+                });
+            }
+        }
+        const sounds = new SoundEngine();
+
+        // --- DONNÉES DES 5 RISQUES ---
         const risksData = {
             chimique: {
                 id: 'chimique',
-                title: 'Produit Chimique sans Rétention',
+                title: 'Bidon de Solvant sans Rétention',
                 icon: '🛢️',
-                desc: 'Un fut de solvant inflammable est posé à même le sol avec une fuite apparente, sans bac de rétention ni étiquetage de sécurité conforme.',
-                ref: 'Code du Travail Art. R4412-17 (Stockage sur bac de rétention étanche) & R4412-22.',
-                pos: { x: -3.8, y: 1.2, z: -2 },
+                desc: 'Un produit chimique inflammable fuit directement sur le sol de l atelier. Absence de bac de rétention et de Fiche de Données de Sécurité (FDS).',
+                ref: 'Code du Travail Art. R4412-17 & R4412-22 (Stockage obligatoire sur bac de rétention étanche).',
+                pos: { x: -3.8, y: 1.1, z: -1.5 },
                 fixed: false
             },
             electrique: {
                 id: 'electrique',
                 title: 'Câble Électrique Dénudé au Sol',
                 icon: '⚡',
-                desc: 'Un câble d alimentation haute tension traverse la voie de passage. Les conducteurs sont mis à nu par le passage des engins (étincelles observées).',
-                ref: 'Code du Travail Art. R4224-3 (Allées dégagées) & Art. R4226-9 (Protection mécanique des câbles).',
+                desc: 'Une rallonge électrique détériorée traverse l allée piétonne et produit des étincelles. Risque majeur d électrocution et de chute.',
+                ref: 'Code du Travail Art. R4224-3 (Allées de passage dégagées) & Art. R4226-9 (Maintien en état des installations).',
                 pos: { x: 0, y: 0.4, z: 1.2 },
                 fixed: false
             },
             gaz: {
                 id: 'gaz',
-                title: 'Bouteilles de Gaz Non Arrimées',
+                title: 'Bouteilles d Acétylène non Arrimées',
                 icon: '🍾',
-                desc: 'Des bouteilles d oxygène et d acétylène sont entreposées debout sans chaîne de retenue. Risque de chute, de choc et de rupture de détendeur.',
-                ref: 'INRS ED 6098 / Code du Travail (Maintien obligatoire par chaîne ou collier de sécurité).',
-                pos: { x: 4.2, y: 1.5, z: -3.5 },
+                desc: 'Les bouteilles de gaz sous pression sont stockées debout sans chaîne de sécurité. Risque de chute, de rupture de valve et de projection.',
+                ref: 'INRS ED 6098 (Stockage et arrimage sécurisé des bouteilles de gaz).',
+                pos: { x: 3.8, y: 1.6, z: -3.2 },
                 fixed: false
             },
             extincteur: {
                 id: 'extincteur',
-                title: 'Accès Extincteur Masqué et Bloqué',
+                title: 'Accès Extincteur Obstrué',
                 icon: '🧯',
-                desc: 'Des palettes en bois et cartons d emballage sont empilés devant l extincteur d atelier, empêchant son accès en cas d urgence incendie.',
-                ref: 'Code du Travail Art. R4227-33 (Les équipements de secours doivent rester visibles et accessibles en permanence).',
-                pos: { x: 4.5, y: 1.3, z: 2.2 },
+                desc: 'Des palettes en bois et cartons masquent et bloquent l accès immédiat à l extincteur d atelier en cas de départ de feu.',
+                ref: 'Code du Travail Art. R4227-33 (Les équipements de premier secours doivent être dégagés et signalés).',
+                pos: { x: 4.2, y: 1.3, z: 2.2 },
                 fixed: false
             },
             meuleuse: {
                 id: 'meuleuse',
                 title: 'Meuleuse sans Carter de Protection',
                 icon: '⚙️',
-                desc: 'Une meuleuse d angle posée sur l établi est utilisée sans son carter métallique de sécurité. Risque d éclatement de disque mortel.',
-                ref: 'Code du Travail Art. R4324-1 à R4324-4 (Carter de protection obligatoire sur outils rotatifs).',
-                pos: { x: -1.6, y: 1.2, z: -3.8 },
+                desc: 'Une meuleuse d angle posée sur l établi a été dépouillée de son carter de protection. Risque d éclat de disque mortel.',
+                ref: 'Code du Travail Art. R4324-1 à R4324-4 (Protections obligatoires des éléments mobiles de travail).',
+                pos: { x: -1.5, y: 1.3, z: -3.8 },
                 fixed: false
             }
         };
@@ -439,446 +503,253 @@
         let currentActiveRisk = null;
         let scoreCount = 0;
 
-        // Configuration de la scène 3D
+        // --- GÉNÉRATION PROCÉDURALE DE TEXTURES HAUTE DÉFINITION ---
+        function generateTextures() {
+            // Texture Béton
+            const cvFloor = document.createElement('canvas');
+            cvFloor.width = 512; cvFloor.height = 512;
+            const ctxF = cvFloor.getContext('2d');
+            ctxF.fillStyle = '#334155'; ctxF.fillRect(0,0,512,512);
+            for(let i=0; i<8000; i++) {
+                ctxF.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)';
+                ctxF.fillRect(Math.random()*512, Math.random()*512, 2, 2);
+            }
+            const floorTex = new THREE.CanvasTexture(cvFloor);
+            floorTex.wrapS = THREE.RepeatWrapping; floorTex.wrapT = THREE.RepeatWrapping;
+            floorTex.repeat.set(4, 4);
+
+            // Texture Métal/Briques
+            const cvWall = document.createElement('canvas');
+            cvWall.width = 256; cvWall.height = 256;
+            const ctxW = cvWall.getContext('2d');
+            ctxW.fillStyle = '#1e293b'; ctxW.fillRect(0,0,256,256);
+            ctxW.strokeStyle = 'rgba(255,255,255,0.05)';
+            for(let y=0; y<256; y+=32) {
+                ctxW.beginPath(); ctxW.moveTo(0, y); ctxW.lineTo(256, y); ctxW.stroke();
+            }
+            const wallTex = new THREE.CanvasTexture(cvWall);
+
+            return { floorTex, wallTex };
+        }
+
+        const { floorTex, wallTex } = generateTextures();
+
+        // --- SCENE 3D SETUP ---
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0a0f1d);
-        scene.fog = new THREE.FogExp2(0x0a0f1d, 0.035);
+        scene.background = new THREE.Color(0x0f172a);
+        scene.fog = new THREE.FogExp2(0x0f172a, 0.04);
 
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
-        const cameraTarget = new THREE.Vector3(0, 1.2, 0);
-        camera.position.set(0, 2.5, 6);
+        camera.position.set(0, 2.2, 5.5);
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.1;
         container.appendChild(renderer.domElement);
 
-        // Générateur de texture de béton haute résolution avec marquage au sol
-        function createConcreteTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 1024; canvas.height = 1024;
-            const ctx = canvas.getContext('2d');
-            
-            // Fond béton gris
-            ctx.fillStyle = '#3a414b';
-            ctx.fillRect(0, 0, 1024, 1024);
+        // --- ÉCLAIRAGE INDUSTRIEL ET AMBIANT ---
+        const ambientLight = new THREE.AmbientLight(0x94a3b8, 0.7);
+        scene.add(ambientLight);
 
-            // Bruit de béton
-            for(let i=0; i<120000; i++) {
-                ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)';
-                ctx.fillRect(Math.random()*1024, Math.random()*1024, 2, 2);
-            }
+        // Lampes de plafond d'atelier
+        function addCeilingLight(x, z) {
+            const light = new THREE.PointLight(0xffedd5, 1.2, 12);
+            light.position.set(x, 4.5, z);
+            light.castShadow = true;
+            scene.add(light);
 
-            // Taches et salissures
-            for(let i=0; i<25; i++) {
-                let x = Math.random()*1024, y = Math.random()*1024, r = 20 + Math.random()*70;
-                let grad = ctx.createRadialGradient(x,y,0, x,y,r);
-                grad.addColorStop(0, 'rgba(15,15,15,0.3)');
-                grad.addColorStop(1, 'rgba(15,15,15,0)');
-                ctx.fillStyle = grad;
-                ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
-            }
-
-            // Lignes de sécurité Jaune/Noir
-            ctx.fillStyle = '#f39c12';
-            ctx.fillRect(80, 80, 864, 24);
-            ctx.fillRect(80, 920, 864, 24);
-
-            // Bandes de hachures noires
-            ctx.fillStyle = '#1e293b';
-            for(let i=100; i<900; i+=40) {
-                ctx.beginPath();
-                ctx.moveTo(i, 80); ctx.lineTo(i+20, 80); ctx.lineTo(i, 104); ctx.closePath();
-                ctx.fill();
-                ctx.beginPath();
-                ctx.moveTo(i, 920); ctx.lineTo(i+20, 920); ctx.lineTo(i, 944); ctx.closePath();
-                ctx.fill();
-            }
-
-            const texture = new THREE.CanvasTexture(canvas);
-            texture.wrapS = THREE.RepeatWrapping;
-            texture.wrapT = THREE.RepeatWrapping;
-            return texture;
+            // Structure physique du projecteur
+            const fixtureGeo = new THREE.CylinderGeometry(0.4, 0.5, 0.15, 16);
+            const fixtureMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8 });
+            const fixture = new THREE.Mesh(fixtureGeo, fixtureMat);
+            fixture.position.set(x, 4.8, z);
+            scene.add(fixture);
         }
+        addCeilingLight(-3, -2);
+        addCeilingLight(3, -2);
+        addCeilingLight(0, 2);
 
-        // Texture étiquette produit chimique GHS
-        function createGHSLabelTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 256; canvas.height = 256;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 256, 256);
-            ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 10;
-            ctx.strokeRect(10, 10, 236, 236);
-
-            // Losange Danger Red
-            ctx.save();
-            ctx.translate(128, 90); ctx.rotate(Math.PI/4);
-            ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 8;
-            ctx.strokeRect(-35, -35, 70, 70);
-            ctx.restore();
-
-            // Pictogramme Flamme
-            ctx.fillStyle = '#000';
-            ctx.font = '32px sans-serif'; ctx.textAlign = 'center';
-            ctx.fillText('🔥', 128, 100);
-
-            // Textes
-            ctx.font = 'bold 16px sans-serif';
-            ctx.fillText('SOLVANT X-85', 128, 175);
-            ctx.fillStyle = '#dc2626';
-            ctx.font = 'bold 12px sans-serif';
-            ctx.fillText('DANGER - INFLAMMABLE', 128, 200);
-
-            return new THREE.CanvasTexture(canvas);
-        }
-
-        // Texture Panneau Extincteur
-        function createSignTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 256; canvas.height = 256;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#dc2626'; ctx.fillRect(0,0,256,256);
-            ctx.fillStyle = '#ffffff'; ctx.fillRect(15,15,226,226);
-            ctx.fillStyle = '#dc2626';
-            ctx.font = 'bold 30px sans-serif'; ctx.textAlign = 'center';
-            ctx.fillText('EXTINCTEUR', 128, 65);
-            ctx.font = '60px sans-serif';
-            ctx.fillText('🧯', 128, 155);
-            return new THREE.CanvasTexture(canvas);
-        }
-
-        const concreteTex = createConcreteTexture();
-        const ghsLabelTex = createGHSLabelTexture();
-        const signTex = createSignTexture();
-
-        // Construction de l'Atelier
+        // --- DÉCORATION DE L'ATELIER ---
         function buildDetailedWorkshop() {
-            // Sol en béton armé
-            const floorGeo = new THREE.PlaneGeometry(16, 14);
-            const floorMat = new THREE.MeshStandardMaterial({
-                map: concreteTex,
-                roughness: 0.6,
-                metalness: 0.2
-            });
+            // Sol bétonisé
+            const floorGeo = new THREE.PlaneGeometry(14, 12);
+            const floorMat = new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.6, metalness: 0.1 });
             const floor = new THREE.Mesh(floorGeo, floorMat);
             floor.rotation.x = -Math.PI / 2;
             floor.receiveShadow = true;
             scene.add(floor);
 
-            // Murs métalliques industriels
-            const wallMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7, metalness: 0.3 });
+            // Murs
+            const wallMat = new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.9 });
             
-            const wallBack = new THREE.Mesh(new THREE.PlaneGeometry(16, 6), wallMat);
-            wallBack.position.set(0, 3, -7);
-            scene.add(wallBack);
+            const backWall = new THREE.Mesh(new THREE.PlaneGeometry(14, 6), wallMat);
+            backWall.position.set(0, 3, -6);
+            scene.add(backWall);
 
-            const wallLeft = new THREE.Mesh(new THREE.PlaneGeometry(14, 6), wallMat);
-            wallLeft.rotation.y = Math.PI / 2;
-            wallLeft.position.set(-8, 3, 0);
-            scene.add(wallLeft);
+            const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(12, 6), wallMat);
+            leftWall.rotation.y = Math.PI / 2;
+            leftWall.position.set(-7, 3, 0);
+            scene.add(leftWall);
 
-            const wallRight = new THREE.Mesh(new THREE.PlaneGeometry(14, 6), wallMat);
-            wallRight.rotation.y = -Math.PI / 2;
-            wallRight.position.set(8, 3, 0);
-            scene.add(wallRight);
+            const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(12, 6), wallMat);
+            rightWall.rotation.y = -Math.PI / 2;
+            rightWall.position.set(7, 3, 0);
+            scene.add(rightWall);
 
-            // Poutres métalliques IPN
-            const beamMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.3 });
-            for(let x = -6; x <= 6; x += 4) {
-                const beam = new THREE.Mesh(new THREE.BoxGeometry(0.3, 6, 0.3), beamMat);
-                beam.position.set(x, 3, -6.85);
+            // Charpente métallique au plafond
+            for (let x = -6; x <= 6; x += 4) {
+                const beamGeo = new THREE.BoxGeometry(0.2, 0.3, 12);
+                const beamMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.7 });
+                const beam = new THREE.Mesh(beamGeo, beamMat);
+                beam.position.set(x, 5.2, 0);
                 scene.add(beam);
             }
 
-            // Tuyauterie industrielle sur le mur du fond
-            const pipeMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.2 });
-            const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 16, 16), pipeMat);
-            pipe.rotation.z = Math.PI / 2;
-            pipe.position.set(0, 4.5, -6.7);
-            scene.add(pipe);
-
-            // Établi de travail robuste
+            // Établi mécanique en bois et acier
             const benchGroup = new THREE.Group();
-            // Plateau bois
-            const topGeo = new THREE.BoxGeometry(3.2, 0.12, 1.4);
-            const topMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.7 });
-            const top = new THREE.Mesh(topGeo, topMat);
-            top.position.y = 0.9;
-            top.castShadow = true; top.receiveShadow = true;
-            benchGroup.add(top);
+            const topMesh = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.12, 1.4), new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.7 }));
+            topMesh.position.y = 0.9;
+            topMesh.castShadow = true;
+            benchGroup.add(topMesh);
 
-            // Pieds métalliques
-            const legGeo = new THREE.BoxGeometry(0.12, 0.84, 0.12);
-            const legMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8 });
-            [[-1.4, -0.5], [1.4, -0.5], [-1.4, 0.5], [1.4, 0.5]].forEach(p => {
-                const leg = new THREE.Mesh(legGeo, legMat);
-                leg.position.set(p[0], 0.42, p[1]);
+            const legsMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8 });
+            [[-1.5, -0.6], [1.5, -0.6], [-1.5, 0.6], [1.5, 0.6]].forEach(p => {
+                const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.9), legsMat);
+                leg.position.set(p[0], 0.45, p[1]);
                 leg.castShadow = true;
                 benchGroup.add(leg);
             });
-
-            // Étau de serrage fixé sur l'établi
-            const viseMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.9 });
-            const viseBase = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.15, 0.25), viseMat);
-            viseBase.position.set(-1.2, 1.0, 0.4);
-            benchGroup.add(viseBase);
-
-            benchGroup.position.set(-2, 0, -4);
+            benchGroup.position.set(-2, 0, -4.2);
             scene.add(benchGroup);
         }
 
         buildDetailedWorkshop();
 
-        // Conteneurs des Objets Interactive 3D
-        const riskObjects = {};
-        const hotspots = [];
-        const sparkParticles = [];
+        // --- OBJETS 3D ET ÉTINCELLES ANIMÉES ---
+        const riskObjects3D = {};
+        let sparkParticles = null;
 
-        function createDetailedRiskObjects() {
-            // --- 1. RISQUE CHIMIQUE (Bidon & Fuite / Bac de rétention) ---
-            const chemGroup = new THREE.Group();
-            
-            // Bidon d'huile/solvant
-            const drumGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.8, 24);
-            const drumMat = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, metalness: 0.5, roughness: 0.3 });
-            const drum = new THREE.Mesh(drumGeo, drumMat);
-            drum.castShadow = true;
-            chemGroup.add(drum);
+        function createDetailedRisks() {
+            // 1. Bidon Chimique & Solvant au sol
+            const canGroup = new THREE.Group();
+            const canGeo = new THREE.CylinderGeometry(0.25, 0.25, 0.65, 20);
+            const canMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.3, roughness: 0.4 });
+            const can = new THREE.Mesh(canGeo, canMat);
+            can.castShadow = true;
+            canGroup.add(can);
 
-            // Étiquette GHS
-            const labelGeo = new THREE.PlaneGeometry(0.25, 0.25);
-            const labelMat = new THREE.MeshBasicMaterial({ map: ghsLabelTex, side: THREE.DoubleSide });
-            const label = new THREE.Mesh(labelGeo, labelMat);
-            label.position.set(0, 0.05, 0.31);
-            chemGroup.add(label);
-
-            // Flaque de solvant au sol (Problème)
+            // Flaque de produit au sol
             const puddleGeo = new THREE.CircleGeometry(0.6, 16);
-            const puddleMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.1, metalness: 0.9, transparent: true, opacity: 0.85 });
+            const puddleMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.1, transparent: true, opacity: 0.7 });
             const puddle = new THREE.Mesh(puddleGeo, puddleMat);
             puddle.rotation.x = -Math.PI / 2;
-            puddle.position.set(0, -0.39, 0);
-            chemGroup.add(puddle);
+            puddle.position.set(0.2, -0.31, 0.1);
+            canGroup.add(puddle);
 
-            // Bac de rétention jaune (Masqué au départ, activé une fois corrigé)
-            const trayGeo = new THREE.BoxGeometry(0.9, 0.2, 0.9);
-            const trayMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.4 });
-            const tray = new THREE.Mesh(trayGeo, trayMat);
-            tray.position.set(0, -0.3, 0);
-            tray.visible = false;
-            chemGroup.add(tray);
+            canGroup.position.set(-3.8, 0.32, -1.5);
+            scene.add(canGroup);
+            riskObjects3D.chimique = canGroup;
 
-            chemGroup.position.set(-3.8, 0.4, -2);
-            scene.add(chemGroup);
-            riskObjects.chimique = { group: chemGroup, puddle: puddle, tray: tray, drum: drum };
-
-            // --- 2. RISQUE ÉLECTRIQUE (Câble au sol & Étincelles) ---
-            const elecGroup = new THREE.Group();
-            
-            // Câble jaune déroulé
+            // 2. Câble Électrique avec Étincelles
+            const cableGroup = new THREE.Group();
             const cableGeo = new THREE.CylinderGeometry(0.03, 0.03, 3.5, 12);
-            const cableMat = new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.6 });
+            const cableMat = new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.5 });
             const cable = new THREE.Mesh(cableGeo, cableMat);
-            cable.rotation.z = Math.PI / 2;
-            cable.rotation.y = 0.2;
-            cable.castShadow = true;
-            elecGroup.add(cable);
+            cable.rotation.z = Math.PI / 2.2;
+            cableGroup.add(cable);
 
-            // Passe-câble de protection (Solution)
-            const rampGeo = new THREE.BoxGeometry(3.5, 0.08, 0.35);
-            const rampMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 });
-            const ramp = new THREE.Mesh(rampGeo, rampMat);
-            ramp.rotation.y = 0.2;
-            ramp.position.y = 0.02;
-            ramp.visible = false;
-            elecGroup.add(ramp);
-
-            // Effet d'étincelles
+            // Système de particules pour étincelles
             const sparkGeo = new THREE.BufferGeometry();
-            const sparkCount = 12;
-            const sparkPos = new Float32Array(sparkCount * 3);
-            for(let i=0; i<sparkCount*3; i++) sparkPos[i] = (Math.random()-0.5)*0.2;
-            sparkGeo.setAttribute('position', new THREE.BufferAttribute(sparkPos, 3));
-            const sparkMat = new THREE.PointsMaterial({ color: 0x38bdf8, size: 0.08, transparent: true });
-            const sparks = new THREE.Points(sparkGeo, sparkMat);
-            sparks.position.set(0, 0.05, 0);
-            elecGroup.add(sparks);
+            const sparkCoords = new Float32Array(30 * 3);
+            for(let i=0; i<90; i++) sparkCoords[i] = (Math.random()-0.5)*0.2;
+            sparkGeo.setAttribute('position', new THREE.BufferAttribute(sparkCoords, 3));
+            const sparkMat = new THREE.PointsMaterial({ color: 0x38bdf8, size: 0.05, transparent: true });
+            sparkParticles = new THREE.Points(sparkGeo, sparkMat);
+            sparkParticles.position.set(0, 0.05, 0);
+            cableGroup.add(sparkParticles);
 
-            elecGroup.position.set(0, 0.03, 1.2);
-            scene.add(elecGroup);
-            riskObjects.electrique = { group: elecGroup, cable: cable, ramp: ramp, sparks: sparks };
+            cableGroup.position.set(0, 0.02, 1.2);
+            scene.add(cableGroup);
+            riskObjects3D.electrique = cableGroup;
 
-            // --- 3. RISQUE GAZ (Bouteilles non attachées) ---
+            // 3. Bouteilles de gaz instables
             const gazGroup = new THREE.Group();
-            
-            // Bouteille Acétylène (Rouge brun)
-            const bot1 = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 1.3, 16), new THREE.MeshStandardMaterial({ color: 0x991b1b, metalness: 0.6, roughness: 0.3 }));
-            bot1.position.x = -0.2; bot1.castShadow = true;
-            gazGroup.add(bot1);
-
-            // Bouteille Oxygène (Bleue)
-            const bot2 = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 1.4, 16), new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.6, roughness: 0.3 }));
-            bot2.position.x = 0.2; bot2.castShadow = true;
-            gazGroup.add(bot2);
-
-            // Chaîne d'arrimage de sécurité (Masquée au départ)
-            const chainGeo = new THREE.TorusGeometry(0.35, 0.02, 8, 24, Math.PI);
-            const chainMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.2 });
-            const chain = new THREE.Mesh(chainGeo, chainMat);
-            chain.position.set(0, 0.2, 0.05);
-            chain.visible = false;
-            gazGroup.add(chain);
-
-            gazGroup.position.set(4.2, 0.7, -3.5);
+            const botGeo = new THREE.CylinderGeometry(0.18, 0.18, 1.4, 16);
+            const bot1 = new THREE.Mesh(botGeo, new THREE.MeshStandardMaterial({ color: 0x15803d, metalness: 0.6 }));
+            const bot2 = new THREE.Mesh(botGeo, new THREE.MeshStandardMaterial({ color: 0xb91c1c, metalness: 0.6 }));
+            bot1.position.x = -0.2; bot1.rotation.z = 0.1; bot1.castShadow = true;
+            bot2.position.x = 0.2; bot2.rotation.z = -0.08; bot2.castShadow = true;
+            gazGroup.add(bot1); gazGroup.add(bot2);
+            gazGroup.position.set(3.8, 0.7, -3.2);
             scene.add(gazGroup);
-            riskObjects.gaz = { group: gazGroup, chain: chain };
+            riskObjects3D.gaz = gazGroup;
 
-            // --- 4. RISQUE EXTINCTEUR (Accès encombré) ---
+            // 4. Extincteur masqué par palettes
             const extGroup = new THREE.Group();
-            
-            // Extincteur mural
-            const extBody = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.65, 16), new THREE.MeshStandardMaterial({ color: 0xdc2626, metalness: 0.4, roughness: 0.3 }));
-            extBody.position.y = 0.8; extBody.castShadow = true;
-            extGroup.add(extBody);
+            const extGeo = new THREE.CylinderGeometry(0.16, 0.16, 0.75, 16);
+            const ext = new THREE.Mesh(extGeo, new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.5 }));
+            ext.position.y = 0.38; ext.castShadow = true;
+            extGroup.add(ext);
 
-            // Panneau Signalisation
-            const sign = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.4), new THREE.MeshBasicMaterial({ map: signTex }));
-            sign.position.set(0, 1.5, -0.01);
-            extGroup.add(sign);
+            // Palettes/cartons devant
+            const boxGeo = new THREE.BoxGeometry(0.7, 0.6, 0.6);
+            const box = new THREE.Mesh(boxGeo, new THREE.MeshStandardMaterial({ color: 0x854d0e, roughness: 0.8 }));
+            box.position.set(0.05, 0.3, 0.4); box.castShadow = true;
+            extGroup.add(box);
 
-            // Palettes/Cartons encombrants devant
-            const palletGroup = new THREE.Group();
-            const boxGeo = new THREE.BoxGeometry(0.7, 0.6, 0.7);
-            const boxMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.8 });
-            const box1 = new THREE.Mesh(boxGeo, boxMat);
-            box1.position.set(0, 0.3, 0.5); box1.castShadow = true;
-            palletGroup.add(box1);
-
-            extGroup.add(palletGroup);
-            extGroup.position.set(4.5, 0, 2.2);
+            extGroup.position.set(4.2, 0, 2.2);
             scene.add(extGroup);
-            riskObjects.extincteur = { group: extGroup, obstacles: palletGroup };
+            riskObjects3D.extincteur = extGroup;
 
-            // --- 5. RISQUE MEULEUSE (Carter manquant) ---
+            // 5. Meuleuse d'angle
             const toolGroup = new THREE.Group();
-            
-            // Corps de la meuleuse
-            const bodyMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.4, 12), new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.4 }));
-            bodyMesh.rotation.z = Math.PI / 2;
-            toolGroup.add(bodyMesh);
-
-            // Disque abrasif
-            const discMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.01, 24), new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.9 }));
-            discMesh.position.x = 0.2;
-            discMesh.rotation.z = Math.PI / 2;
-            toolGroup.add(discMesh);
-
-            // Carter de sécurité métallique (Masqué au départ)
-            const guardGeo = new THREE.CylinderGeometry(0.16, 0.16, 0.03, 16, 1, false, 0, Math.PI);
-            const guardMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8, roughness: 0.3, side: THREE.DoubleSide });
-            const guard = new THREE.Mesh(guardGeo, guardMat);
-            guard.position.x = 0.2;
-            guard.rotation.z = Math.PI / 2;
-            guard.visible = false;
-            toolGroup.add(guard);
-
-            toolGroup.position.set(-1.6, 0.98, -3.8);
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.4, 12), new THREE.MeshStandardMaterial({ color: 0x0284c7 }));
+            body.rotation.z = Math.PI/2;
+            const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.01, 20), new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.9 }));
+            disc.position.x = 0.2;
+            toolGroup.add(body); toolGroup.add(disc);
+            toolGroup.position.set(-1.5, 0.98, -3.8);
             scene.add(toolGroup);
-            riskObjects.meuleuse = { group: toolGroup, guard: guard };
+            riskObjects3D.meuleuse = toolGroup;
 
-            // --- BALISES VOYANTS 3D CLIGNOTANTS (HOTSPOTS) ---
+            // Pastilles de détection rouges 3D
             Object.keys(risksData).forEach(key => {
                 const r = risksData[key];
-                const hsGroup = new THREE.Group();
-                
-                const ringGeo = new THREE.RingGeometry(0.15, 0.22, 24);
-                const ringMat = new THREE.MeshBasicMaterial({ color: 0xef4444, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
-                const ring = new THREE.Mesh(ringGeo, ringMat);
-                ring.rotation.x = -Math.PI / 2;
-                hsGroup.add(ring);
-
-                const sphereGeo = new THREE.SphereGeometry(0.08, 16, 16);
-                const sphereMat = new THREE.MeshBasicMaterial({ color: 0xf87171 });
-                const sphere = new THREE.Mesh(sphereGeo, sphereMat);
-                sphere.position.y = 0.1;
-                sphere.userData = { riskId: key };
-                hsGroup.add(sphere);
-
-                hsGroup.position.set(r.pos.x, r.pos.y, r.pos.z);
-                scene.add(hsGroup);
-                hotspots.push({ group: hsGroup, ring: ring, key: key });
+                const hsGeo = new THREE.SphereGeometry(0.16, 16, 16);
+                const hsMat = new THREE.MeshBasicMaterial({ color: 0xef4444, wireframe: true });
+                const hs = new THREE.Mesh(hsGeo, hsMat);
+                hs.position.set(r.pos.x, r.pos.y, r.pos.z);
+                hs.userData = { riskId: key };
+                scene.add(hs);
             });
         }
 
-        createDetailedRiskObjects();
+        createDetailedRisks();
 
-        // Lumières du Décor
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
-
-        const dirLight = new THREE.DirectionalLight(0xffedd5, 0.9);
-        dirLight.position.set(6, 12, 8);
-        dirLight.castShadow = true;
-        dirLight.shadow.mapSize.width = 1024;
-        dirLight.shadow.mapSize.height = 1024;
-        dirLight.shadow.bias = -0.0005;
-        scene.add(dirLight);
-
-        // Projecteur au-dessus de l'établi
-        const spotLight = new THREE.SpotLight(0x38bdf8, 1.2);
-        spotLight.position.set(-2, 4, -4);
-        spotLight.target.position.set(-2, 0.9, -4);
-        spotLight.angle = Math.PI / 4;
-        spotLight.penumbra = 0.5;
-        scene.add(spotLight);
-        scene.add(spotLight.target);
-
-        // Particules de poussière ambiante dans l'air
-        const dustGeo = new THREE.BufferGeometry();
-        const dustCount = 120;
-        const dustPos = new Float32Array(dustCount * 3);
-        for(let i=0; i<dustCount*3; i+=3) {
-            dustPos[i] = (Math.random() - 0.5) * 14;
-            dustPos[i+1] = Math.random() * 5;
-            dustPos[i+2] = (Math.random() - 0.5) * 12;
-        }
-        dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
-        const dustMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.04, transparent: true, opacity: 0.3 });
-        const dustPoints = new THREE.Points(dustGeo, dustMat);
-        scene.add(dustPoints);
-
-        // Navigation Caméra Tactile et Clavier
+        // --- NAVIGATION TACTILE & ROTATION SANS BUG ---
         let isDragging = false;
-        let prevMouseX = 0, prevMouseY = 0;
+        let prevX = 0, prevY = 0;
         let targetYaw = 0, targetPitch = 0;
-        let isMoving = false;
-        let moveDirection = null;
 
         function onPointerDown(e) {
             isDragging = true;
-            prevMouseX = e.clientX || (e.touches && e.touches[0].clientX);
-            prevMouseY = e.clientY || (e.touches && e.touches[0].clientY);
+            prevX = e.clientX || (e.touches && e.touches[0].clientX);
+            prevY = e.clientY || (e.touches && e.touches[0].clientY);
         }
 
         function onPointerMove(e) {
             if (!isDragging) return;
             const x = e.clientX || (e.touches && e.touches[0].clientX);
             const y = e.clientY || (e.touches && e.touches[0].clientY);
-
-            const dx = x - prevMouseX;
-            const dy = y - prevMouseY;
-
-            targetYaw -= dx * 0.004;
-            targetPitch -= dy * 0.004;
+            
+            targetYaw -= (x - prevX) * 0.004;
+            targetPitch -= (y - prevY) * 0.004;
             targetPitch = Math.max(-Math.PI / 4, Math.min(Math.PI / 4, targetPitch));
 
-            prevMouseX = x;
-            prevMouseY = y;
+            prevX = x; prevY = y;
         }
 
         function onPointerUp() { isDragging = false; }
@@ -890,51 +761,33 @@
         window.addEventListener('touchmove', onPointerMove);
         window.addEventListener('touchend', onPointerUp);
 
-        // Déplacement D-Pad
-        function startMove(dir) { isMoving = true; moveDirection = dir; }
-        function stopMove() { isMoving = false; moveDirection = null; }
-
-        function updateMovement() {
-            if (!isMoving || !moveDirection) return;
-            const speed = 0.08;
-            const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), targetYaw);
-            const side = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), targetYaw);
-
-            if (moveDirection === 'forward') camera.position.addScaledVector(forward, speed);
-            if (moveDirection === 'backward') camera.position.addScaledVector(forward, -speed);
-            if (moveDirection === 'left') camera.position.addScaledVector(side, -speed);
-            if (moveDirection === 'right') camera.position.addScaledVector(side, speed);
-        }
-
-        // Raycasting pour la sélection
+        // --- SELECTION ET CLIC SUR ANOMALIE ---
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
 
-        function handleTap(e) {
-            const x = e.clientX || (e.changedTouches && e.changedTouches[0].clientX);
-            const y = e.clientY || (e.changedTouches && e.changedTouches[0].clientY);
+        function handleSelect(e) {
+            const clientX = e.clientX || (e.changedTouches && e.changedTouches[0].clientX);
+            const clientY = e.clientY || (e.changedTouches && e.changedTouches[0].clientY);
 
-            mouse.x = (x / window.innerWidth) * 2 - 1;
-            mouse.y = -(y / window.innerHeight) * 2 + 1;
+            mouse.x = (clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(clientY / window.innerHeight) * 2 + 1;
 
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObjects(scene.children, true);
 
             for (let i = 0; i < intersects.length; i++) {
-                let obj = intersects[i].object;
-                while (obj && !obj.userData.riskId && obj.parent) {
-                    obj = obj.parent;
-                }
-                if (obj && obj.userData && obj.userData.riskId) {
+                const obj = intersects[i].object;
+                if (obj.userData && obj.userData.riskId) {
+                    sounds.playClick();
                     openRiskModal(obj.userData.riskId);
                     break;
                 }
             }
         }
 
-        window.addEventListener('click', handleTap);
+        window.addEventListener('click', handleSelect);
 
-        // Gestion de la Fenêtre Modale
+        // --- MODALE PÉDAGOGIQUE ---
         function openRiskModal(riskId) {
             const data = risksData[riskId];
             if (!data) return;
@@ -947,12 +800,12 @@
 
             const fixBtn = document.getElementById('m-fix-btn');
             if (data.fixed) {
-                fixBtn.innerText = '✅ Situation Conforme';
+                fixBtn.innerText = '✅ Risque déjà corrigé';
                 fixBtn.style.background = '#64748b';
                 fixBtn.disabled = true;
             } else {
-                fixBtn.innerText = 'Mettre en conformité';
-                fixBtn.style.background = 'linear-gradient(135deg, #2ecc71, #27ae60)';
+                fixBtn.innerText = 'Corriger le risque';
+                fixBtn.style.background = 'var(--success)';
                 fixBtn.disabled = false;
             }
 
@@ -960,6 +813,7 @@
         }
 
         function closeModal() {
+            sounds.playClick();
             document.getElementById('modal').classList.remove('active');
         }
 
@@ -968,94 +822,75 @@
 
             currentActiveRisk.fixed = true;
             scoreCount++;
-            document.getElementById('score').innerText = scoreCount + ' / 5 Corriger';
+            document.getElementById('score').innerText = scoreCount + ' / 5 Risques Identifiés';
+            sounds.playSuccess();
 
-            const id = currentActiveRisk.id;
-            const obj = riskObjects[id];
-
-            // Animation visuelle instantanée de remise en conformité 3D
-            if (id === 'chimique') {
-                obj.puddle.visible = false;
-                obj.tray.visible = true;
-                obj.drum.position.y = 0.2;
-            } else if (id === 'electrique') {
-                obj.ramp.visible = true;
-                obj.sparks.visible = false;
-            } else if (id === 'gaz') {
-                obj.chain.visible = true;
-            } else if (id === 'extincteur') {
-                obj.obstacles.visible = false;
-            } else if (id === 'meuleuse') {
-                obj.guard.visible = true;
+            // Mettre en vert le matériel une fois sécurisé
+            const targetObj = riskObjects3D[currentActiveRisk.id];
+            if (targetObj) {
+                targetObj.traverse(child => {
+                    if (child.isMesh) child.material.color.setHex(0x2ecc71);
+                });
             }
-
-            // Masquer la balise rouge correspondante
-            const hs = hotspots.find(h => h.key === id);
-            if (hs) hs.group.visible = false;
 
             closeModal();
 
             if (scoreCount === 5) {
                 setTimeout(() => {
-                    alert('🎉 Excellent travail ! Vous avez identifié et corrigé l ensemble des 5 risques majeurs de l atelier RESTEV 85.');
+                    alert('🏆 Félicitations ! Vous avez identifié et sécurisé l ensemble des risques de l atelier RESTEV 85.');
                 }, 400);
             }
         }
 
-        // Téléportation de la Caméra
+        // --- DEPLACEMENT ET TELEPORTATION ---
         function teleportTo(target) {
+            sounds.playClick();
             if (target === 'global') {
-                camera.position.set(0, 2.5, 6);
+                camera.position.set(0, 2.2, 5.5);
                 targetYaw = 0; targetPitch = 0;
             } else if (risksData[target]) {
                 const p = risksData[target].pos;
-                camera.position.set(p.x, p.y + 0.2, p.z + 1.8);
+                camera.position.set(p.x, p.y + 0.2, p.z + 1.6);
             }
         }
 
-        // WebXR VR
+        function moveCam(dir) {
+            sounds.playClick();
+            const speed = 0.5;
+            if (dir === 'forward') camera.position.z -= speed;
+            if (dir === 'backward') camera.position.z += speed;
+            if (dir === 'left') camera.position.x -= speed;
+            if (dir === 'right') camera.position.x += speed;
+        }
+
+        // --- VR WEBXR ---
         function startVR() {
+            sounds.playClick();
             if ('xr' in navigator) {
                 navigator.xr.requestSession('immersive-vr').then(session => {
                     renderer.xr.enabled = true;
                     renderer.xr.setSession(session);
-                }).catch(() => {
-                    alert('Casque VR non détecté ou session WebXR non disponible.');
-                });
+                }).catch(() => alert('Casque VR non détecté ou mode non disponible.'));
             } else {
-                alert('WebXR n est pas supporté sur ce navigateur.');
+                alert('Ouvrez ce lien directement dans le navigateur de votre casque VR (Meta Quest Browser).');
             }
         }
 
-        // Boucle de Rendu
+        // --- BOUCLE D'ANIMATION EN TEMPS RÉEL ---
         let clock = new THREE.Clock();
 
         function animate() {
             renderer.setAnimationLoop(() => {
-                const elapsedTime = clock.getElapsedTime();
+                const delta = clock.getDelta();
 
-                // Smooth Camera Look Rotation
+                // Animation des étincelles électriques
+                if (sparkParticles && Math.random() > 0.6) {
+                    sounds.playSpark();
+                    sparkParticles.visible = !sparkParticles.visible;
+                }
+
                 camera.rotation.y = targetYaw;
                 camera.rotation.x = targetPitch;
-
-                // Mise à jour déplacement
-                updateMovement();
-
-                // Animation des balises hotspots (pulsation)
-                hotspots.forEach(hs => {
-                    if (hs.group.visible) {
-                        const s = 1 + Math.sin(elapsedTime * 4) * 0.15;
-                        hs.ring.scale.set(s, s, s);
-                    }
-                });
-
-                // Animation des poussières ambiantes
-                const positions = dustGeo.attributes.position.array;
-                for (let i = 1; i < dustCount * 3; i += 3) {
-                    positions[i] -= 0.002;
-                    if (positions[i] < 0) positions[i] = 5;
-                }
-                dustGeo.attributes.position.needsUpdate = true;
 
                 renderer.render(scene, camera);
             });
@@ -1063,10 +898,8 @@
 
         animate();
 
-        // Responsive Resizing
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updatePointer;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
