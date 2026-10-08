@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>RESTEV 85 — Simulation HSE VR Dynamique</title>
+    <title>RESTEV 85 — Simulation HSE VR Post-Processed</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
@@ -24,7 +24,15 @@
         .custom-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
         .custom-scroll::-webkit-scrollbar-thumb { background: rgba(2, 132, 199, 0.5); border-radius: 4px; }
     </style>
+    
+    <!-- Three.js + Post-Processing Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 </head>
 <body>
 
@@ -41,10 +49,10 @@
                 </div>
                 <div>
                     <div class="flex items-center gap-2">
-                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-sky-500/20 text-sky-400 border border-sky-500/30">Module VR Dynamique</span>
-                        <h1 class="text-sm md:text-base font-extrabold text-white tracking-wide">RESTEV 85 — Inspection Prévention HSE</h1>
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-sky-500/20 text-sky-400 border border-sky-500/30">HSE Post-Processing Pro</span>
+                        <h1 class="text-sm md:text-base font-extrabold text-white tracking-wide">RESTEV 85 — Chasse aux Risques Atelier</h1>
                     </div>
-                    <p class="text-xs text-slate-400 font-medium mt-0.5">Analyse en temps réel des postes de travail sous risques</p>
+                    <p class="text-xs text-slate-400 font-medium mt-0.5">Évaluation en temps réel avec rendu studio et effets lumineux</p>
                 </div>
             </div>
 
@@ -72,7 +80,7 @@
               <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
               <span class="relative inline-flex rounded-full h-3 w-3 bg-teal-500"></span>
             </span>
-            <span>Examinez les opérateurs en activité. Cliquez sur un équipement dangereux pour intervenir.</span>
+            <span>Inspectez l'atelier. Cliquez directement sur un équipement dangereux pour intervenir.</span>
         </div>
 
         <div class="pointer-events-auto flex items-center justify-center gap-2 overflow-x-auto py-1 custom-scroll max-w-full">
@@ -257,16 +265,30 @@
         const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 100);
         camera.position.set(0, 2.2, 5.5);
 
+        // --- RENDERER PRO & TONEMAPPING ---
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.18;
+        renderer.toneMappingExposure = 1.25;
         container.appendChild(renderer.domElement);
         renderer.xr.enabled = true;
 
+        // --- POST-PROCESSING (EFFECT COMPOSER & UNREAL BLOOM) ---
+        const composer = new THREE.EffectComposer(renderer);
+        composer.addPass(new THREE.RenderPass(scene, camera));
+
+        const bloomPass = new THREE.UnrealBloomPass(
+            new THREE.Vector2(window.innerWidth, window.innerHeight),
+            0.45, // Intensité du halo
+            0.4,  // Rayon
+            0.85  // Seuil d'activation
+        );
+        composer.addPass(bloomPass);
+
+        // --- ÉCLAIRAGE INDUSTRIEL ---
         const ambientLight = new THREE.HemisphereLight(0xcce3ff, 0x090d16, 0.75); scene.add(ambientLight);
         const mainSun = new THREE.DirectionalLight(0xffedd5, 1.8); mainSun.position.set(-6, 9, 5); mainSun.castShadow = true; scene.add(mainSun);
 
@@ -325,7 +347,6 @@
 
             const torso = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.55, 0.22), vestMat); torso.position.y = 1.15; torso.castShadow = true; torso.userData = { hazardId }; worker.add(torso);
             
-            // Épaules / Bras articulés pour animation
             const armL = new THREE.Group(); armL.position.set(-0.22, 1.35, 0);
             const armLMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.45), vestMat); armLMesh.position.y = -0.22; armL.add(armLMesh);
             worker.add(armL); worker.userData.armL = armL;
@@ -355,13 +376,11 @@
             const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(14, 6), wallMat); leftWall.rotation.y = Math.PI / 2; leftWall.position.set(-8, 3, 0); scene.add(leftWall);
             const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(14, 6), wallMat); rightWall.rotation.y = -Math.PI / 2; rightWall.position.set(8, 3, 0); scene.add(rightWall);
 
-            // Pont Roulant Mobile (Grue)
             gantryCrane = new THREE.Group();
             const beam = new THREE.Mesh(new THREE.BoxGeometry(16, 0.35, 0.45), new THREE.MeshStandardMaterial({ color: 0xeab308, metalness: 0.8 }));
             gantryCrane.add(beam);
             
-            // Girophare sur le pont roulant
-            warningLight = new THREE.PointLight(0xff0000, 2, 6);
+            warningLight = new THREE.PointLight(0xff0000, 2.5, 8);
             warningLight.position.set(0, 0.3, 0);
             const beaconMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.15, 12), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
             beaconMesh.position.set(0, 0.3, 0);
@@ -433,14 +452,13 @@
             const workerBox = createDetailedWorker('extincteur', 0x10b981); workerBox.position.set(-0.6, 0, 0.5); workerBox.rotation.y = 0.5; extGroup.add(workerBox);
             extGroup.position.set(4.8, 0, 1.8); scene.add(extGroup); hazardMeshGroups.extincteur = extGroup;
 
-            // Meuleuse + Étincelles de Meulage Dynamiques
+            // Meuleuse
             const toolGroup = new THREE.Group(); toolGroup.userData = { hazardId: 'meuleuse' };
             const grinderBody = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.38, 16), new THREE.MeshStandardMaterial({ color: 0x0284c7 }));
             grinderBody.rotation.z = Math.PI / 2; grinderBody.userData = { hazardId: 'meuleuse' }; toolGroup.add(grinderBody);
             const guard = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.03, 16, 1, false, 0, Math.PI), new THREE.MeshStandardMaterial({ color: 0x64748b }));
             guard.position.x = 0.2; guard.rotation.y = Math.PI / 2; guard.name = 'guard'; guard.visible = false; toolGroup.add(guard);
             
-            // Particules d'étincelles de tronçonnage
             const gSparkGeo = new THREE.BufferGeometry(); const gSparkCoords = new Float32Array(40 * 3);
             for(let i=0; i<120; i++) gSparkCoords[i] = (Math.random() - 0.5) * 0.25;
             gSparkGeo.setAttribute('position', new THREE.BufferAttribute(gSparkCoords, 3));
@@ -620,7 +638,7 @@
             }
         }
 
-        // --- BOUCLE D'ANIMATION DYNAMIQUE AVANCÉE ---
+        // --- BOUCLE D'ANIMATION AVEC COMPOSER.RENDER() ---
         const clock = new THREE.Clock();
 
         function animate() {
@@ -628,22 +646,13 @@
                 const delta = clock.getDelta();
                 const time = clock.getElapsedTime();
 
-                // 1. Animation Pont Roulant (Mouvement longitudinal)
-                if (gantryCrane) {
-                    gantryCrane.position.z = -2.0 + Math.sin(time * 0.3) * 3.5;
-                }
-                // 2. Girophare d'Avertissement (Clignotement / Rotation)
-                if (warningLight) {
-                    warningLight.intensity = (Math.sin(time * 12) > 0) ? 3.0 : 0.2;
-                }
+                if (gantryCrane) gantryCrane.position.z = -2.0 + Math.sin(time * 0.3) * 3.5;
+                if (warningLight) warningLight.intensity = (Math.sin(time * 12) > 0) ? 3.0 : 0.2;
 
-                // 3. Animation des Opérateurs (Mouvements de travail & respiration)
                 Object.keys(workersGroup).forEach(key => {
                     const w = workersGroup[key];
-                    // Respiration / Balancement corporel
                     w.position.y += Math.sin(time * 2 + key.length) * 0.0008;
 
-                    // Mouvements spécifiques des bras
                     if (key === 'meuleuse' && w.userData.armL && !HAZARDS.meuleuse.fixed) {
                         w.userData.armL.rotation.x = Math.sin(time * 8) * 0.08 - 0.4;
                         w.userData.armR.rotation.x = Math.cos(time * 8) * 0.08 - 0.4;
@@ -652,7 +661,6 @@
                     }
                 });
 
-                // 4. Balises Cibles (Flottement vertical & oscillation)
                 if (beaconsVisible) {
                     Object.values(beaconsGroup).forEach(b => {
                         b.group.position.y = b.basePosY + Math.sin(time * 3) * 0.08;
@@ -660,7 +668,6 @@
                     });
                 }
 
-                // 5. Clignotement des Étincelles
                 if (sparkSystem && sparkSystem.visible && Math.random() > 0.5) {
                     audioSynth.playSpark(); sparkSystem.visible = !sparkSystem.visible;
                 }
@@ -679,13 +686,17 @@
                 }
 
                 camera.lookAt(targetLookAt);
-                renderer.render(scene, camera);
+                
+                // Rendu post-traité au lieu de renderer.render()
+                composer.render();
             });
         }
 
         window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
         });
 
         animate();
