@@ -3,17 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>RESTEV 85 - Safety Day VR / Chasse aux Risques avec Opérateurs</title>
+    <title>RESTEV 85 — Simulation HSE Professionnelle VR 3D</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
         
         :root {
-            --hse-primary: #0284c7;
-            --hse-success: #10b981;
-            --hse-warning: #f59e0b;
-            --hse-danger: #ef4444;
-            --bg-dark: #050811;
+            --bg-dark: #030712;
         }
 
         * {
@@ -44,16 +40,16 @@
         }
 
         .glass-hud {
-            background: rgba(10, 16, 30, 0.88);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
         }
 
         .glass-card {
-            background: rgba(13, 22, 41, 0.94);
-            backdrop-filter: blur(24px);
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(28px);
             border: 1px solid rgba(255, 255, 255, 0.18);
         }
 
@@ -61,10 +57,10 @@
             position: absolute;
             top: 50%;
             left: 50%;
-            width: 14px;
-            height: 14px;
+            width: 16px;
+            height: 16px;
             transform: translate(-50%, -50%);
-            border: 2px solid rgba(255, 255, 255, 0.85);
+            border: 2px solid rgba(255, 255, 255, 0.9);
             border-radius: 50%;
             pointer-events: none;
             z-index: 15;
@@ -86,7 +82,7 @@
             background: rgba(16, 185, 129, 0.35);
             width: 28px;
             height: 28px;
-            box-shadow: 0 0 18px rgba(16, 185, 129, 0.9);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.9);
         }
 
         #vignette {
@@ -94,7 +90,7 @@
             inset: 0;
             z-index: 8;
             pointer-events: none;
-            background: radial-gradient(circle at center, transparent 40%, rgba(3, 7, 18, 0.6) 100%);
+            background: radial-gradient(circle at center, transparent 40%, rgba(3, 7, 18, 0.65) 100%);
         }
 
         #flashlight-beam {
@@ -104,7 +100,7 @@
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.2s ease;
-            background: radial-gradient(circle at 50% 50%, rgba(255, 243, 212, 0.15) 0%, rgba(255, 243, 212, 0.03) 30%, transparent 60%);
+            background: radial-gradient(circle at 50% 50%, rgba(255, 243, 212, 0.18) 0%, rgba(255, 243, 212, 0.04) 32%, transparent 65%);
         }
 
         body.flashlight-on #flashlight-beam {
@@ -130,25 +126,25 @@
         <!-- En-tête / Dashboard -->
         <header class="glass-hud pointer-events-auto rounded-2xl px-5 py-3.5 flex items-center justify-between shadow-2xl">
             <div class="flex items-center gap-4">
-                <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-500 flex items-center justify-center font-black text-white text-xl shadow-lg shadow-sky-500/20">
-                    HSE
+                <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-sky-600 to-teal-400 flex items-center justify-center font-black text-white text-xl shadow-lg shadow-sky-500/20">
+                    R85
                 </div>
                 <div>
                     <div class="flex items-center gap-2">
-                        <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-sky-500/20 text-sky-400 border border-sky-500/30">Inspection Humaine</span>
-                        <h1 class="text-sm md:text-base font-extrabold text-white tracking-wide">RESTEV 85 — Protections des Opérateurs</h1>
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-sky-500/20 text-sky-400 border border-sky-500/30">Module VR Pro</span>
+                        <h1 class="text-sm md:text-base font-extrabold text-white tracking-wide">RESTEV 85 — Inspection Prévention HSE</h1>
                     </div>
-                    <p class="text-xs text-slate-400 font-medium mt-0.5">Identifiez les situations exposant le personnel aux accidents</p>
+                    <p class="text-xs text-slate-400 font-medium mt-0.5">Évaluation des situations à risques et protection du personnel</p>
                 </div>
             </div>
 
             <!-- Compteur & Chrono -->
             <div class="flex items-center gap-3">
-                <button id="toggle-beacons-btn" onclick="toggleBeacons()" class="pointer-events-auto bg-slate-800/90 hover:bg-slate-700 border border-slate-600 text-xs text-amber-400 font-bold px-3 py-2 rounded-xl transition flex items-center gap-1.5">
-                    <span>💡</span> <span class="hidden sm:inline">Aide Visuelle :</span> <span id="beacon-status-text">OFF</span>
+                <button id="toggle-beacons-btn" onclick="toggleBeacons()" class="pointer-events-auto bg-slate-800/90 hover:bg-slate-700 border border-slate-600 text-xs text-amber-400 font-bold px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-md">
+                    <span>💡</span> <span class="hidden sm:inline">Balises Cibles :</span> <span id="beacon-status-text">OFF</span>
                 </button>
 
-                <div class="bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-1.5 flex items-center gap-3">
+                <div class="bg-slate-900/90 border border-slate-700/80 rounded-xl px-4 py-1.5 flex items-center gap-3">
                     <div class="text-right">
                         <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Chrono</div>
                         <div id="timer-display" class="text-xs md:text-sm font-mono font-bold text-sky-400">00:00</div>
@@ -156,19 +152,19 @@
                     <div class="h-6 w-px bg-slate-700"></div>
                     <div class="text-right">
                         <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Sécurisés</div>
-                        <div id="score-counter" class="text-xs md:text-sm font-extrabold text-emerald-400">0 / 5</div>
+                        <div id="score-counter" class="text-xs md:text-sm font-extrabold text-teal-400">0 / 5</div>
                     </div>
                 </div>
             </div>
         </header>
 
-        <!-- Instruction -->
+        <!-- Message d'instruction -->
         <div id="instruction-toast" class="self-center glass-hud px-6 py-3 rounded-full text-xs md:text-sm text-slate-200 font-semibold border border-sky-500/30 shadow-2xl pointer-events-none flex items-center gap-3">
             <span class="relative flex h-3 w-3">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-teal-500"></span>
             </span>
-            <span>Observez les opérateurs et le matériel. Cliquez sur un risque pour intervenir.</span>
+            <span>Explorez l'atelier. Cliquez directement sur un équipement dangereux pour l'analyser.</span>
         </div>
 
         <!-- Téléportation rapide -->
@@ -177,23 +173,23 @@
                 <span>🌐</span> Vue Globale
             </button>
             <button onclick="teleportCamera('chimique')" class="glass-hud hover:bg-slate-800 text-xs text-white px-3.5 py-2.5 rounded-xl transition flex items-center gap-2 whitespace-nowrap border border-white/10 active:scale-95">
-                <span>👷‍♂️</span> Opérateur Chimie
+                <span>🛢️</span> Solvants / Chimie
             </button>
             <button onclick="teleportCamera('electrique')" class="glass-hud hover:bg-slate-800 text-xs text-white px-3.5 py-2.5 rounded-xl transition flex items-center gap-2 whitespace-nowrap border border-white/10 active:scale-95">
-                <span>🚶‍♂️</span> Piéton & Câble
+                <span>⚡</span> Armoire & Câble
             </button>
             <button onclick="teleportCamera('gaz')" class="glass-hud hover:bg-slate-800 text-xs text-white px-3.5 py-2.5 rounded-xl transition flex items-center gap-2 whitespace-nowrap border border-white/10 active:scale-95">
-                <span>👨‍🔧</span> Agent Bouteilles Gaz
+                <span>🍾</span> Gaz Comprimé
             </button>
             <button onclick="teleportCamera('extincteur')" class="glass-hud hover:bg-slate-800 text-xs text-white px-3.5 py-2.5 rounded-xl transition flex items-center gap-2 whitespace-nowrap border border-white/10 active:scale-95">
-                <span>📦</span> Manutentionnaire
+                <span>🧯</span> Incendie / Secours
             </button>
             <button onclick="teleportCamera('meuleuse')" class="glass-hud hover:bg-slate-800 text-xs text-white px-3.5 py-2.5 rounded-xl transition flex items-center gap-2 whitespace-nowrap border border-white/10 active:scale-95">
-                <span>⚙️</span> Opérateur Meuleuse
+                <span>⚙️</span> Établi / Meuleuse
             </button>
         </div>
 
-        <!-- Commandes bas -->
+        <!-- Controls Bottom -->
         <div class="flex items-end justify-between w-full pt-2">
             <!-- D-Pad Tactile -->
             <div class="pointer-events-auto glass-hud p-2 rounded-2xl grid grid-cols-3 gap-1 w-32 h-32 opacity-85 hover:opacity-100 transition shadow-2xl">
@@ -212,8 +208,8 @@
                 <button id="flashlight-btn" onclick="toggleFlashlight()" class="glass-hud hover:bg-slate-800 text-white font-bold px-4 py-3 rounded-2xl shadow-xl border border-white/20 transition active:scale-95 text-xs flex items-center gap-2">
                     <span>🔦</span> Lampe (Touche F)
                 </button>
-                <button id="vr-btn" onclick="enterVRMode()" class="pointer-events-auto bg-gradient-to-r from-sky-500 to-emerald-600 hover:from-sky-400 hover:to-emerald-500 text-white font-extrabold px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2 border border-white/20 transition transform active:scale-95 text-xs sm:text-sm">
-                    <span class="text-base">🥽</span> Mode VR
+                <button id="vr-btn" onclick="enterVRMode()" class="pointer-events-auto bg-gradient-to-r from-sky-500 to-teal-500 hover:from-sky-400 hover:to-teal-400 text-white font-extrabold px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2 border border-white/20 transition transform active:scale-95 text-xs sm:text-sm">
+                    <span class="text-base">🥽</span> Mode VR WebXR
                 </button>
             </div>
         </div>
@@ -230,10 +226,10 @@
                     </div>
                     <div>
                         <div class="flex items-center gap-2 mb-1">
-                            <span id="modal-category" class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-red-500/20 text-red-400 border border-red-500/30">EXPOSITION HUMAINE</span>
+                            <span id="modal-category" class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-red-500/20 text-red-400 border border-red-500/30">RISQUE SÉCURITÉ</span>
                             <span id="modal-severity" class="text-xs font-bold text-amber-400">Gravité : Critique</span>
                         </div>
-                        <h2 id="modal-title" class="text-lg md:text-xl font-extrabold text-white">Opérateur en Danger</h2>
+                        <h2 id="modal-title" class="text-lg md:text-xl font-extrabold text-white">Anomalie Détectée</h2>
                     </div>
                 </div>
                 <button onclick="closeModal()" class="text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-800 transition">✕</button>
@@ -241,13 +237,13 @@
 
             <div class="space-y-4 text-sm text-slate-300">
                 <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
-                    <h3 class="text-xs font-extrabold text-sky-400 uppercase tracking-wider mb-1.5">Mise en Danger de l'Opérateur</h3>
-                    <p id="modal-desc" class="text-slate-200 leading-relaxed">Description de la situation d'exposition.</p>
+                    <h3 class="text-xs font-extrabold text-sky-400 uppercase tracking-wider mb-1.5">Analyse de la Situation Dangereuse</h3>
+                    <p id="modal-desc" class="text-slate-200 leading-relaxed">Description de la situation.</p>
                 </div>
 
                 <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
                     <h3 class="text-xs font-extrabold text-amber-400 uppercase tracking-wider mb-1.5">Risques corporels & Conséquences</h3>
-                    <p id="modal-consequence" class="text-slate-200 leading-relaxed">Accidents encourus par le salarié.</p>
+                    <p id="modal-consequence" class="text-slate-200 leading-relaxed">Accidents encourus par le personnel.</p>
                 </div>
 
                 <div class="bg-sky-950/40 border-l-4 border-sky-500 p-4 rounded-r-2xl text-xs text-sky-200">
@@ -260,8 +256,8 @@
                 <button onclick="closeModal()" class="flex-1 py-3.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs sm:text-sm transition">
                     Poursuivre la recherche
                 </button>
-                <button id="modal-fix-btn" onclick="fixCurrentHazard()" class="flex-1 py-3.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-extrabold text-xs sm:text-sm shadow-xl shadow-emerald-500/30 transition flex items-center justify-center gap-2">
-                    <span>🛠️</span> Sécuriser le Poste
+                <button id="modal-fix-btn" onclick="fixCurrentHazard()" class="flex-1 py-3.5 px-4 rounded-xl bg-teal-500 hover:bg-teal-400 text-white font-extrabold text-xs sm:text-sm shadow-xl shadow-teal-500/30 transition flex items-center justify-center gap-2">
+                    <span>🛠️</span> Appliquer la Correction
                 </button>
             </div>
         </div>
@@ -269,26 +265,26 @@
 
     <!-- Écran Bilan HSE -->
     <div id="victory-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-lg flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300">
-        <div class="glass-card max-w-lg w-full rounded-3xl p-6 text-center border border-emerald-500/40 shadow-2xl">
-            <div class="w-16 h-16 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400 text-3xl flex items-center justify-center text-emerald-400 mx-auto mb-4 shadow-xl shadow-emerald-500/20">
+        <div class="glass-card max-w-lg w-full rounded-3xl p-6 text-center border border-teal-500/40 shadow-2xl">
+            <div class="w-16 h-16 rounded-2xl bg-teal-500/20 border-2 border-teal-400 text-3xl flex items-center justify-center text-teal-400 mx-auto mb-4 shadow-xl shadow-teal-500/20">
                 🏆
             </div>
-            <span class="px-3 py-1 rounded-full text-xs font-extrabold uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Personnel Protégé</span>
-            <h2 class="text-2xl font-black text-white mt-2 mb-1">Rapport d'Audit Sécurité HSE</h2>
-            <p class="text-xs text-slate-400 mb-6">Tous les salariés de l'atelier RESTEV 85 sont désormais hors de danger.</p>
+            <span class="px-3 py-1 rounded-full text-xs font-extrabold uppercase bg-teal-500/20 text-teal-400 border border-teal-500/30">Atelier Conforme</span>
+            <h2 class="text-2xl font-black text-white mt-2 mb-1">Audit Prévention Validé !</h2>
+            <p class="text-xs text-slate-400 mb-6">L'ensemble des situations à risques de l'atelier RESTEV 85 ont été sécurisées.</p>
 
             <div class="grid grid-cols-2 gap-3 mb-6">
                 <div class="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800 text-center">
-                    <span class="text-[10px] text-slate-400 uppercase font-bold">Conformité</span>
-                    <div class="text-xl font-black text-emerald-400 mt-0.5">100%</div>
+                    <span class="text-[10px] text-slate-400 uppercase font-bold">Conformité HSE</span>
+                    <div class="text-xl font-black text-teal-400 mt-0.5">100%</div>
                 </div>
                 <div class="bg-slate-900/80 p-3.5 rounded-2xl border border-slate-800 text-center">
-                    <span class="text-[10px] text-slate-400 uppercase font-bold">Temps d'Audit</span>
+                    <span class="text-[10px] text-slate-400 uppercase font-bold">Temps de Parcours</span>
                     <div id="final-time" class="text-xl font-black text-sky-400 mt-0.5">00:00</div>
                 </div>
             </div>
 
-            <button onclick="resetGame()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-sky-500 to-emerald-600 text-white font-extrabold text-sm shadow-xl hover:from-sky-400 hover:to-emerald-500 transition">
+            <button onclick="resetGame()" class="w-full py-4 rounded-2xl bg-gradient-to-r from-sky-500 to-teal-500 text-white font-extrabold text-sm shadow-xl hover:from-sky-400 hover:to-teal-400 transition">
                 🔄 Recommencer l'inspection
             </button>
         </div>
@@ -340,70 +336,70 @@
         }
         const audioSynth = new WebAudioSynth();
 
-        // --- DATASET DANGERS & OPÉRATEURS ---
+        // --- DATASET DANGERS & RÉFÉRENCES ---
         const HAZARDS = {
             chimique: {
                 id: 'chimique',
-                category: 'Exposition Produits Toxiques',
-                title: 'Opérateur Chimie sans Rétention ni EPI',
-                icon: '👷‍♂️',
+                category: 'Risque Chimique & Solvants',
+                title: 'Fût de Solvant en Fuite sans Rétention',
+                icon: '🛢️',
                 severity: 'Gravité : Élevée',
-                desc: 'Un opérateur effectue des prélèvements au-dessus d\'un fût de solvants qui fuit au sol. Il ne porte ni tablier de protection étanche ni chaussures antidérapantes.',
-                consequence: 'Inhalation de vapeurs de solvants nocives, brûlures chimiques cutanées et chute grave sur le sol rendu glissant.',
-                ref: 'Code du Travail Art. R4412-17 & R4321-1 : Obligation de fourniture d\'EPI appropriés et de bacs de rétention étanches.',
+                desc: 'Un opérateur effectue un transfert de liquide au-dessus d\'un fût de solvants présentant une fuite active au sol. Absence totale de bac de rétention réglementaire.',
+                consequence: 'Risque d\'intoxication par émanations de COV, pollution du milieu professionnel et glissades graves.',
+                ref: 'Code du Travail Art. R4412-17 & INRS ED 6026 : Bacs de rétention étanches obligatoires d\'une capacité de 100% du plus grand réservoir.',
                 cameraPos: { x: -3.8, y: 1.2, z: -0.2 }, lookAt: { x: -3.8, y: 0.5, z: -1.8 }, beaconPos: { x: -3.8, y: 1.3, z: -1.8 }, fixed: false
             },
             electrique: {
                 id: 'electrique',
-                category: 'Risque d\'Électrocution',
-                title: 'Piéton Exposé au Câble Dénudé',
-                icon: '🚶‍♂️',
+                category: 'Risque Électrique & Passage',
+                title: 'Câble Dénudé en Zone de Passsage Piéton',
+                icon: '⚡',
                 severity: 'Gravité : Critique',
-                desc: 'Un salarié traverse l\'allée centrale de circulation où repose un câble électrique à nu produisant des étincelles.',
-                consequence: 'Électrisation / électrocution par contact direct et risque élevé de chute de plain-pied.',
-                ref: 'Code du Travail Art. R4226-9 & R4224-3 : Allées piétonnes devant rester exemptes de tout obstacle ou conducteur dénudé.',
+                desc: 'Un salarié traverse l\'allée principale au niveau d\'une rallonge électrique dont la gaine armée est déchirée, générant des arcs électriques au sol.',
+                consequence: 'Risque direct d\'électrocution/électrisation et de chute de plain-pied.',
+                ref: 'Code du Travail Art. R4226-9 & R4224-3 : Passages piétons maintenus libres de tout obstacle et liaisons électriques protégées mécaniquement.',
                 cameraPos: { x: 0, y: 1.3, z: 2.8 }, lookAt: { x: 0, y: 0.1, z: 1.0 }, beaconPos: { x: 0, y: 0.5, z: 1.1 }, fixed: false
             },
             gaz: {
                 id: 'gaz',
-                category: 'Risque d\'Explosion & Écrasement',
-                title: 'Agent Manipulant des Bouteilles Instables',
-                icon: '👨‍🔧',
+                category: 'Gaz Sous Pression',
+                title: 'Bouteilles d\'O2/Acétylène Non Arrimées',
+                icon: '🍾',
                 severity: 'Gravité : Critique',
-                desc: 'Un opérateur intervient sur les vannes de bouteilles d\'oxygène et d\'acétylène sous pression laissées debout sans chaîne d\'arrimage.',
-                consequence: 'Basculement des bouteilles sur l\'opérateur (écrasement des pieds) et explosion par rupture du détendeur.',
-                ref: 'INRS ED 6098 : Fixation obligatoire de toute bouteille sous pression à une structure rigide par chaîne.',
+                desc: 'Bouteilles d\'oxygène et d\'acétylène sous pression stockées debout sans chaîne d\'arrimage ni fixation rigide au mur.',
+                consequence: 'Risque d\'écrasement par basculement et d\'explosion ou effet roquette en cas de rupture du détendeur.',
+                ref: 'INRS ED 6098 : Les bouteilles sous pression doivent obligatoirement être maintenues verticales et enchaînées.',
                 cameraPos: { x: 3.8, y: 1.5, z: -1.8 }, lookAt: { x: 3.8, y: 1.2, z: -3.8 }, beaconPos: { x: 3.8, y: 1.6, z: -3.8 }, fixed: false
             },
             extincteur: {
                 id: 'extincteur',
                 category: 'Sécurité Incendie',
-                title: 'Manutentionnaire Obstruant l\'Extincteur',
-                icon: '📦',
+                title: 'Accès Extincteur Obstrué par Palettes',
+                icon: '🧯',
                 severity: 'Gravité : Modérée',
-                desc: 'Un manutentionnaire vient de déposer un empilement de palettes bloquant totalement l\'accès à l\'extincteur mural.',
-                consequence: 'Incapacité d\'accéder aux équipements d\'extinction en cas de départ de feu immédiat dans la zone.',
-                ref: 'Code du Travail Art. R4227-33 : Les moyens de premier secours doivent rester dégagés en toutes circonstances.',
+                desc: 'L\'extincteur d\'urgence est masqué et rendu inaccessible par un empilement incontrôlé de palettes en bois et de cartons de stockage.',
+                consequence: 'Incapacité d\'attaquer un départ de feu dans les premières secondes critiques.',
+                ref: 'Code du Travail Art. R4227-33 & NF S 61-919 : L\'accès aux équipements de secours doit rester parfaitement dégagé et balisé.',
                 cameraPos: { x: 4.0, y: 1.4, z: 3.2 }, lookAt: { x: 4.8, y: 1.2, z: 1.8 }, beaconPos: { x: 4.8, y: 1.7, z: 1.8 }, fixed: false
             },
             meuleuse: {
                 id: 'meuleuse',
-                category: 'Projection de Débris',
-                title: 'Opérateur Utilisant une Meuleuse sans Carter',
+                category: 'Équipement de Travail',
+                title: 'Meuleuse d\'Angle Dépourvue de Carter',
                 icon: '⚙️',
                 severity: 'Gravité : Critique',
-                desc: 'Un ouvrier travaille sur l\'établi avec une meuleuse d\'angle dépourvue de carter de protection.',
-                consequence: 'Éclatement du disque rotatif entraînant des projections mortelles de bris abrasifs au visage et aux mains.',
-                ref: 'Code du Travail Art. R4324-1 & NF EN 60745-2-3 : Maintien obligatoire des organes de sécurité sur les outils rotatifs.',
+                desc: 'Un opérateur travaille sur l\'établi avec une meuleuse d\'angle dont le carter orientable de protection du disque abrasif a été retiré.',
+                consequence: 'Risque de blessure grave ou mortelle par projection de débris de disque abrasif en cas d\'éclatement à 10 000 tr/min.',
+                ref: 'Code du Travail Art. R4324-1 & NF EN 60745-2-3 : Interdiction stricte de retirer les carters et organes de protection d\'origine.',
                 cameraPos: { x: -1.6, y: 1.4, z: -2.8 }, lookAt: { x: -1.8, y: 0.95, z: -4.0 }, beaconPos: { x: -1.8, y: 1.2, z: -4.0 }, fixed: false
             }
         };
 
-        // --- THREE.JS CONFIGURATION ---
+        // --- THREE.JS SCENE SETUP ---
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x050811);
-        scene.fog = new THREE.FogExp2(0x050811, 0.038);
+        scene.background = new THREE.Color(0x030712);
+        scene.fog = new THREE.FogExp2(0x030712, 0.035);
 
         const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 100);
         camera.position.set(0, 2.2, 5.5);
@@ -414,15 +410,15 @@
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.15;
+        renderer.toneMappingExposure = 1.18;
         container.appendChild(renderer.domElement);
         renderer.xr.enabled = true;
 
-        // --- ÉCLAIRAGE ET LAMPE TORCHE ---
-        const ambientLight = new THREE.HemisphereLight(0xbae6fd, 0x0f172a, 0.7);
+        // --- ÉCLAIRAGE INDUSTRIEL ADVANCED ---
+        const ambientLight = new THREE.HemisphereLight(0xcce3ff, 0x090d16, 0.75);
         scene.add(ambientLight);
 
-        const mainSun = new THREE.DirectionalLight(0xffedd5, 1.6);
+        const mainSun = new THREE.DirectionalLight(0xffedd5, 1.8);
         mainSun.position.set(-6, 9, 5); mainSun.castShadow = true;
         mainSun.shadow.mapSize.set(2048, 2048);
         scene.add(mainSun);
@@ -440,29 +436,36 @@
             audioSynth.playClick();
         }
 
-        // --- TEXTURES PROCÉDURALES ---
+        // --- GENERATEUR DE TEXTURES HAUTE DÉFINITION ---
         function createTextures() {
+            // Sol Époxy
             const cvFloor = document.createElement('canvas');
             cvFloor.width = 1024; cvFloor.height = 1024;
             const ctxF = cvFloor.getContext('2d');
-            ctxF.fillStyle = '#1a2332'; ctxF.fillRect(0, 0, 1024, 1024);
-            ctxF.strokeStyle = 'rgba(0,0,0,0.45)'; ctxF.lineWidth = 6;
+            ctxF.fillStyle = '#111827'; ctxF.fillRect(0, 0, 1024, 1024);
+            ctxF.strokeStyle = 'rgba(255,255,255,0.05)'; ctxF.lineWidth = 4;
             for(let x = 0; x <= 1024; x += 256) {
                 ctxF.beginPath(); ctxF.moveTo(x, 0); ctxF.lineTo(x, 1024); ctxF.stroke();
                 ctxF.beginPath(); ctxF.moveTo(0, x); ctxF.lineTo(1024, x); ctxF.stroke();
             }
+            // Allée piétonne zébrée
+            ctxF.fillStyle = 'rgba(234, 179, 8, 0.15)';
+            ctxF.fillRect(384, 0, 256, 1024);
             const floorTexture = new THREE.CanvasTexture(cvFloor);
             floorTexture.wrapS = THREE.RepeatWrapping; floorTexture.wrapT = THREE.RepeatWrapping; floorTexture.repeat.set(4, 4);
 
+            // GHS Hazard Label
             const cvGHS = document.createElement('canvas');
             cvGHS.width = 256; cvGHS.height = 256;
             const ctxG = cvGHS.getContext('2d');
             ctxG.fillStyle = '#ffffff'; ctxG.fillRect(0, 0, 256, 256);
-            ctxG.strokeStyle = '#dc2626'; ctxG.lineWidth = 16;
-            ctxG.beginPath(); ctxG.moveTo(128, 20); ctxG.lineTo(236, 128); ctxG.lineTo(128, 236); ctxG.lineTo(20, 128); ctxG.closePath(); ctxG.stroke();
-            ctxG.fillStyle = '#000000'; ctxG.beginPath(); ctxG.arc(128, 140, 25, 0, Math.PI*2); ctxG.fill();
+            ctxG.strokeStyle = '#dc2626'; ctxG.lineWidth = 18;
+            ctxG.beginPath(); ctxG.moveTo(128, 16); ctxG.lineTo(240, 128); ctxG.lineTo(128, 240); ctxG.lineTo(16, 128); ctxG.closePath(); ctxG.stroke();
+            ctxG.fillStyle = '#000000';
+            ctxG.beginPath(); ctxG.arc(128, 145, 28, 0, Math.PI*2); ctxG.fill();
             const ghsTexture = new THREE.CanvasTexture(cvGHS);
 
+            // Stripe Yellow Black
             const cvStripe = document.createElement('canvas');
             cvStripe.width = 256; cvStripe.height = 256;
             const ctxS = cvStripe.getContext('2d');
@@ -478,102 +481,159 @@
         }
         const { floorTexture, ghsTexture, stripeTexture } = createTextures();
 
-        // --- CONSTRUCTEUR DE PERSONNAGES 3D (OPÉRATEURS) ---
-        function createWorkerCharacter(hazardId, colorVest = 0xf97316) {
+        // --- MODELISATEUR DE PERSONNAGE PRO (OPÉRATEURS HSE) ---
+        function createDetailedWorker(hazardId, vestColor = 0xf97316) {
             const worker = new THREE.Group();
             worker.userData = { hazardId: hazardId };
 
-            const skinMat = new THREE.MeshStandardMaterial({ color: 0xe0a96d, roughness: 0.8 });
-            const vestMat = new THREE.MeshStandardMaterial({ color: colorVest, roughness: 0.5 });
-            const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.7 });
-            const helmetMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.3, roughness: 0.3 });
-            const bootMat = new THREE.MeshStandardMaterial({ color: 0x0f172a });
+            const skinMat = new THREE.MeshStandardMaterial({ color: 0xdfa175, roughness: 0.8 });
+            const vestMat = new THREE.MeshStandardMaterial({ color: vestColor, roughness: 0.4 });
+            const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 });
+            const helmetMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.3, roughness: 0.2 });
+            const bootMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
+            const glassMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.6 });
 
-            // Tête & Casque
+            // Tête, Visière & Casque
             const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), skinMat);
             head.position.y = 1.55; head.userData = { hazardId: hazardId }; worker.add(head);
+
+            const visor = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.06, 0.12), glassMat);
+            visor.position.set(0, 1.57, 0.08); worker.add(visor);
 
             const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.14, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2), helmetMat);
             helmet.position.set(0, 1.58, 0); helmet.userData = { hazardId: hazardId }; worker.add(helmet);
 
-            // Buste / Gilets Fluo
-            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.55, 0.22), vestMat);
+            const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.02, 16), helmetMat);
+            brim.position.set(0, 1.58, 0.02); worker.add(brim);
+
+            // Buste & Harnais de Sécurité
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.55, 0.22), vestMat);
             torso.position.y = 1.15; torso.castShadow = true; torso.userData = { hazardId: hazardId }; worker.add(torso);
 
-            // Bandes réfléchissantes fluo
-            const stripe1 = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.05, 0.23), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-            stripe1.position.y = 1.18; worker.add(stripe1);
+            // Bandes réfléchissantes 3D
+            [-0.1, 0.1].forEach(y => {
+                const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.37, 0.04, 0.23), new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.2 }));
+                stripe.position.y = 1.15 + y; worker.add(stripe);
+            });
 
-            // Jambes
+            // Radio de Torse
+            const radio = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.1, 0.05), new THREE.MeshStandardMaterial({ color: 0x0f172a }));
+            radio.position.set(0.12, 1.3, 0.12); worker.add(radio);
+
+            // Jambes & Bottes
             [-0.1, 0.1].forEach(x => {
-                const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.65), pantsMat);
+                const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.065, 0.65), pantsMat);
                 leg.position.set(x, 0.55, 0); leg.castShadow = true; leg.userData = { hazardId: hazardId }; worker.add(leg);
 
-                const boot = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.18), bootMat);
+                const boot = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.1, 0.2), bootMat);
                 boot.position.set(x, 0.05, 0.04); boot.userData = { hazardId: hazardId }; worker.add(boot);
             });
 
-            // Bras
+            // Bras & Gants
             const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.45), vestMat);
-            armL.position.set(-0.22, 1.15, 0); armL.rotation.z = 0.2; armL.userData = { hazardId: hazardId }; worker.add(armL);
+            armL.position.set(-0.22, 1.15, 0); armL.rotation.z = 0.25; armL.userData = { hazardId: hazardId }; worker.add(armL);
 
             const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.45), vestMat);
-            armR.position.set(0.22, 1.15, 0); armR.rotation.z = -0.2; armR.userData = { hazardId: hazardId }; worker.add(armR);
+            armR.position.set(0.22, 1.15, 0); armR.rotation.z = -0.25; armR.userData = { hazardId: hazardId }; worker.add(armR);
 
             return worker;
         }
 
-        // --- ENRICHISSEMENT DE L'ATELIER ET DES RISQUES ---
-        function buildEnvironment() {
-            const floor = new THREE.Mesh(new THREE.PlaneGeometry(16, 14), new THREE.MeshStandardMaterial({ map: floorTexture, roughness: 0.45 }));
+        // --- BÂTIMENT INDUSTRIEL & PONT ROULANT ---
+        function buildFactoryHall() {
+            // Sol
+            const floor = new THREE.Mesh(new THREE.PlaneGeometry(16, 14), new THREE.MeshStandardMaterial({ map: floorTexture, roughness: 0.4 }));
             floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
 
-            const wallMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.85 });
-            const backWall = new THREE.Mesh(new THREE.PlaneGeometry(16, 6), wallMat); backWall.position.set(0, 3, -7); scene.add(backWall);
-            const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(14, 6), wallMat); leftWall.rotation.y = Math.PI / 2; leftWall.position.set(-8, 3, 0); scene.add(leftWall);
-            const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(14, 6), wallMat); rightWall.rotation.y = -Math.PI / 2; rightWall.position.set(8, 3, 0); scene.add(rightWall);
+            // Murs
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
+            const backWall = new THREE.Mesh(new THREE.PlaneGeometry(16, 6), wallMat); backWall.position.set(0, 3, -7); backWall.receiveShadow = true; scene.add(backWall);
+            const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(14, 6), wallMat); leftWall.rotation.y = Math.PI / 2; leftWall.position.set(-8, 3, 0); leftWall.receiveShadow = true; scene.add(leftWall);
+            const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(14, 6), wallMat); rightWall.rotation.y = -Math.PI / 2; rightWall.position.set(8, 3, 0); rightWall.receiveShadow = true; scene.add(rightWall);
 
-            // Établi
-            const benchGroup = new THREE.Group();
-            const top = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.12, 1.4), new THREE.MeshStandardMaterial({ color: 0x78350f }));
-            top.position.y = 0.88; benchGroup.add(top);
-            [[-1.4, -0.6], [1.4, -0.6], [-1.4, 0.6], [1.4, 0.6]].forEach(p => {
-                const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.88), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
-                leg.position.set(p[0], 0.44, p[1]); benchGroup.add(leg);
+            // Pont Roulant Jaune (Grue Supérieure)
+            const gantry = new THREE.Mesh(new THREE.BoxGeometry(16, 0.3, 0.4), new THREE.MeshStandardMaterial({ color: 0xeab308, metalness: 0.8 }));
+            gantry.position.set(0, 5.2, -2.0); scene.add(gantry);
+
+            // Tuyauterie Réseau
+            const pipes = [
+                { color: 0xdc2626, y: 4.8 }, // Incendie
+                { color: 0x0284c7, y: 4.6 }, // Air Comprimé
+                { color: 0xeab308, y: 4.4 }  // Gaz
+            ];
+            pipes.forEach(p => {
+                const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 16, 16), new THREE.MeshStandardMaterial({ color: p.color, metalness: 0.7 }));
+                pipe.rotation.z = Math.PI / 2; pipe.position.set(0, p.y, -6.85); scene.add(pipe);
             });
+
+            // Établi d'usinage
+            const benchGroup = new THREE.Group();
+            const top = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.12, 1.4), new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.7 }));
+            top.position.y = 0.88; top.castShadow = true; top.receiveShadow = true; benchGroup.add(top);
+
+            [[-1.4, -0.6], [1.4, -0.6], [-1.4, 0.6], [1.4, 0.6]].forEach(p => {
+                const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.88), new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8 }));
+                leg.position.set(p[0], 0.44, p[1]); leg.castShadow = true; benchGroup.add(leg);
+            });
+
+            const vice = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.2, 0.3), new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.9 }));
+            vice.position.set(1.1, 1.0, 0.2); benchGroup.add(vice);
             benchGroup.position.set(-1.8, 0, -4.2); scene.add(benchGroup);
         }
-        buildEnvironment();
 
+        buildFactoryHall();
+
+        // --- ÉQUIPEMENTS DE DANGER HAUTE FIDÉLITÉ ---
         const hazardMeshGroups = {};
         let sparkSystem = null;
 
-        function buildHazardsAndWorkers() {
+        function buildDetailedHazards() {
             
-            // 1. CHIMIE + OPÉRATEUR
+            // --- 1. SOLVANTS / CHIMIE ---
             const chemGroup = new THREE.Group(); chemGroup.userData = { hazardId: 'chimique' };
-            const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.95, 24), new THREE.MeshStandardMaterial({ color: 0xb91c1c }));
-            drum.userData = { hazardId: 'chimique' }; chemGroup.add(drum);
 
-            const puddle = new THREE.Mesh(new THREE.CircleGeometry(0.85, 24), new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.1, transparent: true, opacity: 0.8 }));
-            puddle.rotation.x = -Math.PI / 2; puddle.position.set(0.35, -0.46, 0.2); puddle.name = 'puddle'; puddle.userData = { hazardId: 'chimique' }; chemGroup.add(puddle);
+            const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.95, 24), new THREE.MeshStandardMaterial({ color: 0xb91c1c, metalness: 0.65, roughness: 0.3 }));
+            drum.castShadow = true; drum.userData = { hazardId: 'chimique' }; chemGroup.add(drum);
 
-            const bund = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.22, 0.9), new THREE.MeshStandardMaterial({ color: 0xeab308 }));
+            [-0.25, 0.25].forEach(y => {
+                const ring = new THREE.Mesh(new THREE.TorusGeometry(0.325, 0.012, 8, 24), new THREE.MeshStandardMaterial({ color: 0x7f1d1d, metalness: 0.8 }));
+                ring.rotation.x = Math.PI / 2; ring.position.y = y; chemGroup.add(ring);
+            });
+
+            const label = new THREE.Mesh(new THREE.PlaneGeometry(0.25, 0.25), new THREE.MeshBasicMaterial({ map: ghsTexture, side: THREE.DoubleSide }));
+            label.position.set(0, 0.1, 0.326); label.userData = { hazardId: 'chimique' }; chemGroup.add(label);
+
+            const puddle = new THREE.Mesh(new THREE.CircleGeometry(0.85, 24), new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.05, metalness: 0.2, transparent: true, opacity: 0.85 }));
+            puddle.rotation.x = -Math.PI / 2; puddle.position.set(0.35, -0.46, 0.2); puddle.name = 'puddle'; puddle.userData = { hazardId: 'chimique' };
+            chemGroup.add(puddle);
+
+            const bund = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.22, 0.9), new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.4 }));
             bund.position.y = -0.37; bund.name = 'bund'; bund.visible = false; chemGroup.add(bund);
 
-            // Personnage Opérateur Chimie
-            const workerChem = createWorkerCharacter('chimique', 0xf97316);
-            workerChem.position.set(-0.6, -0.48, 0.1); workerChem.rotation.y = 0.8;
-            chemGroup.add(workerChem);
+            const workerChem = createDetailedWorker('chimique', 0xf97316);
+            workerChem.position.set(-0.65, -0.48, 0.1); workerChem.rotation.y = 0.8; chemGroup.add(workerChem);
 
             chemGroup.position.set(-3.8, 0.48, -1.8); scene.add(chemGroup); hazardMeshGroups.chimique = chemGroup;
 
 
-            // 2. ÉLECTRIQUE + PIÉTON
+            // --- 2. CÂBLE ÉLECTRIQUE DÉNUDÉ ---
             const cableGroup = new THREE.Group(); cableGroup.userData = { hazardId: 'electrique' };
-            const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(-0.2, 1.1, -6.8), new THREE.Vector3(0, 0.02, 1.1), new THREE.Vector3(1.2, 0.02, 1.3)]);
-            const cable = new THREE.Mesh(new THREE.TubeGeometry(curve, 32, 0.025, 12), new THREE.MeshStandardMaterial({ color: 0x0f172a }));
+
+            const cabinet = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.2, 0.25), new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8 }));
+            cabinet.position.set(-0.2, 1.6, -6.85); cableGroup.add(cabinet);
+
+            const curve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(-0.2, 1.0, -6.8),
+                new THREE.Vector3(-0.2, 0.02, -5.0),
+                new THREE.Vector3(0.0, 0.02, 1.1),
+                new THREE.Vector3(1.2, 0.02, 1.3)
+            ]);
+            const cable = new THREE.Mesh(new THREE.TubeGeometry(curve, 40, 0.025, 12), new THREE.MeshStandardMaterial({ color: 0x0f172a }));
             cable.userData = { hazardId: 'electrique' }; cableGroup.add(cable);
+
+            const copperWire = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.2, 8), new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.9 }));
+            copperWire.rotation.z = Math.PI / 2; copperWire.position.set(0.0, 0.03, 1.1); copperWire.userData = { hazardId: 'electrique' };
+            cableGroup.add(copperWire);
 
             const sparkGeo = new THREE.BufferGeometry();
             const sparkCoords = new Float32Array(30 * 3);
@@ -582,74 +642,76 @@
             sparkSystem = new THREE.Points(sparkGeo, new THREE.PointsMaterial({ color: 0x38bdf8, size: 0.08, transparent: true }));
             sparkSystem.position.set(0.0, 0.06, 1.1); cableGroup.add(sparkSystem);
 
-            const ramp = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.08, 0.45), new THREE.MeshStandardMaterial({ map: stripeTexture }));
+            const ramp = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.08, 0.45), new THREE.MeshStandardMaterial({ map: stripeTexture, roughness: 0.5 }));
             ramp.position.set(0.0, 0.04, 1.0); ramp.name = 'ramp'; ramp.visible = false; cableGroup.add(ramp);
 
-            // Personnage Piéton sur le point de trébucher
-            const workerWalk = createWorkerCharacter('electrique', 0xeab308);
-            workerWalk.position.set(-0.4, 0, 1.0); workerWalk.rotation.y = 1.4;
-            cableGroup.add(workerWalk);
+            const workerWalk = createDetailedWorker('electrique', 0xeab308);
+            workerWalk.position.set(-0.4, 0, 1.0); workerWalk.rotation.y = 1.4; cableGroup.add(workerWalk);
 
             scene.add(cableGroup); hazardMeshGroups.electrique = cableGroup;
 
 
-            // 3. GAZ + MANUTENTIONNAIRE
+            // --- 3. BOUTEILLES DE GAZ ---
             const gasGroup = new THREE.Group(); gasGroup.userData = { hazardId: 'gaz' };
-            const o2 = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 1.4, 20), new THREE.MeshStandardMaterial({ color: 0x15803d }));
+
+            const o2 = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 1.4, 20), new THREE.MeshStandardMaterial({ color: 0x15803d, metalness: 0.6 }));
             o2.position.set(-0.22, 0.7, 0); o2.rotation.z = 0.14; o2.userData = { hazardId: 'gaz' }; gasGroup.add(o2);
-            const ac = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 1.2, 20), new THREE.MeshStandardMaterial({ color: 0x991b1b }));
+
+            const ac = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 1.2, 20), new THREE.MeshStandardMaterial({ color: 0x991b1b, metalness: 0.6 }));
             ac.position.set(0.22, 0.6, 0); ac.rotation.z = -0.12; ac.userData = { hazardId: 'gaz' }; gasGroup.add(ac);
 
-            const chain = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.02, 8, 24), new THREE.MeshStandardMaterial({ color: 0x94a3b8 }));
+            const chain = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.02, 8, 24), new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9 }));
             chain.rotation.x = Math.PI / 2; chain.position.set(0, 0.85, 0.05); chain.name = 'chain'; chain.visible = false; gasGroup.add(chain);
 
-            // Personnage Agent de Maintenance
-            const workerGas = createWorkerCharacter('gaz', 0x0284c7);
-            workerGas.position.set(0, 0, 0.5); workerGas.rotation.y = Math.PI;
-            gasGroup.add(workerGas);
+            const workerGas = createDetailedWorker('gaz', 0x0284c7);
+            workerGas.position.set(0, 0, 0.5); workerGas.rotation.y = Math.PI; gasGroup.add(workerGas);
 
             gasGroup.position.set(3.8, 0, -3.8); scene.add(gasGroup); hazardMeshGroups.gaz = gasGroup;
 
 
-            // 4. INCENDIE + MANUTENTIONNAIRE PALETTES
+            // --- 4. EXTINCTEUR ENCOMBRÉ ---
             const extGroup = new THREE.Group(); extGroup.userData = { hazardId: 'extincteur' };
-            const extBody = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.75, 20), new THREE.MeshStandardMaterial({ color: 0xdc2626 }));
+
+            const sign = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.4), new THREE.MeshBasicMaterial({ color: 0xdc2626, side: THREE.DoubleSide }));
+            sign.position.set(0, 2.1, -0.01); extGroup.add(sign);
+
+            const extBody = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.75, 20), new THREE.MeshStandardMaterial({ color: 0xdc2626, metalness: 0.5 }));
             extBody.position.y = 1.3; extBody.userData = { hazardId: 'extincteur' }; extGroup.add(extBody);
 
             const boxes = new THREE.Group(); boxes.name = 'boxes';
             for(let i=0; i<3; i++) {
-                const b = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.5, 0.55), new THREE.MeshStandardMaterial({ color: 0x9a3412 }));
-                b.position.set((i-1)*0.3, 0.25+i*0.2, 0.4-i*0.1); b.userData = { hazardId: 'extincteur' }; boxes.add(b);
+                const b = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.5, 0.55), new THREE.MeshStandardMaterial({ color: 0x9a3412, roughness: 0.8 }));
+                b.position.set((i-1)*0.3, 0.25+i*0.2, 0.4-i*0.1); b.rotation.y = i*0.3; b.userData = { hazardId: 'extincteur' }; boxes.add(b);
             }
             extGroup.add(boxes);
 
-            // Personnage Manutentionnaire
-            const workerBox = createWorkerCharacter('extincteur', 0x10b981);
-            workerBox.position.set(-0.6, 0, 0.5); workerBox.rotation.y = 0.5;
-            extGroup.add(workerBox);
+            const workerBox = createDetailedWorker('extincteur', 0x10b981);
+            workerBox.position.set(-0.6, 0, 0.5); workerBox.rotation.y = 0.5; extGroup.add(workerBox);
 
             extGroup.position.set(4.8, 0, 1.8); scene.add(extGroup); hazardMeshGroups.extincteur = extGroup;
 
 
-            // 5. MEULEUSE + OPÉRATEUR SUR ÉTABLI
+            // --- 5. MEULEUSE SANS CARTER ---
             const toolGroup = new THREE.Group(); toolGroup.userData = { hazardId: 'meuleuse' };
-            const grinderBody = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.38, 16), new THREE.MeshStandardMaterial({ color: 0x0284c7 }));
+
+            const grinderBody = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.38, 16), new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.4 }));
             grinderBody.rotation.z = Math.PI / 2; grinderBody.userData = { hazardId: 'meuleuse' }; toolGroup.add(grinderBody);
 
-            const guard = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.03, 16, 1, false, 0, Math.PI), new THREE.MeshStandardMaterial({ color: 0x64748b }));
+            const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.008, 24), new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8 }));
+            disc.position.x = 0.2; disc.userData = { hazardId: 'meuleuse' }; toolGroup.add(disc);
+
+            const guard = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.03, 16, 1, false, 0, Math.PI), new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.9 }));
             guard.position.x = 0.2; guard.rotation.y = Math.PI / 2; guard.name = 'guard'; guard.visible = false; toolGroup.add(guard);
 
-            // Personnage Opérateur Meuleuse
-            const workerGrind = createWorkerCharacter('meuleuse', 0xef4444);
-            workerGrind.position.set(0.1, -0.97, 0.5); workerGrind.rotation.y = Math.PI;
-            toolGroup.add(workerGrind);
+            const workerGrind = createDetailedWorker('meuleuse', 0xef4444);
+            workerGrind.position.set(0.1, -0.97, 0.5); workerGrind.rotation.y = Math.PI; toolGroup.add(workerGrind);
 
             toolGroup.position.set(-1.8, 0.97, -4.0); scene.add(toolGroup); hazardMeshGroups.meuleuse = toolGroup;
         }
 
-        buildHazardsAndWorkers();
+        buildDetailedHazards();
 
-        // --- BALISES VISUELLES ---
+        // --- BALISES CIBLES 3D ---
         const beaconsGroup = {};
         let beaconsVisible = false;
 
@@ -708,7 +770,7 @@
             }
         });
 
-        // --- TIMING ---
+        // --- TIMER ---
         let secondsElapsed = 0;
         const timerElement = document.getElementById('timer-display');
         setInterval(() => {
@@ -733,14 +795,14 @@
 
             const fixBtn = document.getElementById('modal-fix-btn');
             if (data.fixed) {
-                fixBtn.innerText = '✅ Poste Sécurisé';
-                fixBtn.classList.remove('bg-emerald-500', 'hover:bg-emerald-400');
+                fixBtn.innerText = '✅ Poste Conforme';
+                fixBtn.classList.remove('bg-teal-500', 'hover:bg-teal-400');
                 fixBtn.classList.add('bg-slate-700', 'cursor-not-allowed');
                 fixBtn.disabled = true;
             } else {
-                fixBtn.innerHTML = '<span>🛠️</span> Sécuriser le Poste';
+                fixBtn.innerHTML = '<span>🛠️</span> Appliquer la Correction';
                 fixBtn.classList.remove('bg-slate-700', 'cursor-not-allowed');
-                fixBtn.classList.add('bg-emerald-500', 'hover:bg-emerald-400');
+                fixBtn.classList.add('bg-teal-500', 'hover:bg-teal-400');
                 fixBtn.disabled = false;
             }
 
@@ -793,7 +855,7 @@
 
         function resetGame() { location.reload(); }
 
-        // --- NAVIGATION ET DÉPLACEMENT ---
+        // --- NAVIGATION ---
         let isNavigating = false, navDirection = null;
         let targetCamPos = camera.position.clone(), targetLookAt = new THREE.Vector3(0, 1.5, 0);
 
