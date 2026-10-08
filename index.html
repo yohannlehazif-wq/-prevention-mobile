@@ -103,7 +103,6 @@
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
 
@@ -123,7 +122,7 @@
                 </div>
                 <div>
                     <h1 class="text-sm md:text-base font-bold text-white tracking-wide">RESTEV 85 — Chasse aux Risques</h1>
-                    <p class="text-xs text-teal-400 font-medium">Circuit prévention VR · Version 2026.10.08.3</p>
+                    <p class="text-xs text-teal-400 font-medium">3 environnements intégrés · Version 2026.10.08.6</p>
                 </div>
             </div>
 
@@ -142,12 +141,7 @@
             <span>Examinez attentivement l'atelier. Cliquez directement sur un équipement dangereux pour l'analyser.</span>
         </div>
 
-        <!-- Local GLB loader: avoids upload and browser path restrictions -->
-        <input id="glb-file-input" type="file" accept=".glb,model/gltf-binary" class="hidden">
-        <div id="glb-loader-panel" class="pointer-events-auto self-center glass-panel rounded-2xl px-4 py-3 flex flex-wrap items-center justify-center gap-3 max-w-2xl">
-            <button id="load-glb-btn" class="bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-400 hover:to-blue-500 text-white font-bold px-4 py-2.5 rounded-xl text-sm shadow-lg">📂 Choisir le garage manuellement</button>
-            <span id="glb-status" class="text-xs text-slate-300">Chargement automatique de models/car-garage.glb…</span>
-        </div>
+        <div class="pointer-events-auto self-center glass-panel px-3 py-2 rounded-2xl flex gap-2 flex-wrap justify-center"><button class="env-btn bg-teal-600 px-3 py-2 rounded-xl text-xs font-bold" data-env="garage">🔧 Garage</button><button class="env-btn bg-slate-700 px-3 py-2 rounded-xl text-xs font-bold" data-env="warehouse">📦 Entrepôt</button><button class="env-btn bg-slate-700 px-3 py-2 rounded-xl text-xs font-bold" data-env="workshop">🏭 Atelier</button></div>
         <!-- Teleport Shortcuts Bar -->
         <div class="pointer-events-auto flex items-center justify-center gap-1.5 sm:gap-2 overflow-x-auto py-1 custom-scroll max-w-full">
             <button onclick="teleportCamera('global')" class="glass-panel hover:bg-slate-700/80 active:scale-95 text-xs text-white px-3 py-2 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap">
@@ -554,6 +548,17 @@
 
         buildWorkshopEnvironment();
 
+
+        const environmentGroup=new THREE.Group();scene.add(environmentGroup);
+        function pm(c,m=.15){return new THREE.MeshStandardMaterial({color:c,metalness:m,roughness:.65})}
+        function pb(g,sz,p,c,m=.15){const o=new THREE.Mesh(new THREE.BoxGeometry(...sz),pm(c,m));o.position.set(...p);o.castShadow=o.receiveShadow=true;g.add(o);return o}
+        function pc(g,r,h,p,c){const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,20),pm(c,.4));o.position.set(...p);o.castShadow=true;g.add(o);return o}
+        function garageEnv(){const g=new THREE.Group();pb(g,[3.5,.55,1.7],[0,.72,-.4],0x1d4ed8,.45);pb(g,[1.9,.58,1.45],[-.2,1.22,-.4],0x2563eb,.4);[[-1.15,.38,-1.15],[1.15,.38,-1.15],[-1.15,.38,.32],[1.15,.38,.32]].forEach(p=>{const w=pc(g,.34,.22,p,0x111827);w.rotation.x=Math.PI/2});pb(g,[.28,3.4,.28],[-2.35,1.7,-.4],0x0f766e,.55);pb(g,[.28,3.4,.28],[2.35,1.7,-.4],0x0f766e,.55);for(let y=.2;y<1.3;y+=.32){const t=pc(g,.42,.22,[-5,y,-4.8],0x171717);t.rotation.x=Math.PI/2}return g}
+        function warehouseEnv(){const g=new THREE.Group();[-4,0,4].forEach(x=>[-3,0,3].forEach(z=>{pb(g,[2.3,.12,1.1],[x,.18,z],0x8b5a2b);for(let y=.55;y<2.6;y+=.62)pb(g,[2.05,.5,.95],[x,y,z],y>1.8?0x3b82f6:0xb45309)}));pb(g,[5,.45,1.6],[0,.22,-5.8],0x475569);pb(g,[.12,.02,11],[-2.3,.025,0],0xfacc15);return g}
+        function workshopEnv(){const g=new THREE.Group();[[-4,-3],[0,-3],[4,-3]].forEach((p,i)=>{pb(g,[2.3,1.15,1.5],[p[0],.58,p[1]],i===1?0x0369a1:0x475569,.6);pb(g,[1.1,.45,.9],[p[0],1.37,p[1]],0x1e293b,.55)});const d=pc(g,.28,11,[0,4.2,-5.8],0x94a3b8);d.rotation.z=Math.PI/2;pb(g,[8,.025,.11],[0,.025,2.2],0x22c55e);return g}
+        const environments={garage:garageEnv(),warehouse:warehouseEnv(),workshop:workshopEnv()};Object.values(environments).forEach(e=>environmentGroup.add(e));
+        function chooseEnvironment(name){Object.entries(environments).forEach(([k,v])=>v.visible=k===name);document.querySelectorAll('.env-btn').forEach(b=>{b.classList.toggle('bg-teal-600',b.dataset.env===name);b.classList.toggle('bg-slate-700',b.dataset.env!==name)});document.querySelector('#instruction-toast span:last-child').textContent={garage:'Garage automobile : trouvez les 5 risques.',warehouse:'Entrepôt logistique : trouvez les 5 risques.',workshop:'Atelier industriel : trouvez les 5 risques.'}[name]}
+        document.querySelectorAll('.env-btn').forEach(b=>b.addEventListener('click',()=>chooseEnvironment(b.dataset.env)));chooseEnvironment('garage');
         const hazardMeshGroups = {};
         let sparkSystem = null;
 
@@ -1016,94 +1021,8 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-
-        // --- LOCAL GARAGE GLB LOADER ---
-        let importedGarage = null;
-        let importedGarageUrl = null;
-        const glbInput = document.getElementById('glb-file-input');
-        const loadGlbBtn = document.getElementById('load-glb-btn');
-        const glbStatus = document.getElementById('glb-status');
-        loadGlbBtn.addEventListener('click', () => glbInput.click());
-        glbInput.addEventListener('change', event => {
-            const file = event.target.files && event.target.files[0];
-            if (!file) return;
-            if (!file.name.toLowerCase().endsWith('.glb')) {
-                glbStatus.textContent = 'Selectionnez un fichier se terminant par .glb';
-                return;
-            }
-            if (typeof THREE.GLTFLoader !== 'function') {
-                glbStatus.textContent = 'Le chargeur 3D ne sest pas charge. Verifiez la connexion puis rechargez la page.';
-                return;
-            }
-            glbStatus.textContent = `Chargement de ${file.name}...`;
-            loadGlbBtn.disabled = true;
-            if (importedGarageUrl) URL.revokeObjectURL(importedGarageUrl);
-            importedGarageUrl = URL.createObjectURL(file);
-            new THREE.GLTFLoader().load(importedGarageUrl, gltf => {
-                if (importedGarage) scene.remove(importedGarage);
-                importedGarage = gltf.scene;
-                importedGarage.traverse(obj => {
-                    if (obj.isMesh) { obj.castShadow = true; obj.receiveShadow = true; }
-                });
-                let box = new THREE.Box3().setFromObject(importedGarage);
-                const size = box.getSize(new THREE.Vector3());
-                importedGarage.scale.setScalar(14 / Math.max(size.x, size.z, 0.001));
-                box = new THREE.Box3().setFromObject(importedGarage);
-                const center = box.getCenter(new THREE.Vector3());
-                importedGarage.position.set(-center.x, -box.min.y, -center.z);
-                scene.add(importedGarage);
-                targetCamPos.set(0, 2.2, 5.5);
-                targetLookAt.set(0, 1.3, 0);
-                glbStatus.textContent = `Garage charge : ${file.name}. Les 5 risques sont cliquables.`;
-                loadGlbBtn.textContent = 'Changer de garage GLB';
-                loadGlbBtn.disabled = false;
-            }, progress => {
-                if (progress.total) glbStatus.textContent = `Chargement : ${Math.round(progress.loaded / progress.total * 100)}%`;
-            }, error => {
-                console.error(error);
-                glbStatus.textContent = 'Impossible de lire ce GLB. Selectionnez le GLB 4K de 21 Mo.';
-                loadGlbBtn.disabled = false;
-            });
-        });
-
-
-        // Automatic loading from GitHub Pages folder: ./models/car-garage.glb
-        function loadGarageFromGitHub() {
-            const path = './models/car-garage.glb';
-            glbStatus.textContent = 'Chargement automatique du garage...';
-            new THREE.GLTFLoader().load(path, gltf => {
-                if (importedGarage) scene.remove(importedGarage);
-                importedGarage = gltf.scene;
-                importedGarage.traverse(obj => {
-                    if (obj.isMesh) {
-                        obj.castShadow = true;
-                        obj.receiveShadow = true;
-                        if (obj.material) obj.material.needsUpdate = true;
-                    }
-                });
-                let box = new THREE.Box3().setFromObject(importedGarage);
-                const size = box.getSize(new THREE.Vector3());
-                importedGarage.scale.setScalar(14 / Math.max(size.x, size.z, 0.001));
-                box = new THREE.Box3().setFromObject(importedGarage);
-                const center = box.getCenter(new THREE.Vector3());
-                importedGarage.position.set(-center.x, -box.min.y, -center.z);
-                scene.add(importedGarage);
-                targetCamPos.set(0, 2.2, 5.5);
-                targetLookAt.set(0, 1.3, 0);
-                glbStatus.textContent = 'Garage chargé automatiquement. Les 5 risques sont cliquables.';
-                loadGlbBtn.textContent = 'Changer de garage GLB';
-            }, progress => {
-                if (progress.total) glbStatus.textContent = `Chargement du garage : ${Math.round(progress.loaded / progress.total * 100)}%`;
-            }, error => {
-                console.warn(error);
-                glbStatus.textContent = 'Garage non trouvé dans models/. Utilisez le bouton pour sélectionner car-garage.glb.';
-            });
-        }
-        loadGarageFromGitHub();
-
         // Start App
         animate();
     </script>
-<div style="position:fixed;right:12px;bottom:85px;z-index:20;padding:7px 10px;border-radius:10px;background:rgba(8,18,34,.88);border:1px solid rgba(255,255,255,.12);font-size:10px;color:#cbd5e1;max-width:min(420px,calc(100% - 24px))">Modèle 3D <a href="https://sketchfab.com/3d-models/car-garage-2fad766df0194511a9641e3e63798b5f" target="_blank" rel="noopener noreferrer" style="color:#5eead4">car garage</a> par <a href="https://sketchfab.com/praveensharma11198" target="_blank" rel="noopener noreferrer" style="color:#5eead4">praveensharma11198</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer" style="color:#5eead4">CC BY 4.0</a></div>
 </body>
 </html>
