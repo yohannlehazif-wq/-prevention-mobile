@@ -1,1 +1,71 @@
-const C='prevy-previa-inline-v5',S=['./','./index.html','./manifest.webmanifest','./assets/consolidated.css','./assets/consolidated.js'];self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.addAll(S)).then(()=>self.skipWaiting())));self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;if(e.request.mode==='navigate')e.respondWith(fetch(e.request).catch(()=>caches.match('./index.html')));else if(new URL(e.request.url).origin===location.origin)e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)))})
+function loadGarageAutomatically() {
+    const loader = new THREE.GLTFLoader();
+
+    document.getElementById("toast").textContent =
+        "Chargement du garage automobile…";
+
+    loader.load(
+        "./models/car-garage.glb",
+
+        gltf => {
+            glb = gltf.scene;
+
+            glb.traverse(object => {
+                if (object.isMesh) {
+                    object.castShadow = true;
+                    object.receiveShadow = true;
+                }
+            });
+
+            let box = new THREE.Box3().setFromObject(glb);
+            const size = box.getSize(new THREE.Vector3());
+
+            const scale = 18 / Math.max(
+                size.x,
+                size.z,
+                0.001
+            );
+
+            glb.scale.setScalar(scale);
+
+            box = new THREE.Box3().setFromObject(glb);
+
+            const center = box.getCenter(
+                new THREE.Vector3()
+            );
+
+            glb.position.set(
+                -center.x,
+                -box.min.y,
+                -center.z
+            );
+
+            scene.add(glb);
+
+            document.getElementById("toast").textContent =
+                "Garage chargé. Commencez le circuit prévention.";
+        },
+
+        progress => {
+            if (!progress.total) return;
+
+            const percentage = Math.round(
+                progress.loaded /
+                progress.total *
+                100
+            );
+
+            document.getElementById("toast").textContent =
+                `Chargement du garage : ${percentage} %`;
+        },
+
+        error => {
+            console.error(error);
+
+            document.getElementById("toast").textContent =
+                "Le garage 3D n’a pas pu être chargé.";
+        }
+    );
+}
+
+loadGarageAutomatically();
