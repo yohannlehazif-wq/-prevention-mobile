@@ -103,23 +103,7 @@
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
-<style>
-    .game-overlay { position: fixed; inset: 0; z-index: 80; background: rgba(3,7,18,.90); backdrop-filter: blur(14px); display:flex; align-items:center; justify-content:center; padding:16px; transition:.25s ease; }
-    .game-overlay.hidden-overlay { opacity:0; pointer-events:none; transform:scale(1.01); }
-    .game-card { width:min(760px, 100%); max-height:92vh; overflow:auto; background:linear-gradient(145deg,rgba(15,23,42,.98),rgba(8,47,73,.96)); border:1px solid rgba(94,234,212,.25); border-radius:28px; padding:clamp(20px,4vw,38px); box-shadow:0 30px 80px rgba(0,0,0,.55); }
-    .mode-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:20px; }
-    .mode-card { text-align:left; padding:16px; border-radius:18px; background:rgba(30,41,59,.72); border:1px solid rgba(148,163,184,.22); color:white; transition:.2s; }
-    .mode-card:hover,.mode-card.selected { border-color:#2dd4bf; background:rgba(13,148,136,.18); transform:translateY(-2px); }
-    .answer-grid { display:grid; gap:10px; margin-top:12px; }
-    .answer-btn { width:100%; text-align:left; padding:12px 14px; border-radius:14px; background:#1e293b; border:1px solid #475569; color:#e2e8f0; transition:.15s; }
-    .answer-btn:hover { border-color:#2dd4bf; background:#0f3b46; }
-    .answer-btn.chosen { outline:2px solid #2dd4bf; background:#0f4c4c; }
-    .feedback-box { margin-top:14px; padding:12px; border-radius:14px; font-size:.88rem; }
-    .feedback-good { background:rgba(16,185,129,.14); border:1px solid rgba(52,211,153,.4); color:#a7f3d0; }
-    .feedback-bad { background:rgba(239,68,68,.14); border:1px solid rgba(248,113,113,.4); color:#fecaca; }
-    @media(max-width:700px){ .mode-grid{grid-template-columns:1fr;} #crosshair{display:none;} .game-card{border-radius:20px;} }
-</style>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
 
@@ -139,19 +123,15 @@
                 </div>
                 <div>
                     <h1 class="text-sm md:text-base font-bold text-white tracking-wide">RESTEV 85 — Chasse aux Risques</h1>
-                    <p class="text-xs text-teal-400 font-medium">Inspection VR Réaliste d'Atelier · Version 2026.10.08.1</p>
+                    <p class="text-xs text-teal-400 font-medium">Garage interactif · Version 2026.10.08.2</p>
                 </div>
             </div>
 
             <!-- Score & Progress -->
             <div class="flex items-center gap-3">
-                <div class="bg-slate-900/80 border border-slate-700/60 rounded-xl px-3 py-1.5 flex items-center gap-3">
-                    <span class="text-xs text-slate-400 hidden lg:inline">Risques</span>
+                <div class="bg-slate-900/80 border border-slate-700/60 rounded-xl px-3 py-1.5 flex items-center gap-2">
+                    <span class="text-xs text-slate-400 hidden sm:inline">Anomalies Sécurisées :</span>
                     <span id="score-counter" class="text-sm md:text-base font-extrabold text-teal-400">0 / 5</span>
-                    <span class="text-slate-600">|</span>
-                    <span id="points-counter" class="text-sm font-bold text-amber-300">0 pts</span>
-                    <span class="text-slate-600 hidden sm:inline">|</span>
-                    <span id="time-counter" class="text-sm font-semibold text-slate-200 hidden sm:inline">00:00</span>
                 </div>
             </div>
         </header>
@@ -162,16 +142,16 @@
             <span>Examinez attentivement l'atelier. Cliquez directement sur un équipement dangereux pour l'analyser.</span>
         </div>
 
+        <!-- Local GLB loader: avoids upload and browser path restrictions -->
+        <input id="glb-file-input" type="file" accept=".glb,model/gltf-binary" class="hidden">
+        <div id="glb-loader-panel" class="pointer-events-auto self-center glass-panel rounded-2xl px-4 py-3 flex flex-wrap items-center justify-center gap-3 max-w-2xl">
+            <button id="load-glb-btn" class="bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-400 hover:to-blue-500 text-white font-bold px-4 py-2.5 rounded-xl text-sm shadow-lg">📂 Charger mon garage GLB</button>
+            <span id="glb-status" class="text-xs text-slate-300">Aucun envoi nécessaire : sélectionnez le fichier GLB depuis votre ordinateur.</span>
+        </div>
         <!-- Teleport Shortcuts Bar -->
         <div class="pointer-events-auto flex items-center justify-center gap-1.5 sm:gap-2 overflow-x-auto py-1 custom-scroll max-w-full">
             <button onclick="teleportCamera('global')" class="glass-panel hover:bg-slate-700/80 active:scale-95 text-xs text-white px-3 py-2 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap">
                 <span>🌐</span> <span class="hidden sm:inline">Vue</span> Globale
-            </button>
-            <button id="hint-btn" onclick="useHint()" class="glass-panel hover:bg-amber-700/80 active:scale-95 text-xs text-white px-3 py-2 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap">
-                <span>💡</span> Indice
-            </button>
-            <button onclick="openSketchfabViewer()" class="glass-panel hover:bg-blue-700/80 active:scale-95 text-xs text-white px-3 py-2 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap">
-                <span>🏭</span> Garage 3D
             </button>
             <button onclick="teleportCamera('chimique')" class="glass-panel hover:bg-slate-700/80 active:scale-95 text-xs text-white px-3 py-2 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap">
                 <span>🛢️</span> Zone Chimie
@@ -244,7 +224,7 @@
                     Continuer la recherche
                 </button>
                 <button id="modal-fix-btn" onclick="fixCurrentHazard()" class="flex-1 py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-xs sm:text-sm shadow-lg shadow-emerald-500/30 transition flex items-center justify-center gap-2">
-                    <span>🧠</span> Identifier et sécuriser
+                    <span>🛠️</span> Appliquer la Correction
                 </button>
             </div>
         </div>
@@ -847,7 +827,7 @@
                 fixBtn.classList.add('bg-slate-700', 'cursor-not-allowed');
                 fixBtn.disabled = true;
             } else {
-                fixBtn.innerHTML = '<span>🧠</span> Identifier et sécuriser';
+                fixBtn.innerHTML = '<span>🛠️</span> Appliquer la Correction';
                 fixBtn.classList.remove('bg-slate-700', 'cursor-not-allowed');
                 fixBtn.classList.add('bg-emerald-500', 'hover:bg-emerald-400');
                 fixBtn.disabled = false;
@@ -1003,13 +983,9 @@
                 const delta = clock.getDelta();
 
                 // Animate Electrical Sparks
-                if (sparkSystem && !HAZARDS.electrique.fixed) {
-                    const sparkOn = Math.random() > 0.72;
-                    sparkSystem.visible = sparkOn;
-                    if (sparkOn && (!window.__lastSparkSound || performance.now() - window.__lastSparkSound > 700)) {
-                        audioSynth.playSpark();
-                        window.__lastSparkSound = performance.now();
-                    }
+                if (sparkSystem && sparkSystem.visible && Math.random() > 0.55) {
+                    audioSynth.playSpark();
+                    sparkSystem.visible = !sparkSystem.visible;
                 }
 
                 // Smooth Camera Lerp Transitions
@@ -1017,19 +993,10 @@
 
                 if (isNavigating && navDirection) {
                     const speed = 2.5 * delta;
-                    const forward = new THREE.Vector3();
-                    camera.getWorldDirection(forward);
-                    forward.y = 0;
-                    if (forward.lengthSq() < 0.001) forward.set(0, 0, -1);
-                    forward.normalize();
-                    const right = new THREE.Vector3().crossVectors(forward, camera.up).normalize();
-                    if (navDirection === 'forward') targetCamPos.addScaledVector(forward, speed);
-                    if (navDirection === 'backward') targetCamPos.addScaledVector(forward, -speed);
-                    if (navDirection === 'left') targetCamPos.addScaledVector(right, -speed);
-                    if (navDirection === 'right') targetCamPos.addScaledVector(right, speed);
-                    targetCamPos.x = THREE.MathUtils.clamp(targetCamPos.x, -7.2, 7.2);
-                    targetCamPos.z = THREE.MathUtils.clamp(targetCamPos.z, -6.2, 6.2);
-                    targetCamPos.y = THREE.MathUtils.clamp(targetCamPos.y, 1.1, 2.6);
+                    if (navDirection === 'forward') targetCamPos.z -= speed;
+                    if (navDirection === 'backward') targetCamPos.z += speed;
+                    if (navDirection === 'left') targetCamPos.x -= speed;
+                    if (navDirection === 'right') targetCamPos.x += speed;
                 }
 
                 if (!isDragging) {
@@ -1049,116 +1016,58 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
+
+        // --- LOCAL GARAGE GLB LOADER ---
+        let importedGarage = null;
+        let importedGarageUrl = null;
+        const glbInput = document.getElementById('glb-file-input');
+        const loadGlbBtn = document.getElementById('load-glb-btn');
+        const glbStatus = document.getElementById('glb-status');
+        loadGlbBtn.addEventListener('click', () => glbInput.click());
+        glbInput.addEventListener('change', event => {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            if (!file.name.toLowerCase().endsWith('.glb')) {
+                glbStatus.textContent = 'Selectionnez un fichier se terminant par .glb';
+                return;
+            }
+            if (typeof THREE.GLTFLoader !== 'function') {
+                glbStatus.textContent = 'Le chargeur 3D ne sest pas charge. Verifiez la connexion puis rechargez la page.';
+                return;
+            }
+            glbStatus.textContent = `Chargement de ${file.name}...`;
+            loadGlbBtn.disabled = true;
+            if (importedGarageUrl) URL.revokeObjectURL(importedGarageUrl);
+            importedGarageUrl = URL.createObjectURL(file);
+            new THREE.GLTFLoader().load(importedGarageUrl, gltf => {
+                if (importedGarage) scene.remove(importedGarage);
+                importedGarage = gltf.scene;
+                importedGarage.traverse(obj => {
+                    if (obj.isMesh) { obj.castShadow = true; obj.receiveShadow = true; }
+                });
+                let box = new THREE.Box3().setFromObject(importedGarage);
+                const size = box.getSize(new THREE.Vector3());
+                importedGarage.scale.setScalar(14 / Math.max(size.x, size.z, 0.001));
+                box = new THREE.Box3().setFromObject(importedGarage);
+                const center = box.getCenter(new THREE.Vector3());
+                importedGarage.position.set(-center.x, -box.min.y, -center.z);
+                scene.add(importedGarage);
+                targetCamPos.set(0, 2.2, 5.5);
+                targetLookAt.set(0, 1.3, 0);
+                glbStatus.textContent = `Garage charge : ${file.name}. Les 5 risques sont cliquables.`;
+                loadGlbBtn.textContent = 'Changer de garage GLB';
+                loadGlbBtn.disabled = false;
+            }, progress => {
+                if (progress.total) glbStatus.textContent = `Chargement : ${Math.round(progress.loaded / progress.total * 100)}%`;
+            }, error => {
+                console.error(error);
+                glbStatus.textContent = 'Impossible de lire ce GLB. Selectionnez le GLB 4K de 21 Mo.';
+                loadGlbBtn.disabled = false;
+            });
+        });
+
         // Start App
         animate();
     </script>
-
-<!-- Modern educational layer -->
-<div id="start-screen" class="game-overlay">
-  <div class="game-card">
-    <div class="flex items-center gap-3 mb-4"><div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-700 to-teal-500 flex items-center justify-center font-extrabold text-xl">R85</div><div><div class="text-teal-300 text-xs font-bold uppercase tracking-widest">RESTEV 85</div><h2 class="text-2xl md:text-3xl font-extrabold">Chasse aux risques</h2></div></div>
-    <p class="text-slate-300 text-sm md:text-base">Observez le garage, identifiez les situations dangereuses, choisissez la bonne prévention puis sécurisez la zone.</p>
-    <div class="mode-grid">
-      <button class="mode-card selected" data-mode="decouverte" onclick="selectGameMode('decouverte',this)"><b>🌱 Découverte</b><span class="block text-xs text-slate-300 mt-2">Indices guidés et zones accessibles.</span></button>
-      <button class="mode-card" data-mode="professionnel" onclick="selectGameMode('professionnel',this)"><b>🦺 Professionnel</b><span class="block text-xs text-slate-300 mt-2">Moins d'aide et questions obligatoires.</span></button>
-      <button class="mode-card" data-mode="chrono" onclick="selectGameMode('chrono',this)"><b>⏱️ Chronométré</b><span class="block text-xs text-slate-300 mt-2">Objectif : terminer en moins de 5 minutes.</span></button>
-    </div>
-    <div class="mt-6 flex flex-col sm:flex-row gap-3">
-      <button onclick="startGame()" class="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-teal-500 to-blue-600 font-bold">Commencer l'inspection</button>
-      <button onclick="openSketchfabViewer()" class="px-5 py-3.5 rounded-xl bg-slate-800 border border-slate-600 font-semibold">Voir le garage 3D</button>
-    </div>
-    <p class="mt-4 text-[11px] text-slate-400">Modèle « car garage » par praveensharma11198, licence CC BY 4.0. Version 2026.10.08.1</p>
-  </div>
-</div>
-
-<div id="quiz-screen" class="game-overlay hidden-overlay">
-  <div class="game-card max-w-2xl">
-    <div class="flex justify-between items-start gap-4"><div><div class="text-teal-300 text-xs font-bold uppercase">Analyse de la situation</div><h2 id="quiz-title" class="text-xl font-extrabold mt-1"></h2></div><button onclick="closeQuiz()" class="text-slate-300 p-2">✕</button></div>
-    <div id="quiz-step" class="mt-5"></div>
-    <div id="quiz-feedback"></div>
-    <button id="quiz-next" onclick="nextQuizStep()" class="hidden mt-5 w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 font-bold">Continuer</button>
-  </div>
-</div>
-
-<div id="sketchfab-screen" class="game-overlay hidden-overlay">
-  <div class="game-card" style="width:min(1000px,100%);">
-    <div class="flex justify-between items-start gap-4 mb-4"><div><div class="text-teal-300 text-xs font-bold uppercase">Immersion complémentaire</div><h2 class="text-xl font-extrabold">Garage 3D Sketchfab</h2></div><button onclick="closeSketchfabViewer()" class="text-slate-300 p-2">✕</button></div>
-    <div class="rounded-2xl overflow-hidden bg-black" style="aspect-ratio:16/9"><iframe id="sketchfab-frame" title="car garage 3D" width="100%" height="100%" allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen style="border:0"></iframe></div>
-    <p class="text-xs text-slate-400 mt-3">Modèle « car garage » par praveensharma11198, utilisé sous licence Creative Commons Attribution 4.0. Cette vue sert à l'immersion visuelle ; le scénario interactif RESTEV 85 reste accessible en fermant cette fenêtre.</p>
-  </div>
-</div>
-
-<script>
-(() => {
-  const SKETCHFAB_EMBED = 'https://sketchfab.com/models/2fad766df0194511a9641e3e63798b5f/embed?autostart=1&ui_theme=dark&ui_annotations=1';
-  let gameMode = 'decouverte', gameStarted = false, startedAt = 0, timerHandle = null;
-  let points = 0, hintsUsed = 0, quizPhase = 0, selectedAnswer = null, activeQuiz = null;
-  let lastTouchMoved = false;
-
-  const QUIZZES = {
-    chimique: { risk:['Incendie, exposition chimique et pollution','Bruit impulsionnel','Chute de hauteur'], riskOk:0, prevention:['Utiliser une rétention adaptée et traiter la fuite','Ajouter uniquement une affiche','Déplacer le fût près d’une issue'], preventionOk:0 },
-    electrique: { risk:['Risque biologique','Électrisation et chute de plain-pied','Rayonnement optique'], riskOk:1, prevention:['Cacher le câble sous un carton','Baliser sans intervenir','Mettre hors service le câble endommagé et sécuriser le passage'], preventionOk:2 },
-    gaz: { risk:['Chute des bouteilles et effet projectile','Manutention de papier','Travail sur écran'], riskOk:0, prevention:['Coucher les bouteilles au sol','Les maintenir avec un dispositif adapté et protéger les robinets','Ajouter une étiquette sans les fixer'], preventionOk:1 },
-    extincteur: { risk:['Perte de temps lors d’un départ de feu','Vibration mécanique','Exposition au froid'], riskOk:0, prevention:['Dégager et maintenir accessible le moyen d’extinction','Masquer les cartons avec un rideau','Déplacer l’extincteur sans étude'], preventionOk:0 },
-    meuleuse: { risk:['Projection et contact avec l’outil en rotation','Risque routier','Éblouissement solaire'], riskOk:0, prevention:['Utiliser l’outil plus lentement sans carter','Remettre le carter adapté et vérifier l’outil avant usage','Porter uniquement des gants'], preventionOk:1 }
-  };
-
-  window.selectGameMode = (mode, el) => { gameMode = mode; document.querySelectorAll('.mode-card').forEach(x => x.classList.remove('selected')); el.classList.add('selected'); audioSynth.playClick(); };
-  window.startGame = () => {
-    gameStarted = true; startedAt = Date.now();
-    document.getElementById('start-screen').classList.add('hidden-overlay');
-    if (gameMode !== 'decouverte') document.querySelectorAll('[onclick^="teleportCamera(\'"]').forEach((b,i) => { if(i>0) b.style.display='none'; });
-    timerHandle = setInterval(updateTimer, 1000); updateTimer(); updateHud();
-    showToast(gameMode === 'chrono' ? 'Top départ : trouvez les 5 risques en moins de 5 minutes.' : 'Observez avant de cliquer. Chaque bonne analyse rapporte des points.');
-  };
-  function updateTimer(){ if(!gameStarted) return; const s=Math.floor((Date.now()-startedAt)/1000), m=String(Math.floor(s/60)).padStart(2,'0'), ss=String(s%60).padStart(2,'0'); document.getElementById('time-counter').textContent=`${m}:${ss}`; if(gameMode==='chrono'&&s===300) showToast('5 minutes écoulées : vous pouvez poursuivre sans bonus de temps.'); }
-  function updateHud(){ document.getElementById('points-counter').textContent = `${Math.max(0,points)} pts`; }
-  function showToast(text){ const t=document.querySelector('#instruction-toast span:last-child'); if(t)t.textContent=text; }
-
-  window.useHint = () => {
-    const remaining = Object.values(HAZARDS).filter(h=>!h.fixed); if(!remaining.length)return;
-    hintsUsed++; points -= gameMode==='professionnel'?40:20; updateHud();
-    const h=remaining[Math.floor(Math.random()*remaining.length)];
-    if(gameMode==='professionnel') showToast(`Indice : observez une zone liée à « ${h.title.split(' ')[0]}… »`);
-    else { showToast(`Indice : rapprochez-vous de la zone ${h.id}.`); teleportCamera(h.id); }
-  };
-
-  const originalFix = window.fixCurrentHazard;
-  window.fixCurrentHazard = () => {
-    if(!currentSelectedHazard || currentSelectedHazard.fixed) return;
-    closeModal(); activeQuiz=currentSelectedHazard; quizPhase=0; selectedAnswer=null;
-    document.getElementById('quiz-title').textContent=activeQuiz.title;
-    document.getElementById('quiz-screen').classList.remove('hidden-overlay'); renderQuiz();
-  };
-  function renderQuiz(){
-    const q=QUIZZES[activeQuiz.id], isRisk=quizPhase===0, choices=isRisk?q.risk:q.prevention;
-    document.getElementById('quiz-step').innerHTML=`<div class="text-sm font-bold text-slate-200">${isRisk?'1. Quel est le principal risque ?':'2. Quelle mesure de prévention est la plus adaptée ?'}</div><div class="answer-grid">${choices.map((x,i)=>`<button class="answer-btn" onclick="chooseQuizAnswer(${i},this)">${x}</button>`).join('')}</div>`;
-    document.getElementById('quiz-feedback').innerHTML=''; document.getElementById('quiz-next').classList.add('hidden'); selectedAnswer=null;
-  }
-  window.chooseQuizAnswer=(i,el)=>{ selectedAnswer=i; document.querySelectorAll('#quiz-step .answer-btn').forEach(x=>x.classList.remove('chosen')); el.classList.add('chosen'); const q=QUIZZES[activeQuiz.id], ok=i===(quizPhase===0?q.riskOk:q.preventionOk); const fb=document.getElementById('quiz-feedback'); fb.className=`feedback-box ${ok?'feedback-good':'feedback-bad'}`; fb.textContent=ok?'Bonne réponse.':'Ce choix n’est pas le plus adapté. La bonne réponse sera expliquée dans la fiche.'; points+=ok?(quizPhase===0?50:100):-25; updateHud(); document.getElementById('quiz-next').classList.remove('hidden'); document.querySelectorAll('#quiz-step .answer-btn').forEach(x=>x.disabled=true); };
-  window.nextQuizStep=()=>{ if(selectedAnswer===null)return; if(quizPhase===0){quizPhase=1;renderQuiz();}else{ points+=100; updateHud(); document.getElementById('quiz-screen').classList.add('hidden-overlay'); originalFix(); setTimeout(()=>showToast('Situation sécurisée. Continuez l’inspection.'),250); } };
-  window.closeQuiz=()=>document.getElementById('quiz-screen').classList.add('hidden-overlay');
-
-  window.openSketchfabViewer=()=>{ document.getElementById('sketchfab-frame').src=SKETCHFAB_EMBED; document.getElementById('sketchfab-screen').classList.remove('hidden-overlay'); };
-  window.closeSketchfabViewer=()=>{ document.getElementById('sketchfab-screen').classList.add('hidden-overlay'); document.getElementById('sketchfab-frame').src=''; };
-
-  // Touch selection: raycast directly at the contact point.
-  renderer.domElement.addEventListener('pointerdown', e=>{ lastTouchMoved=false; mouse.x=(e.clientX/window.innerWidth)*2-1; mouse.y=-(e.clientY/window.innerHeight)*2+1; updateRaycast(); }, {passive:true});
-  renderer.domElement.addEventListener('pointermove', ()=>{ if(isDragging) lastTouchMoved=true; }, {passive:true});
-
-  // Enrich victory information without replacing the existing visual summary.
-  const victoryObserver = new MutationObserver(()=>{
-    const v=document.getElementById('victory-modal');
-    if(!v.classList.contains('opacity-0')){
-      clearInterval(timerHandle); gameStarted=false;
-      const elapsed=Math.floor((Date.now()-startedAt)/1000); let timeBonus=Math.max(0,300-elapsed);
-      if(gameMode==='chrono') points+=timeBonus; updateHud();
-      const p=v.querySelector('p'); if(p) p.textContent=`Inspection terminée : ${Math.max(0,points)} points, ${hintsUsed} indice(s) utilisé(s), temps ${Math.floor(elapsed/60)} min ${elapsed%60} s.`;
-    }
-  });
-  victoryObserver.observe(document.getElementById('victory-modal'),{attributes:true,attributeFilter:['class']});
-})();
-</script>
-
 </body>
 </html>
