@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>RESTEV 85 — Simulation HSE Ultra-Détaillée</title>
+    <title>RESTEV 85 — Simulation HSE Ancrage 3D & Ombres HD</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
@@ -48,10 +48,10 @@
                 </div>
                 <div>
                     <div class="flex items-center gap-2">
-                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-sky-500/20 text-sky-400 border border-sky-500/30">Module VR Ultra-Détaillé</span>
-                        <h1 class="text-sm md:text-base font-extrabold text-white tracking-wide">RESTEV 85 — Simulation Immensive HSE</h1>
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-sky-500/20 text-sky-400 border border-sky-500/30">Ancrage Sol Corrigé</span>
+                        <h1 class="text-sm md:text-base font-extrabold text-white tracking-wide">RESTEV 85 — Simulation HSE Ultra-Réaliste</h1>
                     </div>
-                    <p class="text-xs text-slate-400 font-medium mt-0.5">Inspection globale des infrastructures et postes à risques</p>
+                    <p class="text-xs text-slate-400 font-medium mt-0.5">Scènes ancrées au sol avec ombres de contact haute précision</p>
                 </div>
             </div>
 
@@ -79,7 +79,7 @@
               <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
               <span class="relative inline-flex rounded-full h-3 w-3 bg-teal-500"></span>
             </span>
-            <span>Examinez l'environnement d'usine. Cliquez sur un équipement défaillant pour engager l'action corrective.</span>
+            <span>Examinez les postes. Cliquez sur un équipement dangereux pour intervenir.</span>
         </div>
 
         <div class="pointer-events-auto flex items-center justify-center gap-2 overflow-x-auto py-1 custom-scroll max-w-full">
@@ -88,7 +88,7 @@
             <button onclick="teleportCamera('electrique')" class="glass-hud hover:bg-slate-800 text-xs text-white px-3.5 py-2.5 rounded-xl transition flex items-center gap-2 whitespace-nowrap border border-white/10 active:scale-95">⚡ Armoire & LOTO</button>
             <button onclick="teleportCamera('gaz')" class="glass-hud hover:bg-slate-800 text-xs text-white px-3.5 py-2.5 rounded-xl transition flex items-center gap-2 whitespace-nowrap border border-white/10 active:scale-95">🍾 Stockage Bouteilles Gaz</button>
             <button onclick="teleportCamera('extincteur')" class="glass-hud hover:bg-slate-800 text-xs text-white px-3.5 py-2.5 rounded-xl transition flex items-center gap-2 whitespace-nowrap border border-white/10 active:scale-95">🧯 Station Incendie</button>
-            <button onclick="teleportCamera('meuleuse')" class="glass-hud hover:bg-slate-800 text-xs text-white px-3.5 py-2.5 rounded-xl transition flex items-center gap-2 whitespace-nowrap border border-white/10 active:scale-95">⚙️ Établi USI & Meuleuse</button>
+            <button onclick="teleportCamera('meuleuse')" class="glass-hud hover:bg-slate-800 text-xs text-white px-3.5 py-2.5 rounded-xl transition flex items-center gap-2 whitespace-nowrap border border-white/10 active:scale-95">⚙️ Établi & Meuleuse</button>
         </div>
 
         <div class="flex items-end justify-between w-full pt-2">
@@ -264,6 +264,7 @@
         const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 100);
         camera.position.set(0, 2.2, 5.5);
 
+        // --- RENDERER PRO AVEC ÉLIMINATION DU PETER PANNING ---
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -279,8 +280,26 @@
         const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.48, 0.4, 0.80);
         composer.addPass(bloomPass);
 
-        const ambientLight = new THREE.HemisphereLight(0xdbeafe, 0x090d16, 0.65); scene.add(ambientLight);
-        const mainSun = new THREE.DirectionalLight(0xffedd5, 1.8); mainSun.position.set(-6, 9, 5); mainSun.castShadow = true; scene.add(mainSun);
+        // --- ÉCLAIRAGE INDUSTRIEL ET CALIBRAGE DES OMBRES ---
+        const ambientLight = new THREE.HemisphereLight(0xdbeafe, 0x090d16, 0.65); 
+        scene.add(ambientLight);
+
+        const mainSun = new THREE.DirectionalLight(0xffedd5, 1.8); 
+        mainSun.position.set(-6, 9, 5); 
+        mainSun.castShadow = true; 
+        
+        // Calibrage fin des ombres pour plaquer les objets au sol sans espace vide
+        mainSun.shadow.mapSize.width = 2048;
+        mainSun.shadow.mapSize.height = 2048;
+        mainSun.shadow.camera.near = 0.5;
+        mainSun.shadow.camera.far = 25;
+        mainSun.shadow.camera.left = -10;
+        mainSun.shadow.camera.right = 10;
+        mainSun.shadow.camera.top = 10;
+        mainSun.shadow.camera.bottom = -10;
+        mainSun.shadow.bias = -0.0003;        // Ancrage exact au niveau des pieds
+        mainSun.shadow.normalBias = 0.02;    // Supprime l'auto-ombrage parasite
+        scene.add(mainSun);
 
         const flashlight = new THREE.SpotLight(0xfff4e0, 0, 18, Math.PI / 5, 0.4, 1);
         flashlight.position.set(0.2, -0.2, 0); flashlight.target.position.set(0, 0, -5);
@@ -292,6 +311,16 @@
             flashlight.intensity = flashlightOn ? 4.0 : 0;
             document.body.classList.toggle('flashlight-on', flashlightOn);
             audioSynth.playClick();
+        }
+
+        // Fonction utilitaire pour forcer l'ombre sur tous les sous-maillages
+        function applyShadows(object, cast = true, receive = true) {
+            object.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = cast;
+                    child.receiveShadow = receive;
+                }
+            });
         }
 
         function createTextures() {
@@ -340,7 +369,7 @@
             const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), skinMat); head.position.y = 1.55; head.userData = { hazardId }; worker.add(head);
             const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.14, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2), helmetMat); helmet.position.set(0, 1.58, 0); helmet.userData = { hazardId }; worker.add(helmet);
 
-            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.55, 0.22), vestMat); torso.position.y = 1.15; torso.castShadow = true; torso.userData = { hazardId }; worker.add(torso);
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.55, 0.22), vestMat); torso.position.y = 1.15; torso.userData = { hazardId }; worker.add(torso);
             
             const armL = new THREE.Group(); armL.position.set(-0.22, 1.35, 0);
             const armLMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.45), vestMat); armLMesh.position.y = -0.22; armL.add(armLMesh);
@@ -350,11 +379,13 @@
             const armRMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.45), vestMat); armRMesh.position.y = -0.22; armR.add(armRMesh);
             worker.add(armR); worker.userData.armR = armR;
 
+            // Ancrage strict des bottes au sol Y=0
             [-0.1, 0.1].forEach(x => {
-                const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.065, 0.65), pantsMat); leg.position.set(x, 0.55, 0); leg.castShadow = true; leg.userData = { hazardId }; worker.add(leg);
+                const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.065, 0.65), pantsMat); leg.position.set(x, 0.425, 0); leg.userData = { hazardId }; worker.add(leg);
                 const boot = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.1, 0.2), bootMat); boot.position.set(x, 0.05, 0.04); boot.userData = { hazardId }; worker.add(boot);
             });
 
+            applyShadows(worker, true, true);
             workersGroup[hazardId] = worker;
             return worker;
         }
@@ -363,29 +394,28 @@
         let warningLight = null;
 
         function buildFactoryHall() {
-            // Sol béton avec zones balisées
+            // Sol récepteur principal d'ombres
             const floor = new THREE.Mesh(new THREE.PlaneGeometry(16, 14), new THREE.MeshStandardMaterial({ map: floorTexture, roughness: 0.4 }));
-            floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+            floor.rotation.x = -Math.PI / 2; 
+            floor.position.y = 0; // Référence zéro absolue
+            floor.receiveShadow = true; 
+            scene.add(floor);
 
-            // Murs béton avec conduites métalliques
             const wallMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
-            const backWall = new THREE.Mesh(new THREE.PlaneGeometry(16, 6), wallMat); backWall.position.set(0, 3, -7); scene.add(backWall);
-            const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(14, 6), wallMat); leftWall.rotation.y = Math.PI / 2; leftWall.position.set(-8, 3, 0); scene.add(leftWall);
-            const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(14, 6), wallMat); rightWall.rotation.y = -Math.PI / 2; rightWall.position.set(8, 3, 0); scene.add(rightWall);
+            const backWall = new THREE.Mesh(new THREE.PlaneGeometry(16, 6), wallMat); backWall.position.set(0, 3, -7); backWall.receiveShadow = true; scene.add(backWall);
+            const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(14, 6), wallMat); leftWall.rotation.y = Math.PI / 2; leftWall.position.set(-8, 3, 0); leftWall.receiveShadow = true; scene.add(leftWall);
+            const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(14, 6), wallMat); rightWall.rotation.y = -Math.PI / 2; rightWall.position.set(8, 3, 0); rightWall.receiveShadow = true; scene.add(rightWall);
 
-            // Tuyauterie et gaines de ventilation haute
             const pipeMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.2 });
             const mainPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 16, 16), pipeMat);
-            mainPipe.rotation.z = Math.PI / 2; mainPipe.position.set(0, 5.4, -6.6); scene.add(mainPipe);
+            mainPipe.rotation.z = Math.PI / 2; mainPipe.position.set(0, 5.4, -6.6); mainPipe.castShadow = true; scene.add(mainPipe);
 
-            // Charpente métallique du toit (Trusses)
             const trussMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.85 });
             for(let z = -6; z <= 6; z += 4) {
                 const trussBar = new THREE.Mesh(new THREE.BoxGeometry(16, 0.15, 0.15), trussMat);
-                trussBar.position.set(0, 5.8, z); scene.add(trussBar);
+                trussBar.position.set(0, 5.8, z); trussBar.castShadow = true; scene.add(trussBar);
             }
 
-            // Luminaires suspendus high-bay LED
             for(let x = -4; x <= 4; x += 8) {
                 for(let z = -4; z <= 4; z += 8) {
                     const bayLight = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.2, 0.15, 16), new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.9 }));
@@ -395,10 +425,9 @@
                 }
             }
 
-            // Pont Roulant Mobile (Grue)
             gantryCrane = new THREE.Group();
             const beam = new THREE.Mesh(new THREE.BoxGeometry(16, 0.35, 0.45), new THREE.MeshStandardMaterial({ color: 0xeab308, metalness: 0.8 }));
-            gantryCrane.add(beam);
+            beam.castShadow = true; gantryCrane.add(beam);
             
             warningLight = new THREE.PointLight(0xff0000, 2.5, 8);
             warningLight.position.set(0, 0.3, 0);
@@ -414,48 +443,53 @@
         let sparkSystem = null;
         let grindingSparks = null;
 
-        // --- SCÈNES DE PRÉVENTION HAUTE DÉFINITION ---
+        // --- SCÈNES DE PRÉVENTION (ALIGNEES SUR L'AXE Y SANS FLOTTEMENT) ---
         function buildDetailedHazards() {
 
-            // 1. SCÈNE CHIMIE (Fût, bac de rétention, pompe de transfert, flaque)
+            // 1. SCÈNE CHIMIE
             const chemGroup = new THREE.Group(); chemGroup.userData = { hazardId: 'chimique' };
             
+            // Fût 200 L posé directement sur le sol (hauteur 0.95 -> centre Y = 0.475)
             const drumMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, metalness: 0.75, roughness: 0.25 });
             const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.95, 32), drumMat);
+            drum.position.y = 0.475;
             drum.userData = { hazardId: 'chimique' }; chemGroup.add(drum);
             
             [0.2, -0.2].forEach(y => {
                 const rib = new THREE.Mesh(new THREE.TorusGeometry(0.325, 0.015, 12, 32), new THREE.MeshStandardMaterial({ color: 0x991b1b, metalness: 0.8 }));
-                rib.rotation.x = Math.PI / 2; rib.position.y = y; chemGroup.add(rib);
+                rib.rotation.x = Math.PI / 2; rib.position.y = 0.475 + y; chemGroup.add(rib);
             });
 
-            // Pompe manuelle de transfert installée sur le fût
             const pump = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.4, 12), new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.9 }));
-            pump.position.set(0.1, 0.65, 0); chemGroup.add(pump);
+            pump.position.set(0.1, 1.125, 0); chemGroup.add(pump);
 
             const label = new THREE.Mesh(new THREE.PlaneGeometry(0.25, 0.25), new THREE.MeshBasicMaterial({ map: ghsTexture, side: THREE.DoubleSide }));
-            label.position.set(0, 0.1, 0.326); label.userData = { hazardId: 'chimique' }; chemGroup.add(label);
+            label.position.set(0, 0.575, 0.326); label.userData = { hazardId: 'chimique' }; chemGroup.add(label);
 
             const signBoard = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.4), new THREE.MeshBasicMaterial({ map: ghsTexture }));
             signBoard.position.set(-3.8, 2.2, -6.95); scene.add(signBoard);
 
+            // Flaque de solvant plaquée au sol Y = 0.005
             const puddle = new THREE.Mesh(new THREE.CircleGeometry(0.85, 32), new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.02, metalness: 0.1, transparent: true, opacity: 0.88 }));
-            puddle.rotation.x = -Math.PI / 2; puddle.position.set(0.35, -0.46, 0.2); puddle.name = 'puddle'; puddle.userData = { hazardId: 'chimique' }; chemGroup.add(puddle);
+            puddle.rotation.x = -Math.PI / 2; puddle.position.set(0.35, 0.005, 0.2); puddle.name = 'puddle'; puddle.userData = { hazardId: 'chimique' }; chemGroup.add(puddle);
 
+            // Bac de rétention
             const bundGroup = new THREE.Group(); bundGroup.name = 'bund'; bundGroup.visible = false;
             const bundBase = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.22, 0.95), new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.4 }));
-            bundBase.position.y = -0.37; bundGroup.add(bundBase);
+            bundBase.position.y = 0.11; bundGroup.add(bundBase);
             const grid = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.02, 0.88), new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.9, roughness: 0.3 }));
-            grid.position.y = -0.25; bundGroup.add(grid);
+            grid.position.y = 0.23; bundGroup.add(grid);
             chemGroup.add(bundGroup);
 
             const spotChem = new THREE.PointLight(0xf59e0b, 1.2, 5); spotChem.position.set(-3.8, 2.5, -1.8); scene.add(spotChem);
 
-            const workerChem = createDetailedWorker('chimique', 0xf97316); workerChem.position.set(-0.65, -0.48, 0.1); workerChem.rotation.y = 0.8; chemGroup.add(workerChem);
-            chemGroup.position.set(-3.8, 0.48, -1.8); scene.add(chemGroup); hazardMeshGroups.chimique = chemGroup;
+            const workerChem = createDetailedWorker('chimique', 0xf97316); workerChem.position.set(-0.65, 0, 0.1); workerChem.rotation.y = 0.8; chemGroup.add(workerChem);
+            chemGroup.position.set(-3.8, 0, -1.8); 
+            applyShadows(chemGroup, true, true);
+            scene.add(chemGroup); hazardMeshGroups.chimique = chemGroup;
 
 
-            // 2. SCÈNE ÉLECTRIQUE (Armoire TGBT ouverte, disjoncteurs, LOTO station)
+            // 2. SCÈNE ÉLECTRIQUE
             const cableGroup = new THREE.Group(); cableGroup.userData = { hazardId: 'electrique' };
 
             const cabinet = new THREE.Group(); cabinet.position.set(0, 1.8, -6.9);
@@ -464,7 +498,6 @@
             const cabDoor = new THREE.Mesh(new THREE.BoxGeometry(0.78, 1.18, 0.04), new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.5 }));
             cabDoor.position.set(-0.4, 0, 0.12); cabDoor.rotation.y = -2.0; cabinet.add(cabDoor);
 
-            // Station Lockout/Tagout (LOTO) fixée sur le mur
             const lotoStation = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.4, 0.05), new THREE.MeshStandardMaterial({ color: 0xef4444 }));
             lotoStation.position.set(0.7, 1.8, -6.92); scene.add(lotoStation);
 
@@ -472,8 +505,10 @@
                 const breaker = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.1, 0.08), new THREE.MeshStandardMaterial({ color: (i === 0) ? 0xef4444 : 0x0284c7 }));
                 breaker.position.set(0, i, 0.05); cabinet.add(breaker);
             }
+            applyShadows(cabinet, true, true);
             scene.add(cabinet);
 
+            // Câble tangent au sol Y = 0.02
             const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(0, 1.2, -6.8), new THREE.Vector3(0, 0.02, 1.1), new THREE.Vector3(1.2, 0.02, 1.3)]);
             const cable = new THREE.Mesh(new THREE.TubeGeometry(curve, 48, 0.025, 12), new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 }));
             cable.userData = { hazardId: 'electrique' }; cableGroup.add(cable);
@@ -488,17 +523,23 @@
             ramp.position.set(0.0, 0.04, 1.0); ramp.name = 'ramp'; ramp.visible = false; cableGroup.add(ramp);
 
             const workerWalk = createDetailedWorker('electrique', 0xeab308); workerWalk.position.set(-0.4, 0, 1.0); workerWalk.rotation.y = 1.4; cableGroup.add(workerWalk);
+            applyShadows(cableGroup, true, true);
             scene.add(cableGroup); hazardMeshGroups.electrique = cableGroup;
 
 
-            // 3. SCÈNE GAZ (Bouteilles O2/AC, manodétendeurs, chariot de transport)
+            // 3. SCÈNE GAZ COMPRIMÉ
             const gasGroup = new THREE.Group(); gasGroup.userData = { hazardId: 'gaz' };
 
+            // Bouteille Oxygène posée au sol Y=0.7 (hauteur 1.4)
             const o2 = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 1.4, 24), new THREE.MeshStandardMaterial({ color: 0x15803d, metalness: 0.5 }));
-            o2.position.set(-0.22, 0.7, 0); o2.rotation.z = 0.14; o2.userData = { hazardId: 'gaz' }; gasGroup.add(o2);
+            o2.position.set(-0.22, 0.7, 0); o2.userData = { hazardId: 'gaz' }; gasGroup.add(o2);
             
+            // Bouteille Acétylène posée au sol Y=0.6 (hauteur 1.2)
             const ac = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 1.2, 24), new THREE.MeshStandardMaterial({ color: 0x7f1d1d, metalness: 0.5 }));
-            ac.position.set(0.22, 0.6, 0); ac.rotation.z = -0.12; ac.userData = { hazardId: 'gaz' }; gasGroup.add(ac);
+            ac.position.set(0.22, 0.6, 0); ac.userData = { hazardId: 'gaz' }; gasGroup.add(ac);
+
+            // Légère inclinaison non conforme (avant correction)
+            o2.rotation.z = 0.14; ac.rotation.z = -0.12;
 
             [o2, ac].forEach(bot => {
                 const cap = new THREE.Mesh(new THREE.SphereGeometry(0.15, 12, 12), new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8 }));
@@ -514,20 +555,24 @@
             chain.rotation.x = Math.PI / 2; chain.position.set(0, 0.85, 0.05); chain.name = 'chain'; chain.visible = false; gasGroup.add(chain);
 
             const workerGas = createDetailedWorker('gaz', 0x0284c7); workerGas.position.set(0, 0, 0.5); workerGas.rotation.y = Math.PI; gasGroup.add(workerGas);
-            gasGroup.position.set(3.8, 0, -3.8); scene.add(gasGroup); hazardMeshGroups.gaz = gasGroup;
+            gasGroup.position.set(3.8, 0, -3.8); 
+            applyShadows(gasGroup, true, true);
+            scene.add(gasGroup); hazardMeshGroups.gaz = gasGroup;
 
 
-            // 4. SCÈNE EXTINCTEUR (Panneau ISO 7010, palettes Europe structurées)
+            // 4. SCÈNE EXTINCTEUR & PALETTES
             const extGroup = new THREE.Group(); extGroup.userData = { hazardId: 'extincteur' };
 
             const isoSign = new THREE.Mesh(new THREE.PlaneGeometry(0.35, 0.35), new THREE.MeshBasicMaterial({ map: isoTexture }));
             isoSign.position.set(4.8, 2.2, 1.8); isoSign.rotation.y = -Math.PI / 2; scene.add(isoSign);
 
+            // Extincteur suspendu au mur
             const extBody = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.75, 24), new THREE.MeshStandardMaterial({ color: 0xdc2626, metalness: 0.4, roughness: 0.3 }));
             extBody.position.y = 1.3; extBody.userData = { hazardId: 'extincteur' }; extGroup.add(extBody);
             const extHead = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, 0.12, 12), new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8 }));
             extHead.position.y = 1.72; extGroup.add(extHead);
 
+            // Palettes empilées au sol Y=0
             const boxes = new THREE.Group(); boxes.name = 'boxes';
             for(let p = 0; p < 3; p++) {
                 const pallet = new THREE.Group();
@@ -543,34 +588,41 @@
             extGroup.add(boxes);
 
             const workerBox = createDetailedWorker('extincteur', 0x10b981); workerBox.position.set(-0.6, 0, 0.5); workerBox.rotation.y = 0.5; extGroup.add(workerBox);
-            extGroup.position.set(4.8, 0, 1.8); scene.add(extGroup); hazardMeshGroups.extincteur = extGroup;
+            extGroup.position.set(4.8, 0, 1.8); 
+            applyShadows(extGroup, true, true);
+            scene.add(extGroup); hazardMeshGroups.extincteur = extGroup;
 
 
-            // 5. SCÈNE MEULEUSE (Établi, étau, barre métallique incandescente, EPI)
+            // 5. SCÈNE MEULEUSE & ÉTABLI
             const toolGroup = new THREE.Group(); toolGroup.userData = { hazardId: 'meuleuse' };
 
+            // Établi (Pieds Y=0.44 -> plateau Y=0.94)
             const bench = new THREE.Group();
             const bTop = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.12, 1.4), new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.3 }));
-            bTop.position.y = 0.88; bTop.castShadow = true; bench.add(bTop);
+            bTop.position.y = 0.88; bench.add(bTop);
             [[-1.4, -0.6], [1.4, -0.6], [-1.4, 0.6], [1.4, 0.6]].forEach(p => {
                 const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.88), new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.9 }));
                 leg.position.set(p[0], 0.44, p[1]); bench.add(leg);
             });
-            bench.position.set(-1.8, 0, -4.2); scene.add(bench);
+            bench.position.set(-1.8, 0, -4.2); 
+            applyShadows(bench, true, true);
+            scene.add(bench);
 
+            // Étau fixé sur le plateau Y = 0.94 + 0.1 = 1.04
             const vise = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.2, 0.35), new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.85 }));
-            vise.position.set(-1.2, 1.0, -4.0); scene.add(vise);
+            vise.position.set(-3.0, 1.04, -4.2); vise.castShadow = true; vise.receiveShadow = true; scene.add(vise);
 
-            // Pièce métallique en cours de coupe avec zone incandescente
             const cutMetal = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.8, 16), new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.9 }));
-            cutMetal.rotation.z = Math.PI / 2; cutMetal.position.set(-1.2, 1.12, -4.0); scene.add(cutMetal);
+            cutMetal.rotation.z = Math.PI / 2; cutMetal.position.set(-3.0, 1.16, -4.2); cutMetal.castShadow = true; scene.add(cutMetal);
 
             const hotGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.08, 16), new THREE.MeshBasicMaterial({ color: 0xff3300 }));
-            hotGlow.rotation.z = Math.PI / 2; hotGlow.position.set(-1.2, 1.12, -4.0); scene.add(hotGlow);
+            hotGlow.rotation.z = Math.PI / 2; hotGlow.position.set(-3.0, 1.16, -4.2); scene.add(hotGlow);
 
+            // Lunettes EPI posées sur la table Y = 0.96
             const goggle = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.02, 8, 16), new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.7 }));
-            goggle.rotation.x = Math.PI / 2; goggle.position.set(-2.4, 0.96, -3.9); scene.add(goggle);
+            goggle.rotation.x = Math.PI / 2; goggle.position.set(-2.4, 0.96, -3.9); goggle.castShadow = true; scene.add(goggle);
 
+            // Meuleuse posée sur l'établi
             const grinderBody = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.38, 16), new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.4 }));
             grinderBody.rotation.z = Math.PI / 2; grinderBody.userData = { hazardId: 'meuleuse' }; toolGroup.add(grinderBody);
             
@@ -594,7 +646,9 @@
             spotMeul.position.set(-1.8, 3.0, -4.0); spotMeul.target = bench; scene.add(spotMeul);
 
             const workerGrind = createDetailedWorker('meuleuse', 0xef4444); workerGrind.position.set(0.1, -0.97, 0.5); workerGrind.rotation.y = Math.PI; toolGroup.add(workerGrind);
-            toolGroup.position.set(-1.8, 0.97, -4.0); scene.add(toolGroup); hazardMeshGroups.meuleuse = toolGroup;
+            toolGroup.position.set(-1.8, 0.97, -4.0); 
+            applyShadows(toolGroup, true, true);
+            scene.add(toolGroup); hazardMeshGroups.meuleuse = toolGroup;
         }
 
         buildDetailedHazards();
@@ -696,7 +750,9 @@
 
             const group = hazardMeshGroups[currentSelectedHazard.id];
             if (currentSelectedHazard.id === 'chimique') {
-                group.getObjectByName('puddle').visible = false; group.getObjectByName('bund').visible = true; group.position.y = 0.8;
+                group.getObjectByName('puddle').visible = false; 
+                group.getObjectByName('bund').visible = true; 
+                group.position.y = 0.22; // Remise sur bac de rétention
             } else if (currentSelectedHazard.id === 'electrique') {
                 if (sparkSystem) sparkSystem.visible = false; group.getObjectByName('ramp').visible = true;
             } else if (currentSelectedHazard.id === 'gaz') {
@@ -778,8 +834,6 @@
 
                 Object.keys(workersGroup).forEach(key => {
                     const w = workersGroup[key];
-                    w.position.y += Math.sin(time * 2 + key.length) * 0.0008;
-
                     if (key === 'meuleuse' && w.userData.armL && !HAZARDS.meuleuse.fixed) {
                         w.userData.armL.rotation.x = Math.sin(time * 8) * 0.08 - 0.4;
                         w.userData.armR.rotation.x = Math.cos(time * 8) * 0.08 - 0.4;
